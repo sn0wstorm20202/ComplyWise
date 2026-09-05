@@ -1,0 +1,20 @@
+[
+  {
+    "evidence_id": "EVD-KSPCB-ESDM-CTE",
+    "source_id": "SRC-KSPCB-CONSENT-2019",
+    "locator": "KSPCB Consent Framework Schedule II",
+    "excerpt": "Electronics system design and manufacturing units in Karnataka require prior Consent to Establish from KSPCB.",
+    "structured_fact": {"state": "KARNATAKA", "domain": "ELECTRONICS"},
+    "verification_status": "VERIFIED",
+    "effective_from": "2019-04-01"
+  },
+  {
+    "evidence_id": "EVD-WPC-ETA-WIRELESS",
+    "source_id": "SRC-WPC-ETA-RULES",
+    "locator": "WPC Notification on ETA through Saral Sanchar",
+    "excerpt": "All wireless and RF products operating in de-licensed frequency bands must obtain Equipment Type Approval (ETA) from the Wireless Planning and Coordination wing.",
+    "structured_fact": {"authority": "WPC", "trigger": "wireless_or_rf"},
+    "verification_status": "VERIFIED",
+    "effective_from": "2018-05-22"
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "rule_id": "RULE-BIS-CRS-01",
+    "version": 1,
+    "domain": "ELECTRONICS",
+    "jurisdiction": "CENTRAL",
+    "requirement_id": "REQ-BIS-CRS-SMART-METER",
+    "status": "PUBLISHED",
+    "effective_from": "2013-04-03",
+    "condition_ast": {
+      "op": "OR",
+      "args": [
+        {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "ELECTRONIC"},
+        {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "METER"}
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-BIS-CRS-ELECTRONICS"]
+  },
+  {
+    "rule_id": "RULE-TSPCB-CTE-01",
+    "version": 1,
+    "domain": "ENVIRONMENT",
+    "jurisdiction": "TELANGANA",
+    "requirement_id": "REQ-TSPCB-CTE",
+    "status": "PUBLISHED",
+    "effective_from": "2014-06-02",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {"op": "EQ", "left": {"var": "state"}, "right": "TELANGANA"},
+        {
+          "op": "OR",
+          "args": [
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "ELECTRONIC"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "METER"}
+          ]
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-TSPCB-CTE-ELECTRONICS"]
+  },
+  {
+    "rule_id": "RULE-CPCB-EPR-01",
+    "version": 1,
+    "domain": "ELECTRONICS",
+    "jurisdiction": "CENTRAL",
+    "requirement_id": "REQ-CPCB-EPR-EWASTE",
+    "status": "PUBLISHED",
+    "effective_from": "2023-04-01",
+    "condition_ast": {
+      "op": "OR",
+      "args": [
+        {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "ELECTRONIC"},
+        {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "METER"}
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-EPR-EWASTE-PRODUCER"]
+  }
+]

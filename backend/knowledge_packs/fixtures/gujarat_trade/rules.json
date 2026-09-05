@@ -1,0 +1,18 @@
+[
+  {
+    "rule_id": "RULE-DGFT-IEC-01",
+    "version": 1,
+    "domain": "TRADE",
+    "jurisdiction": "CENTRAL",
+    "requirement_id": "REQ-DGFT-IEC",
+    "status": "PUBLISHED",
+    "effective_from": "2023-04-01",
+    "condition_ast": {
+      "op": "EQ",
+      "left": {"var": "import_export_intent"},
+      "right": true
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-DGFT-IEC-MANDATE"]
+  }
+]

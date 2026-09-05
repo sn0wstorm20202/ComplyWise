@@ -1,0 +1,14 @@
+# ComplyWise backend — runtime dependencies
+# Stack is fixed by TRD_v2.0 §4: Python 3.12+, Django, DRF, PostgreSQL, pgvector.
+# Keep this list small. Do not add queues, caches or service meshes without a real need.
+
+Django>=5.2,<6.1
+djangorestframework>=3.16
+django-cors-headers>=4.7
+dj-database-url>=3.0
+psycopg[binary]>=3.2
+pgvector>=0.4
+pydantic>=2.11
+jsonschema>=4.20
+python-dotenv>=1.1
+gunicorn>=23.0

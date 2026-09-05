@@ -1,0 +1,51 @@
+"""Serializers for the onboarding boundary.
+
+Authority: PRD_v2.0 §10, TRD_v2.0 §8, §30.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from rest_framework import serializers
+
+from domain.profile.variables import get_variable
+
+
+class SmartQuestionAnswerSerializer(serializers.Serializer):
+    """Validates submitted answers to smart questions."""
+
+    answers = serializers.DictField(
+        child=serializers.JSONField(allow_null=True),
+        allow_empty=True,
+        required=False,
+        default=dict,
+    )
+
+    def validate_answers(self, value: dict[str, Any]) -> dict[str, Any]:
+        unknown_keys = [k for k in value if get_variable(k) is None]
+        if unknown_keys:
+            raise serializers.ValidationError(
+                f"Unknown profile variable keys: {', '.join(unknown_keys)}"
+            )
+        return value
+
+
+class ProductsActivitiesCreateSerializer(serializers.Serializer):
+    """Validates user's natural language products & activities input."""
+
+    product_description = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        min_length=3,
+        error_messages={
+            "blank": "Please describe what your company manufactures, trades, or does.",
+            "required": "Product and activity description is required.",
+        },
+    )
+    import_export_intent = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        default=None,
+    )

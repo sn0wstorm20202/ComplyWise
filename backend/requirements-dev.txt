@@ -1,0 +1,6 @@
+-r requirements.txt
+
+# Test + lint toolchain
+pytest>=8.4
+pytest-django>=4.11
+ruff>=0.12

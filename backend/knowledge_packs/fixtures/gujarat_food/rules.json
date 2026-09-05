@@ -1,0 +1,64 @@
+[
+  {
+    "rule_id": "RULE-FSSAI-STATE-01",
+    "version": 1,
+    "domain": "FOOD",
+    "jurisdiction": "CENTRAL",
+    "requirement_id": "REQ-FSSAI-STATE-LICENCE",
+    "status": "PUBLISHED",
+    "effective_from": "2011-08-05",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "FOOD"},
+        {"op": "GTE", "left": {"var": "annual_turnover"}, "right": 1200000},
+        {"op": "LTE", "left": {"var": "annual_turnover"}, "right": 200000000}
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-FSSAI-STATE-TURNOVER"]
+  },
+  {
+    "rule_id": "RULE-GPCB-CTE-01",
+    "version": 1,
+    "domain": "ENVIRONMENT",
+    "jurisdiction": "GUJARAT",
+    "requirement_id": "REQ-GPCB-CTE",
+    "status": "PUBLISHED",
+    "effective_from": "1981-03-29",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {"op": "EQ", "left": {"var": "state"}, "right": "GUJARAT"},
+        {
+          "op": "OR",
+          "args": [
+            {"op": "EQ", "left": {"var": "effluent_emission_generation"}, "right": true},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "FOOD"}
+          ]
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-GPCB-CTE-FOOD"]
+  },
+  {
+    "rule_id": "RULE-GUJ-FACTORIES-01",
+    "version": 1,
+    "domain": "LABOR",
+    "jurisdiction": "GUJARAT",
+    "requirement_id": "REQ-GUJ-FACTORY-LICENSE",
+    "status": "PUBLISHED",
+    "effective_from": "1949-04-01",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {"op": "EQ", "left": {"var": "state"}, "right": "GUJARAT"},
+        {"op": "GTE", "left": {"var": "total_worker_count"}, "right": 10},
+        {"op": "GT", "left": {"var": "connected_power_load"}, "right": 0}
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-FACTORIES-ACT-10-POWER"]
+  }
+]

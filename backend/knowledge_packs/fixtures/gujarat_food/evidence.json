@@ -1,0 +1,40 @@
+[
+  {
+    "evidence_id": "EVD-FSSAI-STATE-TURNOVER",
+    "source_id": "SRC-FSSAI-ACT-2006",
+    "locator": "FSS Licensing Regulations 2011, Schedule 1",
+    "excerpt": "Food business operators with an annual turnover exceeding 12 Lakh rupees and up to 20 Crore rupees require a State Food Safety License.",
+    "structured_fact": {
+      "min_turnover": 1200000,
+      "max_turnover": 200000000,
+      "currency": "INR",
+      "licence_tier": "STATE"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "2011-08-05"
+  },
+  {
+    "evidence_id": "EVD-GPCB-CTE-FOOD",
+    "source_id": "SRC-GPCB-CONSENT-RULES",
+    "locator": "Water Act 1974 Section 25, Air Act 1981 Section 21",
+    "excerpt": "Every industrial plant in Gujarat generating trade effluent or domestic wastewater must obtain Consent to Establish before commencing installation.",
+    "structured_fact": {
+      "mandatory_for_state": "GUJARAT",
+      "trigger": "effluent_or_food_processing"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "1981-03-29"
+  },
+  {
+    "evidence_id": "EVD-FACTORIES-ACT-10-POWER",
+    "source_id": "SRC-FACTORIES-ACT-1948",
+    "locator": "Factories Act Section 2(m)(i)",
+    "excerpt": "Factory means any premises whereon ten or more workers are working, and on any day of which a manufacturing process is being carried on with the aid of power.",
+    "structured_fact": {
+      "min_workers_with_power": 10,
+      "requires_power": true
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "1949-04-01"
+  }
+]

@@ -1,0 +1,29 @@
+[
+  {
+    "evidence_id": "EVD-BIS-CRS-ELECTRONICS",
+    "source_id": "SRC-MEITY-CRO-2012",
+    "locator": "MeitY CRO 2012 Notification Schedule",
+    "excerpt": "No person shall manufacture, store for sale or distribute electronic goods notified under the Compulsory Registration Order without conforming to Indian Standards.",
+    "structured_fact": {"compliance_type": "MANDATORY_REGISTRATION", "domain": "ELECTRONICS"},
+    "verification_status": "VERIFIED",
+    "effective_from": "2013-04-03"
+  },
+  {
+    "evidence_id": "EVD-TSPCB-CTE-ELECTRONICS",
+    "source_id": "SRC-TSPCB-REGULATIONS",
+    "locator": "TSPCB Consent Manual Chapter 2",
+    "excerpt": "Industries in Telangana classified under Orange or Green categories for electronics manufacturing require prior Consent to Establish from TSPCB.",
+    "structured_fact": {"state": "TELANGANA", "category": "CONSENT"},
+    "verification_status": "VERIFIED",
+    "effective_from": "2014-06-02"
+  },
+  {
+    "evidence_id": "EVD-EPR-EWASTE-PRODUCER",
+    "source_id": "SRC-EWASTE-MANAGEMENT-2022",
+    "locator": "E-Waste Rules 2022 Rule 4",
+    "excerpt": "Every producer of Electrical and Electronic Equipment (EEE) must register on the CPCB portal to obtain Extended Producer Responsibility certificate.",
+    "structured_fact": {"portal": "CPCB EPR Portal", "obligation": "EPR_CERTIFICATE"},
+    "verification_status": "VERIFIED",
+    "effective_from": "2023-04-01"
+  }
+]

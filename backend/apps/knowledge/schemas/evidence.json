@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EvidencePackSchema",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["evidence_id", "source_id"],
+    "additionalProperties": false,
+    "properties": {
+      "evidence_id": {"type": "string", "minLength": 1},
+      "source_id": {"type": "string", "minLength": 1},
+      "locator": {"type": "string"},
+      "excerpt": {"type": "string"},
+      "structured_fact": {"type": "object"},
+      "verification_status": {
+        "type": "string",
+        "enum": ["VERIFIED", "UNVERIFIED", "CONFLICTING"]
+      },
+      "effective_from": {"type": ["string", "null"]},
+      "effective_until": {"type": ["string", "null"]}
+    }
+  }
+}

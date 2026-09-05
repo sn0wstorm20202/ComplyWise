@@ -1,0 +1,24 @@
+[
+  {
+    "requirement_id": "REQ-TNPCB-CTE",
+    "name": "TNPCB Consent to Establish (CTE)",
+    "category": "CONSENT",
+    "authority": "TNPCB",
+    "jurisdiction": "TAMIL_NADU",
+    "domain": "AUTOMOTIVE",
+    "description": "Pollution control consent for establishing automotive component manufacturing in Tamil Nadu.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-TNPCB-AUTO-CTE"]
+  },
+  {
+    "requirement_id": "REQ-TN-FACTORY-LICENSE",
+    "name": "Factory License (Tamil Nadu)",
+    "category": "LICENCE",
+    "authority": "DISH_TN",
+    "jurisdiction": "TAMIL_NADU",
+    "domain": "LABOR",
+    "description": "Statutory factory license under Tamil Nadu Factories Rules for manufacturing premises.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-TN-FACTORIES-WORKERS"]
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "requirement_id": "REQ-FSSAI-STATE-LICENCE",
+    "name": "FSSAI State Food License",
+    "category": "LICENCE",
+    "authority": "FSSAI",
+    "jurisdiction": "CENTRAL",
+    "domain": "FOOD",
+    "description": "Statutory food license for food business operators with turnover above 12 Lakh and up to 20 Crore INR.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-FSSAI-STATE-TURNOVER"],
+    "metadata": {"renewal_period_years": 5}
+  },
+  {
+    "requirement_id": "REQ-GPCB-CTE",
+    "name": "GPCB Consent to Establish (CTE)",
+    "category": "CONSENT",
+    "authority": "GPCB",
+    "jurisdiction": "GUJARAT",
+    "domain": "ENVIRONMENT",
+    "description": "Pollution control clearance required prior to setting up industrial machinery in Gujarat.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-GPCB-CTE-FOOD"],
+    "metadata": {"portal": "XGN Gujarat"}
+  },
+  {
+    "requirement_id": "REQ-GUJ-FACTORY-LICENSE",
+    "name": "Factory License (Gujarat)",
+    "category": "LICENCE",
+    "authority": "DISH_GUJARAT",
+    "jurisdiction": "GUJARAT",
+    "domain": "LABOR",
+    "description": "Occupational health and safety factory license under the Factories Act for 10+ workers using power.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-FACTORIES-ACT-10-POWER"],
+    "metadata": {"portal": "DISH Portal"}
+  }
+]

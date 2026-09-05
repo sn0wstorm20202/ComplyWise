@@ -1,0 +1,46 @@
+[
+  {
+    "rule_id": "RULE-TNPCB-CTE-01",
+    "version": 1,
+    "domain": "AUTOMOTIVE",
+    "jurisdiction": "TAMIL_NADU",
+    "requirement_id": "REQ-TNPCB-CTE",
+    "status": "PUBLISHED",
+    "effective_from": "2020-01-01",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {"op": "EQ", "left": {"var": "state"}, "right": "TAMIL_NADU"},
+        {
+          "op": "OR",
+          "args": [
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "AUTO"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "AUTOMOTIVE"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "VEHICLE"}
+          ]
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-TNPCB-AUTO-CTE"]
+  },
+  {
+    "rule_id": "RULE-TN-FACTORY-01",
+    "version": 1,
+    "domain": "LABOR",
+    "jurisdiction": "TAMIL_NADU",
+    "requirement_id": "REQ-TN-FACTORY-LICENSE",
+    "status": "PUBLISHED",
+    "effective_from": "1950-04-01",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {"op": "EQ", "left": {"var": "state"}, "right": "TAMIL_NADU"},
+        {"op": "GTE", "left": {"var": "total_worker_count"}, "right": 10},
+        {"op": "GT", "left": {"var": "connected_power_load"}, "right": 0}
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-TN-FACTORIES-WORKERS"]
+  }
+]

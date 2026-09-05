@@ -1,0 +1,12 @@
+"""App configuration for the businesses boundary."""
+
+from __future__ import annotations
+
+from django.apps import AppConfig
+
+
+class BusinessesConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.businesses"
+    label = "businesses"
+    verbose_name = "Businesses"

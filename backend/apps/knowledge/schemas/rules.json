@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RulesPackSchema",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["rule_id", "requirement_id", "condition_ast"],
+    "additionalProperties": false,
+    "properties": {
+      "rule_id": {"type": "string", "minLength": 1},
+      "version": {"type": "integer", "minimum": 1},
+      "domain": {"type": "string"},
+      "jurisdiction": {"type": "string"},
+      "rule_type": {
+        "type": "string",
+        "enum": ["NORMAL", "EXCEPTION", "OVERRIDE", "EXEMPTION"]
+      },
+      "effective_from": {"type": ["string", "null"]},
+      "effective_until": {"type": ["string", "null"]},
+      "status": {
+        "type": "string",
+        "enum": [
+          "DRAFT",
+          "VALIDATION_PENDING",
+          "UNDER_REVIEW",
+          "PUBLISHED",
+          "SUPERSEDED",
+          "ARCHIVED",
+          "REJECTED"
+        ]
+      },
+      "requirement_id": {"type": "string", "minLength": 1},
+      "condition_ast": {"type": "object"},
+      "result": {
+        "type": "string",
+        "enum": [
+          "APPLICABLE",
+          "NOT_APPLICABLE",
+          "NEEDS_INFORMATION",
+          "CONFLICT_REVIEW",
+          "UNVERIFIED"
+        ]
+      },
+      "evidence_refs": {
+        "type": "array",
+        "items": {"type": "string"}
+      }
+    }
+  }
+}

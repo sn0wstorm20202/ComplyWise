@@ -1,0 +1,24 @@
+[
+  {
+    "requirement_id": "REQ-KSPCB-CTE",
+    "name": "KSPCB Consent to Establish (CTE)",
+    "category": "CONSENT",
+    "authority": "KSPCB",
+    "jurisdiction": "KARNATAKA",
+    "domain": "ENVIRONMENT",
+    "description": "Pollution control board consent for establishing electronic system design & manufacturing in Karnataka.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-KSPCB-ESDM-CTE"]
+  },
+  {
+    "requirement_id": "REQ-WPC-ETA",
+    "name": "WPC Equipment Type Approval (ETA)",
+    "category": "APPROVAL",
+    "authority": "WPC_DOT",
+    "jurisdiction": "CENTRAL",
+    "domain": "ELECTRONICS",
+    "description": "Equipment Type Approval from Wireless Planning and Coordination wing for devices with wireless RF/Bluetooth/WiFi capabilities.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-WPC-ETA-WIRELESS"]
+  }
+]

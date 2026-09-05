@@ -1,0 +1,24 @@
+[
+  {
+    "source_id": "SRC-TNPCB-CONSENT-2020",
+    "authority": "TNPCB",
+    "title": "Tamil Nadu Pollution Control Board Comprehensive Consent Regulations",
+    "source_type": "REGULATION",
+    "canonical_url": "https://www.tnpcb.gov.in",
+    "publication_date": "2020-01-01",
+    "effective_date": "2020-01-01",
+    "status": "ACTIVE",
+    "metadata": {"jurisdiction": "TAMIL_NADU"}
+  },
+  {
+    "source_id": "SRC-TN-FACTORIES-1950",
+    "authority": "DISH_TN",
+    "title": "Tamil Nadu Factories Rules, 1950",
+    "source_type": "REGULATION",
+    "canonical_url": "https://dish.tn.gov.in",
+    "publication_date": "1950-03-15",
+    "effective_date": "1950-04-01",
+    "status": "ACTIVE",
+    "metadata": {"jurisdiction": "TAMIL_NADU"}
+  }
+]

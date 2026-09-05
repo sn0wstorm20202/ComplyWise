@@ -1,0 +1,35 @@
+[
+  {
+    "source_id": "SRC-FSSAI-ACT-2006",
+    "authority": "FSSAI",
+    "title": "Food Safety and Standards Act, 2006",
+    "source_type": "ACT",
+    "canonical_url": "https://www.fssai.gov.in/act-rules",
+    "publication_date": "2006-08-23",
+    "effective_date": "2011-08-05",
+    "status": "ACTIVE",
+    "metadata": {"statute": "Act 34 of 2006", "section": "Section 31"}
+  },
+  {
+    "source_id": "SRC-GPCB-CONSENT-RULES",
+    "authority": "GPCB",
+    "title": "Gujarat Pollution Control Board Water and Air Consent Regulations",
+    "source_type": "REGULATION",
+    "canonical_url": "https://gpcb.gujarat.gov.in/consent",
+    "publication_date": "1981-03-29",
+    "effective_date": "1981-03-29",
+    "status": "ACTIVE",
+    "metadata": {"jurisdiction": "GUJARAT"}
+  },
+  {
+    "source_id": "SRC-FACTORIES-ACT-1948",
+    "authority": "DISH_GUJARAT",
+    "title": "Factories Act, 1948 and Gujarat Factories Rules, 1963",
+    "source_type": "ACT",
+    "canonical_url": "https://dish.gujarat.gov.in",
+    "publication_date": "1948-09-23",
+    "effective_date": "1949-04-01",
+    "status": "ACTIVE",
+    "metadata": {"section": "2(m)"}
+  }
+]

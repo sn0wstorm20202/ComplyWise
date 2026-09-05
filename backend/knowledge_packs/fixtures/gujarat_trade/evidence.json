@@ -1,0 +1,11 @@
+[
+  {
+    "evidence_id": "EVD-DGFT-IEC-MANDATE",
+    "source_id": "SRC-DGFT-FTP-2023",
+    "locator": "FTP 2023 Para 2.05",
+    "excerpt": "No export or import shall be made by any person without obtaining an Importer-Exporter Code (IEC) number granted by the DGFT.",
+    "structured_fact": {"trigger": "import_export_intent"},
+    "verification_status": "VERIFIED",
+    "effective_from": "2023-04-01"
+  }
+]

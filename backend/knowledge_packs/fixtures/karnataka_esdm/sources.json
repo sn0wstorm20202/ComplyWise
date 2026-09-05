@@ -1,0 +1,24 @@
+[
+  {
+    "source_id": "SRC-KSPCB-CONSENT-2019",
+    "authority": "KSPCB",
+    "title": "Karnataka State Pollution Control Board Consent Guidelines",
+    "source_type": "REGULATION",
+    "canonical_url": "https://kspcb.karnataka.gov.in",
+    "publication_date": "2019-04-01",
+    "effective_date": "2019-04-01",
+    "status": "ACTIVE",
+    "metadata": {"jurisdiction": "KARNATAKA"}
+  },
+  {
+    "source_id": "SRC-WPC-ETA-RULES",
+    "authority": "WPC_DOT",
+    "title": "Wireless Planning and Coordination Wing Equipment Type Approval Regulations",
+    "source_type": "REGULATION",
+    "canonical_url": "https://saralsanchar.gov.in",
+    "publication_date": "2018-05-22",
+    "effective_date": "2018-05-22",
+    "status": "ACTIVE",
+    "metadata": {"frequency": "De-licensed frequency bands"}
+  }
+]

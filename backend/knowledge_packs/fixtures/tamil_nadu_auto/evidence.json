@@ -1,0 +1,20 @@
+[
+  {
+    "evidence_id": "EVD-TNPCB-AUTO-CTE",
+    "source_id": "SRC-TNPCB-CONSENT-2020",
+    "locator": "TNPCB Industry Categorisation Schedule Item 14",
+    "excerpt": "Automobile manufacturing and component fabrication units are categorized under Orange Category requiring prior Consent to Establish from TNPCB.",
+    "structured_fact": {"state": "TAMIL_NADU", "category": "ORANGE", "domain": "AUTOMOTIVE"},
+    "verification_status": "VERIFIED",
+    "effective_from": "2020-01-01"
+  },
+  {
+    "evidence_id": "EVD-TN-FACTORIES-WORKERS",
+    "source_id": "SRC-TN-FACTORIES-1950",
+    "locator": "Rule 3, Grant of Licence",
+    "excerpt": "Any manufacturing unit operating in Tamil Nadu with 10 or more workers and using electric power must obtain factory registration prior to commencing commercial production.",
+    "structured_fact": {"state": "TAMIL_NADU", "min_workers": 10, "power_required": true},
+    "verification_status": "VERIFIED",
+    "effective_from": "1950-04-01"
+  }
+]

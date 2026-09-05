@@ -1,0 +1,35 @@
+[
+  {
+    "source_id": "SRC-MEITY-CRO-2012",
+    "authority": "BIS",
+    "title": "Electronics and Information Technology Goods (Compulsory Registration) Order",
+    "source_type": "REGULATION",
+    "canonical_url": "https://www.crsbis.in",
+    "publication_date": "2012-10-03",
+    "effective_date": "2013-04-03",
+    "status": "ACTIVE",
+    "metadata": {"scheme": "CRS Scheme II"}
+  },
+  {
+    "source_id": "SRC-TSPCB-REGULATIONS",
+    "authority": "TSPCB",
+    "title": "Telangana State Pollution Control Board Consent Guidelines",
+    "source_type": "REGULATION",
+    "canonical_url": "https://tspcb.cgg.gov.in",
+    "publication_date": "2014-06-02",
+    "effective_date": "2014-06-02",
+    "status": "ACTIVE",
+    "metadata": {"jurisdiction": "TELANGANA"}
+  },
+  {
+    "source_id": "SRC-EWASTE-MANAGEMENT-2022",
+    "authority": "CPCB",
+    "title": "E-Waste (Management) Rules, 2022",
+    "source_type": "REGULATION",
+    "canonical_url": "https://cpcb.nic.in/e-waste",
+    "publication_date": "2022-11-02",
+    "effective_date": "2023-04-01",
+    "status": "ACTIVE",
+    "metadata": {"portal": "CPCB EPR Portal"}
+  }
+]

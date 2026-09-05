@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SourcesPackSchema",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["source_id", "authority", "title"],
+    "additionalProperties": false,
+    "properties": {
+      "source_id": {"type": "string", "minLength": 1},
+      "authority": {"type": "string", "minLength": 1},
+      "title": {"type": "string", "minLength": 1},
+      "source_type": {"type": "string"},
+      "canonical_url": {"type": "string"},
+      "publication_date": {"type": ["string", "null"]},
+      "effective_date": {"type": ["string", "null"]},
+      "status": {
+        "type": "string",
+        "enum": ["ACTIVE", "SUPERSEDED", "WITHDRAWN", "UNDER_REVIEW"]
+      },
+      "content_hash": {"type": "string"},
+      "metadata": {"type": "object"}
+    }
+  }
+}

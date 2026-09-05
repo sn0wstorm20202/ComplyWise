@@ -1,0 +1,13 @@
+[
+  {
+    "requirement_id": "REQ-DGFT-IEC",
+    "name": "Importer-Exporter Code (IEC)",
+    "category": "REGISTRATION",
+    "authority": "DGFT",
+    "jurisdiction": "CENTRAL",
+    "domain": "TRADE",
+    "description": "Primary registration code mandated by Directorate General of Foreign Trade for any cross-border commercial shipments.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-DGFT-IEC-MANDATE"]
+  }
+]

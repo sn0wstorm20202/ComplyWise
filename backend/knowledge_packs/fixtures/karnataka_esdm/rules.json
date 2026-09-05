@@ -1,0 +1,48 @@
+[
+  {
+    "rule_id": "RULE-KSPCB-CTE-01",
+    "version": 1,
+    "domain": "ELECTRONICS",
+    "jurisdiction": "KARNATAKA",
+    "requirement_id": "REQ-KSPCB-CTE",
+    "status": "PUBLISHED",
+    "effective_from": "2019-04-01",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {"op": "EQ", "left": {"var": "state"}, "right": "KARNATAKA"},
+        {
+          "op": "OR",
+          "args": [
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "ELECTRONIC"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "ESDM"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "SEMICONDUCTOR"}
+          ]
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-KSPCB-ESDM-CTE"]
+  },
+  {
+    "rule_id": "RULE-WPC-ETA-01",
+    "version": 1,
+    "domain": "ELECTRONICS",
+    "jurisdiction": "CENTRAL",
+    "requirement_id": "REQ-WPC-ETA",
+    "status": "PUBLISHED",
+    "effective_from": "2018-05-22",
+    "condition_ast": {
+      "op": "OR",
+      "args": [
+        {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "WIRELESS"},
+        {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "BLUETOOTH"},
+        {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "WIFI"},
+        {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "IOT"},
+        {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "RADIO"}
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-WPC-ETA-WIRELESS"]
+  }
+]

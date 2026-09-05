@@ -1,0 +1,45 @@
+[project]
+name = "complywise-backend"
+version = "0.1.0"
+description = "ComplyWise compliance intelligence backend (modular monolith)"
+requires-python = ">=3.12"
+
+# Dependencies are pinned in requirements.txt / requirements-dev.txt so that the
+# same files drive local uv installs and the Azure deployment image.
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py", "*_test.py"]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "postgres: requires a PostgreSQL database (skipped on the SQLite fallback)",
+]
+filterwarnings = ["error::DeprecationWarning:apps.*", "error::DeprecationWarning:common.*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # import sorting
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "DJ",   # flake8-django
+    "RUF",
+]
+ignore = [
+    "E501",    # line length is enforced by the formatter
+    "B008",    # DRF/Django idioms rely on calls in defaults
+    "RUF012",  # Django class attrs are conventionally mutable
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "common", "config", "domain"]

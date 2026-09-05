@@ -1,0 +1,196 @@
+[
+  {
+    "code": "CENTRAL",
+    "name": "Central (All India)",
+    "aliases": [
+      "CENTRAL",
+      "Central",
+      "central",
+      "ALL_INDIA",
+      "All India",
+      "INDIA",
+      "India",
+      "NATIONAL",
+      "National",
+      "UNION",
+      "Union"
+    ]
+  },
+  {
+    "code": "GUJARAT",
+    "name": "Gujarat",
+    "aliases": [
+      "GUJARAT",
+      "Gujarat",
+      "gujarat",
+      "GJ",
+      "Gj",
+      "gj"
+    ]
+  },
+  {
+    "code": "TELANGANA",
+    "name": "Telangana",
+    "aliases": [
+      "TELANGANA",
+      "Telangana",
+      "telangana",
+      "TS",
+      "TG",
+      "Ts",
+      "Tg"
+    ]
+  },
+  {
+    "code": "TAMIL_NADU",
+    "name": "Tamil Nadu",
+    "aliases": [
+      "TAMIL_NADU",
+      "TAMIL NADU",
+      "Tamil Nadu",
+      "tamil nadu",
+      "Tamil  Nadu",
+      "TN",
+      "Tn",
+      "tn"
+    ]
+  },
+  {
+    "code": "KARNATAKA",
+    "name": "Karnataka",
+    "aliases": [
+      "KARNATAKA",
+      "Karnataka",
+      "karnataka",
+      "KA",
+      "Ka",
+      "ka"
+    ]
+  },
+  {
+    "code": "MAHARASHTRA",
+    "name": "Maharashtra",
+    "aliases": [
+      "MAHARASHTRA",
+      "Maharashtra",
+      "maharashtra",
+      "MH",
+      "Mh",
+      "mh"
+    ]
+  },
+  {
+    "code": "ODISHA",
+    "name": "Odisha",
+    "aliases": [
+      "ODISHA",
+      "Odisha",
+      "odisha",
+      "ORISSA",
+      "Orissa",
+      "orissa",
+      "OD",
+      "OR"
+    ]
+  },
+  {
+    "code": "DELHI",
+    "name": "Delhi (NCT)",
+    "aliases": [
+      "DELHI",
+      "Delhi",
+      "delhi",
+      "DL",
+      "NCT",
+      "NCT of Delhi"
+    ]
+  },
+  {
+    "code": "ANDHRA_PRADESH",
+    "name": "Andhra Pradesh",
+    "aliases": [
+      "ANDHRA_PRADESH",
+      "Andhra Pradesh",
+      "andhra pradesh",
+      "AP",
+      "Ap"
+    ]
+  },
+  {
+    "code": "RAJASTHAN",
+    "name": "Rajasthan",
+    "aliases": [
+      "RAJASTHAN",
+      "Rajasthan",
+      "rajasthan",
+      "RJ",
+      "Rj"
+    ]
+  },
+  {
+    "code": "WEST_BENGAL",
+    "name": "West Bengal",
+    "aliases": [
+      "WEST_BENGAL",
+      "West Bengal",
+      "west bengal",
+      "WB",
+      "Wb"
+    ]
+  },
+  {
+    "code": "UTTAR_PRADESH",
+    "name": "Uttar Pradesh",
+    "aliases": [
+      "UTTAR_PRADESH",
+      "Uttar Pradesh",
+      "uttar pradesh",
+      "UP",
+      "Up"
+    ]
+  },
+  {
+    "code": "HARYANA",
+    "name": "Haryana",
+    "aliases": [
+      "HARYANA",
+      "Haryana",
+      "haryana",
+      "HR",
+      "Hr"
+    ]
+  },
+  {
+    "code": "KERALA",
+    "name": "Kerala",
+    "aliases": [
+      "KERALA",
+      "Kerala",
+      "kerala",
+      "KL",
+      "Kl"
+    ]
+  },
+  {
+    "code": "PUNJAB",
+    "name": "Punjab",
+    "aliases": [
+      "PUNJAB",
+      "Punjab",
+      "punjab",
+      "PB",
+      "Pb"
+    ]
+  },
+  {
+    "code": "MADHYA_PRADESH",
+    "name": "Madhya Pradesh",
+    "aliases": [
+      "MADHYA_PRADESH",
+      "Madhya Pradesh",
+      "madhya pradesh",
+      "MP",
+      "Mp"
+    ]
+  }
+]

@@ -195,21 +195,30 @@ function RequirementDetailContent({ params }: PageProps) {
                 </div>
 
                 <div className="space-y-4 pt-1">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {detail.what_you_need.documents.map((doc, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-start gap-2.5 p-3 rounded-xl border border-slate-100 bg-slate-50/60 text-xs text-slate-800"
-                      >
-                        <span className="text-emerald-600 font-bold">✓</span>
-                        <span>{doc}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {/* No document list is held for most requirements today. Saying so
+                      is the honest state; an empty grid would read as "none needed". */}
+                  {detail.what_you_need.documents_available ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {detail.what_you_need.documents.map((doc, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-start gap-2.5 p-3 rounded-xl border border-slate-100 bg-slate-50/60 text-xs text-slate-800"
+                        >
+                          <span className="text-emerald-600 font-bold">✓</span>
+                          <span>{doc}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500 p-3 rounded-xl border border-slate-100 bg-slate-50/60">
+                      {detail.what_you_need.not_recorded_note ??
+                        "No document list is recorded in published knowledge for this requirement."}
+                    </p>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
                     <div className="p-3 rounded-xl border border-slate-100 bg-slate-50/50">
-                      <span className="font-semibold text-slate-600 block">Statutory Fee Estimate:</span>
+                      <span className="font-semibold text-slate-600 block">Statutory Fee:</span>
                       <span className="text-slate-900 font-medium mt-0.5 block">
                         {detail.what_you_need.statutory_fee_estimate}
                       </span>
@@ -217,7 +226,9 @@ function RequirementDetailContent({ params }: PageProps) {
                     <div className="p-3 rounded-xl border border-slate-100 bg-slate-50/50">
                       <span className="font-semibold text-slate-600 block">Validity Period:</span>
                       <span className="text-slate-900 font-medium mt-0.5 block">
-                        {detail.what_you_need.validity_period}
+                        {detail.what_you_need.renewal_period_years !== null
+                          ? `${detail.what_you_need.renewal_period_years} year(s) — renewal cycle recorded in published knowledge`
+                          : detail.what_you_need.validity_period}
                       </span>
                     </div>
                   </div>
@@ -236,18 +247,40 @@ function RequirementDetailContent({ params }: PageProps) {
                 </div>
 
                 <div className="space-y-2.5 pt-1">
-                  <div className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/60 text-xs">
-                    <span className="font-bold text-indigo-600 shrink-0">Step 1:</span>
-                    <span className="text-slate-800">{detail.what_to_do_next.step_1}</span>
-                  </div>
-                  <div className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/60 text-xs">
-                    <span className="font-bold text-indigo-600 shrink-0">Step 2:</span>
-                    <span className="text-slate-800">{detail.what_to_do_next.step_2}</span>
-                  </div>
-                  <div className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/60 text-xs">
-                    <span className="font-bold text-indigo-600 shrink-0">Step 3:</span>
-                    <span className="text-slate-800">{detail.what_to_do_next.step_3}</span>
-                  </div>
+                  {/* Application steps come from published requirement metadata. Where
+                      none are recorded, no procedure is invented here. */}
+                  {detail.what_to_do_next.steps_available ? (
+                    detail.what_to_do_next.steps.map((step, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/60 text-xs"
+                      >
+                        <span className="font-bold text-indigo-600 shrink-0">
+                          Step {idx + 1}:
+                        </span>
+                        <span className="text-slate-800">{step}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-500 p-3.5 rounded-xl border border-slate-100 bg-slate-50/60">
+                      {detail.what_to_do_next.not_recorded_note ??
+                        "No application procedure is recorded in published knowledge for this requirement."}
+                    </p>
+                  )}
+
+                  {detail.what_to_do_next.official_portal && (
+                    <div className="flex items-start gap-3 p-3.5 rounded-xl border border-indigo-100 bg-indigo-50/50 text-xs">
+                      <span className="font-bold text-indigo-600 shrink-0">Portal:</span>
+                      <a
+                        href={detail.what_to_do_next.official_portal}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-indigo-700 hover:underline break-all"
+                      >
+                        {detail.what_to_do_next.official_portal} ↗
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
 

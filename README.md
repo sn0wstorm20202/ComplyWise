@@ -68,7 +68,8 @@ complywise/
 ├── docs/                        # Authoritative documentation contracts
 │   ├── PRD.md                   # Product Requirements Document v2.0
 │   ├── TRD.md                   # Technical Requirements Document v2.0
-│   ├── FRONTEND_INSTRUCTIONS.md # UI design system and API wiring rules
+│   ├── FRONTEND_INSTRUCTIONS.md # UI design system and screen rules
+│   ├── FRONTEND_API_WIRING.md   # Verified endpoint/auth/enum integration contract
 │   └── PROJECT_EXECUTION.md     # Living implementation roadmap & test tracker
 ├── .env.example                 # Environment configuration template
 ├── .gitignore                   # Workspace gitignore rules
@@ -116,9 +117,26 @@ DATABASE_SSL_REQUIRE=True
 ENABLE_PGVECTOR=True
 
 # AI & Regulatory Intelligence Model Configuration
+# Provider abstraction: one interface per capability; select by env var.
+# LLM_PROVIDER: openai | gemini | grok   EMBEDDING_PROVIDER: openai | gemini
+# Every provider is optional; configure only what you use. Missing keys degrade
+# cleanly (the assistant answers with citations only); applicability decisions
+# never use an LLM.
+LLM_PROVIDER=gemini
+EMBEDDING_PROVIDER=gemini
+
 OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_MODEL=gpt-5.6-luna
 OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-3.1-flash-lite
+GEMINI_EMBEDDING_MODEL=gemini-embedding-001
+
+GROK_API_KEY=your_grok_api_key_here
+GROK_MODEL=grok-4
+
+# Server-side only, optional: knowledge acquisition (never sent to the browser)
 FIRECRAWL_API_KEY=your_firecrawl_api_key_here
 ```
 
@@ -153,7 +171,7 @@ python manage.py migrate
 # 5. Load curated regulatory knowledge packs into the database
 python manage.py load_knowledge_packs
 
-# 6. Run the test suite to verify everything passes (242 automated tests)
+# 6. Run the test suite to verify everything passes (265 automated tests)
 pytest
 
 # 7. Start the Django development server

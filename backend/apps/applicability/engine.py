@@ -140,6 +140,7 @@ class ApplicabilityEngine:
                     }
 
             results_to_create: list[DecisionResult] = []
+            had_failures = False
 
             # Evaluate every published requirement in scope (C5)
             for req in all_published_reqs:
@@ -172,20 +173,26 @@ class ApplicabilityEngine:
                         continue
 
                     if business_state and req_jurisdiction != business_state:
-                        # Business state is known but does not match requirement state -> UNVERIFIED (C5)
+                        # Business state is known and differs from the requirement's
+                        # state. A Gujarat licence cannot bind a Tamil Nadu premises,
+                        # so this is a decision, not an unverified gap.
                         result = DecisionResult(
                             decision_run=run,
                             requirement_id=req.requirement_id,
                             requirement_name=req.name,
                             rule_version=None,
-                            status=ApplicabilityStatus.UNVERIFIED,
+                            status=ApplicabilityStatus.NOT_APPLICABLE,
                             explanation_trace={
                                 "requirement_id": req.requirement_id,
                                 "requirement_name": req.name,
                                 "authority": req.authority,
                                 "jurisdiction": req.jurisdiction,
-                                "status": ApplicabilityStatus.UNVERIFIED,
+                                "status": ApplicabilityStatus.NOT_APPLICABLE,
                                 "reason": "JURISDICTION_NOT_MATCHED",
+                                "note": (
+                                    f"This requirement applies in {req.jurisdiction}; "
+                                    f"the business operates in {business_state}."
+                                ),
                                 "evaluations": [],
                             },
                             evidence_refs=[],

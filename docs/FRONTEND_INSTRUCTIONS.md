@@ -2,10 +2,15 @@
 
 ## Hackathon Frontend Build & Backend Wiring
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Product:** ComplyWise  
 **Problem Statement:** 26130  
 **Target:** Working prototype matching the supplied visual reference
+
+> **API wiring lives in `FRONTEND_API_WIRING.md`** — the verified endpoint
+> inventory, auth flow, enums, real-vs-placeholder table and error states.
+> This document remains the design/UX contract; that one is the integration
+> contract. Do not duplicate endpoint details here.
 
 ---
 

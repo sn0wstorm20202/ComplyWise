@@ -18,6 +18,7 @@ from domain.profile.variables import (
     PROFILE_VARIABLES,
     coerce_value,
     get_variable,
+    resolve_variable_options,
 )
 
 from .models import Business, BusinessProfileVersion
@@ -59,7 +60,10 @@ class ProfileVariableDefinitionSerializer(serializers.Serializer):
     options = serializers.SerializerMethodField()
 
     def get_options(self, obj) -> list[dict[str, str]]:  # noqa: ANN001
-        return [{"value": o.value, "label": o.label} for o in obj.options]
+        # Some option sets are knowledge rather than schema — the selectable
+        # jurisdictions are exactly those the knowledge base can normalise — so
+        # they are resolved at runtime rather than frozen into the registry.
+        return resolve_variable_options(obj)
 
 
 class ProfileVariableEntrySerializer(serializers.Serializer):
@@ -121,7 +125,7 @@ class BusinessProfileVersionCreateSerializer(serializers.Serializer):
     become a silently-ignored decision input.
     """
 
-    variables = serializers.DictField(child=serializers.DictField(), allow_empty=False)
+    variables = serializers.DictField(allow_empty=False)
     change_note = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
     carry_forward = serializers.BooleanField(required=False, default=True)
 
@@ -134,6 +138,12 @@ class BusinessProfileVersionCreateSerializer(serializers.Serializer):
             if variable is None:
                 errors[key] = "Not a recognised business profile variable."
                 continue
+
+            # Two accepted shapes: `{"value": x, "origin": ...}` when provenance
+            # matters, or a bare `x` from a form field. A bare value is a user
+            # answer by definition, so the origin is not ambiguous.
+            if not isinstance(payload, dict) or "value" not in payload:
+                payload = {"value": payload, "origin": VariableOrigin.USER_PROVIDED}
 
             entry_serializer = ProfileVariableEntrySerializer(data=payload)
             if not entry_serializer.is_valid():

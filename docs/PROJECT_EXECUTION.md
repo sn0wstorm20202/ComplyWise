@@ -7,6 +7,27 @@
 
 ---
 
+## LATEST MILESTONE — V2 Dynamic Prototype Audit (2026-03)
+
+Full detail at the bottom of this file. Here is the headline:
+
+```text
+End-to-end journey (register → profile → products → dynamic questions →
+analysis → results → dashboard):   VERIFIED IN REAL BROWSER (16/16 checks)
+Backend tests:                     265/265 passing
+Django check / migrations:         0 issues / clean
+Frontend tsc + production build:   0 errors
+Scenario hardcoding:               NONE (guarded by test_knowledge_boundary.py)
+6th unseen scenario (synthetic):   PASS (zero engine code changes, SHA-256 asserted)
+Provider abstraction:              openai | gemini | grok; openai | gemini embeddings
+LLM verified live:                 Gemini (gemini-3.1-flash-lite) via domain.providers
+```
+
+Authoritative docs: `PRD.md` (v2.0), `TRD.md` (v2.0), `FRONTEND_INSTRUCTIONS.md`
+(+ `FRONTEND_API_WIRING.md` for the endpoint-level integration contract).
+
+---
+
 ## 1. Rules For This File
 
 `PRD.md` = product contract.  
@@ -513,6 +534,194 @@ Authority: PRD_v2.0, TRD_v2.0, FRONTEND_INSTRUCTIONS.md, Problem Statement 26130
 - `backend/tests/test_status_contract.py`: 16/16 contract integrity tests passed.
 - `backend/tests/test_onboarding.py`: 5/5 passed.
 - Strict multi-tenancy & access control verified across all endpoints.
+
+---
+
+## TASK 3+4 (PARTIAL) + V2 DYNAMIC-PROTOTYPE AUDIT — Dynamic End-to-End Verification
+
+Status: DONE (audit + fix + verify cycle; the research-paper ingestion architecture
+is explicitly the NEXT phase and was not attempted).
+
+### What was audited and verified at runtime
+
+The full internal accuracy pipeline was traced and exercised end-to-end against a
+live stack (Django dev server + Next.js production build + real Chrome via CDP):
+
+```text
+Business Profile (19-var registry)   IMPLEMENTED  — canonical keys accepted; unknown keys 400
+  ↓  (POST /businesses/{id}/profile, GET /profile/variables)
+Product/Activity understanding        IMPLEMENTED  — free text persisted; detected terms come
+                                                   from published rule AST probes, never a label set
+  ↓
+Variable resolution / context         IMPLEMENTED  — immutable versions, provenance, jurisdiction
+                                                   normalisation is data-driven (jurisdictions.json)
+  ↓
+Smart questions (rule-driven)         IMPLEMENTED  — questions = rule-referenced vars − answered
+                                                   vars; answers make questions disappear (verified)
+  ↓
+Knowledge selection + jurisdiction    IMPLEMENTED  — PUBLISHED only; CENTRAL+state filter
+  ↓
+Rule evaluation (3-valued Kleene)     IMPLEMENTED  — missing decision-critical var ⇒
+                                                   NEEDS_INFORMATION, never silent NOT_APPLICABLE
+  ↓
+Evidence validation                   IMPLEMENTED  — zero/dangling/inactive/expired/conflicting
+                                                   evidence downgrades APPLICABLE → UNVERIFIED/
+                                                   CONFLICT_REVIEW
+  ↓
+Decision generation                   IMPLEMENTED  — DecisionRun RUNNING→COMPLETED/FAILED;
+                                                   precedence OVERRIDE>EXEMPTION>EXCEPTION>NORMAL
+  ↓
+Explanation trace                     IMPLEMENTED  — every rule considered is recorded with truth
+                                                   value; matched rule id/version on the result
+  ↓
+Source linkage                        IMPLEMENTED  — requirement detail carries
+                                                   Evidence → Source (title, authority, locator,
+                                                   verification status, canonical URL)
+  ↓
+Dashboard result                      IMPLEMENTED  — all counts from the latest DecisionRun; nulls
+                                                   rendered as "Not yet calculated", none invented
+```
+
+### Live verification evidence
+
+- API journey (PowerShell/Invoke-RestMethod), fresh user, unseen businesses:
+  - Kerala spice business: 11 results, jurisdiction-correct (all non-Kerala state
+    requirements NOT_APPLICABLE with `JURISDICTION_NOT_MATCHED`; central rules
+    decided by AST): PASS.
+  - Gujarat food business: missing `annual_turnover` ⇒ FSSAI NEEDS_INFORMATION;
+    question asked; question answered; re-evaluation ⇒ FSSAI/GPCB/Gujarat factory
+    APPLICABLE with evidence; IEC NEEDS_INFORMATION until intent answered: PASS.
+  - Unknown profile variable ⇒ 400 "Not a recognised business profile variable."
+    (this is the correct contract; the frontend form is registry-driven, so real
+    keys can never drift — the historical runtime error was pre-registry drift).
+- Browser journey (real Chrome via CDP, production Next.js build): sign in →
+  new business → profile → products → 2 dynamic questions → analysis → results
+  (3 APPLICABLE, 8 NOT_APPLICABLE with reasons) → dashboard (Assessment
+  Completeness 100% with real basis sentence) → compliance list → requirement
+  detail (4 questions + verified FSSAI evidence trace): 16/16 checks PASS.
+- Tenant isolation and auth: 404 for a foreign business, 401 without token: PASS.
+
+### Fixes applied during this audit
+
+1. `frontend/types/index.ts` — corrected dormant contract drift:
+   `OnboardingStatus` rewritten to the actual backend shape; added
+   `SmartQuestionAnswerResponse`; `DashboardSummary` gained `readiness_label` /
+   `readiness_basis`; `SmartQuestionsResponse`/`SmartQuestion` aligned to the
+   service payload (`total_missing`, `question`, `required`, …).
+2. `frontend/lib/api/onboarding.ts` — `submitAnswers` now typed to the real
+   `{message, profile_version}` envelope (was mis-typed as `BusinessProfileVersion`).
+3. `frontend/features/dashboard/index.ts` — removed a stale camelCase
+   `DashboardMetrics` that contradicted the canonical type; now re-exports `@/types`.
+4. `frontend/app/onboarding/page.tsx` — closed an UNKNOWN→FALSE fabrication path:
+   unanswered choice/numeric questions are no longer pre-filled (first option / 0)
+   and are omitted from the answers payload; the defunct `q.relevance` display now
+   renders the real `required` flag.
+5. `backend/apps/assistant/views.py` — resolves the provider up front so an invalid
+   `LLM_PROVIDER` is a deterministic 503 `PROVIDER_MISCONFIGURED` regardless of
+   retrieval outcome (previously it depended on whether evidence matched).
+6. `backend/config/settings.py` — Gemini defaults are now models that exist for
+   current API keys (`gemini-3.1-flash-lite`, `gemini-embedding-001`); the old
+   defaults (`gemini-2.5-pro`, `text-embedding-004`) were verified to return
+   HTTP 404 for a current AI Studio key.
+7. `backend/apps/dashboard/services.py` — `due_soon_count` now honours
+   `UPCOMING_DEADLINE_WINDOW_DAYS` (previously declared but never read).
+8. `.env.example` — documents LLM/EMBEDDING provider selection, all provider
+   keys/models, Firecrawl server-only usage; `.env` aligned (GROK vs GROQ
+   confusion documented; Groq key is not read by the application).
+9. Seeded the demo account `compliance.officer@example.com` — the Sign-In page
+   offered one-click demo login against a user that did not exist in the DB.
+
+### New regression tests (23)
+
+- `tests/test_providers.py` (16): provider selection via env; unknown provider
+  rejected loudly; grok correctly unavailable for embeddings; missing keys →
+  `ProviderNotConfigured` without network traffic; status payloads contain no
+  secrets; assistant degrades to citations-only without a key; 503 on invalid
+  provider; no-evidence queries never claim an answer.
+- `tests/test_dynamic_behavior.py` (5+): missing var ⇒ NEEDS_INFORMATION;
+  answering resolves to APPLICABLE with evidence; changed activity changes the
+  outcome; questions track answered variables; question set changes with
+  jurisdiction.
+- The existing `tests/test_dynamic_engine_invariant.py` remains the sixth-scenario
+  proof: a synthetic Odisha/OSPCB pack evaluates APPLICABLE with byte-identical
+  engine files (SHA-256 asserted).
+
+### Gates re-run after all changes
+
+- `pytest`: **265 passed** (242 prior + 23 new).
+- `python manage.py check`: 0 issues. `makemigrations --check --dry-run`: clean.
+- `npx tsc --noEmit`: 0 errors. `npm run build`: all 14 routes, 0 errors.
+- Browser suite (this milestone): 16/16 + 5/5 (detail/evidence deep-check).
+
+---
+
+## FINAL BOSS IMPLEMENTATION — COMPLETED & VERIFIED (Problem Statement 26130)
+
+### Headline Achievements
+- **Deterministic Evaluation Engine:** 100% dynamic, AST-driven evaluation preserving three-valued Kleene logic (`APPLICABLE`, `NOT_APPLICABLE`, `NEEDS_INFORMATION`).
+- **Milestone 30 Runtime Verification:**
+  - **Test A (Fixture-equivalent business - Gujarat Food Processing):** Correctly resolved 11 rules (`REQ-FSSAI-STATE-LICENCE`, `REQ-GPCB-CTE`, `REQ-GUJ-FACTORY-LICENSE` resolved to `APPLICABLE`).
+  - **Test B (New business with evidence - Telangana Smart Electronics):** Correctly resolved `REQ-TSPCB-CTE` and `REQ-BIS-CRS-SMART-METER` to `APPLICABLE` with complete provenance (`evidence_refs`, `explanation_trace`).
+  - **Test C (Coverage gap / incomplete profile):** Honestly resolved to `NEEDS_INFORMATION` (FSSAI State Licence), never false `NOT_APPLICABLE`.
+- **Full Browser E2E Validation (Playwright Chrome):**
+  - All 16 verification steps passed end-to-end:
+    1. Welcome Screen (`/`) with Problem Statement 26130 badge.
+    2. Authentication (`/auth/signin`) with Fast Demo Login redirect.
+    3. Onboarding Step 1 (Business Profile creation with canonical variables).
+    4. Onboarding Step 2 (Products & Activities NLP input).
+    5. Onboarding Step 3 (Smart Questions dynamic interaction).
+    6. Onboarding Steps 4 & 5 (Regulatory Analysis & Initial Results with executive summary metrics).
+    7. Operational Dashboard (`/dashboard`) with live calculated metrics.
+    8. Compliance Matrix (`/compliance`) & Requirement Detail (`/compliance/[id]`) with 4 Core Questions and verified statutory evidence trace.
+    9. Statutory Documents Vault (`/documents`).
+    10. Clearance Workflows (`/workflows`) with honest capability statuses.
+    11. Statutory Compliance Calendar (`/calendar`).
+    12. Schemes & Incentives Directory (`/schemes`).
+    13. Standards Directory (`/standards`) with real-time search.
+    14. AI Assistant Copilot (`/assistant`) with grounded citations.
+  - Total Page Errors: **0**
+  - Total Serious Console Errors: **0**
+- **Test Invariants:**
+  - Pytest: **265/265 passed** across 15 test suites.
+  - Synthetic 6th scenario invariant: Byte-for-byte SHA-256 equality asserted on core engine files.
+  - Zero scenario hardcoding in application code (guarded by `test_knowledge_boundary.py`).
+- **AI & Retrieval:**
+  - Gemini set as default (`gemini-3.1-flash-lite` LLM, `gemini-embedding-001` embeddings).
+  - Firecrawl server-side integration for live authoritative source discovery.
+  - Zero secrets in frontend code, git, or error envelopes.
+
+---
+
+## LIVE REGULATORY DISCOVERY & ADAPTIVE INTELLIGENCE MILESTONE — COMPLETED & VERIFIED
+
+### Headline Achievements
+- **Adaptive Smart Question Planner (`SmartQuestionPlanner`):**
+  - Synthesizes `DerivedBusinessContext` (MSMED Act 2020 composite investment/turnover scaling, manufacturing/service indicators, trade intent, environmental footprint) and AST rule dependencies.
+  - AI-assisted question formulation and ranking with fallback to deterministic variable definitions (`backend/apps/onboarding/planner.py`).
+  - Persists `SmartQuestionPlan` and `SmartQuestionInstance` linked to canonical variable keys (V01–V19) with strict business isolation.
+- **Live Regulatory Discovery (Firecrawl v2):**
+  - Dynamic `RegulatoryQueryPlanner` generates targeted queries based on business sector, activities, location, and derived context.
+  - Robust stdlib client (`backend/apps/ingestion/firecrawl.py`) interfacing with Firecrawl v2 API.
+  - Domain authority classification (`OFFICIAL`, `OFFICIAL_GUIDANCE`, `SECONDARY`, `UNKNOWN`) prioritizing official `.gov.in` and `.nic.in` domains.
+  - Secure structured claim extraction (`claim_extraction.py`) extracting requirements, authorities, and source links.
+- **Strict Evidence Quarantine Invariant:**
+  - Discovered web claims are strictly stored in `CandidateRequirement` with `verification_status="UNVERIFIED"` and `Source.status="DISCOVERED"`.
+  - The deterministic AST applicability engine remains authoritative. Candidate claims NEVER enter `RequirementDefinition` or `DecisionResult` and NEVER produce `APPLICABLE` decisions without human review.
+- **Frontend Live Discovery & Filtering (Part N):**
+  - Real-time Firecrawl discovery execution during Onboarding Step 4, rendering Live Discovery Summary and Quarantined Candidate Claims in Step 5.
+  - Dashboard Live Discovery Provenance banner displaying official source count and quarantined candidate count.
+  - Compliance Matrix view filtering tabs:
+    - "Action Required" (default view: `APPLICABLE` & `NEEDS_INFORMATION`)
+    - "Verification Required" (`UNVERIFIED` candidates & `CONFLICT_REVIEW`)
+    - "Discovered Knowledge (Quarantined)" (all candidate requirements with amber quarantine badges)
+    - "All Published Rules" (authoritative knowledge packs)
+    - Collapsible "Audit Trail: Not Applicable Obligations" (`NOT_APPLICABLE` rules hidden by default).
+- **Automated & E2E Validation:**
+  - Unit & Integration Test Suites: 30/30 passed (`test_business_context.py`, `test_smart_question_planner.py`, `test_regulatory_discovery.py`, `test_business_isolation_regression.py`, `test_dynamic_behavior.py`, `test_dynamic_engine_invariant.py`, `test_fixtures_regression.py`, `test_live_firecrawl_smoke.py`).
+  - Playwright Chrome E2E test with unseen business (*Eastern GridCell Energy Pvt. Ltd.* in West Bengal): full onboarding, adaptive questioning, live discovery, initial results, dashboard provenance banner, and filtered compliance matrix with 0 console errors and 0 page errors.
+
+
+
 
 
 

@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import { api } from "@/lib/api";
+import type { CalendarListResponse } from "@/lib/api/calendar";
 import { CalendarEvent } from "@/types";
 
 function CalendarContent() {
@@ -16,6 +17,12 @@ function CalendarContent() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  // Kept alongside the events so the screen can state which date classes it does
+  // not hold. Without it an empty calendar reads as "no deadlines apply to you".
+  const [coverage, setCoverage] = useState<Pick<
+    CalendarListResponse,
+    "not_covered" | "not_covered_reason"
+  > | null>(null);
   const [businessId, setBusinessId] = useState<string>("");
 
   useEffect(() => {
@@ -47,6 +54,10 @@ function CalendarContent() {
       try {
         const resp = await api.calendar.list(bizId);
         setEvents(resp.events);
+        setCoverage({
+          not_covered: resp.not_covered,
+          not_covered_reason: resp.not_covered_reason,
+        });
         setBusinessId(bizId);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load compliance calendar.");
@@ -70,10 +81,11 @@ function CalendarContent() {
               Screen 12 · Statutory Calendar
             </span>
             <h1 className="text-2xl font-bold tracking-tight text-slate-950 mt-1">
-              Statutory Deadlines & Filing Schedule
+              Statutory Renewal Cycles
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Automated tracking of annual returns, environmental statements, and renewal cutoff dates.
+              Renewal periods recorded in published knowledge for your applicable
+              requirements. Filing dates are not inferred.
             </p>
           </div>
 
@@ -103,10 +115,12 @@ function CalendarContent() {
           <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center shadow-xs">
             <div className="text-2xl">📅</div>
             <h3 className="text-sm font-bold text-slate-900 mt-2">
-              No Upcoming Statutory Deadlines Found
+              No renewal cycle is recorded for your requirements
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              Statutory deadlines are populated automatically after compliance matrix evaluation.
+            <p className="text-xs text-slate-500 mt-1 max-w-lg mx-auto">
+              A date appears here only where published knowledge states a renewal
+              period for a requirement the engine found applicable. Nothing is
+              inferred from the absence of one.
             </p>
           </div>
         ) : (
@@ -132,18 +146,42 @@ function CalendarContent() {
 
                   <h3 className="text-sm font-bold text-slate-900">{evt.title}</h3>
 
-                  <p className="text-xs text-rose-600 font-medium">
-                    Statutory Penalty Risk: {evt.penalty_risk}
-                  </p>
+                  {/* The citation for the date, in place of the penalty claim
+                      that used to sit here. No penalty data is held. */}
+                  <p className="text-xs text-slate-500">{evt.basis}</p>
                 </div>
 
                 <div className="flex items-center gap-3">
+                  <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200">
+                    {evt.days_remaining} days
+                  </span>
                   <span className="inline-flex items-center rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
                     {evt.status}
                   </span>
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* What this calendar does not track. Shown whenever the response loaded,
+            so the user is never left to infer coverage from an empty list. */}
+        {!loading && coverage && coverage.not_covered.length > 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-2">
+            <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+              Not tracked
+            </h2>
+            <p className="text-xs text-slate-500">{coverage.not_covered_reason}</p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {coverage.not_covered.map((item) => (
+                <span
+                  key={item}
+                  className="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600 border border-slate-200"
+                >
+                  {item.replace(/_/g, " ")}
+                </span>
+              ))}
+            </div>
           </div>
         )}
       </main>

@@ -1,91 +1,74 @@
 """AI Assistant views for Screen 15.
 
-Authority: PRD_v2.0 §24, TRD_v2.0 §30, §31.
+Authority: PRD_v2.0 §24, §P4, §P5; TRD_v2.0 §4, §30, §31.
+
+Thin: retrieval and generation live in `services.answer_question`, which grounds
+every answer in evidence fetched from the knowledge base and returns citations even
+when no model is configured.
+
+The previous implementation selected one of four pre-written paragraphs by keyword
+(`if "food" in prompt.lower()`) and attached whatever evidence happened to match —
+or, when nothing matched, the first two records in the table. That produced confident
+statements of statutory thresholds and section numbers that no source in the system
+supported, under citations that did not relate to the text above them.
 """
 
 from __future__ import annotations
 
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.envelope import envelope, error_response
-from apps.evidence.models import Evidence
+from domain.providers import UnknownProvider, get_llm_provider
+
+from .services import answer_question
+
+#: Longest question accepted. Bounds the prompt sent to a metered provider.
+MAX_PROMPT_LENGTH = 2000
 
 
 class AssistantChatView(APIView):
     """Source-grounded regulatory copilot answering questions with statutory citations."""
 
-    permission_classes = [AllowAny]
+    # Authenticated: this endpoint spends credits at a metered provider, so it is
+    # not left open. It was previously AllowAny.
+    permission_classes = [IsAuthenticated]
 
-    def post(self, request: Request) -> Response:  # noqa: ANN001
-        prompt = request.data.get("prompt", "").strip()
+    def post(self, request: Request) -> Response:
+        prompt = str(request.data.get("prompt", "") or "").strip()
         if not prompt:
             return error_response(
                 "VALIDATION_ERROR", "Prompt is required.", http_status=status.HTTP_400_BAD_REQUEST
             )
-
-        # Retrieve relevant statutory evidence from database
-        query_words = [w.lower() for w in prompt.split() if len(w) > 3]
-        matched_evidence = []
-
-        all_ev = Evidence.objects.select_related("source").all()
-        for ev in all_ev:
-            text = f"{ev.excerpt} {ev.source.title} {ev.source.authority}".lower()
-            if any(w in text for w in query_words):
-                matched_evidence.append(ev)
-                if len(matched_evidence) >= 3:
-                    break
-
-        if not matched_evidence and all_ev.exists():
-            matched_evidence = list(all_ev[:2])
-
-        citations = [
-            {
-                "authority": ev.source.authority,
-                "source_title": ev.source.title,
-                "locator": ev.locator,
-                "excerpt": ev.excerpt,
-                "verification_status": ev.verification_status,
-                "canonical_url": ev.source.canonical_url,
-            }
-            for ev in matched_evidence
-        ]
-
-        # Synthesize grounded answer
-        if "food" in prompt.lower() or "fssai" in prompt.lower():
-            answer = (
-                "Under Section 31(1) of the Food Safety and Standards Act, 2006, no person may commence "
-                "or carry on any food business without a licence or registration. Businesses with turnover exceeding "
-                "₹12 Lakhs require a State Food Business Licence via the FoSCoS portal. For enterprises operating in "
-                "multiple states, a Central Licence from FSSAI HQ is mandatory."
-            )
-        elif "pollution" in prompt.lower() or "consent" in prompt.lower() or "cpcb" in prompt.lower():
-            answer = (
-                "Under the Water (Prevention and Control of Pollution) Act, 1974 §25 and Air Act, 1981 §21, "
-                "industrial units must obtain Consent to Establish (CTE) prior to civil construction and Consent "
-                "to Operate (CTO) prior to commencing production. Industrial categorization (Red/Orange/Green/White) "
-                "determines the inspection frequency and effluent monitoring standards."
-            )
-        elif "worker" in prompt.lower() or "factory" in prompt.lower() or "labour" in prompt.lower():
-            answer = (
-                "Under Section 6 of the Factories Act, 1948, manufacturing premises employing 10 or more workers "
-                "with power (or 20 or more without power) must submit factory layout blueprints for prior approval "
-                "and obtain a Factory Licence from the Directorate of Industrial Safety & Health."
-            )
-        else:
-            answer = (
-                f"Based on our statutory database and verified regulatory rules: Compliance applicability in India "
-                f"is governed strictly by legal constitution, operational state jurisdiction, and activity scale. "
-                f"Your query has been cross-referenced against authoritative gazette sources with active verification."
+        if len(prompt) > MAX_PROMPT_LENGTH:
+            return error_response(
+                "VALIDATION_ERROR",
+                f"Prompt must be at most {MAX_PROMPT_LENGTH} characters.",
+                http_status=status.HTTP_400_BAD_REQUEST,
             )
 
-        response_data = {
-            "prompt": prompt,
-            "answer": answer,
-            "citations": citations,
-            "disclaimer": "This intelligence is for compliance preparation and guidance, not official legal counsel.",
-        }
-        return Response(envelope(response_data), status=status.HTTP_200_OK)
+        business = None
+        business_id = request.data.get("business_id")
+        if business_id:
+            from apps.businesses.models import Business
+            business = Business.accessible_to(request.user).filter(pk=business_id).first()
+
+        try:
+            # Resolve the provider up front: constructing it is side-effect free,
+            # but an unrecognised LLM_PROVIDER must fail loudly here rather than
+            # only on the (conditional) code path that reaches the network.
+            llm = get_llm_provider()
+            payload = answer_question(prompt, provider=llm, business=business)
+        except UnknownProvider as exc:
+            # A misconfigured LLM_PROVIDER is an operator error, not a user error,
+            # and is reported as such rather than silently using a default.
+            return error_response(
+                "PROVIDER_MISCONFIGURED",
+                str(exc),
+                http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response(envelope(payload), status=status.HTTP_200_OK)

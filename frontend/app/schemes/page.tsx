@@ -7,7 +7,8 @@ import Navbar from "@/components/Navbar";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import { api } from "@/lib/api";
-import { SchemeItem } from "@/types";
+import CapabilityUnavailableNotice from "@/components/CapabilityUnavailableNotice";
+import type { SchemesListResponse } from "@/lib/api/schemes";
 
 function SchemesContent() {
   const searchParams = useSearchParams();
@@ -15,7 +16,9 @@ function SchemesContent() {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [schemes, setSchemes] = useState<SchemeItem[]>([]);
+  // The whole response is held, not just the list: `available` decides whether a
+  // list can be read at all, and the reason has to be rendered when it cannot.
+  const [response, setResponse] = useState<SchemesListResponse | null>(null);
   const [businessId, setBusinessId] = useState<string>("");
 
   useEffect(() => {
@@ -46,7 +49,7 @@ function SchemesContent() {
       setError(null);
       try {
         const resp = await api.schemes.list(bizId);
-        setSchemes(resp.schemes);
+        setResponse(resp);
         setBusinessId(bizId);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load government schemes.");
@@ -70,10 +73,11 @@ function SchemesContent() {
               Screen 13 · Government Incentives
             </span>
             <h1 className="text-2xl font-bold tracking-tight text-slate-950 mt-1">
-              Government Schemes & Subsidies Intelligence
+              Government Schemes & Subsidies
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Matched central and state industrial subsidies based on enterprise scale and sector.
+              Scheme eligibility is a rule evaluation like any other requirement, decided
+              against published knowledge rather than suggested.
             </p>
           </div>
 
@@ -99,19 +103,27 @@ function SchemesContent() {
           <div className="space-y-4">
             <LoadingSkeleton count={3} className="h-36 w-full" />
           </div>
-        ) : schemes.length === 0 ? (
+        ) : response === null ? null : !response.available ? (
+          <CapabilityUnavailableNotice
+            capability={response.capability}
+            reason={response.reason}
+            requires={response.requires}
+            icon="💰"
+          />
+        ) : response.schemes.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center shadow-xs">
             <div className="text-2xl">💰</div>
             <h3 className="text-sm font-bold text-slate-900 mt-2">
-              No Schemes Matched For Current Parameters
+              No published scheme rule was satisfied by this business profile
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              Incentive programs are matched using your investment scale and trade intent.
+            <p className="text-xs text-slate-500 mt-1 max-w-lg mx-auto">
+              Scheme rules were evaluated and none returned an eligible result. This is a
+              decision, not an absence of data.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {schemes.map((sc) => (
+            {response.schemes.map((sc) => (
               <div
                 key={sc.id}
                 className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-indigo-300 transition-all flex flex-col justify-between space-y-4"

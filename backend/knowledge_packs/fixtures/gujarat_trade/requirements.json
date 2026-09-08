@@ -8,6 +8,25 @@
     "domain": "TRADE",
     "description": "Primary registration code mandated by Directorate General of Foreign Trade for any cross-border commercial shipments.",
     "status": "PUBLISHED",
-    "evidence_refs": ["EVD-DGFT-IEC-MANDATE"]
+    "evidence_refs": [
+      "EVD-DGFT-IEC-MANDATE"
+    ],
+    "metadata": {
+      "portal": "https://www.dgft.gov.in",
+      "required_documents": [
+        "PAN of the entity",
+        "Cancelled cheque or bank certificate of the current account",
+        "Proof of registered office address",
+        "Digital Signature Certificate or Aadhaar for e-signing"
+      ],
+      "statutory_fee": "Application fee as notified by DGFT",
+      "application_steps": [
+        "Register on the DGFT portal with PAN and mobile verification",
+        "Complete the IEC application (ANF 2A) online",
+        "Attach PAN, bank proof and address proof",
+        "e-Sign and pay the application fee",
+        "Download the IEC certificate once issued"
+      ]
+    }
   }
 ]

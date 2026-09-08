@@ -152,7 +152,7 @@ TEMPLATES = [
 
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
-if DATABASE_URL:
+if DATABASE_URL and not (RUNNING_TESTS and not env_bool("FORCE_POSTGRES_TESTS", default=False)):
     is_pooler = ":6543" in DATABASE_URL or "pooler.supabase.com" in DATABASE_URL.lower()
     default_conn_max_age = "0" if is_pooler else "600"
     db_config = dj_database_url.parse(
@@ -249,14 +249,49 @@ AZURE_STORAGE_CONTAINER = os.getenv("AZURE_STORAGE_CONTAINER", "complywise-docum
 DOCUMENT_MAX_UPLOAD_BYTES = int(os.getenv("DOCUMENT_MAX_UPLOAD_BYTES", str(20 * 1024 * 1024)))
 
 # ---------------------------------------------------------------------------
-# AI providers — accessed only through the provider interfaces in TRD_v2.0 §4.
-# Model names are configuration, never hardcoded in domain code.
+# AI providers — accessed only through the provider interfaces in TRD_v2.0 §4
+# (`domain.providers`). Model names are configuration, never hardcoded in domain
+# code, and no provider participates in an applicability decision.
+#
+# Keys are all optional and independent: a deployment configures the provider it
+# selects and leaves the others unset. `domain.providers.registry` reports an
+# unconfigured provider as "not_configured" rather than failing at import.
 # ---------------------------------------------------------------------------
+
+#: Active provider for text generation: gemini | openai | grok.
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini")
+#: Active provider for embeddings: gemini | openai. (xAI has no embeddings API.)
+EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "gemini")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.6-luna")
 OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+# Defaults must be models a freshly-issued AI Studio key can actually call
+# (verified live 2026-03: gemini-2.5-pro/gemini-2.5-flash answer HTTP 404 for new
+# accounts and text-embedding-004 is retired; gemini-3.1-flash-lite and
+# gemini-embedding-001 respond). Any available model name may be set in .env.
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
+
+GROK_API_KEY = os.getenv("GROK_API_KEY", "")
+GROK_MODEL = os.getenv("GROK_MODEL", "grok-4")
+
+# Server-side only. Never sent to the frontend and never included in an API
+# response: this key is billable and grants crawling on our account (§13).
 FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY", "")
+
+# Discovery orchestration bounds (apps/ingestion). Discovery is OPTIONAL: without
+# a key the app runs in knowledge-only mode and reports discovery as unavailable.
+# Query contents come from the business's own profile variables; the trusted-host
+# suffix list is a retrieval policy (which domains are acceptable to crawl), not
+# regulatory content.
+DISCOVERY_MAX_QUERIES = int(os.getenv("DISCOVERY_MAX_QUERIES", "4"))
+DISCOVERY_MAX_SOURCES_PER_RUN = int(os.getenv("DISCOVERY_MAX_SOURCES_PER_RUN", "6"))
+DISCOVERY_TRUSTED_HOST_SUFFIXES = env_list(
+    "DISCOVERY_TRUSTED_HOST_SUFFIXES", default=".gov.in,.nic.in,.gov"
+)
 
 # ---------------------------------------------------------------------------
 # Knowledge layer

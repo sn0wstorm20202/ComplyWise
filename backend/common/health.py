@@ -154,14 +154,38 @@ def check_knowledge_packs() -> dict[str, Any]:
 
 
 def check_integrations() -> dict[str, Any]:
-    """Booleans only — whether each integration has been given credentials."""
+    """Booleans only — whether each integration has been given credentials.
+
+    Never the values. `firecrawl_api_key` in particular is server-side only and
+    must not reach the frontend in any form beyond this boolean (§13).
+    """
     return {
         "openai_api_key": bool(settings.OPENAI_API_KEY),
         "openai_model": bool(settings.OPENAI_MODEL),
         "openai_embedding_model": bool(settings.OPENAI_EMBEDDING_MODEL),
+        "gemini_api_key": bool(settings.GEMINI_API_KEY),
+        "gemini_model": bool(settings.GEMINI_MODEL),
+        "gemini_embedding_model": bool(settings.GEMINI_EMBEDDING_MODEL),
+        "grok_api_key": bool(settings.GROK_API_KEY),
+        "grok_model": bool(settings.GROK_MODEL),
         "azure_storage": bool(settings.AZURE_STORAGE_CONNECTION_STRING),
         "firecrawl_api_key": bool(settings.FIRECRAWL_API_KEY),
     }
+
+
+def check_providers() -> dict[str, Any]:
+    """Report which AI provider is selected and whether it is usable.
+
+    An unconfigured provider is `not_configured`, not an error: the compliance
+    engine is deterministic and runs without any AI credential. An unrecognised
+    `LLM_PROVIDER` value is reported as `invalid`, because that is a deployment
+    mistake rather than an optional feature being off.
+    """
+    # Imported here rather than at module scope: this module is imported by
+    # settings-adjacent code paths, and the registry reads Django settings.
+    from domain.providers import provider_status
+
+    return provider_status()
 
 
 def liveness_payload() -> dict[str, Any]:
@@ -186,6 +210,7 @@ def readiness_payload() -> tuple[dict[str, Any], bool]:
         "pgvector": check_pgvector(),
         "knowledge_packs": check_knowledge_packs(),
         "integrations": check_integrations(),
+        "providers": check_providers(),
     }
     is_ready = database.get("status") in {OK, DEGRADED}
     overall = OK if database.get("status") == OK else (DEGRADED if is_ready else UNAVAILABLE)

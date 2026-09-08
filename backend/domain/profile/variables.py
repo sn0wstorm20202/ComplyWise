@@ -62,6 +62,11 @@ class ProfileVariable:
     why_it_matters: str = ""
     unit: str | None = None
     options: tuple[Option, ...] = field(default_factory=tuple)
+    #: Name of a runtime registry that supplies this variable's option set.
+    #: Used when the valid values are knowledge (e.g. the jurisdictions the
+    #: knowledge base can actually normalise) rather than a fixed taxonomy.
+    #: Left None when `options` above is the complete answer.
+    options_source: str | None = None
     default_relevance: Relevance = Relevance.CONDITIONAL
     #: True for values that are only ever supplied by the user, never derived.
     user_input_only: bool = True
@@ -76,6 +81,10 @@ class ProfileVariable:
     @property
     def option_values(self) -> frozenset[str]:
         return frozenset(option.value for option in self.options)
+
+
+#: `options_source` value meaning "ask the jurisdiction registry at runtime".
+OPTIONS_SOURCE_JURISDICTIONS = "JURISDICTION_REGISTRY"
 
 
 def _options(*pairs: tuple[str, str]) -> tuple[Option, ...]:
@@ -158,6 +167,7 @@ PROFILE_VARIABLES: tuple[ProfileVariable, ...] = (
         key="state",
         label="Registered state or union territory",
         data_type=VariableDataType.JURISDICTION,
+        options_source=OPTIONS_SOURCE_JURISDICTIONS,
         why_it_matters="State authorities set their own approvals and incentives.",
         default_relevance=Relevance.CORE,
     ),
@@ -307,6 +317,25 @@ def get_variable(key_or_code: str) -> ProfileVariable | None:
     return VARIABLES_BY_KEY.get(key_or_code) or VARIABLES_BY_CODE.get(key_or_code.upper())
 
 
+def resolve_variable_options(variable: ProfileVariable) -> list[dict[str, str]]:
+    """The selectable options for a variable, including runtime-sourced ones.
+
+    Every surface that renders a choice must go through this function so the
+    profile form and the smart-question form cannot offer different values for
+    the same variable.
+    """
+    if variable.options_source == OPTIONS_SOURCE_JURISDICTIONS:
+        # Imported here: the jurisdiction registry reads knowledge-pack data and
+        # depends on Django settings, while this module must stay import-light.
+        from domain.jurisdictions.resolver import JurisdictionRegistry
+
+        return [
+            {"value": item["code"], "label": item["name"]}
+            for item in JurisdictionRegistry.all_jurisdictions()
+        ]
+    return [{"value": o.value, "label": o.label} for o in variable.options]
+
+
 def coerce_value(variable: ProfileVariable, value: object) -> object:
     """Normalise a raw submitted value to the variable's declared type.
 
@@ -349,7 +378,19 @@ def coerce_value(variable: ProfileVariable, value: object) -> object:
         return text
 
     if dt is VariableDataType.MULTI_CHOICE:
-        if not isinstance(value, (list, tuple, set)):
+        if isinstance(value, str):
+            text = value.strip()
+            if text.startswith("[") and text.endswith("]"):
+                import json
+                try:
+                    parsed = json.loads(text)
+                    if isinstance(parsed, list):
+                        value = parsed
+                except Exception:
+                    pass
+            if isinstance(value, str):
+                value = [item.strip() for item in text.split(",") if item.strip()]
+        elif not isinstance(value, (list, tuple, set)):
             raise ValueError(f"{variable.label} must be a list.")
         items = [str(item).strip() for item in value]
         if variable.options:

@@ -120,7 +120,7 @@ export default function HomePage() {
                 Sign In / Demo
               </Link>
               <Link
-                href="/onboarding"
+                href="/onboarding?new=true"
                 className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 shadow-xs transition-colors"
               >
                 Start Journey →

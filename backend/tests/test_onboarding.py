@@ -90,6 +90,7 @@ def test_knowledge(db) -> RequirementDefinition:
             "op": "AND",
             "args": [
                 {"op": "EQ", "left": {"var": "state"}, "right": "GUJARAT"},
+                {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "FOOD"},
                 {"op": "GTE", "left": {"var": "annual_turnover"}, "right": 1200000},
                 {"op": "GTE", "left": {"var": "total_worker_count"}, "right": 10},
             ],
@@ -164,21 +165,23 @@ def test_submit_answers_persists_new_profile_version(test_user, test_business):
 
 
 @pytest.mark.django_db
-def test_products_activities_submission(test_user, test_business):
+def test_products_activities_submission(test_user, test_business, test_knowledge):
     """Products and activities endpoint saves natural language text and returns detected hints."""
     client = APIClient()
     client.force_authenticate(user=test_user)
 
     url = f"/api/v1/businesses/{test_business.id}/onboarding/products-activities"
     payload = {
-        "product_description": "We manufacture and package organic fruit juices, jams, and pickles.",
+        "product_description": "We manufacture and package organic food: fruit juices, jams, and pickles.",
         "import_export_intent": "NONE",
     }
     res = client.post(url, data=payload, format="json")
     assert res.status_code == status.HTTP_200_OK
     assert "data" in res.data
     data = res.data["data"]
-    assert "Food Processing" in data["detected_activities"]
+    # Detected activities are the text probes published rules actually search for,
+    # not a curated label set. "FOOD" is what the FSSAI rule matches on.
+    assert "FOOD" in data["detected_activities"]
 
     current = test_business.current_profile
     assert current is not None
@@ -198,6 +201,7 @@ def test_dashboard_summary_with_evaluation(test_user, test_business, test_knowle
         version=1,
         variables={
             "state": {"value": "Gujarat", "origin": "USER_PROVIDED"},
+            "product_description": {"value": "Food processing unit", "origin": "USER_PROVIDED"},
             "annual_turnover": {"value": "2500000", "origin": "USER_PROVIDED"},
             "total_worker_count": {"value": 20, "origin": "USER_PROVIDED"},
         },

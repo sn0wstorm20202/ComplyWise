@@ -29,6 +29,7 @@ class JurisdictionRegistry:
 
     _alias_map: dict[str, str] = {}
     _canonical_codes: set[str] = set()
+    _display_names: dict[str, str] = {}
     _loaded: bool = False
 
     @classmethod
@@ -44,6 +45,7 @@ class JurisdictionRegistry:
 
         cls._alias_map = {}
         cls._canonical_codes = set()
+        cls._display_names = {}
 
         for item in data:
             code = item.get("code")
@@ -56,6 +58,7 @@ class JurisdictionRegistry:
             name = item.get("name")
             if name and isinstance(name, str):
                 cls._alias_map[_clean_token(name)] = canonical
+                cls._display_names[canonical] = name.strip()
 
             for alias in item.get("aliases", []):
                 if isinstance(alias, str) and alias.strip():
@@ -88,6 +91,21 @@ class JurisdictionRegistry:
         if not cls._loaded:
             cls.load()
         return code.strip().upper() in cls._canonical_codes
+
+    @classmethod
+    def all_jurisdictions(cls) -> list[dict[str, str]]:
+        """Every canonical jurisdiction, for rendering a selector.
+
+        The frontend must not carry its own list of states: a jurisdiction the
+        knowledge base has never heard of cannot be normalised, so offering it
+        would let a user pick a value that silently resolves to nothing.
+        """
+        if not cls._loaded:
+            cls.load()
+        return [
+            {"code": code, "name": cls._display_names.get(code, code)}
+            for code in sorted(cls._canonical_codes)
+        ]
 
 
 def normalize_jurisdiction(val: Any) -> str | None:

@@ -8,7 +8,7 @@ import { request } from "./client";
 import {
   SmartQuestionsResponse,
   SmartQuestionAnswerPayload,
-  BusinessProfileVersion,
+  SmartQuestionAnswerResponse,
   ProductsActivitiesPayload,
   ProductsActivitiesResponse,
   OnboardingStatus,
@@ -21,8 +21,8 @@ export const onboardingApi = {
   submitAnswers: (
     businessId: string,
     payload: SmartQuestionAnswerPayload
-  ): Promise<BusinessProfileVersion> =>
-    request<BusinessProfileVersion>(`/businesses/${businessId}/onboarding/answers`, {
+  ): Promise<SmartQuestionAnswerResponse> =>
+    request<SmartQuestionAnswerResponse>(`/businesses/${businessId}/onboarding/answers`, {
       method: "POST",
       body: JSON.stringify(payload),
     }),

@@ -24,6 +24,13 @@ export const businessesApi = {
       body: JSON.stringify(data),
     }),
 
+  /** Update business details (e.g. name) */
+  update: (businessId: string, data: { name?: string }) =>
+    request<Business>(`/businesses/${businessId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
   /** Get specific business details */
   get: (businessId: string) => request<Business>(`/businesses/${businessId}`),
 

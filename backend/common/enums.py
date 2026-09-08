@@ -98,6 +98,10 @@ class SourceStatus(models.TextChoices):
     EXPIRED = "EXPIRED", "Expired"
     WITHDRAWN = "WITHDRAWN", "Withdrawn"
     CONFLICTING = "CONFLICTING", "Conflicting"
+    #: Captured by automated discovery awaiting human verification. Never usable
+    #: as decision evidence: the engine requires ACTIVE, and assistant retrieval
+    #: only reads ACTIVE sources.
+    DISCOVERED = "DISCOVERED", "Discovered (unverified)"
 
 
 class VerificationStatus(models.TextChoices):

@@ -8,7 +8,8 @@ import StatusBadge from "@/components/StatusBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import { api } from "@/lib/api";
-import { WorkflowItem } from "@/types";
+import CapabilityUnavailableNotice from "@/components/CapabilityUnavailableNotice";
+import type { WorkflowsListResponse } from "@/lib/api/workflows";
 
 function WorkflowsContent() {
   const searchParams = useSearchParams();
@@ -16,7 +17,9 @@ function WorkflowsContent() {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [workflows, setWorkflows] = useState<WorkflowItem[]>([]);
+  // Held whole so `available` gates the list. No workflow definitions are ingested,
+  // so an empty grid here would imply "no approvals are outstanding".
+  const [response, setResponse] = useState<WorkflowsListResponse | null>(null);
   const [businessId, setBusinessId] = useState<string>("");
 
   useEffect(() => {
@@ -47,7 +50,7 @@ function WorkflowsContent() {
       setError(null);
       try {
         const resp = await api.workflows.list(bizId);
-        setWorkflows(resp.workflows);
+        setResponse(resp);
         setBusinessId(bizId);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load approval workflows.");
@@ -74,7 +77,8 @@ function WorkflowsContent() {
               Industrial Clearance Workflows
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Step-by-step guidance, statutory submissions, portal logins, and inspection milestones.
+              Application procedures as recorded by the issuing authority. Steps are
+              served only where published knowledge states them.
             </p>
           </div>
 
@@ -100,19 +104,27 @@ function WorkflowsContent() {
           <div className="space-y-4">
             <LoadingSkeleton count={3} className="h-48 w-full" />
           </div>
-        ) : workflows.length === 0 ? (
+        ) : response === null ? null : !response.available ? (
+          <CapabilityUnavailableNotice
+            capability={response.capability}
+            reason={response.reason}
+            requires={response.requires}
+            icon="⚡"
+          />
+        ) : response.workflows.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center shadow-xs">
             <div className="text-2xl">⚡</div>
             <h3 className="text-sm font-bold text-slate-900 mt-2">
-              No Active Approval Workflows
+              No approval workflow is recorded for your applicable requirements
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              Complete onboarding evaluation to generate actionable workflows for statutory licenses.
+            <p className="text-xs text-slate-500 mt-1 max-w-lg mx-auto">
+              A workflow appears here only where published knowledge records the
+              application procedure for a requirement the engine found applicable.
             </p>
           </div>
         ) : (
           <div className="space-y-6">
-            {workflows.map((wf) => {
+            {response.workflows.map((wf) => {
               const progressPct = Math.round(
                 (wf.steps.filter((s) => s.status === "COMPLETED").length /
                   wf.total_steps) *

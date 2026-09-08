@@ -2,15 +2,25 @@
  * Schemes API client
  *
  * Authority: TRD_v2.0 §30, PRD_v2.0 §21
+ *
+ * The backend has no scheme catalogue, so this endpoint always returns
+ * `available: false` with a reason. The response is typed as a union so a caller
+ * cannot read `schemes` without first checking `available`.
  */
 
 import { request } from "./client";
-import { SchemeItem } from "@/types";
+import { CapabilityUnavailable, SchemeItem } from "@/types";
 
-export interface SchemesListResponse {
+export interface SchemesAvailable {
   business_id: string;
+  available: true;
   schemes: SchemeItem[];
+  count: number;
 }
+
+export type SchemesListResponse =
+  | SchemesAvailable
+  | (CapabilityUnavailable & { business_id: string; schemes: never[] });
 
 export const schemesApi = {
   list: (businessId: string): Promise<SchemesListResponse> =>

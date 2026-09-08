@@ -8,9 +8,9 @@
     "status": "PUBLISHED",
     "effective_from": "2023-04-01",
     "condition_ast": {
-      "op": "EQ",
+      "op": "IN",
       "left": {"var": "import_export_intent"},
-      "right": true
+      "right": ["IMPORT_ONLY", "EXPORT_ONLY", "IMPORT_AND_EXPORT"]
     },
     "result": "APPLICABLE",
     "evidence_refs": ["EVD-DGFT-IEC-MANDATE"]

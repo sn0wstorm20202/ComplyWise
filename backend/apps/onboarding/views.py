@@ -37,8 +37,7 @@ class _OnboardingScopedView(APIView):
 class OnboardingQuestionsView(_OnboardingScopedView):
     """Retrieve dynamic smart questions based on the business's current profile.
 
-    Questions are computed at runtime from published rules matching the business's
-    jurisdiction and product context.
+    Questions are computed dynamically using adaptive question planning.
     """
 
     def get(self, request: Request, business_id) -> Response:  # noqa: ANN001
@@ -48,7 +47,13 @@ class OnboardingQuestionsView(_OnboardingScopedView):
                 "NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND
             )
 
-        questions_data = get_dynamic_smart_questions(business)
+        round_param = request.query_params.get("round", "1")
+        try:
+            round_num = max(1, int(round_param))
+        except ValueError:
+            round_num = 1
+
+        questions_data = get_dynamic_smart_questions(business, round_number=round_num)
         return Response(envelope(questions_data), status=status.HTTP_200_OK)
 
 
@@ -86,11 +91,17 @@ class OnboardingAnswersView(_OnboardingScopedView):
                 http_status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Check if adaptive questioning requires another round
+        next_plan = get_dynamic_smart_questions(business, round_number=2)
+        has_more = next_plan.get("status") == "ACTIVE" and len(next_plan.get("questions", [])) > 0
+
         return Response(
             envelope(
                 {
                     "message": "Answers saved successfully.",
                     "profile_version": BusinessProfileVersionSerializer(new_profile).data,
+                    "has_more_questions": has_more,
+                    "next_round": next_plan if has_more else None,
                 }
             ),
             status=status.HTTP_200_OK,

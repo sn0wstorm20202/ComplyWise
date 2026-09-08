@@ -8,7 +8,28 @@
     "domain": "AUTOMOTIVE",
     "description": "Pollution control consent for establishing automotive component manufacturing in Tamil Nadu.",
     "status": "PUBLISHED",
-    "evidence_refs": ["EVD-TNPCB-AUTO-CTE"]
+    "evidence_refs": [
+      "EVD-TNPCB-AUTO-CTE"
+    ],
+    "metadata": {
+      "renewal_period_years": 5,
+      "portal": "https://tnpcb.gov.in",
+      "required_documents": [
+        "Consent to Establish application form",
+        "Project report with manufacturing process flow",
+        "Effluent and emission characterisation details",
+        "Site plan showing effluent treatment arrangement",
+        "Land document and local body clearance"
+      ],
+      "statutory_fee": "Consent fee as per TNPCB schedule, based on capital investment",
+      "application_steps": [
+        "Create an account on the TNPCB online consent management system",
+        "Submit the Consent to Establish application with the project report",
+        "Upload effluent characterisation and treatment plan",
+        "Pay the consent fee for your investment slab",
+        "Respond to any queries raised by the District Environmental Engineer"
+      ]
+    }
   },
   {
     "requirement_id": "REQ-TN-FACTORY-LICENSE",
@@ -19,6 +40,27 @@
     "domain": "LABOR",
     "description": "Statutory factory license under Tamil Nadu Factories Rules for manufacturing premises.",
     "status": "PUBLISHED",
-    "evidence_refs": ["EVD-TN-FACTORIES-WORKERS"]
+    "evidence_refs": [
+      "EVD-TN-FACTORIES-WORKERS"
+    ],
+    "metadata": {
+      "renewal_period_years": 1,
+      "portal": "https://labour.tn.gov.in",
+      "required_documents": [
+        "Form 1 application for factory licence",
+        "Site and building plan approved by the Inspectorate of Factories",
+        "List of manufacturing processes and machinery",
+        "Proof of ownership or lease of premises",
+        "Details of workers employed and shift schedule"
+      ],
+      "statutory_fee": "As per Schedule to the Tamil Nadu Factories Rules, based on worker count and connected power load",
+      "application_steps": [
+        "Register on the Tamil Nadu Labour Department single-window portal",
+        "Submit Form 1 with the approved building plan and machinery list",
+        "Pay the statutory licence fee under the prescribed schedule",
+        "Attend premises inspection by the Inspector of Factories",
+        "Receive the factory licence and display it at the premises"
+      ]
+    }
   }
 ]

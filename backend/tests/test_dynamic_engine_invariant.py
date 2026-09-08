@@ -124,7 +124,7 @@ def synthetic_sixth_pack(tmp_path: Path) -> Path:
                         "arg": {
                             "op": "EQ",
                             "left": {"var": "import_export_intent"},
-                            "right": False,
+                            "right": "NONE",
                         },
                     },
                     {"op": "LT", "left": {"var": "total_worker_count"}, "right": 500},
@@ -223,7 +223,7 @@ def test_sixth_scenario_requires_no_engine_change(
         variables={
             "state": {"value": "ODISHA", "origin": "USER_PROVIDED"},
             "annual_turnover": {"value": "150000000", "origin": "USER_PROVIDED"},
-            "import_export_intent": {"value": True, "origin": "USER_PROVIDED"},
+            "import_export_intent": {"value": "IMPORT_AND_EXPORT", "origin": "USER_PROVIDED"},
             "total_worker_count": {"value": 85, "origin": "USER_PROVIDED"},
             "legal_constitution": {"value": "PRIVATE_LIMITED", "origin": "USER_PROVIDED"},
         },
@@ -283,6 +283,6 @@ def test_sixth_scenario_does_not_disturb_five_fixtures(
     assert results["REQ-GPCB-CTE"].status == ApplicabilityStatus.APPLICABLE
     assert results["REQ-GUJ-FACTORY-LICENSE"].status == ApplicabilityStatus.APPLICABLE
 
-    # Odisha requirement must be UNVERIFIED with JURISDICTION_NOT_MATCHED for Gujarat business
-    assert results["REQ-OSPCB-MINE-CTO"].status == ApplicabilityStatus.UNVERIFIED
+    # Odisha requirement must be NOT_APPLICABLE with JURISDICTION_NOT_MATCHED for a Gujarat business
+    assert results["REQ-OSPCB-MINE-CTO"].status == ApplicabilityStatus.NOT_APPLICABLE
     assert results["REQ-OSPCB-MINE-CTO"].explanation_trace["reason"] == "JURISDICTION_NOT_MATCHED"

@@ -6,6 +6,7 @@ Authority: TRD_v2.0 §14, §17, §30, §31; PRD_v2.0 §P3, §P5; Task 2 C9 Audit
 from __future__ import annotations
 
 import datetime
+import logging
 
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -20,6 +21,8 @@ from apps.businesses.models import Business, BusinessProfileVersion
 from .engine import ApplicabilityEngine
 from .models import DecisionRun
 from .serializers import DecisionRunSerializer
+
+logger = logging.getLogger("complywise.applicability")
 
 
 class _BusinessScopedView(APIView):
@@ -88,10 +91,12 @@ class BusinessEvaluateView(_BusinessScopedView):
                 http_status=status.HTTP_400_BAD_REQUEST,
             )
         except Exception as exc:
+            # Log server-side with traceback; the client gets a class-level fact,
+            # never internals (TRD_v2.0 §62; milestone §31).
+            logger.exception("Evaluation run failed for business %s", business_id)
             return error_response(
                 "EVALUATION_FAILED",
-                f"Evaluation failed unexpectedly: {exc}",
-                details={"error": str(exc)},
+                f"Evaluation failed unexpectedly ({type(exc).__name__}). The decision run was marked FAILED.",
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

@@ -21,6 +21,7 @@ import { schemesApi } from "./schemes";
 import { standardsApi } from "./standards";
 import { regulatoryUpdatesApi } from "./regulatoryUpdates";
 import { assistantApi } from "./assistant";
+import { discoveryApi } from "./discovery";
 
 export const api = {
   health: healthApi,
@@ -37,6 +38,7 @@ export const api = {
   standards: standardsApi,
   regulatoryUpdates: regulatoryUpdatesApi,
   assistant: assistantApi,
+  discovery: discoveryApi,
 };
 
 export default api;
@@ -55,3 +57,4 @@ export * from "./schemes";
 export * from "./standards";
 export * from "./regulatoryUpdates";
 export * from "./assistant";
+export * from "./discovery";

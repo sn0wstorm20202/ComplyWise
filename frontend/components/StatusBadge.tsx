@@ -18,9 +18,9 @@ interface StatusConfig {
 }
 
 const STATUS_CONFIGS: Record<string, StatusConfig> = {
-  // Applicability statuses (FRONTEND_INSTRUCTIONS.md §8)
+  // Applicability statuses (Mapped to friendly founder language per Part 12)
   APPLICABLE: {
-    label: "Applicable",
+    label: "Required",
     bg: "bg-emerald-50",
     text: "text-emerald-700",
     border: "border-emerald-200",
@@ -34,21 +34,42 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
     dot: "bg-slate-400",
   },
   NEEDS_INFORMATION: {
-    label: "More Info Needed",
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    border: "border-amber-200",
-    dot: "bg-amber-500",
+    label: "Information Needed",
+    bg: "bg-sky-50",
+    text: "text-sky-700",
+    border: "border-sky-200",
+    dot: "bg-sky-500",
   },
   CONFLICT_REVIEW: {
-    label: "Review Required",
+    label: "Needs Review",
     bg: "bg-rose-50",
     text: "text-rose-700",
     border: "border-rose-200",
     dot: "bg-rose-500",
   },
   UNVERIFIED: {
-    label: "Verification Required",
+    label: "Review Recommended",
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+    dot: "bg-amber-500",
+  },
+  REQUIRED: {
+    label: "Required",
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    border: "border-emerald-200",
+    dot: "bg-emerald-500",
+  },
+  ACTION_NEEDED: {
+    label: "Action Needed",
+    bg: "bg-indigo-50",
+    text: "text-indigo-700",
+    border: "border-indigo-200",
+    dot: "bg-indigo-500",
+  },
+  POTENTIALLY_RELEVANT: {
+    label: "Potentially Relevant",
     bg: "bg-purple-50",
     text: "text-purple-700",
     border: "border-purple-200",

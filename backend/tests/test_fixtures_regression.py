@@ -120,7 +120,7 @@ def test_scenario_telangana_electronics(loaded_knowledge_packs, create_business_
         {
             "state": "TELANGANA",
             "product_description": "Smart electronic electricity meters and telemetry devices",
-            "import_export_intent": False,
+            "import_export_intent": "NONE",
         },
     )
 
@@ -133,8 +133,8 @@ def test_scenario_telangana_electronics(loaded_knowledge_packs, create_business_
     assert results["REQ-TSPCB-CTE"].status == ApplicabilityStatus.APPLICABLE
     assert results["REQ-CPCB-EPR-EWASTE"].status == ApplicabilityStatus.APPLICABLE
 
-    # State isolation check: Gujarat CTE is recorded as UNVERIFIED per C5 (JURISDICTION_NOT_MATCHED)
-    assert results["REQ-GPCB-CTE"].status == ApplicabilityStatus.UNVERIFIED
+    # State isolation check: Gujarat CTE is NOT_APPLICABLE: a different state's licence cannot bind these premises
+    assert results["REQ-GPCB-CTE"].status == ApplicabilityStatus.NOT_APPLICABLE
     assert results["REQ-GPCB-CTE"].explanation_trace["reason"] == "JURISDICTION_NOT_MATCHED"
 
 
@@ -149,7 +149,7 @@ def test_scenario_gujarat_trade(loaded_knowledge_packs, create_business_and_prof
         {
             "state": "GUJARAT",
             "product_description": "Trading and export of synthetic textile fabrics",
-            "import_export_intent": True,
+            "import_export_intent": "IMPORT_AND_EXPORT",
         },
     )
 
@@ -187,8 +187,8 @@ def test_scenario_tamil_nadu_auto(loaded_knowledge_packs, create_business_and_pr
     assert results["REQ-TNPCB-CTE"].status == ApplicabilityStatus.APPLICABLE
     assert results["REQ-TN-FACTORY-LICENSE"].status == ApplicabilityStatus.APPLICABLE
 
-    # Gujarat Factory Licence is recorded as UNVERIFIED per C5 (JURISDICTION_NOT_MATCHED)
-    assert results["REQ-GUJ-FACTORY-LICENSE"].status == ApplicabilityStatus.UNVERIFIED
+    # Gujarat Factory Licence is NOT_APPLICABLE: a different state's licence cannot bind these premises
+    assert results["REQ-GUJ-FACTORY-LICENSE"].status == ApplicabilityStatus.NOT_APPLICABLE
     assert results["REQ-GUJ-FACTORY-LICENSE"].explanation_trace["reason"] == "JURISDICTION_NOT_MATCHED"
 
 
@@ -214,8 +214,8 @@ def test_scenario_karnataka_esdm(loaded_knowledge_packs, create_business_and_pro
     assert results["REQ-KSPCB-CTE"].status == ApplicabilityStatus.APPLICABLE
     assert results["REQ-WPC-ETA"].status == ApplicabilityStatus.APPLICABLE
 
-    # Central wireless rule applied, but Telangana state CTE is recorded as UNVERIFIED per C5
-    assert results["REQ-TSPCB-CTE"].status == ApplicabilityStatus.UNVERIFIED
+    # Central wireless rule applied, but Telangana state CTE is NOT_APPLICABLE (different state)
+    assert results["REQ-TSPCB-CTE"].status == ApplicabilityStatus.NOT_APPLICABLE
     assert results["REQ-TSPCB-CTE"].explanation_trace["reason"] == "JURISDICTION_NOT_MATCHED"
 
 
@@ -256,7 +256,7 @@ def test_negative_cases_across_scenarios(
         {
             "state": "GUJARAT",
             "product_description": "Retail clothing store",
-            "import_export_intent": False,
+            "import_export_intent": "NONE",
         },
     )
 

@@ -25,6 +25,7 @@ from domain.context.business_context import DerivedBusinessContext, build_busine
 def derive_business_calendar(
     business: Business,
     context: DerivedBusinessContext | None = None,
+    assessment_id: str | None = None,
 ) -> dict[str, Any]:
     """Derive full compliance timeline and milestones for a business."""
     if context is None:
@@ -50,12 +51,21 @@ def derive_business_calendar(
         })
 
     # 2. Procedural execution milestones based on applicable requirements
-    latest_run = (
-        DecisionRun.objects.filter(business=business)
-        .prefetch_related("results")
-        .order_by("-created_at")
-        .first()
-    )
+    latest_run = None
+    if assessment_id:
+        assessment = business.assessments.filter(pk=assessment_id).first()
+        if assessment and assessment.decision_run:
+            latest_run = assessment.decision_run
+        elif assessment:
+            latest_run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
+
+    if latest_run is None:
+        latest_run = (
+            DecisionRun.objects.filter(business=business)
+            .prefetch_related("results")
+            .order_by("-created_at")
+            .first()
+        )
 
     if latest_run is not None:
         actionable_results = [

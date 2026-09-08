@@ -22,20 +22,38 @@ from apps.knowledge.models import RequirementDefinition
 from common.enums import ApplicabilityStatus
 
 
-def get_dashboard_summary(business: Business) -> dict[str, Any]:
-    """Compile comprehensive dashboard intelligence for the business."""
-    profile = business.current_profile
-    latest_run = (
-        DecisionRun.objects.filter(business=business)
-        .prefetch_related("results")
-        .order_by("-created_at")
-        .first()
-    )
+def get_dashboard_summary(business: Business, assessment_id: str | None = None) -> dict[str, Any]:
+    """Compile comprehensive dashboard intelligence for the business, optionally scoped to an assessment."""
+    assessment = None
+    if assessment_id:
+        assessment = business.assessments.filter(pk=assessment_id).first()
+    if assessment is None:
+        assessment = business.assessments.order_by("-assessment_number").first()
+
+    profile = assessment.profile_version if assessment and assessment.profile_version else business.current_profile
+
+    latest_run = None
+    if assessment and assessment.decision_run:
+        latest_run = assessment.decision_run
+    elif assessment:
+        latest_run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
+
+    if latest_run is None:
+        latest_run = (
+            DecisionRun.objects.filter(business=business)
+            .prefetch_related("results")
+            .order_by("-created_at")
+            .first()
+        )
 
     if latest_run is None:
         return {
             "business_id": str(business.id),
             "business_name": business.name,
+            "assessment_id": str(assessment.id) if assessment else None,
+            "assessment_number": assessment.assessment_number if assessment else 1,
+            "assessment_title": assessment.title if assessment else None,
+            "assessment_status": assessment.status if assessment else None,
             "has_evaluation": False,
             "profile_version": profile.version if profile else None,
             # Not 0: nothing has been evaluated, so readiness is not yet calculated.
@@ -160,14 +178,19 @@ def get_dashboard_summary(business: Business) -> dict[str, Any]:
     from domain.intelligence.scheme_discovery import discover_business_schemes
     from domain.intelligence.standards_discovery import discover_business_standards
 
-    doc_data = derive_business_documents(business)
-    wf_data = derive_business_workflows(business)
-    scheme_data = discover_business_schemes(business)
-    std_data = discover_business_standards(business)
+    aid = str(assessment.id) if assessment else None
+    doc_data = derive_business_documents(business, assessment_id=aid)
+    wf_data = derive_business_workflows(business, assessment_id=aid)
+    scheme_data = discover_business_schemes(business, assessment_id=aid)
+    std_data = discover_business_standards(business, assessment_id=aid)
 
     return {
         "business_id": str(business.id),
         "business_name": business.name,
+        "assessment_id": aid,
+        "assessment_number": assessment.assessment_number if assessment else 1,
+        "assessment_title": assessment.title if assessment else None,
+        "assessment_status": assessment.status if assessment else None,
         "has_evaluation": True,
         "latest_run_id": str(latest_run.id),
         "evaluation_date": str(latest_run.evaluation_date),

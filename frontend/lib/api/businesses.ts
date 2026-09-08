@@ -6,14 +6,20 @@
 
 import { request } from "./client";
 import {
+  Assessment,
+  AssessmentSummary,
   Business,
   BusinessProfileData,
   BusinessProfileVersion,
   ProfileVariableDefinition,
   ProfileVariableValue,
+  UserProfileHome,
 } from "@/types";
 
 export const businessesApi = {
+  /** Get current user's profile home (businesses & recent assessments) */
+  getProfileHome: () => request<UserProfileHome>("/user/profile"),
+
   /** List businesses accessible to current user */
   list: () => request<Business[]>("/businesses"),
 
@@ -61,4 +67,37 @@ export const businessesApi = {
   /** Get the canonical variable definitions registry */
   getVariableDefinitions: () =>
     request<ProfileVariableDefinition[]>("/profile/variables"),
+
+  /** List all assessments for a business */
+  getAssessments: (businessId: string) =>
+    request<AssessmentSummary[]>(`/businesses/${businessId}/assessments`),
+
+  /** Create a new assessment for a business */
+  createAssessment: (businessId: string, data?: { title?: string; duplicate_from_latest?: boolean }) =>
+    request<Assessment>(`/businesses/${businessId}/assessments`, {
+      method: "POST",
+      body: JSON.stringify(data || {}),
+    }),
+
+  /** Get specific assessment by business ID and assessment ID */
+  getAssessment: (businessId: string, assessmentId: string) =>
+    request<Assessment>(`/businesses/${businessId}/assessments/${assessmentId}`),
+
+  /** Update an ongoing assessment */
+  updateAssessment: (businessId: string, assessmentId: string, data: Partial<Assessment>) =>
+    request<Assessment>(`/businesses/${businessId}/assessments/${assessmentId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  /** Complete an assessment */
+  completeAssessment: (businessId: string, assessmentId: string, summary?: any) =>
+    request<Assessment>(`/businesses/${businessId}/assessments/${assessmentId}/complete`, {
+      method: "POST",
+      body: JSON.stringify({ summary }),
+    }),
+
+  /** Get an assessment directly by its ID */
+  getAssessmentDirect: (assessmentId: string) =>
+    request<Assessment>(`/assessments/${assessmentId}`),
 };

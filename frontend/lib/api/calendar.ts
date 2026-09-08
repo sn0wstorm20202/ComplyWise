@@ -24,6 +24,10 @@ export interface CalendarListResponse {
 }
 
 export const calendarApi = {
-  list: (businessId: string): Promise<CalendarListResponse> =>
-    request<CalendarListResponse>(`/businesses/${businessId}/calendar`),
+  list: (businessId: string, assessmentId?: string): Promise<CalendarListResponse> =>
+    request<CalendarListResponse>(
+      assessmentId
+        ? `/businesses/${businessId}/calendar?assessment_id=${assessmentId}`
+        : `/businesses/${businessId}/calendar`
+    ),
 };

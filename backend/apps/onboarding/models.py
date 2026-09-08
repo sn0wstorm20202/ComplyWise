@@ -22,6 +22,13 @@ class SmartQuestionPlan(models.Model):
         on_delete=models.CASCADE,
         related_name="question_plans",
     )
+    assessment = models.ForeignKey(
+        "businesses.Assessment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="question_plan_records",
+    )
     round_number = models.PositiveIntegerField(default=1)
     status = models.CharField(
         max_length=30,
@@ -43,6 +50,7 @@ class SmartQuestionInstance(models.Model):
     """An individual adaptive question presented to the user."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    question_id = models.CharField(max_length=100, blank=True, default="")
     plan = models.ForeignKey(
         SmartQuestionPlan,
         on_delete=models.CASCADE,
@@ -60,6 +68,8 @@ class SmartQuestionInstance(models.Model):
     )
     question_text = models.TextField()
     why_it_matters = models.TextField(blank=True, default="")
+    reason = models.TextField(blank=True, default="")
+    domains = models.JSONField(default=list, blank=True)
     data_type = models.CharField(max_length=30, default="TEXT")
     options = models.JSONField(default=list, blank=True)
     unit = models.CharField(max_length=30, blank=True, default="")

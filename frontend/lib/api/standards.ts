@@ -20,8 +20,12 @@ export interface StandardsSearchResponse {
 }
 
 export const standardsApi = {
-  search: (query?: string, businessId?: string): Promise<StandardsSearchResponse> =>
+  search: (query?: string, businessId?: string, assessmentId?: string): Promise<StandardsSearchResponse> =>
     request<StandardsSearchResponse>("/standards/search", {
-      params: { ...(query ? { query } : {}), ...(businessId ? { business_id: businessId } : {}) },
+      params: {
+        ...(query ? { query } : {}),
+        ...(businessId ? { business_id: businessId } : {}),
+        ...(assessmentId ? { assessment_id: assessmentId } : {}),
+      },
     }),
 };

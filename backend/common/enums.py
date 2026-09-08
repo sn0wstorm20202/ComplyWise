@@ -136,6 +136,14 @@ class DecisionRunStatus(models.TextChoices):
     FAILED = "FAILED", "Failed"
 
 
+class AssessmentStatus(models.TextChoices):
+    DRAFT = "DRAFT", "Draft"
+    IN_PROGRESS = "IN_PROGRESS", "In progress"
+    COMPLETED = "COMPLETED", "Completed"
+    FAILED = "FAILED", "Failed"
+    ARCHIVED = "ARCHIVED", "Archived"
+
+
 class Priority(models.TextChoices):
     """Operational urgency. Never a substitute for applicability."""
 

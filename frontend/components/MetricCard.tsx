@@ -4,6 +4,8 @@ interface MetricCardProps {
   label: string;
   value: string | number;
   subtext?: string;
+  description?: string;
+  variant?: string;
   badge?: {
     text: string;
     variant?: "success" | "warning" | "neutral" | "info";
@@ -16,10 +18,12 @@ export function MetricCard({
   label,
   value,
   subtext,
+  description,
   badge,
   icon,
   className = "",
 }: MetricCardProps) {
+  const displayText = subtext || description;
   const badgeStyles = {
     success: "bg-emerald-50 text-emerald-700 border-emerald-200",
     warning: "bg-amber-50 text-amber-700 border-amber-200",
@@ -51,8 +55,8 @@ export function MetricCard({
         )}
       </div>
 
-      {subtext && (
-        <p className="mt-1 text-xs text-slate-500">{subtext}</p>
+      {displayText && (
+        <p className="mt-1 text-xs text-slate-500">{displayText}</p>
       )}
     </div>
   );

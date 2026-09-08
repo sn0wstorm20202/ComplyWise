@@ -101,6 +101,18 @@ class DerivedBusinessContext:
     def has_environmental_footprint(self) -> bool:
         return bool(self.effluent_emission_generation or self.hazardous_waste_generation)
 
+    @property
+    def primary_activity(self) -> str:
+        if self.detected_activities:
+            return ", ".join(self.detected_activities)
+        return self.product_description or "Manufacturing / Processing"
+
+    @property
+    def industry_hint(self) -> str:
+        if self.detected_activities:
+            return ", ".join(self.detected_activities)
+        return "Industrial operations"
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "business_id": self.business_id,

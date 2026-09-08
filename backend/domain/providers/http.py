@@ -20,7 +20,7 @@ from .base import ProviderError
 
 #: Seconds to wait for a provider response before failing. Kept finite so a hung
 #: vendor cannot hold a request worker open indefinitely.
-DEFAULT_TIMEOUT_SECONDS = 30
+DEFAULT_TIMEOUT_SECONDS = 10
 
 
 def post_json(

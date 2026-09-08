@@ -25,6 +25,13 @@ class DiscoveryRun(models.Model):
         on_delete=models.CASCADE,
         related_name="discovery_runs",
     )
+    assessment = models.ForeignKey(
+        "businesses.Assessment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="discovery_run_records",
+    )
     provider = models.CharField(max_length=50, default="firecrawl")
     status = models.CharField(
         max_length=30,

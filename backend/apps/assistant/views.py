@@ -56,12 +56,14 @@ class AssistantChatView(APIView):
             from apps.businesses.models import Business
             business = Business.accessible_to(request.user).filter(pk=business_id).first()
 
+        assessment_id = request.data.get("assessment_id")
+
         try:
             # Resolve the provider up front: constructing it is side-effect free,
             # but an unrecognised LLM_PROVIDER must fail loudly here rather than
             # only on the (conditional) code path that reaches the network.
             llm = get_llm_provider()
-            payload = answer_question(prompt, provider=llm, business=business)
+            payload = answer_question(prompt, provider=llm, business=business, assessment_id=assessment_id)
         except UnknownProvider as exc:
             # A misconfigured LLM_PROVIDER is an operator error, not a user error,
             # and is reported as such rather than silently using a default.

@@ -201,17 +201,27 @@ def _match_template_category(req_def: RequirementDefinition) -> str:
 def derive_business_documents(
     business: Business,
     context: DerivedBusinessContext | None = None,
+    assessment_id: str | None = None,
 ) -> dict[str, Any]:
     """Derive the complete statutory document checklist for a business."""
     if context is None:
         context = build_business_context(business)
 
-    latest_run = (
-        DecisionRun.objects.filter(business=business)
-        .prefetch_related("results")
-        .order_by("-created_at")
-        .first()
-    )
+    latest_run = None
+    if assessment_id:
+        assessment = business.assessments.filter(pk=assessment_id).first()
+        if assessment and assessment.decision_run:
+            latest_run = assessment.decision_run
+        elif assessment:
+            latest_run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
+
+    if latest_run is None:
+        latest_run = (
+            DecisionRun.objects.filter(business=business)
+            .prefetch_related("results")
+            .order_by("-created_at")
+            .first()
+        )
 
     documents: list[dict[str, Any]] = []
     requirements_summary: list[dict[str, Any]] = []

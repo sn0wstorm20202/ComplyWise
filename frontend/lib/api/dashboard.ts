@@ -8,6 +8,10 @@ import { request } from "./client";
 import { DashboardSummary } from "@/types";
 
 export const dashboardApi = {
-  get: (businessId: string): Promise<DashboardSummary> =>
-    request<DashboardSummary>(`/businesses/${businessId}/dashboard`),
+  get: (businessId: string, assessmentId?: string | null): Promise<DashboardSummary> =>
+    request<DashboardSummary>(
+      assessmentId
+        ? `/businesses/${businessId}/dashboard?assessment_id=${assessmentId}`
+        : `/businesses/${businessId}/dashboard`
+    ),
 };

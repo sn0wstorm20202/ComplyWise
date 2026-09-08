@@ -77,6 +77,7 @@ def ts_content() -> str:
         (enums.VariableOrigin, "VariableOrigin"),
         (enums.VariableRelevance, "VariableRelevance"),
         (enums.DecisionRunStatus, "DecisionRunStatus"),
+        (enums.AssessmentStatus, "AssessmentStatus"),
     ],
 )
 def test_frontend_enum_matches_backend(ts_content, enum_class, ts_type_name):

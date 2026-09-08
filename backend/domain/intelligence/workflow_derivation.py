@@ -44,17 +44,27 @@ def _match_workflow_template(req_def: RequirementDefinition) -> str:
 def derive_business_workflows(
     business: Business,
     context: DerivedBusinessContext | None = None,
+    assessment_id: str | None = None,
 ) -> dict[str, Any]:
-    """Derive clearance execution workflows for a business's applicable requirements."""
+    """Derive prioritized statutory workflow roadmaps for a business."""
     if context is None:
         context = build_business_context(business)
 
-    latest_run = (
-        DecisionRun.objects.filter(business=business)
-        .prefetch_related("results")
-        .order_by("-created_at")
-        .first()
-    )
+    latest_run = None
+    if assessment_id:
+        assessment = business.assessments.filter(pk=assessment_id).first()
+        if assessment and assessment.decision_run:
+            latest_run = assessment.decision_run
+        elif assessment:
+            latest_run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
+
+    if latest_run is None:
+        latest_run = (
+            DecisionRun.objects.filter(business=business)
+            .prefetch_related("results")
+            .order_by("-created_at")
+            .first()
+        )
 
     workflows: list[dict[str, Any]] = []
 

@@ -21,7 +21,7 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 
-from common.enums import VariableOrigin
+from common.enums import AssessmentStatus, VariableOrigin
 from common.models import AppendOnlyModel, BaseModel
 from domain.profile.variables import PROFILE_VARIABLES, ProfileVariable, get_variable
 
@@ -80,6 +80,14 @@ class Business(BaseModel):
     @property
     def current_profile(self) -> BusinessProfileVersion | None:
         return self.profile_versions.order_by("-version").first()
+
+    @property
+    def latest_assessment(self) -> Assessment | None:
+        return self.assessments.order_by("-assessment_number").first()
+
+    @property
+    def assessment_count(self) -> int:
+        return self.assessments.count()
 
 
 class BusinessMembership(BaseModel):
@@ -253,6 +261,95 @@ class BusinessProfileVersion(AppendOnlyModel):
             )
         kwargs.pop("_allow_update", None)
         return super().save(*args, **kwargs)
+
+
+class Assessment(BaseModel):
+    """An assessment session/version for a business.
+
+    Represents one audit run with its own profile snapshot, question plan,
+    discovery run, and decision run. Multiple assessments can be created for the same
+    business without overwriting previous results.
+    """
+
+    business = models.ForeignKey(
+        Business,
+        on_delete=models.CASCADE,
+        related_name="assessments",
+        db_index=True,
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_assessments",
+    )
+    assessment_number = models.PositiveIntegerField(default=1)
+    title = models.CharField(max_length=255, blank=True, default="")
+    status = models.CharField(
+        max_length=30,
+        choices=AssessmentStatus.choices,
+        default=AssessmentStatus.IN_PROGRESS,
+        db_index=True,
+    )
+    profile_version = models.ForeignKey(
+        BusinessProfileVersion,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assessments",
+    )
+    decision_run = models.ForeignKey(
+        "applicability.DecisionRun",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assessments",
+    )
+    discovery_run = models.ForeignKey(
+        "ingestion.DiscoveryRun",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assessments",
+    )
+    question_plan = models.ForeignKey(
+        "onboarding.SmartQuestionPlan",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assessments",
+    )
+    current_step = models.PositiveIntegerField(default=1)
+    step_state = models.JSONField(default=dict, blank=True)
+    summary = models.JSONField(default=dict, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "businesses_assessment"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["business", "assessment_number"],
+                name="uniq_business_assessment_num",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["business", "-created_at"]),
+            models.Index(fields=["created_by", "-created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.business.name} - Assessment #{self.assessment_number} [{self.status}]"
+
+    def is_accessible_by(self, user) -> bool:
+        return self.business.is_accessible_by(user)
+
+    @classmethod
+    def accessible_to(cls, user) -> models.QuerySet[Assessment]:
+        if not user or not user.is_authenticated:
+            return cls.objects.none()
+        return cls.objects.filter(business__in=Business.accessible_to(user))
 
 
 def merge_variables(

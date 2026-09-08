@@ -15,12 +15,16 @@ import {
 } from "@/types";
 
 export const onboardingApi = {
-  getQuestions: (businessId: string): Promise<SmartQuestionsResponse> =>
-    request<SmartQuestionsResponse>(`/businesses/${businessId}/onboarding/questions`),
+  getQuestions: (businessId: string, assessmentId?: string): Promise<SmartQuestionsResponse> => {
+    const url = assessmentId
+      ? `/businesses/${businessId}/onboarding/questions?assessment_id=${assessmentId}`
+      : `/businesses/${businessId}/onboarding/questions`;
+    return request<SmartQuestionsResponse>(url);
+  },
 
   submitAnswers: (
     businessId: string,
-    payload: SmartQuestionAnswerPayload
+    payload: SmartQuestionAnswerPayload & { assessment_id?: string }
   ): Promise<SmartQuestionAnswerResponse> =>
     request<SmartQuestionAnswerResponse>(`/businesses/${businessId}/onboarding/answers`, {
       method: "POST",
@@ -29,7 +33,7 @@ export const onboardingApi = {
 
   saveProductsActivities: (
     businessId: string,
-    payload: ProductsActivitiesPayload
+    payload: ProductsActivitiesPayload & { assessment_id?: string }
   ): Promise<ProductsActivitiesResponse> =>
     request<ProductsActivitiesResponse>(
       `/businesses/${businessId}/onboarding/products-activities`,
@@ -39,6 +43,10 @@ export const onboardingApi = {
       }
     ),
 
-  getStatus: (businessId: string): Promise<OnboardingStatus> =>
-    request<OnboardingStatus>(`/businesses/${businessId}/onboarding/status`),
+  getStatus: (businessId: string, assessmentId?: string): Promise<OnboardingStatus> => {
+    const url = assessmentId
+      ? `/businesses/${businessId}/onboarding/status?assessment_id=${assessmentId}`
+      : `/businesses/${businessId}/onboarding/status`;
+    return request<OnboardingStatus>(url);
+  },
 };

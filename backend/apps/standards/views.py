@@ -44,10 +44,12 @@ class StandardsSearchView(APIView):
         query = request.query_params.get("query", "").strip()
         business_id = request.query_params.get("business_id", "").strip()
 
+        assessment_id = request.query_params.get("assessment_id", "").strip() or None
+
         if business_id:
             business = Business.objects.filter(pk=business_id).first()
             if business:
-                disc_result = discover_business_standards(business)
+                disc_result = discover_business_standards(business, assessment_id=assessment_id)
                 items = disc_result.get("standards", [])
                 if query:
                     needle = query.lower()

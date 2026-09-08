@@ -29,5 +29,6 @@ class BusinessDashboardView(APIView):
                 "NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND
             )
 
-        data = get_dashboard_summary(business)
+        assessment_id = request.query_params.get("assessment_id")
+        data = get_dashboard_summary(business, assessment_id=assessment_id)
         return Response(envelope(data), status=status.HTTP_200_OK)

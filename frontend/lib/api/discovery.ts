@@ -8,8 +8,11 @@ import { request } from "./client";
 import { CandidateRequirement, DiscoveryRun, DiscoveryRunResult, DiscoveryStatusData } from "@/types";
 
 export const discoveryApi = {
-  getStatus(businessId: string): Promise<DiscoveryStatusData> {
-    return request<DiscoveryStatusData>(`/businesses/${businessId}/discovery/status`);
+  getStatus(businessId: string, assessmentId?: string): Promise<DiscoveryStatusData> {
+    const url = assessmentId
+      ? `/businesses/${businessId}/discovery/status?assessment_id=${assessmentId}`
+      : `/businesses/${businessId}/discovery/status`;
+    return request<DiscoveryStatusData>(url);
   },
 
   run(businessId: string, forceRefresh: boolean = false): Promise<DiscoveryRunResult> {
@@ -34,14 +37,20 @@ export const discoveryApi = {
     return request<CandidateRequirement[]>(url);
   },
 
-  orchestrate(businessId: string, forceLiveDiscovery: boolean = true): Promise<any> {
+  orchestrate(businessId: string, assessmentId?: string, forceLiveDiscovery: boolean = true): Promise<any> {
     return request<any>(`/businesses/${businessId}/analysis/orchestrate`, {
       method: "POST",
-      body: JSON.stringify({ force_live_discovery: forceLiveDiscovery }),
+      body: JSON.stringify({
+        assessment_id: assessmentId,
+        force_live_discovery: forceLiveDiscovery,
+      }),
     });
   },
 
-  getAnalysisStatus(businessId: string): Promise<any> {
-    return request<any>(`/businesses/${businessId}/analysis/status`);
+  getAnalysisStatus(businessId: string, assessmentId?: string): Promise<any> {
+    const url = assessmentId
+      ? `/businesses/${businessId}/analysis/status?assessment_id=${assessmentId}`
+      : `/businesses/${businessId}/analysis/status`;
+    return request<any>(url);
   },
 };

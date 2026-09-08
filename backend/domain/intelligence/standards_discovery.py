@@ -21,6 +21,7 @@ from knowledge_packs.catalogs import STANDARDS_CATALOG
 def discover_business_standards(
     business: Business,
     context: DerivedBusinessContext | None = None,
+    assessment_id: str | None = None,
 ) -> dict[str, Any]:
     """Identify relevant Indian Standards, QCOs, and quality certifications for a business."""
     if context is None:

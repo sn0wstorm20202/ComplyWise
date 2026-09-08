@@ -18,6 +18,7 @@ export interface ComplianceFilterParams {
   status?: string;
   authority?: string;
   category?: string;
+  assessment_id?: string;
 }
 
 export const complianceApi = {
@@ -31,7 +32,12 @@ export const complianceApi = {
 
   getDetail: (
     businessId: string,
-    requirementId: string
+    requirementId: string,
+    assessmentId?: string
   ): Promise<RequirementDetail> =>
-    request<RequirementDetail>(`/businesses/${businessId}/compliance/${requirementId}`),
+    request<RequirementDetail>(
+      assessmentId
+        ? `/businesses/${businessId}/compliance/${requirementId}?assessment_id=${assessmentId}`
+        : `/businesses/${businessId}/compliance/${requirementId}`
+    ),
 };

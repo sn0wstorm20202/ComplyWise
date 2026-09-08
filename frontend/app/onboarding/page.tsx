@@ -12,6 +12,7 @@ import WhyThisAppliesModal from "@/components/WhyThisAppliesModal";
 import { api } from "@/lib/api";
 import {
   Business,
+  Assessment,
   SmartQuestion,
   DecisionRun,
   ApplicabilityStatus,
@@ -42,14 +43,17 @@ function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams?.get("business_id") || null;
+  const paramAssessmentId = searchParams?.get("assessment_id") || null;
   const isExplicitNew = searchParams?.get("new") === "true";
+  const isNewAssessment = searchParams?.get("new_assessment") === "true" || searchParams?.get("new_assessment") === "1";
 
   const [step, setStep] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Active business session
+  // Active business and assessment session
   const [business, setBusiness] = useState<Business | null>(null);
+  const [assessment, setAssessment] = useState<Assessment | null>(null);
 
   // Canonical variable definitions from backend GET /api/v1/profile/variables
   const [varDefs, setVarDefs] = useState<ProfileVariableDefinition[]>([]);
@@ -149,6 +153,7 @@ function OnboardingContent() {
   // Reset onboarding form for a fresh new entity assessment
   const handleStartFresh = React.useCallback(() => {
     setBusiness(null);
+    setAssessment(null);
     setBusinessName("");
     setLegalConstitution("");
     setRegisteredState("");
@@ -165,15 +170,95 @@ function OnboardingContent() {
     setQuestionAnswers({});
     setDecisionRun(null);
     setStep(1);
+    localStorage.removeItem("complywise_active_assessment_id");
     router.push("/onboarding?new=true");
   }, [router]);
 
-  // Load canonical variable definitions and optional specific business on mount
+  // Load canonical variable definitions, assessment, and business state on mount
   useEffect(() => {
     async function init() {
       await loadVariableDefinitions();
 
-      // Only resume an existing business if specifically provided in URL and not an explicit new assessment
+      let targetBiz: Business | null = null;
+      let targetAss: Assessment | null = null;
+
+      // 1. Explicit assessment resumption
+      if (paramAssessmentId) {
+        try {
+          if (paramBusinessId) {
+            targetAss = await api.businesses.getAssessment(paramBusinessId, paramAssessmentId);
+          } else {
+            targetAss = await api.businesses.getAssessmentDirect(paramAssessmentId);
+          }
+        } catch (e) {
+          console.error("Could not fetch assessment directly:", e);
+        }
+      }
+
+      // If assessment resolved
+      if (targetAss) {
+        setAssessment(targetAss);
+        localStorage.setItem("complywise_active_assessment_id", targetAss.id);
+
+        const resolvedBizId = targetAss.business_id || paramBusinessId;
+        if (resolvedBizId) {
+          try {
+            targetBiz = await api.businesses.get(resolvedBizId);
+            setBusiness(targetBiz);
+            setBusinessName(targetBiz.name);
+            localStorage.setItem("complywise_active_business_id", targetBiz.id);
+          } catch {}
+        }
+
+        // Restore form values from assessment step_state
+        const ss = (targetAss.step_state || {}) as any;
+        if (ss.profile) {
+          if (ss.profile.businessName) setBusinessName(ss.profile.businessName);
+          if (ss.profile.legalConstitution) setLegalConstitution(ss.profile.legalConstitution);
+          if (ss.profile.registeredState) setRegisteredState(ss.profile.registeredState);
+          if (ss.profile.district) setDistrict(ss.profile.district);
+          if (ss.profile.industrialZone) setIndustrialZone(ss.profile.industrialZone);
+          if (ss.profile.lifecycleStage) setLifecycleStage(ss.profile.lifecycleStage);
+          if (ss.profile.plantInvestmentLakhs) setPlantInvestmentLakhs(ss.profile.plantInvestmentLakhs);
+          if (ss.profile.turnoverLakhs) setTurnoverLakhs(ss.profile.turnoverLakhs);
+          if (ss.profile.employeeCount) setEmployeeCount(ss.profile.employeeCount);
+        }
+        if (ss.products) {
+          if (ss.products.productDescription) setProductDescription(ss.products.productDescription);
+          if (ss.products.tradeIntent) setTradeIntent(ss.products.tradeIntent);
+          if (ss.products.detectedActivities) setDetectedActivities(ss.products.detectedActivities);
+        }
+        if (ss.questions?.answers) {
+          setQuestionAnswers(ss.questions.answers);
+        }
+
+        const resumeStep = Math.max(1, Math.min(targetAss.current_step || 1, 5));
+        setStep(resumeStep);
+
+        if (resolvedBizId && resumeStep >= 3) {
+          try {
+            const qResp = await api.onboarding.getQuestions(resolvedBizId, targetAss.id);
+            setSmartQuestions(qResp.questions);
+            if (ss.questions?.answers) {
+              setQuestionAnswers((prev) => ({ ...qResp.questions.reduce((acc: any, q: any) => {
+                const k = q.variable_key || q.key;
+                if (k && q.current_value !== null && q.current_value !== undefined) acc[k] = q.current_value;
+                return acc;
+              }, {}), ...ss.questions.answers, ...prev }));
+            }
+          } catch {}
+        }
+
+        if (resolvedBizId && resumeStep === 5) {
+          try {
+            const evalRun = await api.applicability.evaluate(resolvedBizId);
+            setDecisionRun(evalRun);
+          } catch {}
+        }
+        return;
+      }
+
+      // 2. Business provided without explicit assessment ID
       if (paramBusinessId && !isExplicitNew) {
         try {
           const b = await api.businesses.get(paramBusinessId);
@@ -200,21 +285,40 @@ function OnboardingContent() {
               if (cv.product_description?.value) setProductDescription(String(cv.product_description.value));
               if (cv.import_export_intent?.value) setTradeIntent(String(cv.import_export_intent.value));
             }
-          } catch {
-            // Profile variables might not exist yet; ignore
+          } catch {}
+
+          if (isNewAssessment) {
+            // Fresh cycle for existing business: start at Step 1 with baseline parameters preloaded
+            setAssessment(null);
+            localStorage.removeItem("complywise_active_assessment_id");
+            setStep(1);
+          } else {
+            // Check for existing active assessment
+            const existingList = await api.businesses.getAssessments(b.id).catch(() => []);
+            if (existingList.length > 0) {
+              const latest = await api.businesses.getAssessment(b.id, existingList[0].id).catch(() => null);
+              if (latest) {
+                setAssessment(latest);
+                localStorage.setItem("complywise_active_assessment_id", latest.id);
+                if (latest.current_step && latest.current_step > 1) {
+                  setStep(Math.min(latest.current_step, 5));
+                }
+              }
+            }
           }
         } catch {
           setBusiness(null);
           setBusinessName("");
         }
       } else {
-        // Fresh onboarding assessment: ensure no old business is retained in state
+        // Fresh onboarding assessment: ensure no old business or assessment is retained in state
         setBusiness(null);
+        setAssessment(null);
         setBusinessName("");
       }
     }
     init();
-  }, [loadVariableDefinitions, paramBusinessId, isExplicitNew]);
+  }, [loadVariableDefinitions, paramBusinessId, paramAssessmentId, isExplicitNew, isNewAssessment]);
 
   // STEP 1 SUBMIT: Save Profile using canonical variable keys & values
   async function handleProfileSubmit(e: React.FormEvent) {
@@ -271,6 +375,42 @@ function OnboardingContent() {
         false // carry_forward: false for initial profile submission
       );
 
+      // Ensure Assessment exists and save step 1 state
+      let currAssessment = assessment;
+      if (!currAssessment) {
+        const existingList = await api.businesses.getAssessments(currentBiz.id).catch(() => []);
+        const nextNum = existingList.length + 1;
+        currAssessment = await api.businesses.createAssessment(currentBiz.id, {
+          title: `Assessment #${nextNum} — ${currentBiz.name}`,
+        });
+        setAssessment(currAssessment);
+        localStorage.setItem("complywise_active_assessment_id", currAssessment.id);
+      }
+
+      const profileState = {
+        businessName: trimmedName,
+        legalConstitution,
+        registeredState,
+        district: district.trim(),
+        industrialZone,
+        lifecycleStage,
+        plantInvestmentLakhs,
+        turnoverLakhs,
+        employeeCount,
+      };
+
+      const updatedStepState = {
+        ...(currAssessment.step_state || {}),
+        profile: profileState,
+      };
+
+      const updatedAss = await api.businesses.updateAssessment(currentBiz.id, currAssessment.id, {
+        current_step: 2,
+        step_state: updatedStepState,
+      });
+      setAssessment(updatedAss);
+      localStorage.setItem("complywise_active_assessment_id", updatedAss.id);
+
       setStep(2);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to save business profile.");
@@ -287,29 +427,49 @@ function OnboardingContent() {
     setError(null);
 
     try {
-      const resp = await api.onboarding.saveProductsActivities(business.id, {
-        product_description: productDescription,
-        ...(tradeIntent ? { import_export_intent: tradeIntent } : {}),
-      });
+      const resp = await api.onboarding.saveProductsActivities(
+        business.id,
+        {
+          product_description: productDescription,
+          ...(tradeIntent ? { import_export_intent: tradeIntent } : {}),
+          ...(assessment?.id ? { assessment_id: assessment.id } : {}),
+        }
+      );
       setDetectedActivities(resp.detected_activities);
 
-      // Load Smart Questions for Step 3
-      const questionsResp = await api.onboarding.getQuestions(business.id);
+      // Load Smart Questions for Step 3 scoped to assessment
+      const questionsResp = await api.onboarding.getQuestions(business.id, assessment?.id);
       setSmartQuestions(questionsResp.questions);
 
       // Pre-fill only values the user has actually answered before
       // (backend `current_value`). Never default a choice to the first option
       // or a number to 0: an unobserved answer submitted as a value turns
       // UNKNOWN into FALSE and can flip a requirement to NOT_APPLICABLE.
-      const initialAnswers: Record<string, string | number | boolean> = {};
+      const initialAnswers: Record<string, string | number | boolean | string[]> = {};
       for (const q of questionsResp.questions) {
         const qKey = q.variable_key || q.key || "";
         if (!qKey) continue;
         if (q.current_value !== null && q.current_value !== undefined) {
-          initialAnswers[qKey] = q.current_value as string | number | boolean;
+          initialAnswers[qKey] = q.current_value as string | number | boolean | string[];
         }
       }
-      setQuestionAnswers(initialAnswers);
+      setQuestionAnswers((prev) => ({ ...initialAnswers, ...prev }));
+
+      if (assessment) {
+        const updatedStepState = {
+          ...(assessment.step_state || {}),
+          products: {
+            productDescription,
+            tradeIntent,
+            detectedActivities: resp.detected_activities,
+          },
+        };
+        const updatedAss = await api.businesses.updateAssessment(business.id, assessment.id, {
+          current_step: 3,
+          step_state: updatedStepState,
+        });
+        setAssessment(updatedAss);
+      }
 
       setStep(3);
     } catch (err: unknown) {
@@ -363,11 +523,26 @@ function OnboardingContent() {
       if (Object.keys(formattedAnswers).length > 0) {
         await api.onboarding.submitAnswers(business.id, {
           answers: formattedAnswers,
+          assessment_id: assessment?.id,
         });
       }
 
+      if (assessment) {
+        const updatedStepState = {
+          ...(assessment.step_state || {}),
+          questions: {
+            answers: formattedAnswers,
+          },
+        };
+        const updatedAss = await api.businesses.updateAssessment(business.id, assessment.id, {
+          current_step: 4,
+          step_state: updatedStepState,
+        });
+        setAssessment(updatedAss);
+      }
+
       setStep(4);
-      runRegulatoryAnalysis(business.id);
+      runRegulatoryAnalysis(business.id, assessment?.id);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to record smart question answers.");
       setLoading(false);
@@ -428,7 +603,7 @@ function OnboardingContent() {
   }
 
   // STEP 4: Run Real Regulatory Analysis & Live Regulatory Discovery
-  async function runRegulatoryAnalysis(bizId: string) {
+  async function runRegulatoryAnalysis(bizId: string, assId?: string) {
     setLoading(true);
     setError(null);
 
@@ -449,7 +624,8 @@ function OnboardingContent() {
     }, 1200);
 
     try {
-      const orchResult = await api.discovery.orchestrate(bizId);
+      const effectiveAssId = assId || assessment?.id;
+      const orchResult = await api.discovery.orchestrate(bizId, effectiveAssId);
       clearInterval(queryTimer);
 
       if (orchResult?.stages && Array.isArray(orchResult.stages)) {
@@ -475,6 +651,14 @@ function OnboardingContent() {
       } else {
         const run = await api.applicability.evaluate(bizId);
         setDecisionRun(run);
+      }
+
+      // Refresh assessment record to capture completed status
+      if (effectiveAssId) {
+        try {
+          const refreshedAss = await api.businesses.getAssessment(bizId, effectiveAssId);
+          setAssessment(refreshedAss);
+        } catch {}
       }
 
       // Smooth transition to results
@@ -515,12 +699,19 @@ function OnboardingContent() {
               </h1>
             </div>
             {business ? (
-              <div className="flex items-center gap-2.5">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <div className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-xs text-slate-700">
                   <span className="font-semibold text-slate-900">{business.name}</span>
                   <span className="text-slate-400">·</span>
                   <span className="font-mono text-slate-500">ID: {business.id.slice(0, 8)}</span>
                 </div>
+                {assessment && (
+                  <div className="flex items-center gap-1.5 rounded-lg bg-indigo-50 border border-indigo-200 px-2.5 py-1 text-xs font-bold text-indigo-700">
+                    <span>Assessment #{assessment.assessment_number}</span>
+                    <span className="text-indigo-400">·</span>
+                    <span className="uppercase text-[10px] font-semibold">{assessment.status}</span>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={handleStartFresh}
@@ -881,10 +1072,10 @@ function OnboardingContent() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                    Let&apos;s Understand Your Business
+                    Questions formulated specifically for {business?.name || "your enterprise"}
                   </h2>
                   <p className="text-xs text-slate-500 mt-1">
-                    Answer a few quick questions to help ComplyWise identify your exact permits, statutory registrations, and tax/labor exemptions.
+                    Tailored smart questions targeting missing statutory variables to identify your exact permits, clearances, and compliance mandates.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -915,37 +1106,55 @@ function OnboardingContent() {
               </div>
             ) : (
               <div className="space-y-6">
-                {smartQuestions.map((q, qIdx) => {
-                  const qKey = q.variable_key || q.key || `q-${qIdx}`;
+                {smartQuestions.map((q: any, qIdx: number) => {
+                  const qKey = q.variable_key || q.variable_id || q.key || `q-${qIdx}`;
                   const val = questionAnswers[qKey];
                   const ruleCount = q.candidate_rules_count ?? q.rule_dependency_count ?? 0;
+                  const questionText = q.question || q.question_text || q.label || `Question regarding ${qKey}`;
+                  const questionReason = q.reason || q.why_it_matters;
+                  const domains: string[] = Array.isArray(q.domains) ? q.domains : [];
 
                   return (
                     <div
                       key={qKey || `sq-${qIdx}`}
                       className="p-4 sm:p-5 rounded-xl border border-slate-200/90 bg-slate-50/40 hover:bg-white hover:border-indigo-200 transition-all space-y-3"
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div className="space-y-1.5 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center rounded-md bg-indigo-100/80 px-2 py-0.5 text-[11px] font-bold text-indigo-800">
+                              Question {qIdx + 1} of {smartQuestions.length}
+                            </span>
+                            <span className="font-mono text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
                               {qKey}
                             </span>
-                            <span className="text-xs font-semibold text-slate-500">
-                              {q.required ? "Core profile variable" : "Decision-critical variable"}
-                            </span>
+                            {domains.map((dom, dIdx) => (
+                              <span
+                                key={`${dom}-${dIdx}`}
+                                className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 border border-emerald-200"
+                              >
+                                {dom}
+                              </span>
+                            ))}
+                            {q.priority && (
+                              <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200">
+                                Priority {q.priority}
+                              </span>
+                            )}
                             {ruleCount > 0 && (
                               <span className="text-[11px] text-slate-400">
                                 ({ruleCount} rule{ruleCount > 1 ? "s" : ""} depend on this)
                               </span>
                             )}
                           </div>
-                          <h3 className="text-sm font-bold text-slate-900">{q.label}</h3>
+                          <h3 className="text-sm font-bold text-slate-900 leading-snug">
+                            {questionText}
+                          </h3>
                         </div>
 
-                        {q.why_it_matters && (
-                          <div className="sm:max-w-xs text-[11px] text-slate-500 bg-white border border-slate-200/80 rounded-lg p-2 leading-tight">
-                            <span className="font-semibold text-slate-700">Statutory Rationale:</span> {q.why_it_matters}
+                        {questionReason && (
+                          <div className="sm:max-w-xs text-[11px] text-slate-600 bg-white border border-slate-200/80 rounded-lg p-2.5 leading-relaxed shrink-0">
+                            <span className="font-bold text-slate-700 block mb-0.5">Statutory Rationale:</span> {questionReason}
                           </div>
                         )}
                       </div>
@@ -1001,7 +1210,7 @@ function OnboardingContent() {
                             {/* No pre-selected option: an unchosen select must not
                                 silently answer the question with option[0]. */}
                             <option value="">Select an answer…</option>
-                            {q.options.map((opt, optIdx) => (
+                            {q.options.map((opt: any, optIdx: number) => (
                               <option key={`${opt.value}-${optIdx}`} value={opt.value}>
                                 {opt.label}
                               </option>
@@ -1177,14 +1386,14 @@ function OnboardingContent() {
 
                 <div className="flex items-center gap-3">
                   <Link
-                    href={`/compliance?business_id=${business?.id}`}
+                    href={`/compliance?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
                     className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-900 shadow-md hover:bg-indigo-50 transition-colors"
                   >
                     <span>View Compliance Plan</span>
                     <span>→</span>
                   </Link>
                   <Link
-                    href={`/dashboard?business_id=${business?.id}`}
+                    href={`/dashboard?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
                     className="inline-flex items-center gap-2 rounded-xl bg-indigo-600/60 border border-indigo-400/40 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-600 transition-colors"
                   >
                     <span>Founder Dashboard</span>
@@ -1530,14 +1739,14 @@ function OnboardingContent() {
 
                 <div className="flex items-center gap-3">
                   <Link
-                    href={`/compliance?business_id=${business?.id}`}
+                    href={`/compliance?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
                     className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
                   >
                     View All Compliance Mandates
                   </Link>
 
                   <Link
-                    href={`/dashboard?business_id=${business?.id}`}
+                    href={`/dashboard?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
                     className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 transition-colors"
                   >
                     Enter Overview Dashboard →

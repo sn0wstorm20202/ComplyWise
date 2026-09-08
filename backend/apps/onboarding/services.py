@@ -39,13 +39,14 @@ TEXT_MATCH_OPERATORS = CLASSIFICATION_OPS
 def get_dynamic_smart_questions(
     business: Business,
     round_number: int = 1,
+    assessment_id: str | None = None,
 ) -> dict[str, Any]:
     """Generate dynamic smart questions for decision-critical missing variables.
 
     Uses SmartQuestionPlanner to assess candidate published rules and formulate
-    adaptive questions.
+    adaptive questions tailored to the business and assessment.
     """
-    return plan_adaptive_smart_questions(business, round_number=round_number)
+    return plan_adaptive_smart_questions(business, round_number=round_number, assessment_id=assessment_id)
 
 
 def save_smart_question_answers(
@@ -53,6 +54,7 @@ def save_smart_question_answers(
     business: Business,
     answers: dict[str, Any],
     user: User | None = None,
+    assessment_id: str | None = None,
     change_note: str = "Smart questions answered during onboarding",
 ) -> BusinessProfileVersion:
     """Save answered variables into a new immutable BusinessProfileVersion."""
@@ -91,6 +93,11 @@ def save_smart_question_answers(
     if not cleaned_entries:
         current = business.current_profile
         if current:
+            if assessment_id:
+                assessment = business.assessments.filter(pk=assessment_id).first()
+                if assessment and not assessment.profile_version:
+                    assessment.profile_version = current
+                    assessment.save(update_fields=["profile_version", "updated_at"])
             return current
 
     # Carry forward existing variables from the current version
@@ -107,13 +114,26 @@ def save_smart_question_answers(
         created_by=user,
     )
 
+    # Link profile version to assessment if passed
+    if assessment_id:
+        assessment = business.assessments.filter(pk=assessment_id).first()
+        if assessment:
+            assessment.profile_version = new_profile
+            state = dict(assessment.step_state)
+            state.setdefault("answers", {})
+            state["answers"].update(answers)
+            assessment.step_state = state
+            if assessment.current_step < 5:
+                assessment.current_step = 5
+            assessment.save(update_fields=["profile_version", "step_state", "current_step", "updated_at"])
+
     # Check active question plans and mark completed if all questions answered
     for plan in SmartQuestionPlan.objects.filter(business=business, status="ACTIVE"):
         unanswered_count = plan.questions.filter(is_answered=False).count()
         if unanswered_count == 0:
             plan.status = "COMPLETED"
             plan.stopping_reason = "ALL_ROUND_QUESTIONS_ANSWERED"
-            plan.save()
+            plan.save(update_fields=["status", "stopping_reason"])
 
     return new_profile
 
@@ -161,6 +181,7 @@ def save_products_and_activities(
     product_description: str,
     import_export_intent: str | None = None,
     user: User | None = None,
+    assessment_id: str | None = None,
 ) -> dict[str, Any]:
     """Persist user's natural-language product/activity input and return detected hints."""
     answers: dict[str, Any] = {
@@ -173,9 +194,22 @@ def save_products_and_activities(
         business=business,
         answers=answers,
         user=user,
+        assessment_id=assessment_id,
         change_note="Products and activities updated",
     )
     detected_tags = detect_activity_keywords(product_description)
+
+    if assessment_id:
+        assessment = business.assessments.filter(pk=assessment_id).first()
+        if assessment:
+            state = dict(assessment.step_state)
+            state["product_description"] = product_description.strip()
+            if import_export_intent:
+                state["import_export_intent"] = import_export_intent.strip()
+            assessment.step_state = state
+            if assessment.current_step < 4:
+                assessment.current_step = 4
+            assessment.save(update_fields=["step_state", "current_step", "updated_at"])
 
     return {
         "profile_version": new_profile.version,

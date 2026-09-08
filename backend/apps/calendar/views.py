@@ -33,5 +33,6 @@ class BusinessCalendarListView(APIView):
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
-        payload = derive_business_calendar(business)
+        assessment_id = request.query_params.get("assessment_id")
+        payload = derive_business_calendar(business, assessment_id=assessment_id)
         return Response(envelope(payload), status=status.HTTP_200_OK)

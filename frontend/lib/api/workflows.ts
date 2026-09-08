@@ -23,6 +23,10 @@ export type WorkflowsListResponse =
   | (CapabilityUnavailable & { business_id: string; workflows: never[] });
 
 export const workflowsApi = {
-  list: (businessId: string): Promise<WorkflowsListResponse> =>
-    request<WorkflowsListResponse>(`/businesses/${businessId}/workflows`),
+  list: (businessId: string, assessmentId?: string): Promise<WorkflowsListResponse> =>
+    request<WorkflowsListResponse>(
+      assessmentId
+        ? `/businesses/${businessId}/workflows?assessment_id=${assessmentId}`
+        : `/businesses/${businessId}/workflows`
+    ),
 };

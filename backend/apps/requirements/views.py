@@ -140,12 +140,22 @@ class BusinessComplianceListView(_BusinessScopedView):
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
-        latest_run = (
-            DecisionRun.objects.filter(business=business)
-            .prefetch_related("results")
-            .order_by("-created_at")
-            .first()
-        )
+        assessment_id = request.query_params.get("assessment_id")
+        run = None
+        if assessment_id:
+            assessment = business.assessments.filter(pk=assessment_id).first()
+            if assessment and assessment.decision_run:
+                run = assessment.decision_run
+            elif assessment:
+                run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
+        if run is None:
+            run = (
+                DecisionRun.objects.filter(business=business)
+                .prefetch_related("results")
+                .order_by("-created_at")
+                .first()
+            )
+        latest_run = run
 
         status_filter = request.query_params.get("status")
         authority_filter = request.query_params.get("authority")
@@ -222,12 +232,22 @@ class BusinessRequirementDetailView(_BusinessScopedView):
         if req_def is None:
             return error_response("NOT_FOUND", "Requirement not found.", http_status=status.HTTP_404_NOT_FOUND)
 
-        latest_run = (
-            DecisionRun.objects.filter(business=business)
-            .prefetch_related("results")
-            .order_by("-created_at")
-            .first()
-        )
+        assessment_id = request.query_params.get("assessment_id")
+        run = None
+        if assessment_id:
+            assessment = business.assessments.filter(pk=assessment_id).first()
+            if assessment and assessment.decision_run:
+                run = assessment.decision_run
+            elif assessment:
+                run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
+        if run is None:
+            run = (
+                DecisionRun.objects.filter(business=business)
+                .prefetch_related("results")
+                .order_by("-created_at")
+                .first()
+            )
+        latest_run = run
 
         decision_result: DecisionResult | None = None
         if latest_run:

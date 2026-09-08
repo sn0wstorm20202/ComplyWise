@@ -9,31 +9,47 @@ import MetricCard from "@/components/MetricCard";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import { api } from "@/lib/api";
-import { DashboardSummary, Business, DiscoveryStatusData } from "@/types";
+import { DashboardSummary, Business, DiscoveryStatusData, AssessmentSummary } from "@/types";
 
 function DashboardContent() {
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
+  const paramAssessmentId = searchParams.get("assessment_id");
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [discoveryStatus, setDiscoveryStatus] = useState<DiscoveryStatusData | null>(null);
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [assessments, setAssessments] = useState<AssessmentSummary[]>([]);
   const [activeBusinessId, setActiveBusinessId] = useState<string | null>(null);
+  const [activeAssessmentId, setActiveAssessmentId] = useState<string | null>(paramAssessmentId);
 
-  async function loadDashboard(bizId: string) {
+  async function loadDashboard(bizId: string, assessmentId?: string | null) {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.dashboard.get(bizId);
+      const assId = assessmentId !== undefined ? assessmentId : activeAssessmentId;
+      const data = await api.dashboard.get(bizId, assId);
       setSummary(data);
       setActiveBusinessId(bizId);
+      if (data.assessment_id) {
+        setActiveAssessmentId(data.assessment_id);
+        localStorage.setItem("complywise_active_assessment_id", data.assessment_id);
+      }
       localStorage.setItem("complywise_active_business_id", bizId);
+
+      // Fetch assessments for switcher
+      try {
+        const assList = await api.businesses.getAssessments(bizId);
+        setAssessments(assList);
+      } catch {
+        setAssessments([]);
+      }
 
       // Fetch discovery provenance status
       try {
-        const disc = await api.discovery.getStatus(bizId);
+        const disc = await api.discovery.getStatus(bizId, data.assessment_id || undefined);
         setDiscoveryStatus(disc);
       } catch {
         setDiscoveryStatus(null);
@@ -58,7 +74,7 @@ function DashboardContent() {
           (bizList.length > 0 ? bizList[0].id : null);
 
         if (targetId) {
-          await loadDashboard(targetId);
+          await loadDashboard(targetId, paramAssessmentId);
         } else {
           setLoading(false);
         }
@@ -68,7 +84,7 @@ function DashboardContent() {
       }
     }
     init();
-  }, [paramBusinessId]);
+  }, [paramBusinessId, paramAssessmentId]);
 
   // A null metric means "not yet calculated", never 0. Rendering 0 for an
   // unevaluated business would assert that nothing applies to them.
@@ -96,6 +112,11 @@ function DashboardContent() {
               <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
                 Deterministic Engine Active
               </span>
+              {summary?.assessment_number && (
+                <span className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700 border border-indigo-200">
+                  Assessment #{summary.assessment_number}{summary.assessment_title ? ` · ${summary.assessment_title}` : ""} ({summary.assessment_status || "COMPLETED"})
+                </span>
+              )}
               {discoveryStatus && discoveryStatus.latest_run && (
                 <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200">
                   Live Discovery Provenance Linked
@@ -110,12 +131,15 @@ function DashboardContent() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             {businesses.length > 1 && (
               <select
                 value={activeBusinessId || ""}
-                onChange={(e) => loadDashboard(e.target.value)}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-indigo-500 focus:outline-none"
+                onChange={(e) => {
+                  setActiveBusinessId(e.target.value);
+                  loadDashboard(e.target.value, null);
+                }}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-indigo-500 focus:outline-none bg-white"
               >
                 {businesses.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -125,11 +149,29 @@ function DashboardContent() {
               </select>
             )}
 
+            {assessments.length > 1 && (
+              <select
+                value={activeAssessmentId || summary?.assessment_id || ""}
+                onChange={(e) => {
+                  const selId = e.target.value;
+                  setActiveAssessmentId(selId);
+                  if (activeBusinessId) loadDashboard(activeBusinessId, selId);
+                }}
+                className="rounded-lg border border-indigo-300 bg-indigo-50/50 px-3 py-1.5 text-xs font-semibold text-indigo-900 focus:border-indigo-500 focus:outline-none"
+              >
+                {assessments.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    Assessment #{a.assessment_number}: {a.title || `Assessment #${a.assessment_number}`} ({a.status})
+                  </option>
+                ))}
+              </select>
+            )}
+
             <Link
-              href="/onboarding?new=true"
+              href={activeBusinessId ? `/onboarding?business_id=${activeBusinessId}&new_assessment=true` : "/onboarding?new=true"}
               className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors shadow-xs"
             >
-              <span>+ New Assessment</span>
+              <span>+ Start New Assessment</span>
             </Link>
           </div>
         </div>
@@ -192,7 +234,7 @@ function DashboardContent() {
 
                 <div className="flex items-center gap-3 shrink-0">
                   <Link
-                    href={`/compliance?business_id=${activeBusinessId}&tab=candidates`}
+                    href={`/compliance?business_id=${activeBusinessId}${activeAssessmentId ? `&assessment_id=${activeAssessmentId}` : ""}&tab=candidates`}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-amber-700 transition-colors shadow-xs"
                   >
                     <span>Inspect Quarantined Claims ({discoveryStatus.candidate_requirements_count})</span>
@@ -244,7 +286,7 @@ function DashboardContent() {
                     </p>
                   </div>
                   <Link
-                    href={`/compliance?business_id=${activeBusinessId}&tab=action_required`}
+                    href={`/compliance?business_id=${activeBusinessId}${activeAssessmentId ? `&assessment_id=${activeAssessmentId}` : ""}&tab=action_required`}
                     className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
                   >
                     View All Actions →
@@ -307,7 +349,7 @@ function DashboardContent() {
                     </p>
                   </div>
                   <Link
-                    href={`/calendar?business_id=${activeBusinessId}`}
+                    href={`/calendar?business_id=${activeBusinessId}${activeAssessmentId ? `&assessment_id=${activeAssessmentId}` : ""}`}
                     className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
                   >
                     Calendar →
@@ -362,7 +404,7 @@ function DashboardContent() {
                     </div>
                   </div>
                   <Link
-                    href={`/schemes?business_id=${activeBusinessId}`}
+                    href={`/schemes?business_id=${activeBusinessId}${activeAssessmentId ? `&assessment_id=${activeAssessmentId}` : ""}`}
                     className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
                   >
                     View All Schemes →
@@ -416,7 +458,7 @@ function DashboardContent() {
                     </div>
                   </div>
                   <Link
-                    href={`/standards?business_id=${activeBusinessId}`}
+                    href={`/standards?business_id=${activeBusinessId}${activeAssessmentId ? `&assessment_id=${activeAssessmentId}` : ""}`}
                     className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
                   >
                     View All Standards →
@@ -471,7 +513,7 @@ function DashboardContent() {
                 </div>
 
                 <Link
-                  href={`/assistant?business_id=${activeBusinessId}`}
+                  href={`/assistant?business_id=${activeBusinessId}${activeAssessmentId ? `&assessment_id=${activeAssessmentId}` : ""}`}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-xs font-bold text-slate-900 hover:bg-indigo-50 transition-colors shadow-xs"
                 >
                   <span>Open Full Copilot</span>
@@ -489,7 +531,7 @@ function DashboardContent() {
                 ].map((chip) => (
                   <Link
                     key={chip}
-                    href={`/assistant?business_id=${activeBusinessId}&q=${encodeURIComponent(chip)}`}
+                    href={`/assistant?business_id=${activeBusinessId}${activeAssessmentId ? `&assessment_id=${activeAssessmentId}` : ""}&q=${encodeURIComponent(chip)}`}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 px-3 py-1.5 text-xs text-indigo-100 transition-colors"
                   >
                     <span>💬</span>
@@ -512,7 +554,7 @@ function DashboardContent() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
                 <Link
-                  href={`/compliance?business_id=${activeBusinessId}&tab=action_required`}
+                  href={`/compliance?business_id=${activeBusinessId}${activeAssessmentId ? `&assessment_id=${activeAssessmentId}` : ""}&tab=action_required`}
                   className="p-4 rounded-xl border border-slate-200/70 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all space-y-1"
                 >
                   <div className="text-lg">📜</div>
@@ -525,7 +567,7 @@ function DashboardContent() {
                 </Link>
 
                 <Link
-                  href={`/documents?business_id=${activeBusinessId}`}
+                  href={`/documents?business_id=${activeBusinessId}${activeAssessmentId ? `&assessment_id=${activeAssessmentId}` : ""}`}
                   className="p-4 rounded-xl border border-slate-200/70 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all space-y-1"
                 >
                   <div className="text-lg">📁</div>
@@ -538,7 +580,7 @@ function DashboardContent() {
                 </Link>
 
                 <Link
-                  href={`/workflows?business_id=${activeBusinessId}`}
+                  href={`/workflows?business_id=${activeBusinessId}${activeAssessmentId ? `&assessment_id=${activeAssessmentId}` : ""}`}
                   className="p-4 rounded-xl border border-slate-200/70 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all space-y-1"
                 >
                   <div className="text-lg">⚡</div>
@@ -551,7 +593,7 @@ function DashboardContent() {
                 </Link>
 
                 <Link
-                  href={`/calendar?business_id=${activeBusinessId}`}
+                  href={`/calendar?business_id=${activeBusinessId}${activeAssessmentId ? `&assessment_id=${activeAssessmentId}` : ""}`}
                   className="p-4 rounded-xl border border-slate-200/70 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all space-y-1"
                 >
                   <div className="text-lg">📅</div>
@@ -564,7 +606,7 @@ function DashboardContent() {
                 </Link>
 
                 <Link
-                  href={`/schemes?business_id=${activeBusinessId}`}
+                  href={`/schemes?business_id=${activeBusinessId}${activeAssessmentId ? `&assessment_id=${activeAssessmentId}` : ""}`}
                   className="p-4 rounded-xl border border-slate-200/70 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all space-y-1"
                 >
                   <div className="text-lg">💰</div>
@@ -590,7 +632,7 @@ function DashboardContent() {
                 </Link>
 
                 <Link
-                  href={`/assistant?business_id=${activeBusinessId}`}
+                  href={`/assistant?business_id=${activeBusinessId}${activeAssessmentId ? `&assessment_id=${activeAssessmentId}` : ""}`}
                   className="p-4 rounded-xl border border-slate-200/70 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all space-y-1"
                 >
                   <div className="text-lg">🤖</div>
@@ -603,7 +645,7 @@ function DashboardContent() {
                 </Link>
 
                 <Link
-                  href={activeBusinessId ? `/onboarding?business_id=${activeBusinessId}` : "/onboarding?new=true"}
+                  href={activeBusinessId ? `/onboarding?business_id=${activeBusinessId}&new_assessment=true` : "/onboarding?new=true"}
                   className="p-4 rounded-xl border border-slate-200/70 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all space-y-1"
                 >
                   <div className="text-lg">⚙️</div>

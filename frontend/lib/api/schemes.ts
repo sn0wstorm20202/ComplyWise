@@ -23,6 +23,10 @@ export type SchemesListResponse =
   | (CapabilityUnavailable & { business_id: string; schemes: never[] });
 
 export const schemesApi = {
-  list: (businessId: string): Promise<SchemesListResponse> =>
-    request<SchemesListResponse>(`/businesses/${businessId}/schemes`),
+  list: (businessId: string, assessmentId?: string): Promise<SchemesListResponse> =>
+    request<SchemesListResponse>(
+      assessmentId
+        ? `/businesses/${businessId}/schemes?assessment_id=${assessmentId}`
+        : `/businesses/${businessId}/schemes`
+    ),
 };

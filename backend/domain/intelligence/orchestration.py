@@ -54,12 +54,20 @@ STAGES = [
 def orchestrate_compliance_analysis(
     business: Business,
     *,
+    assessment_id: str | None = None,
     force_live_discovery: bool = True,
 ) -> dict[str, Any]:
     """Execute complete staged compliance analysis for a business."""
     start_time = datetime.now(timezone.utc)
     analysis_id = str(uuid.uuid4())
     stage_records: list[dict[str, Any]] = []
+
+    # Resolve assessment if passed or latest
+    assessment = None
+    if assessment_id:
+        assessment = business.assessments.filter(pk=assessment_id).first()
+    if assessment is None:
+        assessment = business.assessments.order_by("-assessment_number").first()
 
     def record_stage(stage_name: str, message: str, count: int = 0) -> None:
         stage_records.append({
@@ -87,7 +95,12 @@ def orchestrate_compliance_analysis(
     )
 
     # Stage 3: REGULATORY_DISCOVERY
-    disc_run = DiscoveryRun.objects.filter(business=business).order_by("-created_at").first()
+    disc_run = None
+    if assessment and assessment.discovery_run:
+        disc_run = assessment.discovery_run
+    if disc_run is None:
+        disc_run = DiscoveryRun.objects.filter(business=business).order_by("-created_at").first()
+
     if disc_run is None or force_live_discovery:
         try:
             disc_res = run_discovery(business, max_scrape=1)
@@ -95,6 +108,10 @@ def orchestrate_compliance_analysis(
             disc_run = DiscoveryRun.objects.filter(pk=disc_run_id).first() if disc_run_id else None
         except Exception as exc:
             logger.warning("Live discovery encountered error, continuing with published rules: %s", exc)
+
+    if disc_run and assessment and not disc_run.assessment_id:
+        disc_run.assessment = assessment
+        disc_run.save(update_fields=["assessment"])
 
     queries_run = getattr(disc_run, "queries", []) or []
     record_stage(
@@ -124,12 +141,17 @@ def orchestrate_compliance_analysis(
         connection.close()
 
     try:
-        profile_version = business.current_profile
+        profile_version = assessment.profile_version if assessment and assessment.profile_version else business.current_profile
     except Exception:
         connection.close()
         profile_version = business.current_profile
 
-    existing_run = DecisionRun.objects.filter(business=business).order_by("-created_at").first()
+    existing_run = None
+    if assessment and assessment.decision_run:
+        existing_run = assessment.decision_run
+    if existing_run is None:
+        existing_run = DecisionRun.objects.filter(business=business).order_by("-created_at").first()
+
     if existing_run and profile_version and existing_run.profile_version_id == profile_version.id and existing_run.results.exists():
         decision_run = existing_run
     elif profile_version:
@@ -142,6 +164,19 @@ def orchestrate_compliance_analysis(
         decision_run = new_run if (new_run and new_run.results.exists()) else (existing_run or new_run)
     else:
         decision_run = existing_run
+
+    if decision_run and assessment:
+        if not decision_run.assessment_id:
+            decision_run.assessment = assessment
+            decision_run.save(update_fields=["assessment"])
+        if not assessment.decision_run_id:
+            assessment.decision_run = decision_run
+        if disc_run and not assessment.discovery_run_id:
+            assessment.discovery_run = disc_run
+        if not assessment.profile_version_id and profile_version:
+            assessment.profile_version = profile_version
+        assessment.save(update_fields=["decision_run", "discovery_run", "profile_version"])
+
     actionable_reqs = []
     if decision_run:
         actionable_reqs = [
@@ -210,10 +245,38 @@ def orchestrate_compliance_analysis(
     from apps.applicability.serializers import DecisionRunSerializer
     run_data = DecisionRunSerializer(decision_run).data if decision_run else None
 
+    executive_summary = {
+        "total_requirements_evaluated": len(decision_run.results.all()) if decision_run else 0,
+        "requirements_identified": applicable_count,
+        "requirements_action_needed": needs_info_count,
+        "documents_to_prepare": total_docs,
+        "documents_count": total_docs,
+        "major_approval_workflows": total_wfs,
+        "workflows_count": total_wfs,
+        "upcoming_deadlines": upcoming_deadlines,
+        "schemes_identified": total_schemes,
+        "schemes_count": total_schemes,
+        "standards_identified": total_standards,
+        "standards_count": total_standards,
+        "official_sources_searched": sources_count,
+        "quarantined_claims": candidate_count,
+    }
+
+    if assessment:
+        assessment.status = "COMPLETED"
+        assessment.current_step = 5
+        assessment.completed_at = end_time
+        assessment.summary = executive_summary
+        assessment.save(update_fields=["status", "current_step", "completed_at", "summary"])
+
     return {
         "analysis_id": analysis_id,
         "business_id": str(business.id),
         "business_name": business.name,
+        "assessment_id": str(assessment.id) if assessment else None,
+        "assessment_number": assessment.assessment_number if assessment else 1,
+        "assessment_title": assessment.title if assessment else None,
+        "assessment_status": assessment.status if assessment else None,
         "status": "COMPLETED",
         "current_stage": "COMPLETED",
         "started_at": start_time.isoformat(),
@@ -221,22 +284,7 @@ def orchestrate_compliance_analysis(
         "duration_seconds": (end_time - start_time).total_seconds(),
         "stages": stage_records,
         "decision_run": run_data,
-        "executive_summary": {
-            "total_requirements_evaluated": len(decision_run.results.all()) if decision_run else 0,
-            "requirements_identified": applicable_count,
-            "requirements_action_needed": needs_info_count,
-            "documents_to_prepare": total_docs,
-            "documents_count": total_docs,
-            "major_approval_workflows": total_wfs,
-            "workflows_count": total_wfs,
-            "upcoming_deadlines": upcoming_deadlines,
-            "schemes_identified": total_schemes,
-            "schemes_count": total_schemes,
-            "standards_identified": total_standards,
-            "standards_count": total_standards,
-            "official_sources_searched": sources_count,
-            "quarantined_claims": candidate_count,
-        },
+        "executive_summary": executive_summary,
         "live_discovery": {
             "queries": queries_run,
             "sources_count": sources_count,

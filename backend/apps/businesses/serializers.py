@@ -21,7 +21,7 @@ from domain.profile.variables import (
     resolve_variable_options,
 )
 
-from .models import Business, BusinessProfileVersion
+from .models import Assessment, Business, BusinessProfileVersion
 
 
 class BusinessSerializer(serializers.ModelSerializer):
@@ -41,6 +41,154 @@ class BusinessSerializer(serializers.ModelSerializer):
         if not name:
             raise serializers.ValidationError("Business name is required.")
         return name
+
+
+class AssessmentSummarySerializer(serializers.ModelSerializer):
+    business_id = serializers.CharField(source="business.id", read_only=True)
+    business_name = serializers.CharField(source="business.name", read_only=True)
+
+    class Meta:
+        model = Assessment
+        fields = [
+            "id",
+            "business_id",
+            "business_name",
+            "assessment_number",
+            "title",
+            "status",
+            "current_step",
+            "created_at",
+            "updated_at",
+            "completed_at",
+            "summary",
+        ]
+        read_only_fields = [
+            "id",
+            "business_id",
+            "business_name",
+            "assessment_number",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class AssessmentSerializer(serializers.ModelSerializer):
+    business_id = serializers.CharField(source="business.id", read_only=True)
+    business_name = serializers.CharField(source="business.name", read_only=True)
+    profile_version_id = serializers.SerializerMethodField()
+    profile_version_number = serializers.SerializerMethodField()
+    decision_run_id = serializers.SerializerMethodField()
+    discovery_run_id = serializers.SerializerMethodField()
+    question_plan_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Assessment
+        fields = [
+            "id",
+            "business_id",
+            "business_name",
+            "assessment_number",
+            "title",
+            "status",
+            "current_step",
+            "profile_version_id",
+            "profile_version_number",
+            "decision_run_id",
+            "discovery_run_id",
+            "question_plan_id",
+            "step_state",
+            "summary",
+            "created_at",
+            "updated_at",
+            "completed_at",
+        ]
+        read_only_fields = [
+            "id",
+            "business_id",
+            "business_name",
+            "assessment_number",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_profile_version_id(self, obj: Assessment) -> str | None:
+        return str(obj.profile_version_id) if obj.profile_version_id else None
+
+    def get_profile_version_number(self, obj: Assessment) -> int | None:
+        return obj.profile_version.version if obj.profile_version else None
+
+    def get_decision_run_id(self, obj: Assessment) -> str | None:
+        return str(obj.decision_run_id) if obj.decision_run_id else None
+
+    def get_discovery_run_id(self, obj: Assessment) -> str | None:
+        return str(obj.discovery_run_id) if obj.discovery_run_id else None
+
+    def get_question_plan_id(self, obj: Assessment) -> str | None:
+        return str(obj.question_plan_id) if obj.question_plan_id else None
+
+
+class BusinessSummarySerializer(serializers.ModelSerializer):
+    profile_version = serializers.SerializerMethodField()
+    state = serializers.SerializerMethodField()
+    district = serializers.SerializerMethodField()
+    industry = serializers.SerializerMethodField()
+    product_description = serializers.SerializerMethodField()
+    assessment_count = serializers.SerializerMethodField()
+    latest_assessment = serializers.SerializerMethodField()
+    last_assessed_at = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Business
+        fields = [
+            "id",
+            "name",
+            "is_active",
+            "profile_version",
+            "state",
+            "district",
+            "industry",
+            "product_description",
+            "assessment_count",
+            "latest_assessment",
+            "last_assessed_at",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_profile_version(self, obj: Business) -> int | None:
+        current = obj.current_profile
+        return current.version if current else None
+
+    def get_state(self, obj: Business) -> str | None:
+        current = obj.current_profile
+        return current.raw_value("state") if current else None
+
+    def get_district(self, obj: Business) -> str | None:
+        current = obj.current_profile
+        return current.raw_value("district") if current else None
+
+    def get_industry(self, obj: Business) -> str | None:
+        current = obj.current_profile
+        return current.raw_value("industry") if current else None
+
+    def get_product_description(self, obj: Business) -> str | None:
+        current = obj.current_profile
+        return current.raw_value("product_description") if current else None
+
+    def get_assessment_count(self, obj: Business) -> int:
+        return obj.assessments.count()
+
+    def get_latest_assessment(self, obj: Business) -> dict[str, Any] | None:
+        latest = obj.assessments.order_by("-assessment_number").first()
+        return AssessmentSummarySerializer(latest).data if latest else None
+
+    def get_last_assessed_at(self, obj: Business) -> str | None:
+        latest = obj.assessments.order_by("-assessment_number").first()
+        if latest and latest.completed_at:
+            return latest.completed_at.isoformat()
+        if latest:
+            return latest.updated_at.isoformat()
+        return None
 
 
 class ProfileVariableDefinitionSerializer(serializers.Serializer):

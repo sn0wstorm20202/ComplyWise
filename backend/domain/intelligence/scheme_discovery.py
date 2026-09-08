@@ -22,6 +22,7 @@ from knowledge_packs.catalogs import GOVERNMENT_SCHEME_CATALOG
 def discover_business_schemes(
     business: Business,
     context: DerivedBusinessContext | None = None,
+    assessment_id: str | None = None,
 ) -> dict[str, Any]:
     """Dynamically discover government schemes matching the business's profile."""
     if context is None:

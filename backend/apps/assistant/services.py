@@ -159,6 +159,7 @@ def answer_question(
     *,
     provider: LLMProvider | None = None,
     business: Any = None,
+    assessment_id: str | None = None,
 ) -> dict[str, Any]:
     """Answer `prompt` from cited evidence and business compliance plan, degrading honestly at every step."""
     evidence = retrieve_evidence(prompt)
@@ -168,6 +169,7 @@ def answer_question(
         "prompt": prompt,
         "business_id": str(business.id) if business else None,
         "business_name": business.name if business else None,
+        "assessment_id": assessment_id,
         "citations": citations,
         "citation_count": len(citations),
         "disclaimer": DISCLAIMER,
@@ -199,22 +201,31 @@ def answer_question(
         from domain.intelligence.workflow_derivation import derive_business_workflows
 
         ctx = build_business_context(business)
-        dec_run = DecisionRun.objects.filter(business=business).order_by("-created_at").first()
+        dec_run = None
+        if assessment_id:
+            assessment = business.assessments.filter(pk=assessment_id).first()
+            if assessment and assessment.decision_run:
+                dec_run = assessment.decision_run
+            elif assessment:
+                dec_run = DecisionRun.objects.filter(assessment=assessment).first()
+        if dec_run is None:
+            dec_run = DecisionRun.objects.filter(business=business).order_by("-created_at").first()
+
         req_lines: list[str] = []
         if dec_run:
             for r in dec_run.results.filter(status=ApplicabilityStatus.APPLICABLE):
                 req_lines.append(f"- {r.requirement_name} (Code: {r.requirement_id})")
 
-        docs_res = derive_business_documents(business, context=ctx)
+        docs_res = derive_business_documents(business, context=ctx, assessment_id=assessment_id)
         doc_lines = [f"- {d['name']} (for {d['requirement_name']})" for d in docs_res.get("documents", [])[:6]]
 
-        wf_res = derive_business_workflows(business, context=ctx)
+        wf_res = derive_business_workflows(business, context=ctx, assessment_id=assessment_id)
         wf_lines = [f"- {w['title']} ({w['total_steps']} steps via {w['portal_name']})" for w in wf_res.get("workflows", [])[:4]]
 
-        scheme_res = discover_business_schemes(business, context=ctx)
+        scheme_res = discover_business_schemes(business, context=ctx, assessment_id=assessment_id)
         scheme_lines = [f"- {s['name']} ({s['benefit']})" for s in scheme_res.get("schemes", [])[:3]]
 
-        standards_res = discover_business_standards(business, context=ctx)
+        standards_res = discover_business_standards(business, context=ctx, assessment_id=assessment_id)
         std_lines = [f"- {st['standard_code']}: {st['title']} ({st['nature']})" for st in standards_res.get("standards", [])[:3]]
 
         biz_system_prompt = f"""You are ComplyWise AI, an expert industrial compliance advisor.

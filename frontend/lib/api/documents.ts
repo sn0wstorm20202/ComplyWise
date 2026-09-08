@@ -38,8 +38,12 @@ export interface DocumentUploadPayload {
 }
 
 export const documentsApi = {
-  list: (businessId: string): Promise<DocumentsListResponse> =>
-    request<DocumentsListResponse>(`/businesses/${businessId}/documents`),
+  list: (businessId: string, assessmentId?: string): Promise<DocumentsListResponse> =>
+    request<DocumentsListResponse>(
+      assessmentId
+        ? `/businesses/${businessId}/documents?assessment_id=${assessmentId}`
+        : `/businesses/${businessId}/documents`
+    ),
 
   /**
    * Always rejects with `NOT_CONFIGURED` (HTTP 501) until document storage is

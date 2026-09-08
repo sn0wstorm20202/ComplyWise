@@ -74,6 +74,13 @@ export type DecisionRunStatus =
   | "PARTIAL"
   | "FAILED";
 
+export type AssessmentStatus =
+  | "DRAFT"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "FAILED"
+  | "ARCHIVED";
+
 // ---------------------------------------------------------------------------
 // API Envelope & Error Types (TRD_v2.0 §30, common/envelope.py)
 // ---------------------------------------------------------------------------
@@ -219,6 +226,73 @@ export interface BusinessProfileData {
   current_version: BusinessProfileVersion | null;
   variable_definitions: ProfileVariableDefinition[];
   missing_core_variables: string[];
+}
+
+export interface AssessmentSummary {
+  id: string;
+  business_id: string;
+  business_name: string;
+  assessment_number: number;
+  title: string;
+  status: AssessmentStatus;
+  current_step: number;
+  readiness_score?: number | null;
+  requirements_count?: number;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  summary: {
+    total_requirements_evaluated?: number;
+    requirements_identified?: number;
+    requirements_action_needed?: number;
+    documents_count?: number;
+    workflows_count?: number;
+    schemes_count?: number;
+    standards_count?: number;
+    upcoming_deadlines?: number;
+    [key: string]: any;
+  };
+}
+
+export interface Assessment extends AssessmentSummary {
+  created_by_email?: string | null;
+  profile_version_id: string | null;
+  profile_version_number: number | null;
+  decision_run_id: string | null;
+  discovery_run_id: string | null;
+  question_plan_id: string | null;
+  step_state: Record<string, any>;
+}
+
+export interface BusinessSummary {
+  id: string;
+  name: string;
+  is_active?: boolean;
+  state?: string | null;
+  state_name?: string | null;
+  district?: string | null;
+  industry?: string | null;
+  msme_scale?: string | null;
+  turnover?: string | null;
+  latest_profile_version?: number | null;
+  product_description?: string | null;
+  assessment_count: number;
+  latest_assessment?: AssessmentSummary | null;
+  last_assessed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserProfileHome {
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+  };
+  businesses: BusinessSummary[];
+  recent_assessments: AssessmentSummary[];
+  total_businesses: number;
+  total_assessments: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -388,6 +462,10 @@ export interface StatutoryDeadline {
 export interface DashboardSummary {
   business_id: string;
   business_name: string;
+  assessment_id?: string | null;
+  assessment_number?: number;
+  assessment_title?: string | null;
+  assessment_status?: AssessmentStatus | null;
   has_evaluation: boolean;
   latest_run_id?: string;
   evaluation_date?: string;
@@ -789,5 +867,3 @@ export interface DiscoveryStatusData {
   } | null;
   candidate_requirements_count: number;
 }
-
-

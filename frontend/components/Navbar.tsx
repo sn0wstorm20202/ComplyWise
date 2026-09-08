@@ -40,8 +40,9 @@ export function Navbar() {
   }, []);
 
   const navItems = [
+    { label: "My Profile", href: "/profile" },
     { label: "Dashboard", href: "/" },
-    { label: "Onboarding", href: "/onboarding" },
+    { label: "New / Resume Assessment", href: "/onboarding" },
     { label: "Compliance", href: "/compliance" },
     { label: "Documents", href: "/documents" },
     { label: "Workflows", href: "/workflows" },

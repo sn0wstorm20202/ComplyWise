@@ -220,7 +220,12 @@ class AnalysisOrchestrateView(_DiscoveryScopedView):
 
         from domain.intelligence.orchestration import orchestrate_compliance_analysis
         force = bool(request.data.get("force_live_discovery", True))
-        payload = orchestrate_compliance_analysis(business, force_live_discovery=force)
+        assessment_id = request.data.get("assessment_id") or request.query_params.get("assessment_id")
+        payload = orchestrate_compliance_analysis(
+            business,
+            assessment_id=assessment_id,
+            force_live_discovery=force,
+        )
         return Response(envelope(payload), status=status.HTTP_200_OK)
 
 
@@ -235,5 +240,10 @@ class AnalysisStatusView(_DiscoveryScopedView):
             )
 
         from domain.intelligence.orchestration import orchestrate_compliance_analysis
-        payload = orchestrate_compliance_analysis(business, force_live_discovery=False)
+        assessment_id = request.query_params.get("assessment_id")
+        payload = orchestrate_compliance_analysis(
+            business,
+            assessment_id=assessment_id,
+            force_live_discovery=False,
+        )
         return Response(envelope(payload), status=status.HTTP_200_OK)

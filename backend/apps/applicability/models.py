@@ -32,6 +32,13 @@ class DecisionRun(models.Model):
         on_delete=models.CASCADE,
         related_name="decision_runs",
     )
+    assessment = models.ForeignKey(
+        "businesses.Assessment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="decision_run_records",
+    )
     status = models.CharField(
         max_length=30,
         choices=DecisionRunStatus.choices,

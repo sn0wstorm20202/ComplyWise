@@ -326,7 +326,7 @@ function OnboardingContent() {
     setLoading(true);
     setError(null);
 
-    const trimmedName = businessName.trim();
+    const trimmedName = (businessName.trim() || business?.name || "").trim();
     if (!trimmedName) {
       setError("Enterprise legal / operating name is required.");
       setLoading(false);
@@ -377,7 +377,7 @@ function OnboardingContent() {
 
       // Ensure Assessment exists and save step 1 state
       let currAssessment = assessment;
-      if (!currAssessment) {
+      if (!currAssessment || isNewAssessment) {
         const existingList = await api.businesses.getAssessments(currentBiz.id).catch(() => []);
         const nextNum = existingList.length + 1;
         currAssessment = await api.businesses.createAssessment(currentBiz.id, {
@@ -410,6 +410,13 @@ function OnboardingContent() {
       });
       setAssessment(updatedAss);
       localStorage.setItem("complywise_active_assessment_id", updatedAss.id);
+      if (typeof window !== "undefined" && window.location.pathname.startsWith("/onboarding")) {
+        window.history.replaceState(
+          null,
+          "",
+          `/onboarding?business_id=${currentBiz.id}&assessment_id=${updatedAss.id}`
+        );
+      }
 
       setStep(2);
     } catch (err: unknown) {
@@ -427,18 +434,19 @@ function OnboardingContent() {
     setError(null);
 
     try {
+      const effectiveAssId = assessment?.id || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
       const resp = await api.onboarding.saveProductsActivities(
         business.id,
         {
           product_description: productDescription,
           ...(tradeIntent ? { import_export_intent: tradeIntent } : {}),
-          ...(assessment?.id ? { assessment_id: assessment.id } : {}),
+          ...(effectiveAssId ? { assessment_id: effectiveAssId } : {}),
         }
       );
       setDetectedActivities(resp.detected_activities);
 
       // Load Smart Questions for Step 3 scoped to assessment
-      const questionsResp = await api.onboarding.getQuestions(business.id, assessment?.id);
+      const questionsResp = await api.onboarding.getQuestions(business.id, effectiveAssId || undefined);
       setSmartQuestions(questionsResp.questions);
 
       // Pre-fill only values the user has actually answered before
@@ -455,16 +463,16 @@ function OnboardingContent() {
       }
       setQuestionAnswers((prev) => ({ ...initialAnswers, ...prev }));
 
-      if (assessment) {
+      if (effectiveAssId) {
         const updatedStepState = {
-          ...(assessment.step_state || {}),
+          ...(assessment?.step_state || {}),
           products: {
             productDescription,
             tradeIntent,
             detectedActivities: resp.detected_activities,
           },
         };
-        const updatedAss = await api.businesses.updateAssessment(business.id, assessment.id, {
+        const updatedAss = await api.businesses.updateAssessment(business.id, effectiveAssId, {
           current_step: 3,
           step_state: updatedStepState,
         });
@@ -520,21 +528,22 @@ function OnboardingContent() {
         }
       }
 
+      const effectiveAssId = assessment?.id || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
       if (Object.keys(formattedAnswers).length > 0) {
         await api.onboarding.submitAnswers(business.id, {
           answers: formattedAnswers,
-          assessment_id: assessment?.id,
+          ...(effectiveAssId ? { assessment_id: effectiveAssId } : {}),
         });
       }
 
-      if (assessment) {
+      if (effectiveAssId) {
         const updatedStepState = {
-          ...(assessment.step_state || {}),
+          ...(assessment?.step_state || {}),
           questions: {
             answers: formattedAnswers,
           },
         };
-        const updatedAss = await api.businesses.updateAssessment(business.id, assessment.id, {
+        const updatedAss = await api.businesses.updateAssessment(business.id, effectiveAssId, {
           current_step: 4,
           step_state: updatedStepState,
         });
@@ -542,7 +551,7 @@ function OnboardingContent() {
       }
 
       setStep(4);
-      runRegulatoryAnalysis(business.id, assessment?.id);
+      runRegulatoryAnalysis(business.id, effectiveAssId || undefined);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to record smart question answers.");
       setLoading(false);
@@ -624,7 +633,7 @@ function OnboardingContent() {
     }, 1200);
 
     try {
-      const effectiveAssId = assId || assessment?.id;
+      const effectiveAssId = assId || assessment?.id || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : undefined) || undefined;
       const orchResult = await api.discovery.orchestrate(bizId, effectiveAssId);
       clearInterval(queryTimer);
 
@@ -658,6 +667,7 @@ function OnboardingContent() {
         try {
           const refreshedAss = await api.businesses.getAssessment(bizId, effectiveAssId);
           setAssessment(refreshedAss);
+          localStorage.setItem("complywise_active_assessment_id", refreshedAss.id);
         } catch {}
       }
 

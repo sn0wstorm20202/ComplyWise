@@ -2,16 +2,21 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { healthApi } from "@/lib/api/health";
+import { getAuthToken, setAuthToken } from "@/lib/api/client";
 import { HealthData } from "@/types";
 
 export function Navbar() {
+  const router = useRouter();
   const [health, setHealth] = useState<HealthData | null>(null);
   const [checking, setChecking] = useState<boolean>(true);
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
+    setIsAuthenticated(!!getAuthToken());
 
     async function checkHealth() {
       try {
@@ -39,9 +44,21 @@ export function Navbar() {
     };
   }, []);
 
+  function handleLogout() {
+    setAuthToken(null);
+    localStorage.removeItem("complywise_active_business_id");
+    localStorage.removeItem("complywise_active_assessment_id");
+    setIsAuthenticated(false);
+    if (typeof window !== "undefined") {
+      window.location.href = "/auth/signin";
+    } else {
+      router.push("/auth/signin");
+    }
+  }
+
   const navItems = [
     { label: "My Profile", href: "/profile" },
-    { label: "Dashboard", href: "/" },
+    { label: "Dashboard", href: "/dashboard" },
     { label: "New / Resume Assessment", href: "/onboarding" },
     { label: "Compliance", href: "/compliance" },
     { label: "Documents", href: "/documents" },
@@ -90,8 +107,34 @@ export function Navbar() {
           ))}
         </nav>
 
-        {/* Backend Connectivity Status Indicator */}
+        {/* Auth / User Action & Backend Connectivity Status */}
         <div className="flex items-center gap-3">
+          {isAuthenticated ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/profile"
+                className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-indigo-600 bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-lg transition-colors"
+              >
+                <span>👤</span>
+                <span>My Profile</span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/auth/signin"
+              className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-lg transition-colors"
+            >
+              Sign In
+            </Link>
+          )}
+
           <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50/80 px-3 py-1">
             <span
               className={`h-2 w-2 rounded-full ${

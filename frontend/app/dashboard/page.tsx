@@ -25,39 +25,71 @@ function DashboardContent() {
   const [activeBusinessId, setActiveBusinessId] = useState<string | null>(null);
   const [activeAssessmentId, setActiveAssessmentId] = useState<string | null>(paramAssessmentId);
 
+  const isMountedRef = React.useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   async function loadDashboard(bizId: string, assessmentId?: string | null) {
     setLoading(true);
     setError(null);
     try {
       const assId = assessmentId !== undefined ? assessmentId : activeAssessmentId;
       const data = await api.dashboard.get(bizId, assId);
+      if (!isMountedRef.current) return;
       setSummary(data);
       setActiveBusinessId(bizId);
-      if (data.assessment_id) {
-        setActiveAssessmentId(data.assessment_id);
-        localStorage.setItem("complywise_active_assessment_id", data.assessment_id);
+      const effectiveAssId = data.assessment_id || assId || null;
+      if (effectiveAssId) {
+        setActiveAssessmentId(effectiveAssId);
+        localStorage.setItem("complywise_active_assessment_id", effectiveAssId);
       }
       localStorage.setItem("complywise_active_business_id", bizId);
+
+      // Authoritatively persist selection to backend UserWorkspaceState
+      try {
+        await api.businesses.setWorkspace({
+          business_id: bizId,
+          assessment_id: effectiveAssId,
+        });
+      } catch {
+        // Non-blocking workspace sync
+      }
+
+      // Update URL query parameters without reloading so F5 retains exact state (only if still on /dashboard)
+      if (typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard")) {
+        const newUrl = effectiveAssId
+          ? `/dashboard?business_id=${bizId}&assessment_id=${effectiveAssId}`
+          : `/dashboard?business_id=${bizId}`;
+        window.history.replaceState(null, "", newUrl);
+      }
 
       // Fetch assessments for switcher
       try {
         const assList = await api.businesses.getAssessments(bizId);
-        setAssessments(assList);
+        if (isMountedRef.current) setAssessments(assList);
       } catch {
-        setAssessments([]);
+        if (isMountedRef.current) setAssessments([]);
       }
 
       // Fetch discovery provenance status
       try {
         const disc = await api.discovery.getStatus(bizId, data.assessment_id || undefined);
-        setDiscoveryStatus(disc);
+        if (isMountedRef.current) setDiscoveryStatus(disc);
       } catch {
-        setDiscoveryStatus(null);
+        if (isMountedRef.current) setDiscoveryStatus(null);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load dashboard data.");
+      if (isMountedRef.current) {
+        setError(err instanceof Error ? err.message : "Failed to load dashboard data.");
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }
 
@@ -68,13 +100,28 @@ function DashboardContent() {
         const bizList = await api.businesses.list().catch(() => []);
         setBusinesses(bizList);
 
-        const targetId =
+        // Consult authoritative server workspace state
+        let serverWs: any = null;
+        try {
+          serverWs = await api.businesses.getWorkspace();
+        } catch {
+          serverWs = null;
+        }
+
+        const targetBizId =
           paramBusinessId ||
+          serverWs?.active_business_id ||
           localStorage.getItem("complywise_active_business_id") ||
           (bizList.length > 0 ? bizList[0].id : null);
 
-        if (targetId) {
-          await loadDashboard(targetId, paramAssessmentId);
+        const targetAssId =
+          paramAssessmentId ||
+          (paramBusinessId && paramBusinessId !== serverWs?.active_business_id ? null : serverWs?.active_assessment_id) ||
+          localStorage.getItem("complywise_active_assessment_id") ||
+          null;
+
+        if (targetBizId) {
+          await loadDashboard(targetBizId, targetAssId);
         } else {
           setLoading(false);
         }

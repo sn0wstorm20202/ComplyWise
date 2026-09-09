@@ -269,6 +269,17 @@ def orchestrate_compliance_analysis(
         assessment.summary = executive_summary
         assessment.save(update_fields=["status", "current_step", "completed_at", "summary"])
 
+        try:
+            from apps.businesses.models import UserWorkspaceState
+            user = assessment.created_by or getattr(business, "owner", None)
+            if user:
+                ws, _ = UserWorkspaceState.objects.get_or_create(user=user)
+                ws.active_business = business
+                ws.active_assessment = assessment
+                ws.save()
+        except Exception:
+            pass
+
     return {
         "analysis_id": analysis_id,
         "business_id": str(business.id),

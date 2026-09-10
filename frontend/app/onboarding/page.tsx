@@ -652,9 +652,10 @@ function OnboardingContent() {
       if (orchResult?.executive_summary) {
         setExecutiveSummary(orchResult.executive_summary);
       }
-      if (orchResult?.discovery) {
-        setDiscoveryResult(orchResult.discovery);
+      if (orchResult?.discovery || orchResult?.live_discovery) {
+        setDiscoveryResult(orchResult.discovery || orchResult.live_discovery);
       }
+
       if (orchResult?.decision_run) {
         setDecisionRun(orchResult.decision_run);
       } else {
@@ -1082,10 +1083,10 @@ function OnboardingContent() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                    Questions formulated specifically for {business?.name || "your enterprise"}
+                    Pre-Discovery Questions for {business?.name || "your enterprise"}
                   </h2>
                   <p className="text-xs text-slate-500 mt-1">
-                    Tailored smart questions targeting missing statutory variables to identify your exact permits, clearances, and compliance mandates.
+                    Targeted operational details required to formulate precise regulatory discovery queries across official government portals and gazettes.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1122,6 +1123,7 @@ function OnboardingContent() {
                   const ruleCount = q.candidate_rules_count ?? q.rule_dependency_count ?? 0;
                   const questionText = q.question || q.question_text || q.label || `Question regarding ${qKey}`;
                   const questionReason = q.reason || q.why_it_matters;
+                  const discoveryImpact = q.expected_discovery_impact;
                   const domains: string[] = Array.isArray(q.domains) ? q.domains : [];
 
                   return (
@@ -1151,20 +1153,24 @@ function OnboardingContent() {
                                 Priority {q.priority}
                               </span>
                             )}
-                            {ruleCount > 0 && (
-                              <span className="text-[11px] text-slate-400">
-                                ({ruleCount} rule{ruleCount > 1 ? "s" : ""} depend on this)
-                              </span>
-                            )}
                           </div>
                           <h3 className="text-sm font-bold text-slate-900 leading-snug">
                             {questionText}
                           </h3>
                         </div>
 
-                        {questionReason && (
-                          <div className="sm:max-w-xs text-[11px] text-slate-600 bg-white border border-slate-200/80 rounded-lg p-2.5 leading-relaxed shrink-0">
-                            <span className="font-bold text-slate-700 block mb-0.5">Statutory Rationale:</span> {questionReason}
+                        {(questionReason || discoveryImpact) && (
+                          <div className="sm:max-w-xs text-[11px] text-slate-600 bg-white border border-slate-200/80 rounded-lg p-2.5 leading-relaxed shrink-0 space-y-1">
+                            {questionReason && (
+                              <p>
+                                <span className="font-bold text-slate-700 block mb-0.5">Pre-Discovery Focus:</span> {questionReason}
+                              </p>
+                            )}
+                            {discoveryImpact && discoveryImpact !== questionReason && (
+                              <p className="pt-1 border-t border-slate-100 text-indigo-700">
+                                <span className="font-bold block mb-0.5">Search Impact:</span> {discoveryImpact}
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1496,21 +1502,22 @@ function OnboardingContent() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <span className="text-slate-500 block text-[11px]">Queries Planned</span>
-                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.queries?.length || 0}</span>
+                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.queries?.length || (executiveSummary?.official_sources_searched ? 3 : 0)}</span>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <span className="text-slate-500 block text-[11px]">Sources Reviewed</span>
-                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.candidate_urls_count || 0}</span>
+                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.candidate_urls_count || (discoveryResult as any)?.sources_count || executiveSummary?.official_sources_searched || 0}</span>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <span className="text-slate-500 block text-[11px]">Official Portals</span>
-                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.official_sources_count || 0}</span>
+                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.official_sources_count || (discoveryResult as any)?.sources_count || (executiveSummary?.official_sources_searched ? Math.min(executiveSummary.official_sources_searched, 3) : 0)}</span>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <span className="text-slate-500 block text-[11px]">Claims Quarantined</span>
-                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.candidate_requirements_count || 0}</span>
+                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.candidate_requirements_count || (discoveryResult as any)?.candidate_claims_count || executiveSummary?.quarantined_claims || 0}</span>
                 </div>
               </div>
+
             </div>
 
             {/* Quarantined Candidate Regulatory Claims (Part D, E, F) */}

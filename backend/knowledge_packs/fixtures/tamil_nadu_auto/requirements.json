@@ -13,7 +13,7 @@
     ],
     "metadata": {
       "renewal_period_years": 5,
-      "portal": "https://tnpcb.gov.in",
+      "portal": "https://tnocmms.nic.in/",
       "required_documents": [
         "Consent to Establish application form",
         "Project report with manufacturing process flow",
@@ -28,7 +28,8 @@
         "Upload effluent characterisation and treatment plan",
         "Pay the consent fee for your investment slab",
         "Respond to any queries raised by the District Environmental Engineer"
-      ]
+      ],
+      "portal_name": "TNPCB OCMMS Online Consent Management Portal"
     }
   },
   {
@@ -45,7 +46,7 @@
     ],
     "metadata": {
       "renewal_period_years": 1,
-      "portal": "https://labour.tn.gov.in",
+      "portal": "https://dish.tn.gov.in/",
       "required_documents": [
         "Form 1 application for factory licence",
         "Site and building plan approved by the Inspectorate of Factories",
@@ -60,7 +61,8 @@
         "Pay the statutory licence fee under the prescribed schedule",
         "Attend premises inspection by the Inspector of Factories",
         "Receive the factory licence and display it at the premises"
-      ]
+      ],
+      "portal_name": "DISH Tamil Nadu Factory Licensing Portal"
     }
   }
 ]

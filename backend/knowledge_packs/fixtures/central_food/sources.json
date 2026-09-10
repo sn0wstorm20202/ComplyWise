@@ -1,0 +1,58 @@
+[
+  {
+    "source_id": "SRC-FSSAI-LICENSING-REG-2011",
+    "authority": "FSSAI",
+    "title": "Food Safety and Standards (Licensing and Registration of Food Businesses) Regulations, 2011",
+    "source_type": "REGULATION",
+    "canonical_url": "https://fssai.gov.in",
+    "publication_date": "2011-06-10",
+    "effective_date": "2011-08-05",
+    "status": "ACTIVE",
+    "content_hash": "a1b2c3d4e5f601",
+    "metadata": {
+      "gazette_number": "F. No. 2-15015/30/2010"
+    }
+  },
+  {
+    "source_id": "SRC-LEGAL-METROLOGY-ACT-2009",
+    "authority": "LEGAL_METROLOGY",
+    "title": "Legal Metrology (Packaged Commodities) Rules, 2011",
+    "source_type": "REGULATION",
+    "canonical_url": "https://lm.doca.gov.in",
+    "publication_date": "2011-03-07",
+    "effective_date": "2011-04-01",
+    "status": "ACTIVE",
+    "content_hash": "a1b2c3d4e5f602",
+    "metadata": {
+      "rule_number": "Rule 27"
+    }
+  },
+  {
+    "source_id": "SRC-PLASTIC-WASTE-RULES-2016",
+    "authority": "CPCB",
+    "title": "Plastic Waste Management Rules, 2016 (EPR Amendment 2022)",
+    "source_type": "REGULATION",
+    "canonical_url": "https://eprplastic.cpcb.gov.in",
+    "publication_date": "2022-02-16",
+    "effective_date": "2022-07-01",
+    "status": "ACTIVE",
+    "content_hash": "a1b2c3d4e5f603",
+    "metadata": {
+      "schedule": "Schedule II"
+    }
+  },
+  {
+    "source_id": "SRC-FSSAI-ORGANIC-REG-2017",
+    "authority": "FSSAI",
+    "title": "Food Safety and Standards (Organic Foods) Regulations, 2017",
+    "source_type": "REGULATION",
+    "canonical_url": "https://jaivikbharat.fssai.gov.in",
+    "publication_date": "2017-12-29",
+    "effective_date": "2018-07-01",
+    "status": "ACTIVE",
+    "content_hash": "a1b2c3d4e5f604",
+    "metadata": {
+      "portal": "Jaivik Bharat"
+    }
+  }
+]

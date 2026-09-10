@@ -6,6 +6,8 @@ Endpoints: Chat Completions and Embeddings. Model names come from settings
 
 from __future__ import annotations
 
+import logging
+
 from django.conf import settings
 
 from .base import (
@@ -21,6 +23,9 @@ from .http import post_json
 
 CHAT_URL = "https://api.openai.com/v1/chat/completions"
 EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings"
+
+
+logger = logging.getLogger(__name__)
 
 
 def _api_key() -> str:
@@ -59,12 +64,42 @@ class OpenAIProvider(LLMProvider):
         payload: dict[str, object] = {
             "model": self.model,
             "messages": [{"role": m.role, "content": m.content} for m in messages],
-            "temperature": temperature,
         }
-        if max_output_tokens is not None:
-            payload["max_completion_tokens"] = max_output_tokens
+        # GPT-5.x series (luna, sol, terra) and reasoning models (o1, o3, o4) have specific parameter contracts:
+        # 1. They only support default temperature (1.0). Supplying custom temperature yields HTTP 400.
+        # 2. Reasoning tokens count against max_completion_tokens. Set reasoning_effort="low" and allocate sufficient budget.
+        is_reasoning_model = any(
+            frag in self.model.lower()
+            for frag in ("gpt-5", "luna", "sol", "terra", "o1", "o3", "o4")
+        )
+        if is_reasoning_model:
+            payload["reasoning_effort"] = "low"
+            if max_output_tokens is not None:
+                payload["max_completion_tokens"] = max(max_output_tokens, 8000)
+        else:
+            payload["temperature"] = temperature
+            if max_output_tokens is not None:
+                payload["max_completion_tokens"] = max_output_tokens
 
-        data = post_json(CHAT_URL, payload, headers=headers, provider=self.name)
+        try:
+            data = post_json(CHAT_URL, payload, headers=headers, provider=self.name)
+        except ProviderError as exc:
+            gemini_key = getattr(settings, "GEMINI_API_KEY", "") or ""
+            if gemini_key and not getattr(self, "_is_fallback", False):
+                try:
+                    from .gemini_provider import GeminiProvider
+                    fallback = GeminiProvider()
+                    if fallback.is_configured:
+                        fallback._is_fallback = True
+                        logger.warning("OpenAI failed (%s), failing over to Gemini (%s)", exc, fallback.model)
+                        return fallback.complete(
+                            messages,
+                            temperature=temperature,
+                            max_output_tokens=max_output_tokens,
+                        )
+                except Exception as fallback_exc:
+                    logger.warning("Gemini fallback also failed: %s", fallback_exc)
+            raise
 
         choices = data.get("choices") or []
         if not choices:

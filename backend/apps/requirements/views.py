@@ -24,6 +24,7 @@ from apps.applicability.models import DecisionResult, DecisionRun
 from apps.businesses.models import Business
 from apps.evidence.models import Evidence
 from apps.knowledge.models import RequirementDefinition
+from knowledge_packs.catalogs import resolve_statutory_portal
 
 
 class _BusinessScopedView(APIView):
@@ -174,6 +175,18 @@ class BusinessComplianceListView(_BusinessScopedView):
                 for rd in RequirementDefinition.objects.filter(requirement_id__in=req_ids)
             }
 
+            # Prefetch all referenced evidence records with sources
+            all_ev_ids = set()
+            for r in results:
+                for ref in (r.evidence_refs or []):
+                    ev_id = ref.get("evidence_id") if isinstance(ref, dict) else ref
+                    if ev_id:
+                        all_ev_ids.add(str(ev_id))
+            evidences_map = {
+                ev.evidence_id: ev
+                for ev in Evidence.objects.filter(evidence_id__in=all_ev_ids).select_related("source")
+            }
+
             for r in results:
                 req_def = req_defs.get(r.requirement_id)
                 auth = req_def.authority if req_def else "Authority"
@@ -185,6 +198,35 @@ class BusinessComplianceListView(_BusinessScopedView):
                 if category_filter and cat.upper() != category_filter.upper():
                     continue
 
+                metadata = (req_def.metadata or {}) if req_def else {}
+                raw_portal = str(metadata.get(PORTAL_KEY) or "").strip()
+                statutory_act = str(metadata.get("statutory_act") or "").strip()
+
+                portal_info = resolve_statutory_portal(
+                    authority=auth,
+                    requirement_name=r.requirement_name,
+                    requirement_id=r.requirement_id,
+                    raw_portal=raw_portal,
+                )
+                canonical_source_url = portal_info["url"]
+                portal_name = portal_info["name"]
+
+                citations = []
+                for ref in (r.evidence_refs or []):
+                    ev_id = ref.get("evidence_id") if isinstance(ref, dict) else ref
+                    ev_obj = evidences_map.get(str(ev_id))
+                    if ev_obj and ev_obj.source:
+                        cit = {
+                            "evidence_id": ev_obj.evidence_id,
+                            "source_title": ev_obj.source.title,
+                            "authority": ev_obj.source.authority,
+                            "locator": ev_obj.locator,
+                            "excerpt": ev_obj.excerpt,
+                            "verification_status": ev_obj.verification_status,
+                            "canonical_url": ev_obj.source.canonical_url,
+                        }
+                        citations.append(cit)
+
                 items.append(
                     {
                         "requirement_id": r.requirement_id,
@@ -192,12 +234,23 @@ class BusinessComplianceListView(_BusinessScopedView):
                         "authority": auth,
                         "category": cat,
                         "jurisdiction": jur,
+                        "domain": req_def.domain if req_def else "GENERAL",
+                        "description": req_def.description if req_def else "",
                         "status": r.status,
                         "matched_rule_id": r.explanation_trace.get("matched_rule_id"),
                         "matched_rule_type": r.explanation_trace.get("matched_rule_type"),
                         "evidence_count": len(r.evidence_refs or []),
                         "explanation_reason": r.explanation_trace.get("reason"),
+                        "reason_summary": _why_summary(r.explanation_trace, req_def) if req_def else "",
                         "notes": r.explanation_trace.get("note", ""),
+                        "portal": canonical_source_url,
+                        "portal_url": canonical_source_url,
+                        "portal_name": portal_name,
+                        "source_url": canonical_source_url,
+                        "source_title": (citations[0]["source_title"] if citations else (req_def.name if req_def else auth)),
+                        "statutory_act": statutory_act or (citations[0]["locator"] if citations else ""),
+                        "citations": citations,
+                        "citation_count": len(citations),
                     }
                 )
 
@@ -282,7 +335,14 @@ class BusinessRequirementDetailView(_BusinessScopedView):
         # as "no documents needed".
         documents = _str_list(metadata.get(DOCUMENTS_KEY))
         steps = _str_list(metadata.get(STEPS_KEY))
-        portal = str(metadata.get(PORTAL_KEY) or "").strip()
+        raw_portal = str(metadata.get(PORTAL_KEY) or "").strip()
+
+        portal_info = resolve_statutory_portal(
+            authority=req_def.authority,
+            requirement_name=req_def.name,
+            requirement_id=req_def.requirement_id,
+            raw_portal=raw_portal,
+        )
 
         detail_data = {
             "requirement_id": req_def.requirement_id,
@@ -295,6 +355,10 @@ class BusinessRequirementDetailView(_BusinessScopedView):
             "status": eval_status,
             "evaluated": decision_result is not None,
             "evaluation_date": str(latest_run.evaluation_date) if latest_run else None,
+            "portal": portal_info["url"],
+            "portal_url": portal_info["url"],
+            "portal_name": portal_info["name"],
+            "source_url": portal_info["url"],
             # Question 1: Why does this apply? — read from the recorded trace.
             "why_it_applies": {
                 "summary": _why_summary(trace, req_def),
@@ -329,7 +393,9 @@ class BusinessRequirementDetailView(_BusinessScopedView):
             "what_to_do_next": {
                 "steps": steps,
                 "steps_available": bool(steps),
-                "official_portal": portal,
+                "official_portal": portal_info["url"],
+                "portal_url": portal_info["url"],
+                "portal_name": portal_info["name"],
                 "not_recorded_note": (
                     None
                     if steps

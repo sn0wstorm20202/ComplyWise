@@ -43,6 +43,18 @@ GOVERNMENT_SCHEME_CATALOG: list[dict[str, Any]] = [
         "application_route": "Apply online through KVIC PMEGP e-Portal.",
         "portal_url": "https://www.kviconline.gov.in/pmegpeportal",
     },
+    {
+        "id": "SCHEME-SIDBI-SMILE",
+        "name": "SIDBI Make in India Soft Loan Fund for MSMEs (SMILE)",
+        "authority": "Small Industries Development Bank of India (SIDBI)",
+        "jurisdiction": "CENTRAL",
+        "sectors": ["ALL", "MANUFACTURING", "PROCESSING"],
+        "scale_match": ["MICRO", "SMALL", "MEDIUM"],
+        "benefit": "Soft loan in the form of quasi-equity and competitive term debt with attractive moratorium up to 36 months for machinery expansion.",
+        "eligibility": "MSMEs in manufacturing and processing sectors establishing new facilities or undertaking technology modernization.",
+        "application_route": "Apply directly through SIDBI branch offices or online portal.",
+        "portal_url": "https://www.sidbi.in",
+    },
 
     # --- FOOD PROCESSING SECTOR ---
     {
@@ -68,6 +80,54 @@ GOVERNMENT_SCHEME_CATALOG: list[dict[str, Any]] = [
         "eligibility": "Agro-processing units and clusters investing in modern preservation, cold chain, and primary processing.",
         "application_route": "Online application against MoFPI Expression of Interest (EoI).",
         "portal_url": "https://mofpi.gov.in/pmksy",
+    },
+    {
+        "id": "SCHEME-PLISFPI-MILLETS",
+        "name": "PLI Scheme for Food Processing Industry - Millet-based Products (PLISFPI)",
+        "authority": "Ministry of Food Processing Industries (MoFPI)",
+        "jurisdiction": "CENTRAL",
+        "sectors": ["FOOD", "PROCESSING", "MANUFACTURING"],
+        "scale_match": ["MICRO", "SMALL", "MEDIUM", "LARGE"],
+        "benefit": "Sales-linked financial incentive of 8% to 10% on incremental sales of value-added millet products over 5 years.",
+        "eligibility": "Food manufacturing enterprises producing Ready-to-Eat (RTE) or Ready-to-Cook (RTC) millet products with processing facilities.",
+        "application_route": "Apply online via the MoFPI PLISFPI portal.",
+        "portal_url": "https://plimofpi.ifciltd.com",
+    },
+    {
+        "id": "SCHEME-AIF",
+        "name": "Agriculture Infrastructure Fund (AIF)",
+        "authority": "Ministry of Agriculture and Farmers Welfare",
+        "jurisdiction": "CENTRAL",
+        "sectors": ["FOOD", "AGRO", "PROCESSING"],
+        "scale_match": ["MICRO", "SMALL", "MEDIUM"],
+        "benefit": "3% interest subvention per annum on term loans up to ₹2 Crore for up to 7 years and CGTMSE fee coverage.",
+        "eligibility": "Agri-entrepreneurs, food processors, and startups setting up post-harvest management and primary processing infrastructure.",
+        "application_route": "Submit project proposal on the National AIF Portal.",
+        "portal_url": "https://agriinfra.dac.gov.in",
+    },
+    {
+        "id": "SCHEME-OPERATION-GREENS",
+        "name": "Operation Greens — Long Term Value Chain Development",
+        "authority": "Ministry of Food Processing Industries (MoFPI)",
+        "jurisdiction": "CENTRAL",
+        "sectors": ["FOOD", "PROCESSING"],
+        "scale_match": ["MICRO", "SMALL", "MEDIUM", "LARGE"],
+        "benefit": "Capital grant-in-aid of 35% to 50% of eligible project cost up to ₹15 Crore for integrated food value chain infrastructure.",
+        "eligibility": "Food processors and post-harvest aggregators establishing integrated primary/secondary processing facilities.",
+        "application_route": "Online application against MoFPI EoI notifications.",
+        "portal_url": "https://mofpi.gov.in/operation-greens",
+    },
+    {
+        "id": "SCHEME-FSSAI-FOSTAC-SUBSIDY",
+        "name": "Food Safety Training & Certification (FoSTaC) & Compliance Subsidy",
+        "authority": "Food Safety and Standards Authority of India (FSSAI)",
+        "jurisdiction": "CENTRAL",
+        "sectors": ["FOOD", "PROCESSING"],
+        "scale_match": ["MICRO", "SMALL", "MEDIUM"],
+        "benefit": "100% capacity-building subsidy for training certified Food Safety Supervisors (FSS) and compliance audit fee subsidies for MSME FBOs.",
+        "eligibility": "Registered and licensed food business operators with manufacturing/processing facilities in India.",
+        "application_route": "Register personnel via the FSSAI FoSTaC portal.",
+        "portal_url": "https://fostac.fssai.gov.in",
     },
 
     # --- AUTOMOTIVE & PRECISION ENGINEERING ---
@@ -160,6 +220,32 @@ GOVERNMENT_SCHEME_CATALOG: list[dict[str, Any]] = [
         "eligibility": "MSMEs holding valid Udyam Registration located within industrial estates or industrial corridors in Odisha.",
         "application_route": "Apply through District Industries Centre (DIC) / GO-SWIFT portal.",
         "portal_url": "https://msme.odisha.gov.in",
+    },
+
+    # --- STATE INCENTIVES: WEST BENGAL ---
+    {
+        "id": "SCHEME-WB-BANGLASHREE",
+        "name": "Banglashree Scheme for Micro, Small and Medium Enterprises (West Bengal)",
+        "authority": "Department of MSME & Textiles, Government of West Bengal",
+        "jurisdiction": "WEST_BENGAL",
+        "sectors": ["ALL", "MANUFACTURING", "FOOD", "PROCESSING"],
+        "scale_match": ["MICRO", "SMALL", "MEDIUM"],
+        "benefit": "Capital investment subsidy up to 25% of fixed capital investment (up to ₹1 Crore for Small enterprises), 100% waiver of electricity duty for 5 years, and reimbursement of stamp duty & registration fees.",
+        "eligibility": "New and expanding micro, small, and medium manufacturing enterprises set up in West Bengal with valid Udyam Registration.",
+        "application_route": "Apply online through Silpa Sathi (West Bengal Single Window System).",
+        "portal_url": "https://silpasathi.wb.gov.in",
+    },
+    {
+        "id": "SCHEME-WB-AGRO-FOOD",
+        "name": "West Bengal Agro-Food Processing Incentive Scheme",
+        "authority": "Directorate of Food Processing Industries & Horticulture, Govt of West Bengal",
+        "jurisdiction": "WEST_BENGAL",
+        "sectors": ["FOOD", "PROCESSING", "AGRO"],
+        "scale_match": ["MICRO", "SMALL", "MEDIUM"],
+        "benefit": "Term loan interest subvention of 6% up to ₹50 Lakhs over 5 years, plus 50% subsidy for FSSAI/NABL food testing and food-grade packaging upgrades.",
+        "eligibility": "Food processing units engaged in processing cereals, pulses, millets, fruits, vegetables, and packaged snacks in West Bengal.",
+        "application_route": "Apply via Department of Food Processing Industries, Government of West Bengal.",
+        "portal_url": "https://wbfpih.gov.in",
     },
 
     # --- EXPORT SUPPORT ---
@@ -540,4 +626,322 @@ STATUTORY_WORKFLOW_TEMPLATES: dict[str, dict[str, Any]] = {
         ],
     },
 }
+
+
+import re
+
+STATUTORY_PORTAL_REGISTRY: dict[str, dict[str, str]] = {
+    # Telecom, Wireless, Electronics
+    "WPC": {
+        "name": "Saral Sanchar (WPC Portal)",
+        "url": "https://saralsanchar.gov.in/",
+        "description": "Equipment Type Approval (ETA) & Wireless Licensing Portal",
+    },
+    "WPC_DOT": {
+        "name": "Saral Sanchar (WPC Portal)",
+        "url": "https://saralsanchar.gov.in/",
+        "description": "Equipment Type Approval (ETA) & Wireless Licensing Portal",
+    },
+    "SARAL_SANCHAR": {
+        "name": "Saral Sanchar (WPC Portal)",
+        "url": "https://saralsanchar.gov.in/",
+        "description": "Equipment Type Approval (ETA) & Wireless Licensing Portal",
+    },
+    "BIS_CRS": {
+        "name": "BIS Compulsory Registration Scheme (CRS) Portal",
+        "url": "https://www.crsbis.in/BIS/",
+        "description": "MeitY Notified Electronics Compulsory Registration",
+    },
+    "BIS": {
+        "name": "BIS Compulsory Registration Scheme (CRS) Portal",
+        "url": "https://www.crsbis.in/BIS/",
+        "description": "Bureau of Indian Standards Conformity Assessment",
+    },
+
+    # Standards, Packaging, Metrology
+    "LEGAL_METROLOGY": {
+        "name": "National Single Window System / Legal Metrology Portal (LMPC)",
+        "url": "https://lm.doca.gov.in/",
+        "description": "Packaged Commodities Rule 27 Pre-Packer Registration",
+    },
+    "DOCA": {
+        "name": "Legal Metrology Portal (LMPC)",
+        "url": "https://lm.doca.gov.in/",
+        "description": "Department of Consumer Affairs Legal Metrology Division",
+    },
+    "NSWS": {
+        "name": "National Single Window System (NSWS)",
+        "url": "https://www.nsws.gov.in/",
+        "description": "Government of India Integrated Business Approvals Portal",
+    },
+
+    # Food & Agriculture
+    "FSSAI_CENTRAL": {
+        "name": "FoSCoS Central Licensing Portal",
+        "url": "https://foscos.fssai.gov.in/",
+        "description": "Food Safety Compliance System for Central Licenses (>20 Cr)",
+    },
+    "FSSAI_STATE": {
+        "name": "FoSCoS State Licensing Portal",
+        "url": "https://foscos.fssai.gov.in/",
+        "description": "Food Safety Compliance System for State Licenses",
+    },
+    "FSSAI": {
+        "name": "FoSCoS Food Safety Compliance System",
+        "url": "https://foscos.fssai.gov.in/",
+        "description": "Statutory FSSAI Food Business Licensing & Registration",
+    },
+    "JAIVIK_BHARAT": {
+        "name": "Jaivik Bharat / FoSCoS Organic Food Portal",
+        "url": "https://jaivikbharat.fssai.gov.in/",
+        "description": "Organic Food Certification & Logo Endorsement",
+    },
+    "APEDA": {
+        "name": "APEDA TraceNet / Organic Portal",
+        "url": "https://apeda.gov.in/",
+        "description": "National Programme for Organic Production (NPOP)",
+    },
+
+    # Environmental / Extended Producer Responsibility (CPCB)
+    "CPCB_PLASTIC": {
+        "name": "CPCB Centralized EPR Portal for Plastic Packaging",
+        "url": "https://eprplastic.cpcb.gov.in/",
+        "description": "Plastic Packaging Waste Management EPR Registration",
+    },
+    "CPCB_EWASTE": {
+        "name": "CPCB Centralized EPR Portal for E-Waste",
+        "url": "https://eprewastecpcb.in/",
+        "description": "Electrical & Electronic Equipment Producer EPR",
+    },
+    "CPCB_BATTERY": {
+        "name": "CPCB Centralized EPR Portal for Battery Waste",
+        "url": "https://eprbattery.cpcb.gov.in/",
+        "description": "Battery Waste Management Rules Producer & Recycler Portal",
+    },
+    "CPCB": {
+        "name": "CPCB Central Pollution Control Board Portal",
+        "url": "https://cpcb.nic.in/",
+        "description": "Central Environmental Regulation & EPR Frameworks",
+    },
+
+    # State Pollution Control Boards (SPCBs - Consent to Establish & Operate)
+    "KSPCB": {
+        "name": "KSPCB KCMMS Online Consent Management Portal",
+        "url": "https://kcmms.karnataka.gov.in/",
+        "description": "Karnataka State Pollution Control Board Consent Portal",
+    },
+    "GPCB": {
+        "name": "GPCB XGN Gujarat e-Governance Consent Portal",
+        "url": "https://xgn.gpcb.gov.in/",
+        "description": "Gujarat Pollution Control Board Extended Green Node (XGN)",
+    },
+    "MPCB": {
+        "name": "MPCB Electronic Consent Management System (e-CMP)",
+        "url": "https://ecmpcb.in/",
+        "description": "Maharashtra Pollution Control Board Consent Portal",
+    },
+    "TNPCB": {
+        "name": "TNPCB OCMMS Online Consent Management Portal",
+        "url": "https://tnocmms.nic.in/",
+        "description": "Tamil Nadu Pollution Control Board Online Consent System",
+    },
+    "TSPCB": {
+        "name": "TSPCB OCMMS Online Consent Management Portal",
+        "url": "https://tgocmms.nic.in/",
+        "description": "Telangana State Pollution Control Board Consent System",
+    },
+    "WBPCB": {
+        "name": "Silpa Sathi - West Bengal Single Window Portal",
+        "url": "https://silpasathi.wb.gov.in/",
+        "description": "West Bengal Single Window System for Environmental Clearance",
+    },
+    "DPCC": {
+        "name": "DPCC OCMMS Online Consent Management Portal",
+        "url": "https://dpccocmms.nic.in/",
+        "description": "Delhi Pollution Control Committee Consent System",
+    },
+
+    # Foreign Trade
+    "DGFT": {
+        "name": "DGFT Online Services (IEC Application)",
+        "url": "https://www.dgft.gov.in/CP/?opt=iec-service",
+        "description": "Directorate General of Foreign Trade Importer-Exporter Code",
+    },
+
+    # Labor, Factories & Safety (DISH)
+    "DISH_GUJARAT": {
+        "name": "DISH Gujarat Online Factory Licensing Portal",
+        "url": "https://dish.gujarat.gov.in/",
+        "description": "Directorate of Industrial Safety & Health Factory Licensing",
+    },
+    "DISH_TN": {
+        "name": "DISH Tamil Nadu Factory Licensing Portal",
+        "url": "https://dish.tn.gov.in/",
+        "description": "Directorate of Industrial Safety & Health Factory Licensing",
+    },
+    "DISH_WB": {
+        "name": "Silpa Sathi - West Bengal Single Window (Factory License)",
+        "url": "https://silpasathi.wb.gov.in/",
+        "description": "West Bengal Directorate of Factories Single Window Portal",
+    },
+    "SHRAM_SUVIDHA": {
+        "name": "Shram Suvidha Central Labor Portal",
+        "url": "https://shramsuvidha.gov.in/",
+        "description": "Ministry of Labour & Employment Unified Compliance Portal",
+    },
+
+    # Medical Devices & Drugs
+    "CDSCO": {
+        "name": "CDSCO Medical Device Online Portal (Sugam)",
+        "url": "https://cdscomdonline.gov.in/",
+        "description": "Central Drugs Standard Control Organization Licensing",
+    },
+
+    # Petroleum & Explosives
+    "PESO": {
+        "name": "PESO Online Licensing Portal",
+        "url": "https://peso.gov.in/",
+        "description": "Petroleum and Explosives Safety Organization",
+    },
+
+    # Corporate & MSME
+    "MCA": {
+        "name": "Ministry of Corporate Affairs (MCA V3)",
+        "url": "https://www.mca.gov.in/content/mca/global/en/home.html",
+        "description": "Company Incorporation & Annual Filing Portal",
+    },
+    "UDYAM": {
+        "name": "Udyam MSME Registration Portal",
+        "url": "https://udyamregistration.gov.in/",
+        "description": "Official Ministry of MSME Registration Portal",
+    },
+}
+
+
+def extract_url(text: str) -> str | None:
+    """Extract first http or https URL from a text string."""
+    if not text:
+        return None
+    match = re.search(r"https?://[^\s\)\"\'\,>]+", str(text))
+    if match:
+        return match.group(0).rstrip(".,;)")
+    return None
+
+
+def resolve_statutory_portal(
+    authority: str = "",
+    requirement_name: str = "",
+    requirement_id: str = "",
+    raw_portal: str = "",
+) -> dict[str, str]:
+    """Resolve an authoritative, validated statutory application portal URL and name.
+
+    Guarantees:
+    - Never returns bare text as a URL (e.g. 'XGN Gujarat' or 'DISH Portal').
+    - Never returns text containing parentheses like 'Portal (https://...)'.
+    - Routes directly to the specific compliance application service rather than a generic ministry homepage.
+    """
+    auth_upper = (authority or "").strip().upper()
+    req_upper = f"{requirement_id} {requirement_name}".upper()
+    raw_str = (raw_portal or "").strip()
+
+    # Specific requirement keyword matching
+    if "ETA" in req_upper or "WPC" in req_upper or "WIRELESS" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["WPC"]
+
+    if (
+        "LEGAL_METROLOGY" in auth_upper
+        or "METROLOGY" in req_upper
+        or "RULE 27" in req_upper
+        or "PRE-PACKER" in req_upper
+        or "PACKAGED COMMODIT" in req_upper
+    ):
+        return STATUTORY_PORTAL_REGISTRY["LEGAL_METROLOGY"]
+
+    if "PLASTIC" in req_upper and ("EPR" in req_upper or "EPR-PLASTIC" in req_upper):
+        return STATUTORY_PORTAL_REGISTRY["CPCB_PLASTIC"]
+
+    if "E-WASTE" in req_upper or "EWASTE" in req_upper or "EPR-EWASTE" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["CPCB_EWASTE"]
+
+    if "BATTERY" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["CPCB_BATTERY"]
+
+    if "ORGANIC" in req_upper or "JAIVIK" in req_upper or "NPOP" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["JAIVIK_BHARAT"]
+
+    if "FSSAI" in auth_upper or "FOOD" in req_upper:
+        if "CENTRAL" in req_upper:
+            return STATUTORY_PORTAL_REGISTRY["FSSAI_CENTRAL"]
+        return STATUTORY_PORTAL_REGISTRY["FSSAI"]
+
+    if "BIS" in auth_upper or "CRS" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["BIS_CRS"]
+
+    if "DGFT" in auth_upper or "IEC" in req_upper or "IMPORT" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["DGFT"]
+
+    if "KSPCB" in auth_upper or ("KARNATAKA" in req_upper and "CONSENT" in req_upper):
+        return STATUTORY_PORTAL_REGISTRY["KSPCB"]
+
+    if "GPCB" in auth_upper or ("GUJARAT" in req_upper and "CONSENT" in req_upper):
+        return STATUTORY_PORTAL_REGISTRY["GPCB"]
+
+    if "MPCB" in auth_upper or ("MAHARASHTRA" in req_upper and "CONSENT" in req_upper):
+        return STATUTORY_PORTAL_REGISTRY["MPCB"]
+
+    if "TNPCB" in auth_upper or ("TAMIL" in req_upper and "CONSENT" in req_upper):
+        return STATUTORY_PORTAL_REGISTRY["TNPCB"]
+
+    if "TSPCB" in auth_upper or ("TELANGANA" in req_upper and "CONSENT" in req_upper):
+        return STATUTORY_PORTAL_REGISTRY["TSPCB"]
+
+    if "WBPCB" in auth_upper or ("WEST BENGAL" in req_upper and "CTE" in req_upper):
+        return STATUTORY_PORTAL_REGISTRY["WBPCB"]
+
+    if "DISH_GUJARAT" in auth_upper or ("GUJARAT" in req_upper and "FACTORY" in req_upper):
+        return STATUTORY_PORTAL_REGISTRY["DISH_GUJARAT"]
+
+    if "DISH_TN" in auth_upper or ("TAMIL" in req_upper and "FACTORY" in req_upper):
+        return STATUTORY_PORTAL_REGISTRY["DISH_TN"]
+
+    if "DISH_WB" in auth_upper or ("WEST BENGAL" in req_upper and "FACTORY" in req_upper):
+        return STATUTORY_PORTAL_REGISTRY["DISH_WB"]
+
+    if "CDSCO" in auth_upper or "MEDICAL DEVICE" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["CDSCO"]
+
+    if "PESO" in auth_upper:
+        return STATUTORY_PORTAL_REGISTRY["PESO"]
+
+    # If raw_portal already contains a valid URL, extract it
+    extracted = extract_url(raw_str)
+    if extracted:
+        clean_name = re.sub(r"\(https?://[^\)]+\)", "", raw_str).strip() or "Official Statutory Portal"
+        return {
+            "name": clean_name,
+            "url": extracted,
+            "description": "Official statutory portal submission route",
+        }
+
+    # Authority prefix fallback
+    for k, info in STATUTORY_PORTAL_REGISTRY.items():
+        if k in auth_upper:
+            return info
+
+    return STATUTORY_PORTAL_REGISTRY["NSWS"]
+
+
+STATUTORY_PORTALS: dict[str, str] = {k: v["url"] for k, v in STATUTORY_PORTAL_REGISTRY.items()}
+STATUTORY_PORTALS["CONSUMER_AFFAIRS"] = "https://lm.doca.gov.in/"
+STATUTORY_PORTALS["FOSCOS"] = "https://foscos.fssai.gov.in/"
+STATUTORY_PORTALS["EPR_PLASTIC"] = "https://eprplastic.cpcb.gov.in/"
+STATUTORY_PORTALS["JAIVIK_BHARAT"] = "https://jaivikbharat.fssai.gov.in/"
+STATUTORY_PORTALS["SILPASATHI_WB"] = "https://silpasathi.wb.gov.in/"
+STATUTORY_PORTALS["DISH_CENTRAL"] = "https://shramsuvidha.gov.in/"
+STATUTORY_PORTALS["WBPCB"] = "https://silpasathi.wb.gov.in/"
+STATUTORY_PORTALS["CPCB"] = "https://cpcb.nic.in/"
+STATUTORY_PORTALS["MEITY_DPDP"] = "https://www.meity.gov.in/"
+STATUTORY_PORTALS["INDIA_GOV"] = "https://www.nsws.gov.in/"
+
 

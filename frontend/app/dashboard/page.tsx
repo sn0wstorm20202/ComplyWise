@@ -9,6 +9,7 @@ import MetricCard from "@/components/MetricCard";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import { api } from "@/lib/api";
+import { sanitizeExternalUrl } from "@/lib/url";
 import { DashboardSummary, Business, DiscoveryStatusData, AssessmentSummary } from "@/types";
 
 function DashboardContent() {
@@ -370,7 +371,23 @@ function DashboardContent() {
                           </div>
                           <StatusBadge status={act.status} size="sm" />
                         </div>
-                        <div className="flex justify-end pt-1">
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                          {(() => {
+                            const actUrl = sanitizeExternalUrl(act.portal_url || act.source_url);
+                            if (!actUrl) return <span />;
+                            const actLabel = act.portal_name || "Statutory Portal";
+                            return (
+                              <a
+                                href={actUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[11px] font-bold text-emerald-700 hover:underline inline-flex items-center gap-1"
+                                title={`Open statutory portal: ${actLabel}`}
+                              >
+                                <span>🔗 {actLabel} ↗</span>
+                              </a>
+                            );
+                          })()}
                           <Link
                             href={`/compliance/${act.requirement_id}?business_id=${activeBusinessId}`}
                             className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"

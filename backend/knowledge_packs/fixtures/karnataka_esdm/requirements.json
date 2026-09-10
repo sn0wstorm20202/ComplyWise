@@ -8,7 +8,13 @@
     "domain": "ENVIRONMENT",
     "description": "Pollution control board consent for establishing electronic system design & manufacturing in Karnataka.",
     "status": "PUBLISHED",
-    "evidence_refs": ["EVD-KSPCB-ESDM-CTE"]
+    "evidence_refs": [
+      "EVD-KSPCB-ESDM-CTE"
+    ],
+    "metadata": {
+      "portal": "https://kcmms.karnataka.gov.in/",
+      "portal_name": "KSPCB KCMMS Online Consent Management Portal"
+    }
   },
   {
     "requirement_id": "REQ-WPC-ETA",
@@ -19,6 +25,12 @@
     "domain": "ELECTRONICS",
     "description": "Equipment Type Approval from Wireless Planning and Coordination wing for devices with wireless RF/Bluetooth/WiFi capabilities.",
     "status": "PUBLISHED",
-    "evidence_refs": ["EVD-WPC-ETA-WIRELESS"]
+    "evidence_refs": [
+      "EVD-WPC-ETA-WIRELESS"
+    ],
+    "metadata": {
+      "portal": "https://saralsanchar.gov.in/",
+      "portal_name": "Saral Sanchar (WPC Portal)"
+    }
   }
 ]

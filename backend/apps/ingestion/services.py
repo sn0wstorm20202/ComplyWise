@@ -245,8 +245,14 @@ def run_discovery(
             "note": "Deterministic applicability engine remains fully operational with local knowledge.",
         }
 
-    # Generate dynamic queries from business context
-    queries = RegulatoryQueryPlanner.plan_queries(context)
+    # Extract discovery intent from active/latest question plan if present
+    discovery_intent = None
+    latest_plan = business.question_plans.filter(status__in=["ACTIVE", "COMPLETED"]).order_by("-created_at").first()
+    if latest_plan and latest_plan.regulatory_search_intent:
+        discovery_intent = latest_plan.regulatory_search_intent
+
+    # Generate dynamic queries from business context and discovery intent
+    queries = RegulatoryQueryPlanner.plan_queries(context, discovery_intent=discovery_intent)
     if not queries:
         run = DiscoveryRun.objects.create(
             business=business,

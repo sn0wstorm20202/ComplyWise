@@ -64,31 +64,33 @@ def save_smart_question_answers(
         if raw_value is None or (isinstance(raw_value, str) and not raw_value.strip()):
             continue
         var_def = get_variable(key)
-        if var_def is None:
-            continue
+        if var_def is not None:
+            coerced = coerce_value(var_def, raw_value)
+            if coerced is None:
+                continue
+            if var_def.key == "state" and isinstance(coerced, str):
+                canonical = normalize_jurisdiction(coerced)
+                if canonical:
+                    coerced = canonical
 
-        coerced = coerce_value(var_def, raw_value)
-        if coerced is None:
-            continue
-        if var_def.key == "state" and isinstance(coerced, str):
-            canonical = normalize_jurisdiction(coerced)
-            if canonical:
-                coerced = canonical
-
-        # Preserve exact string representation for decimals to avoid precision loss
-        val_to_store = str(coerced) if var_def.data_type in {"DECIMAL", "CURRENCY_INR"} else coerced
-
-        cleaned_entries[var_def.key] = BusinessProfileVersion.build_entry(
-            value=val_to_store,
-            origin=VariableOrigin.USER_PROVIDED,
-        )
+            val_to_store = str(coerced) if var_def.data_type in {"DECIMAL", "CURRENCY_INR"} else coerced
+            cleaned_entries[var_def.key] = BusinessProfileVersion.build_entry(
+                value=val_to_store,
+                origin=VariableOrigin.USER_PROVIDED,
+            )
+        else:
+            # Dynamic discovery context field (non-canonical)
+            cleaned_entries[key] = BusinessProfileVersion.build_entry(
+                value=raw_value,
+                origin=VariableOrigin.USER_PROVIDED,
+            )
 
         # Mark corresponding SmartQuestionInstance as answered
         SmartQuestionInstance.objects.filter(
             business=business,
-            variable_key=var_def.key,
+            variable_key=key,
             is_answered=False,
-        ).update(is_answered=True, answer_value=val_to_store)
+        ).update(is_answered=True, answer_value=raw_value)
 
     if not cleaned_entries:
         current = business.current_profile
@@ -119,9 +121,14 @@ def save_smart_question_answers(
         assessment = business.assessments.filter(pk=assessment_id).first()
         if assessment:
             assessment.profile_version = new_profile
-            state = dict(assessment.step_state)
+            state = dict(assessment.step_state or {})
             state.setdefault("answers", {})
             state["answers"].update(answers)
+            if "discovery_context" not in state:
+                state["discovery_context"] = {}
+            for k, v in answers.items():
+                if get_variable(k) is None:
+                    state["discovery_context"][k] = v
             assessment.step_state = state
             if assessment.current_step < 5:
                 assessment.current_step = 5

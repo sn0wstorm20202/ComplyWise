@@ -561,7 +561,29 @@ def resolve_variable_options(variable: ProfileVariable) -> list[dict[str, str]]:
     return [{"value": o.value, "label": o.label} for o in variable.options]
 
 
+DIGIT_WORDS_MAP = {
+    "0": "zero",
+    "1": "one",
+    "2": "two",
+    "3": "three",
+    "4": "four",
+    "5": "five",
+    "6": "six",
+    "7": "seven",
+    "8": "eight",
+    "9": "nine",
+}
+
+
+def _tokenize_option_str(s: str) -> set[str]:
+    s_clean = s.lower().replace(" ", "_").replace("-", "_")
+    for digit, word in DIGIT_WORDS_MAP.items():
+        s_clean = s_clean.replace(digit, word)
+    return set(filter(None, s_clean.split("_")))
+
+
 def coerce_value(variable: ProfileVariable, value: object) -> object:
+
     """Normalise a raw submitted value to the variable's declared type.
 
     Raises `ValueError` with a user-facing message when the value cannot be
@@ -580,8 +602,8 @@ def coerce_value(variable: ProfileVariable, value: object) -> object:
             return bool(value)
         if isinstance(value, str):
             s = value.strip().lower()
-            if s in {"true", "false", "yes", "no", "1", "0"}:
-                return s in {"true", "yes", "1"}
+            if s in {"true", "false", "yes", "no", "1", "0", "y", "n"}:
+                return s in {"true", "yes", "1", "y"}
         raise ValueError(f"{variable.label} must be true or false.")
 
     if dt is VariableDataType.INTEGER:
@@ -597,8 +619,36 @@ def coerce_value(variable: ProfileVariable, value: object) -> object:
             raise ValueError(f"{variable.label} must be a number.") from exc
 
     if dt is VariableDataType.SINGLE_CHOICE:
+        if isinstance(value, bool):
+            if not value:
+                for opt in variable.options:
+                    if opt.value in {"NONE", "OTHER", "NO"}:
+                        return opt.value
+            else:
+                for opt in variable.options:
+                    if opt.value not in {"NONE", "OTHER", "NO"}:
+                        return opt.value
         text = str(value).strip()
-        if variable.options and text not in variable.option_values:
+        if variable.options:
+            if text in variable.option_values:
+                return text
+            # Try exact case-insensitive match on value or label
+            for opt in variable.options:
+                if opt.value.lower() == text.lower() or opt.label.lower() == text.lower():
+                    return opt.value
+            # Try token subset match (e.g. 'ISO 7' -> 'ISO_CLASS_SEVEN')
+            val_tokens = _tokenize_option_str(text)
+            for opt in variable.options:
+                opt_tokens = _tokenize_option_str(opt.value) | _tokenize_option_str(opt.label)
+                if val_tokens and val_tokens.issubset(opt_tokens):
+                    return opt.value
+            # Try fuzzy/substring match on clean text
+            clean_text = text.lower().replace(" ", "_").replace("-", "_")
+            for opt in variable.options:
+                if clean_text in opt.value.lower() or opt.value.lower() in clean_text:
+                    return opt.value
+                if text.lower() in opt.label.lower() or opt.label.lower() in text.lower():
+                    return opt.value
             raise ValueError(f"{text!r} is not a recognised option for {variable.label}.")
         return text
 
@@ -607,6 +657,7 @@ def coerce_value(variable: ProfileVariable, value: object) -> object:
             text = value.strip()
             if text.startswith("[") and text.endswith("]"):
                 import json
+
                 try:
                     parsed = json.loads(text)
                     if isinstance(parsed, list):
@@ -619,11 +670,38 @@ def coerce_value(variable: ProfileVariable, value: object) -> object:
             raise ValueError(f"{variable.label} must be a list.")
         items = [str(item).strip() for item in value]
         if variable.options:
-            unknown = sorted(set(items) - variable.option_values)
-            if unknown:
-                raise ValueError(
-                    f"{', '.join(unknown)} is not a recognised option for {variable.label}."
-                )
+            resolved_items: list[str] = []
+            for item in items:
+                if item in variable.option_values:
+                    resolved_items.append(item)
+                    continue
+                matched = False
+                for opt in variable.options:
+                    if opt.value.lower() == item.lower() or opt.label.lower() == item.lower():
+                        resolved_items.append(opt.value)
+                        matched = True
+                        break
+                if not matched:
+                    item_tokens = _tokenize_option_str(item)
+                    for opt in variable.options:
+                        opt_tokens = _tokenize_option_str(opt.value) | _tokenize_option_str(opt.label)
+                        if item_tokens and item_tokens.issubset(opt_tokens):
+                            resolved_items.append(opt.value)
+                            matched = True
+                            break
+                if not matched:
+                    clean_item = item.lower().replace(" ", "_").replace("-", "_")
+                    for opt in variable.options:
+                        if clean_item in opt.value.lower() or opt.value.lower() in clean_item:
+                            resolved_items.append(opt.value)
+                            matched = True
+                            break
+                if not matched:
+                    raise ValueError(
+                        f"{item!r} is not a recognised option for {variable.label}."
+                    )
+            return resolved_items
         return items
+
 
     return str(value).strip()

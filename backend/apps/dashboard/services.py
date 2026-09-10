@@ -20,6 +20,7 @@ from apps.businesses.models import Business
 from apps.ingestion.services import assess_knowledge_coverage
 from apps.knowledge.models import RequirementDefinition
 from common.enums import ApplicabilityStatus
+from knowledge_packs.catalogs import resolve_statutory_portal
 
 
 def get_dashboard_summary(business: Business, assessment_id: str | None = None) -> dict[str, Any]:
@@ -129,6 +130,15 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
                 if r.status == ApplicabilityStatus.NEEDS_INFORMATION
                 else "Application / Filing Required"
             )
+            raw_portal = str((req_def.metadata or {}).get("portal") or "") if req_def else ""
+            portal_info = resolve_statutory_portal(
+                authority=req_def.authority if req_def else "",
+                requirement_name=r.requirement_name,
+                requirement_id=r.requirement_id,
+                raw_portal=raw_portal,
+            )
+            source_url = portal_info["url"]
+
             priority_actions.append(
                 {
                     "requirement_id": r.requirement_id,
@@ -138,6 +148,9 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
                     "category": cat,
                     "action_type": action_type,
                     "evidence_count": len(r.evidence_refs or []),
+                    "source_url": source_url,
+                    "portal_url": portal_info["url"],
+                    "portal_name": portal_info["name"],
                 }
             )
 

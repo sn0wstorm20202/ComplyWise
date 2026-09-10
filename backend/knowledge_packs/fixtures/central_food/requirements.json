@@ -1,0 +1,144 @@
+[
+  {
+    "requirement_id": "REQ-FSSAI-CENTRAL-LICENCE",
+    "name": "FSSAI Central Food License",
+    "category": "LICENCE",
+    "authority": "FSSAI",
+    "jurisdiction": "CENTRAL",
+    "domain": "FOOD",
+    "description": "Mandatory central statutory food license for food manufacturing enterprises with annual turnover exceeding 20 Crore INR.",
+    "status": "PUBLISHED",
+    "evidence_refs": [
+      "EVD-FSSAI-CENTRAL-TURNOVER"
+    ],
+    "metadata": {
+      "portal": "https://foscos.fssai.gov.in/",
+      "statutory_fee": "\u20b97,500 per year",
+      "validity_period": "1 to 5 years (renewable)",
+      "renewal_period_years": 5,
+      "required_documents": [
+        "Form B (Application for Central License)",
+        "Food Safety Management System (FSMS) Plan or Certificate",
+        "Blueprint / Layout plan of the processing unit showing dimensions and area allocation",
+        "List of equipment and machinery with installed capacity and horsepower",
+        "List of food categories and product formulations desired to be manufactured",
+        "Water potability analysis report (chemical and bacteriological) from NABL-accredited lab",
+        "Proof of possession of premises (Sale deed / Registered lease agreement)",
+        "Certificate of Incorporation / Partnership Deed and list of directors"
+      ],
+      "application_steps": [
+        "Create an account on the FoSCoS portal (https://foscos.fssai.gov.in)",
+        "Select 'Apply for New License' and choose 'Central Licensing'",
+        "Select Food Manufacturing category and applicable food codes",
+        "Upload mandatory premises blueprint, FSMS plan, water analysis report, and machinery list",
+        "Pay statutory fee of \u20b97,500 per year online",
+        "Central Licensing Authority conducts technical scrutiny and pre-licensing inspection",
+        "Address any scrutiny clarifications within 30 days",
+        "Download digitally signed 14-digit Central Food License"
+      ],
+      "portal_name": "FoSCoS Central Licensing Portal"
+    }
+  },
+  {
+    "requirement_id": "REQ-LEGAL-METROLOGY-PACKER",
+    "name": "Legal Metrology Packaged Commodities Registration (Rule 27)",
+    "category": "REGISTRATION",
+    "authority": "LEGAL_METROLOGY",
+    "jurisdiction": "CENTRAL",
+    "domain": "STANDARDS",
+    "description": "Mandatory statutory registration for manufacturers and pre-packers under Rule 27 of Legal Metrology (Packaged Commodities) Rules, 2011.",
+    "status": "PUBLISHED",
+    "evidence_refs": [
+      "EVD-LEGAL-METROLOGY-RULE-27"
+    ],
+    "metadata": {
+      "portal": "https://lm.doca.gov.in/",
+      "statutory_fee": "\u20b9500 one-time fee",
+      "validity_period": "Lifetime (unless change in premises or packaging lines)",
+      "renewal_period_years": 10,
+      "required_documents": [
+        "Application in prescribed Form under Rule 27",
+        "Specimen artwork / label of packaged commodities showing mandatory declarations (MRP, net weight, ingredients, FSSAI logo)",
+        "Proof of factory / packaging premises ownership or registered lease agreement",
+        "Certificate of Incorporation / Partnership Deed",
+        "GST Registration Certificate",
+        "List of pre-packaged commodities and standard pack sizes"
+      ],
+      "application_steps": [
+        "Access National Single Window System (NSWS) or Central Legal Metrology Portal",
+        "Fill Application under Rule 27 for registration as Manufacturer / Pre-Packer",
+        "Upload sample package label artwork with required statutory declarations",
+        "Pay one-time statutory registration fee of \u20b9500",
+        "Controller / Director of Legal Metrology issues Registration Certificate within 7 days"
+      ],
+      "portal_name": "National Single Window System / Legal Metrology Portal (LMPC)"
+    }
+  },
+  {
+    "requirement_id": "REQ-CPCB-EPR-PLASTIC",
+    "name": "CPCB Extended Producer Responsibility (EPR) for Plastic Packaging",
+    "category": "REGISTRATION",
+    "authority": "CPCB",
+    "jurisdiction": "CENTRAL",
+    "domain": "ENVIRONMENT",
+    "description": "Mandatory Extended Producer Responsibility registration on CPCB centralized portal for Brand Owners and Manufacturers utilizing plastic packaging.",
+    "status": "PUBLISHED",
+    "evidence_refs": [
+      "EVD-CPCB-EPR-PLASTIC-2022"
+    ],
+    "metadata": {
+      "portal": "https://eprplastic.cpcb.gov.in/",
+      "statutory_fee": "\u20b910,000 to \u20b950,000 based on plastic consumption volume",
+      "validity_period": "1 year initial registration, renewable for 3 years",
+      "renewal_period_years": 1,
+      "required_documents": [
+        "Entity PAN, GST, and Company Incorporation Certificate",
+        "State Pollution Control Board Consent to Establish (CTE) / Operate (CTO)",
+        "Category-wise plastic packaging procurement breakdown (Cat I Rigid, Cat II Flexible, Cat III Multi-layered)",
+        "EPR action plan and engagement agreement with registered Plastic Waste Processors (PWPs)",
+        "Declaration of post-consumer plastic waste collection mechanism"
+      ],
+      "application_steps": [
+        "Register company account on CPCB Centralized EPR Portal (https://eprplastic.cpcb.gov.in)",
+        "Select Brand Owner (PIBO) classification",
+        "Submit annual quantity of plastic packaging introduced into the market by category",
+        "Upload SPCB CTE/CTO and CA-certified packaging consumption figures",
+        "Pay statutory registration processing fee online",
+        "CPCB divisional officer verifies application and grants EPR Registration Certificate"
+      ],
+      "portal_name": "CPCB Centralized EPR Portal for Plastic Packaging"
+    }
+  },
+  {
+    "requirement_id": "REQ-APEDA-NPOP-ORGANIC",
+    "name": "Jaivik Bharat / NPOP Organic Food Certification",
+    "category": "CERTIFICATION",
+    "authority": "FSSAI",
+    "jurisdiction": "CENTRAL",
+    "domain": "FOOD",
+    "description": "Statutory organic endorsement under FSS (Organic Foods) Regulations, 2017 for food business operators making organic claims.",
+    "status": "PUBLISHED",
+    "evidence_refs": [
+      "EVD-FSSAI-ORGANIC-2017"
+    ],
+    "metadata": {
+      "portal": "https://jaivikbharat.fssai.gov.in/",
+      "statutory_fee": "Endorsement integrated with FoSCoS; accredited certification body fee applies",
+      "validity_period": "Co-terminus with FSSAI license / NPOP Scope Certificate (annual)",
+      "renewal_period_years": 1,
+      "required_documents": [
+        "Valid NPOP Scope Certificate from an APEDA-accredited certification body or PGS-India Certificate",
+        "Supply chain traceability and organic raw material procurement invoices",
+        "Organic Production and Handling System Plan (OSP)",
+        "Product packaging artwork featuring the official 'Jaivik Bharat' logo and certification code"
+      ],
+      "application_steps": [
+        "Engage accredited certification body for processing inspection and obtain NPOP Scope Certificate",
+        "Log in to FoSCoS portal and apply for Organic Food Endorsement",
+        "Upload Scope Certificate, Organic System Plan, and product label artwork with Jaivik Bharat logo",
+        "FSSAI Designated Officer approves organic endorsement for the declared product lines"
+      ],
+      "portal_name": "Jaivik Bharat / FoSCoS Organic Food Portal"
+    }
+  }
+]

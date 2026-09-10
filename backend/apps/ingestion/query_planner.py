@@ -33,10 +33,31 @@ class RegulatoryQueryPlanner:
     """Generates focused regulatory queries based on structured business context."""
 
     @staticmethod
-    def plan_queries(context: DerivedBusinessContext, max_queries: int = 6) -> list[str]:
+    def plan_queries(
+        context: DerivedBusinessContext,
+        discovery_intent: dict[str, Any] | None = None,
+        max_queries: int = 6,
+    ) -> list[str]:
         queries: list[str] = []
         state_name = context.state_name or "India"
         activity_phrase = _clean_keywords(context.product_description) or "manufacturing"
+
+        # Prioritize search topics derived from Pre-Discovery RegulatoryDiscoveryIntent
+        if discovery_intent and isinstance(discovery_intent, dict):
+            for topic in discovery_intent.get("search_topics", []):
+                if isinstance(topic, str) and topic.strip():
+                    t_str = topic.strip()
+                    if state_name != "India" and state_name.lower() not in t_str.lower():
+                        queries.append(f"{state_name} {t_str} official portal")
+                    else:
+                        queries.append(f"{t_str} official portal")
+
+            # Enrich with dynamic discovery context answers
+            dc = discovery_intent.get("discovery_context")
+            if isinstance(dc, dict):
+                for k, v in dc.items():
+                    if v and isinstance(v, str) and len(v.strip()) > 3:
+                        queries.append(f"{state_name} {v.strip()} regulatory compliance portal official")
 
         # 1. State Environmental Consent (CTE / CTO)
         if state_name != "India":

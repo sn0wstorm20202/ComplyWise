@@ -53,7 +53,7 @@ def discover_business_schemes(
         if "ALL" in sectors:
             sector_match = True
             relevance_rationale = f"Universal support program available for {msme_scale.capitalize()} enterprises."
-        if "FOOD" in sectors and any(w in desc for w in ["food", "fruit", "dehydrat", "grain", "beverage", "dairy", "bakery", "spice", "agro", "edible"]):
+        if "FOOD" in sectors and any(w in desc for w in ["food", "fruit", "dehydrat", "grain", "beverage", "dairy", "bakery", "spice", "agro", "edible", "millet", "cereal", "snack", "flour"]):
             sector_match = True
             relevance_rationale = f"Specifically formulated for food processing enterprises in {context.state_name}."
         if "AUTOMOTIVE" in sectors and any(w in desc for w in ["auto", "vehic", "car", "motor", "engine", "gear", "clutch", "transmission"]):
@@ -65,6 +65,10 @@ def discover_business_schemes(
         if "ELECTRONICS" in sectors and any(w in desc for w in ["electron", "pcb", "chip", "semiconduct", "smart", "circuit", "sensor", "meter", "bess", "battery"]):
             sector_match = True
             relevance_rationale = f"High-priority incentive under national electronics and hardware manufacturing initiatives."
+        if ("MANUFACTURING" in sectors or "PROCESSING" in sectors) and any(w in desc for w in ["manufactur", "process", "produc", "pack", "food", "millet", "flour", "snack", "fabricat", "machin", "assembl"]):
+            sector_match = True
+            if not relevance_rationale:
+                relevance_rationale = f"Manufacturing competitiveness and technology incentive for {msme_scale.capitalize()} enterprises."
         if "EXPORT" in sectors and context.is_cross_border:
             sector_match = True
             relevance_rationale = "Export competitiveness and duty remission scheme matching your international trade profile."

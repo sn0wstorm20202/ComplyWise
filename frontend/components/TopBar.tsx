@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Bell,
   Mail,
@@ -47,17 +48,9 @@ export function TopBar({
         {/* Brand Logo & Name */}
         <Link
           href="/dashboard"
-          className="flex items-center gap-2.5 group cursor-pointer"
+          className="flex items-center group cursor-pointer"
         >
-          <ComplyWiseLogo className="h-7 w-7 text-slate-900 transition-transform group-hover:scale-105" />
-          <div className="flex flex-col">
-            <span className="font-bold text-base tracking-tight text-slate-950 font-sans leading-none">
-              ComplyWise
-            </span>
-            <span className="text-[10px] text-slate-400 font-medium tracking-tight mt-0.5">
-              BIS Compliance
-            </span>
-          </div>
+          <ComplyWiseLogo className="h-7 w-7 text-slate-900 transition-transform group-hover:scale-105" showSubtitle={true} />
         </Link>
 
         {/* Primary Segmented Navigation Pills */}
@@ -188,10 +181,17 @@ export function TopBar({
             <button
               type="button"
               onClick={() => setProfileDropdownOpen((prev) => !prev)}
-              className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer focus:outline-hidden"
+              aria-label="User profile menu"
+              className="flex items-center gap-1.5 p-0.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer focus:outline-hidden"
             >
-              <div className="h-8 w-8 rounded-full ring-2 ring-slate-300 bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-xs">
-                {profile.businessName.charAt(0)}
+              <div className="relative h-8 w-8 rounded-full ring-2 ring-slate-200 overflow-hidden shadow-xs shrink-0">
+                <Image
+                  src="/assets/avatars/user.png"
+                  alt={profile.officer || "User"}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
               </div>
               <ChevronDown className="h-3 w-3 text-slate-400 hidden sm:block" />
             </button>

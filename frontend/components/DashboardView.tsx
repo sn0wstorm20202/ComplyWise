@@ -1,10 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Building2,
-  Sparkles,
-} from "lucide-react";
+
 import PageHeader from "./dashboard/PageHeader";
 import TallFeatureCard from "./dashboard/TallFeatureCard";
 import ComplianceActivityCard from "./dashboard/ComplianceActivityCard";
@@ -47,23 +44,6 @@ export function DashboardView({
 
   return (
     <div className="space-y-6 pb-6 select-none">
-      {/* Demo Data Notification Banner */}
-      {isDemoMode && (
-        <div className="px-4 py-2 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-indigo-900">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-indigo-600 shrink-0" />
-            <span>
-              Active Regulatory Profile: <strong>{profile.businessName}</strong> ({profile.state} · {profile.scale.split("(")[0]})
-            </span>
-          </div>
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-bold text-[10px]">
-              <Sparkles className="h-3 w-3" />
-              <span>Reactive Context Live</span>
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* Page Header Area */}
       <PageHeader

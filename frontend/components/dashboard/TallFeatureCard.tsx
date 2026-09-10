@@ -61,7 +61,8 @@ export function TallFeatureCard({
             src="/assets/complywise-shield-3d.png"
             alt="BIS Compliance Shield & Standards Documents"
             fill
-            className="object-contain drop-shadow-md"
+            priority
+            className="object-contain drop-shadow-md select-none pointer-events-none"
             unoptimized
           />
         </div>

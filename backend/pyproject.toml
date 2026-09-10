@@ -43,3 +43,6 @@ ignore = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["apps", "common", "config", "domain"]
+
+[tool.vercel]
+entrypoint = "config.wsgi:application"

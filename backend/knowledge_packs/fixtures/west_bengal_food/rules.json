@@ -1,0 +1,106 @@
+[
+  {
+    "rule_id": "RULE-WB-FACTORIES-01",
+    "version": 1,
+    "domain": "LABOR",
+    "jurisdiction": "WEST_BENGAL",
+    "requirement_id": "REQ-WB-FACTORY-LICENSE",
+    "status": "PUBLISHED",
+    "effective_from": "1958-01-01",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {
+          "op": "EQ",
+          "left": {
+            "var": "state"
+          },
+          "right": "WEST_BENGAL"
+        },
+        {
+          "op": "GTE",
+          "left": {
+            "var": "total_worker_count"
+          },
+          "right": 10
+        },
+        {
+          "op": "GT",
+          "left": {
+            "var": "connected_power_load"
+          },
+          "right": 0
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": [
+      "EVD-FACTORIES-ACT-10-POWER-WB"
+    ]
+  },
+  {
+    "rule_id": "RULE-WBPCB-CTE-01",
+    "version": 1,
+    "domain": "ENVIRONMENT",
+    "jurisdiction": "WEST_BENGAL",
+    "requirement_id": "REQ-WBPCB-CTE",
+    "status": "PUBLISHED",
+    "effective_from": "1981-05-16",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {
+          "op": "EQ",
+          "left": {
+            "var": "state"
+          },
+          "right": "WEST_BENGAL"
+        },
+        {
+          "op": "OR",
+          "args": [
+            {
+              "op": "EQ",
+              "left": {
+                "var": "effluent_emission_generation"
+              },
+              "right": true
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "FOOD"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "MILLET"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "AGRO"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "SNACK"
+            }
+          ]
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": [
+      "EVD-WBPCB-CTE-FOOD"
+    ]
+  }
+]

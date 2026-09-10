@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ErrorState from "@/components/ErrorState";
 import { authApi } from "@/lib/api/auth";
+import { businessesApi } from "@/lib/api/businesses";
 import { setAuthToken } from "@/lib/api/client";
 
 export default function SignInPage() {
@@ -17,6 +18,25 @@ export default function SignInPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  async function resolveAndRedirect() {
+    try {
+      const ws = await businessesApi.getWorkspace();
+      if (ws.active_business_id) {
+        localStorage.setItem("complywise_active_business_id", ws.active_business_id);
+      }
+      if (ws.active_assessment_id) {
+        localStorage.setItem("complywise_active_assessment_id", ws.active_assessment_id);
+      }
+      if (ws.redirect_url) {
+        router.push(ws.redirect_url);
+        return;
+      }
+    } catch {
+      // Fallback if workspace query fails
+    }
+    router.push("/onboarding");
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -26,12 +46,11 @@ export default function SignInPage() {
       if (mode === "signin") {
         const session = await authApi.login(email, password);
         setAuthToken(session.token);
-        // Check if there is an active business or redirect to onboarding
-        router.push("/onboarding");
+        await resolveAndRedirect();
       } else {
         const session = await authApi.register(email, password, fullName);
         setAuthToken(session.token);
-        router.push("/onboarding");
+        await resolveAndRedirect();
       }
     } catch (err: unknown) {
       const message =
@@ -54,7 +73,7 @@ export default function SignInPage() {
       try {
         const session = await authApi.login(demoEmail, demoPassword);
         setAuthToken(session.token);
-        router.push("/onboarding");
+        await resolveAndRedirect();
         return;
       } catch {
         // If login failed, register demo account
@@ -64,7 +83,7 @@ export default function SignInPage() {
           demoName
         );
         setAuthToken(session.token);
-        router.push("/onboarding");
+        await resolveAndRedirect();
       }
     } catch (err: unknown) {
       const message =

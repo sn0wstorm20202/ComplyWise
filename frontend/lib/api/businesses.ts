@@ -100,4 +100,44 @@ export const businessesApi = {
   /** Get an assessment directly by its ID */
   getAssessmentDirect: (assessmentId: string) =>
     request<Assessment>(`/assessments/${assessmentId}`),
+
+  /** Get authoritative server-side user workspace state */
+  getWorkspace: () =>
+    request<{
+      user_id: string;
+      email: string;
+      has_workspace: boolean;
+      active_business_id: string | null;
+      active_business_name: string | null;
+      active_assessment_id: string | null;
+      active_assessment_number: number | null;
+      active_assessment_title: string | null;
+      active_assessment_status: string | null;
+      current_step: number;
+      redirect_target: "DASHBOARD" | "ONBOARDING";
+      redirect_url: string;
+      updated_at: string | null;
+    }>("/user/workspace"),
+
+  /** Update authoritative active workspace selection */
+  setWorkspace: (data: { business_id?: string | null; assessment_id?: string | null }) =>
+    request<{
+      user_id: string;
+      email: string;
+      has_workspace: boolean;
+      active_business_id: string | null;
+      active_business_name: string | null;
+      active_assessment_id: string | null;
+      active_assessment_number: number | null;
+      active_assessment_title: string | null;
+      active_assessment_status: string | null;
+      current_step: number;
+      redirect_target: "DASHBOARD" | "ONBOARDING";
+      redirect_url: string;
+      updated_at: string | null;
+    }>("/user/workspace", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };
+

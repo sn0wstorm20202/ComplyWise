@@ -8,7 +8,13 @@
     "domain": "ELECTRONICS",
     "description": "Mandatory Bureau of Indian Standards CRS mark for electronic meters and connected devices.",
     "status": "PUBLISHED",
-    "evidence_refs": ["EVD-BIS-CRS-ELECTRONICS"]
+    "evidence_refs": [
+      "EVD-BIS-CRS-ELECTRONICS"
+    ],
+    "metadata": {
+      "portal": "https://www.crsbis.in/BIS/",
+      "portal_name": "BIS Compulsory Registration Scheme (CRS) Portal"
+    }
   },
   {
     "requirement_id": "REQ-TSPCB-CTE",
@@ -19,7 +25,13 @@
     "domain": "ENVIRONMENT",
     "description": "Pollution control board consent for establishing electronic manufacturing in Telangana.",
     "status": "PUBLISHED",
-    "evidence_refs": ["EVD-TSPCB-CTE-ELECTRONICS"]
+    "evidence_refs": [
+      "EVD-TSPCB-CTE-ELECTRONICS"
+    ],
+    "metadata": {
+      "portal": "https://tgocmms.nic.in/",
+      "portal_name": "TSPCB OCMMS Online Consent Management Portal"
+    }
   },
   {
     "requirement_id": "REQ-CPCB-EPR-EWASTE",
@@ -30,6 +42,12 @@
     "domain": "ELECTRONICS",
     "description": "Extended Producer Responsibility authorization for electronic product manufacturers.",
     "status": "PUBLISHED",
-    "evidence_refs": ["EVD-EPR-EWASTE-PRODUCER"]
+    "evidence_refs": [
+      "EVD-EPR-EWASTE-PRODUCER"
+    ],
+    "metadata": {
+      "portal": "https://eprewastecpcb.in/",
+      "portal_name": "CPCB Centralized EPR Portal for E-Waste"
+    }
   }
 ]

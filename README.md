@@ -105,8 +105,8 @@ Open `.env` in your editor and configure your environment variables:
 DJANGO_DEBUG=True
 DJANGO_SECRET_KEY=your-secure-development-secret-key-2026
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,[::1]
-DJANGO_CSRF_TRUSTED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+CSRF_TRUSTED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000/api/v1
 
 # Supabase PostgreSQL Configuration (Target Engine)
@@ -281,4 +281,47 @@ npx tsc --noEmit
 # Production Next.js build
 npm run build
 ```
+
+---
+
+## 7. Cross-Origin Frontend Configuration (CORS & CSRF)
+
+ComplyWise uses an **environment-driven, production-safe CORS and CSRF architecture**. The backend source code remains completely domain-agnostic. Changing frontend deployment domains (e.g. from local to Vercel preview or custom production domains) requires **only** updating environment variables / Azure Application Settings, with zero code changes.
+
+### Environment Variables
+
+* **`CORS_ALLOWED_ORIGINS`**: Comma-separated list of browser frontend origins permitted to make cross-origin API requests.
+  * **Development:** `CORS_ALLOWED_ORIGINS=http://localhost:3000`
+  * **Staging / Preview:** `CORS_ALLOWED_ORIGINS=https://preview.example.com`
+  * **Production:** `CORS_ALLOWED_ORIGINS=https://complywise.vercel.app,https://app.complywise.in`
+* **`CSRF_TRUSTED_ORIGINS`**: Comma-separated list of origins trusted by Django's CSRF protection middleware (for session/cookie authentication and Django Admin). In production, if left unset, this automatically inherits from `CORS_ALLOWED_ORIGINS`.
+* **`CORS_ALLOW_LOCALHOST_IN_PRODUCTION`**: Set to `True` only if local browser testing against a production backend instance is intentionally required (default: `False`).
+
+### Production Security Rules
+
+1. **Strictly No Wildcards:** `CORS_ALLOW_ALL_ORIGINS = True` and `CORS_ALLOWED_ORIGINS = ["*"]` are strictly prohibited. Attempting to deploy with `*` will fail startup validation immediately.
+2. **Valid Origin Syntax:** Origins must include the scheme (`http://` or `https://`), the host, and optional port. Origins must **never** contain paths (e.g. `https://example.com/app` is rejected; use `https://example.com`).
+3. **HTTPS Enforced in Production:** When `DJANGO_DEBUG=False`, all production origins must use `https://`, and `localhost` origins are rejected unless `CORS_ALLOW_LOCALHOST_IN_PRODUCTION=True`.
+4. **Startup Validation:** If `CORS_ALLOWED_ORIGINS` is missing or empty when `DJANGO_DEBUG=False`, the backend immediately fails to start with a clear, actionable `CorsConfigurationError`.
+
+### Azure Deployment Configuration
+
+For Dockerized Django deployments on Azure App Service or Azure Container Apps, inject these runtime Application Settings:
+
+| Setting Name | Value Example | Description |
+| :--- | :--- | :--- |
+| `CORS_ALLOWED_ORIGINS` | `https://complywise.vercel.app` | Frontend production origin |
+| `CSRF_TRUSTED_ORIGINS` | `https://complywise.vercel.app` | CSRF trusted origin |
+| `DJANGO_DEBUG` | `False` | Disables debug mode in production |
+| `DJANGO_ALLOWED_HOSTS` | `complywise-api.azurewebsites.net` | Backend Azure host |
+
+### Frontend Integration Contract
+
+The frontend application communicates with the backend via the `NEXT_PUBLIC_API_BASE_URL` environment variable:
+```env
+NEXT_PUBLIC_API_BASE_URL=https://<your-azure-backend-domain>/api/v1
+```
+* The frontend must **never** hardcode `localhost` in production.
+* The frontend origin must be registered in the backend's `CORS_ALLOWED_ORIGINS` environment setting.
+
 

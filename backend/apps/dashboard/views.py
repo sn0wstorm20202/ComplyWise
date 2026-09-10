@@ -31,4 +31,19 @@ class BusinessDashboardView(APIView):
 
         assessment_id = request.query_params.get("assessment_id")
         data = get_dashboard_summary(business, assessment_id=assessment_id)
+
+        if request.user.is_authenticated:
+            try:
+                from apps.businesses.models import Assessment, UserWorkspaceState
+                ws, _ = UserWorkspaceState.objects.get_or_create(user=request.user)
+                ws.active_business = business
+                aid = data.get("assessment_id")
+                if aid:
+                    ass = Assessment.objects.filter(pk=aid).first()
+                    if ass:
+                        ws.active_assessment = ass
+                ws.save()
+            except Exception:
+                pass
+
         return Response(envelope(data), status=status.HTTP_200_OK)

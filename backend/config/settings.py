@@ -42,6 +42,7 @@ def env_list(name: str, default: str = "") -> list[str]:
 
 DEBUG = env_bool("DJANGO_DEBUG", default=False)
 RUNNING_TESTS = "pytest" in sys.modules or "test" in sys.argv
+IS_PRODUCTION = not DEBUG and not RUNNING_TESTS
 
 #: Reported by /health so a deployed instance can be identified unambiguously.
 COMPLYWISE_VERSION = os.getenv("COMPLYWISE_VERSION", "0.1.0-foundation")
@@ -58,7 +59,6 @@ if not SECRET_KEY:
         )
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]")
-CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 #: The Django admin is an internal knowledge-curation tool (TRD_v2.0 §21), not a
 #: public surface. Always on in DEBUG; opt-in elsewhere.
@@ -220,13 +220,32 @@ REST_FRAMEWORK = {
 }
 
 # ---------------------------------------------------------------------------
-# CORS — the frontend is the only browser client. Credentials stay server-side.
+# CORS & CSRF — environment-driven frontend allowlist (Authority: Milestone CORS Task)
 # ---------------------------------------------------------------------------
+from config.cors import (
+    CORS_ALLOW_HEADERS,
+    CORS_ALLOW_METHODS,
+    CORS_EXPOSE_HEADERS,
+    get_cors_allowed_origins,
+    get_csrf_trusted_origins,
+)
 
-CORS_ALLOWED_ORIGINS = env_list(
-    "CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = get_cors_allowed_origins(
+    is_production=IS_PRODUCTION,
+    allow_localhost_in_prod=env_bool("CORS_ALLOW_LOCALHOST_IN_PRODUCTION", default=False),
 )
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = CORS_ALLOW_METHODS
+CORS_ALLOW_HEADERS = CORS_ALLOW_HEADERS
+CORS_EXPOSE_HEADERS = CORS_EXPOSE_HEADERS
+CORS_PREFLIGHT_MAX_AGE = 86400
+
+CSRF_TRUSTED_ORIGINS = get_csrf_trusted_origins(
+    cors_origins=CORS_ALLOWED_ORIGINS,
+    is_production=IS_PRODUCTION,
+    allow_localhost_in_prod=env_bool("CORS_ALLOW_LOCALHOST_IN_PRODUCTION", default=False),
+)
 
 # ---------------------------------------------------------------------------
 # i18n / static

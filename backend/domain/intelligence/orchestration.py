@@ -187,6 +187,41 @@ def orchestrate_compliance_analysis(
     applicable_count = sum(1 for r in actionable_reqs if r.status == ApplicabilityStatus.APPLICABLE)
     needs_info_count = sum(1 for r in actionable_reqs if r.status == ApplicabilityStatus.NEEDS_INFORMATION)
 
+    # Autonomous Statutory Knowledge Ingestion:
+    # If the business has an operational profile but 0 requirements evaluated as APPLICABLE
+    # (indicating a knowledge gap for this state / turnover / sector combination),
+    # dynamically synthesize statutory requirements from discovery sources and profile,
+    # persist them into the knowledge base, and re-evaluate with the deterministic engine.
+    if profile_version and applicable_count == 0:
+        try:
+            from apps.ingestion.auto_ingest import auto_ingest_regulatory_knowledge
+            ingested = auto_ingest_regulatory_knowledge(
+                business=business,
+                context=context,
+                discovery_run=disc_run,
+                force=True,
+            )
+            if ingested:
+                engine = ApplicabilityEngine()
+                decision_run = engine.evaluate_business_profile(
+                    business=business,
+                    profile_version=profile_version,
+                    save_run=True,
+                )
+                actionable_reqs = [
+                    r for r in decision_run.results.all()
+                    if r.status in {ApplicabilityStatus.APPLICABLE, ApplicabilityStatus.NEEDS_INFORMATION}
+                ]
+                applicable_count = sum(1 for r in actionable_reqs if r.status == ApplicabilityStatus.APPLICABLE)
+                needs_info_count = sum(1 for r in actionable_reqs if r.status == ApplicabilityStatus.NEEDS_INFORMATION)
+                if assessment:
+                    decision_run.assessment = assessment
+                    decision_run.save(update_fields=["assessment"])
+                    assessment.decision_run = decision_run
+                    assessment.save(update_fields=["decision_run"])
+        except Exception as exc:
+            logger.warning("Autonomous knowledge ingestion fallback encountered error: %s", exc)
+
     record_stage(
         "COMPLIANCE_EVALUATION",
         f"Authoritative evaluation complete: {applicable_count} requirements required, {needs_info_count} need information.",
@@ -269,6 +304,71 @@ def orchestrate_compliance_analysis(
         assessment.summary = executive_summary
         assessment.save(update_fields=["status", "current_step", "completed_at", "summary"])
 
+        try:
+            from apps.businesses.models import UserWorkspaceState
+            user = assessment.created_by or getattr(business, "owner", None)
+            if user:
+                ws, _ = UserWorkspaceState.objects.get_or_create(user=user)
+                ws.active_business = business
+                ws.active_assessment = assessment
+                ws.save()
+        except Exception:
+            pass
+
+    disc_payload = None
+    if disc_run:
+        cand_reqs = [
+            {
+                "id": str(cr.id),
+                "requirement_name": cr.requirement_name,
+                "category": cr.category,
+                "authority": cr.authority,
+                "jurisdiction": cr.jurisdiction,
+                "applicability_statement": cr.applicability_statement,
+                "prerequisite": cr.prerequisite,
+                "document_requirements": cr.document_requirements or [],
+                "fee_info": cr.fee_info or "",
+                "deadline_info": cr.deadline_info or "",
+                "source_id": cr.source.source_id if getattr(cr, "source", None) else "",
+                "source_url": (cr.source.canonical_url if getattr(cr, "source", None) else "") or "",
+                "evidence_excerpt": cr.evidence.excerpt if getattr(cr, "evidence", None) else "",
+                "verification_status": cr.verification_status,
+            }
+            for cr in CandidateRequirement.objects.filter(discovery_run=disc_run).select_related("source", "evidence")
+
+        ]
+        disc_payload = {
+            "ran": True,
+            "run_id": str(disc_run.id),
+            "status": disc_run.status,
+            "discovery_available": True,
+            "queries": disc_run.queries or [],
+            "candidate_urls_count": disc_run.candidate_count or len(disc_run.candidate_urls or []),
+            "sources_scraped": disc_run.scraped_count or len(disc_run.scraped_urls or []),
+            "official_sources_count": disc_run.official_source_count,
+            "verified_count": disc_run.verified_count,
+            "candidate_requirements_count": len(cand_reqs),
+            "candidate_requirements": cand_reqs,
+            "errors": [disc_run.error] if disc_run.error else [],
+            "note": "Live regulatory discovery executed and quarantined.",
+        }
+    else:
+        disc_payload = {
+            "ran": False,
+            "run_id": "",
+            "status": "UNAVAILABLE",
+            "discovery_available": False,
+            "queries": queries_run,
+            "candidate_urls_count": sources_count,
+            "sources_scraped": sources_count,
+            "official_sources_count": 0,
+            "verified_count": 0,
+            "candidate_requirements_count": candidate_count,
+            "candidate_requirements": [],
+            "errors": [],
+            "note": "Knowledge base rules applied.",
+        }
+
     return {
         "analysis_id": analysis_id,
         "business_id": str(business.id),
@@ -285,10 +385,8 @@ def orchestrate_compliance_analysis(
         "stages": stage_records,
         "decision_run": run_data,
         "executive_summary": executive_summary,
-        "live_discovery": {
-            "queries": queries_run,
-            "sources_count": sources_count,
-            "candidate_claims_count": candidate_count,
-        },
+        "discovery": disc_payload,
+        "live_discovery": disc_payload,
         "context_summary": context.as_dict(),
     }
+

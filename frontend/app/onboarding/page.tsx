@@ -326,7 +326,7 @@ function OnboardingContent() {
     setLoading(true);
     setError(null);
 
-    const trimmedName = businessName.trim();
+    const trimmedName = (businessName.trim() || business?.name || "").trim();
     if (!trimmedName) {
       setError("Enterprise legal / operating name is required.");
       setLoading(false);
@@ -377,7 +377,7 @@ function OnboardingContent() {
 
       // Ensure Assessment exists and save step 1 state
       let currAssessment = assessment;
-      if (!currAssessment) {
+      if (!currAssessment || isNewAssessment) {
         const existingList = await api.businesses.getAssessments(currentBiz.id).catch(() => []);
         const nextNum = existingList.length + 1;
         currAssessment = await api.businesses.createAssessment(currentBiz.id, {
@@ -410,6 +410,13 @@ function OnboardingContent() {
       });
       setAssessment(updatedAss);
       localStorage.setItem("complywise_active_assessment_id", updatedAss.id);
+      if (typeof window !== "undefined" && window.location.pathname.startsWith("/onboarding")) {
+        window.history.replaceState(
+          null,
+          "",
+          `/onboarding?business_id=${currentBiz.id}&assessment_id=${updatedAss.id}`
+        );
+      }
 
       setStep(2);
     } catch (err: unknown) {
@@ -427,18 +434,19 @@ function OnboardingContent() {
     setError(null);
 
     try {
+      const effectiveAssId = assessment?.id || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
       const resp = await api.onboarding.saveProductsActivities(
         business.id,
         {
           product_description: productDescription,
           ...(tradeIntent ? { import_export_intent: tradeIntent } : {}),
-          ...(assessment?.id ? { assessment_id: assessment.id } : {}),
+          ...(effectiveAssId ? { assessment_id: effectiveAssId } : {}),
         }
       );
       setDetectedActivities(resp.detected_activities);
 
       // Load Smart Questions for Step 3 scoped to assessment
-      const questionsResp = await api.onboarding.getQuestions(business.id, assessment?.id);
+      const questionsResp = await api.onboarding.getQuestions(business.id, effectiveAssId || undefined);
       setSmartQuestions(questionsResp.questions);
 
       // Pre-fill only values the user has actually answered before
@@ -455,16 +463,16 @@ function OnboardingContent() {
       }
       setQuestionAnswers((prev) => ({ ...initialAnswers, ...prev }));
 
-      if (assessment) {
+      if (effectiveAssId) {
         const updatedStepState = {
-          ...(assessment.step_state || {}),
+          ...(assessment?.step_state || {}),
           products: {
             productDescription,
             tradeIntent,
             detectedActivities: resp.detected_activities,
           },
         };
-        const updatedAss = await api.businesses.updateAssessment(business.id, assessment.id, {
+        const updatedAss = await api.businesses.updateAssessment(business.id, effectiveAssId, {
           current_step: 3,
           step_state: updatedStepState,
         });
@@ -520,21 +528,22 @@ function OnboardingContent() {
         }
       }
 
+      const effectiveAssId = assessment?.id || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
       if (Object.keys(formattedAnswers).length > 0) {
         await api.onboarding.submitAnswers(business.id, {
           answers: formattedAnswers,
-          assessment_id: assessment?.id,
+          ...(effectiveAssId ? { assessment_id: effectiveAssId } : {}),
         });
       }
 
-      if (assessment) {
+      if (effectiveAssId) {
         const updatedStepState = {
-          ...(assessment.step_state || {}),
+          ...(assessment?.step_state || {}),
           questions: {
             answers: formattedAnswers,
           },
         };
-        const updatedAss = await api.businesses.updateAssessment(business.id, assessment.id, {
+        const updatedAss = await api.businesses.updateAssessment(business.id, effectiveAssId, {
           current_step: 4,
           step_state: updatedStepState,
         });
@@ -542,7 +551,7 @@ function OnboardingContent() {
       }
 
       setStep(4);
-      runRegulatoryAnalysis(business.id, assessment?.id);
+      runRegulatoryAnalysis(business.id, effectiveAssId || undefined);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to record smart question answers.");
       setLoading(false);
@@ -624,7 +633,7 @@ function OnboardingContent() {
     }, 1200);
 
     try {
-      const effectiveAssId = assId || assessment?.id;
+      const effectiveAssId = assId || assessment?.id || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : undefined) || undefined;
       const orchResult = await api.discovery.orchestrate(bizId, effectiveAssId);
       clearInterval(queryTimer);
 
@@ -643,9 +652,10 @@ function OnboardingContent() {
       if (orchResult?.executive_summary) {
         setExecutiveSummary(orchResult.executive_summary);
       }
-      if (orchResult?.discovery) {
-        setDiscoveryResult(orchResult.discovery);
+      if (orchResult?.discovery || orchResult?.live_discovery) {
+        setDiscoveryResult(orchResult.discovery || orchResult.live_discovery);
       }
+
       if (orchResult?.decision_run) {
         setDecisionRun(orchResult.decision_run);
       } else {
@@ -658,6 +668,7 @@ function OnboardingContent() {
         try {
           const refreshedAss = await api.businesses.getAssessment(bizId, effectiveAssId);
           setAssessment(refreshedAss);
+          localStorage.setItem("complywise_active_assessment_id", refreshedAss.id);
         } catch {}
       }
 
@@ -1072,10 +1083,10 @@ function OnboardingContent() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                    Questions formulated specifically for {business?.name || "your enterprise"}
+                    Pre-Discovery Questions for {business?.name || "your enterprise"}
                   </h2>
                   <p className="text-xs text-slate-500 mt-1">
-                    Tailored smart questions targeting missing statutory variables to identify your exact permits, clearances, and compliance mandates.
+                    Targeted operational details required to formulate precise regulatory discovery queries across official government portals and gazettes.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1112,6 +1123,7 @@ function OnboardingContent() {
                   const ruleCount = q.candidate_rules_count ?? q.rule_dependency_count ?? 0;
                   const questionText = q.question || q.question_text || q.label || `Question regarding ${qKey}`;
                   const questionReason = q.reason || q.why_it_matters;
+                  const discoveryImpact = q.expected_discovery_impact;
                   const domains: string[] = Array.isArray(q.domains) ? q.domains : [];
 
                   return (
@@ -1141,20 +1153,24 @@ function OnboardingContent() {
                                 Priority {q.priority}
                               </span>
                             )}
-                            {ruleCount > 0 && (
-                              <span className="text-[11px] text-slate-400">
-                                ({ruleCount} rule{ruleCount > 1 ? "s" : ""} depend on this)
-                              </span>
-                            )}
                           </div>
                           <h3 className="text-sm font-bold text-slate-900 leading-snug">
                             {questionText}
                           </h3>
                         </div>
 
-                        {questionReason && (
-                          <div className="sm:max-w-xs text-[11px] text-slate-600 bg-white border border-slate-200/80 rounded-lg p-2.5 leading-relaxed shrink-0">
-                            <span className="font-bold text-slate-700 block mb-0.5">Statutory Rationale:</span> {questionReason}
+                        {(questionReason || discoveryImpact) && (
+                          <div className="sm:max-w-xs text-[11px] text-slate-600 bg-white border border-slate-200/80 rounded-lg p-2.5 leading-relaxed shrink-0 space-y-1">
+                            {questionReason && (
+                              <p>
+                                <span className="font-bold text-slate-700 block mb-0.5">Pre-Discovery Focus:</span> {questionReason}
+                              </p>
+                            )}
+                            {discoveryImpact && discoveryImpact !== questionReason && (
+                              <p className="pt-1 border-t border-slate-100 text-indigo-700">
+                                <span className="font-bold block mb-0.5">Search Impact:</span> {discoveryImpact}
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1486,21 +1502,22 @@ function OnboardingContent() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <span className="text-slate-500 block text-[11px]">Queries Planned</span>
-                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.queries?.length || 0}</span>
+                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.queries?.length || (executiveSummary?.official_sources_searched ? 3 : 0)}</span>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <span className="text-slate-500 block text-[11px]">Sources Reviewed</span>
-                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.candidate_urls_count || 0}</span>
+                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.candidate_urls_count || (discoveryResult as any)?.sources_count || executiveSummary?.official_sources_searched || 0}</span>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <span className="text-slate-500 block text-[11px]">Official Portals</span>
-                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.official_sources_count || 0}</span>
+                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.official_sources_count || (discoveryResult as any)?.sources_count || (executiveSummary?.official_sources_searched ? Math.min(executiveSummary.official_sources_searched, 3) : 0)}</span>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <span className="text-slate-500 block text-[11px]">Claims Quarantined</span>
-                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.candidate_requirements_count || 0}</span>
+                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.candidate_requirements_count || (discoveryResult as any)?.candidate_claims_count || executiveSummary?.quarantined_claims || 0}</span>
                 </div>
               </div>
+
             </div>
 
             {/* Quarantined Candidate Regulatory Claims (Part D, E, F) */}

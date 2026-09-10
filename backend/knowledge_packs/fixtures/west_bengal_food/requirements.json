@@ -1,0 +1,76 @@
+[
+  {
+    "requirement_id": "REQ-WB-FACTORY-LICENSE",
+    "name": "Factory License (West Bengal)",
+    "category": "LICENCE",
+    "authority": "DISH_WB",
+    "jurisdiction": "WEST_BENGAL",
+    "domain": "LABOR",
+    "description": "Occupational health and safety factory license under the Factories Act and West Bengal Factories Rules for premises with 10+ workers using power.",
+    "status": "PUBLISHED",
+    "evidence_refs": [
+      "EVD-FACTORIES-ACT-10-POWER-WB"
+    ],
+    "metadata": {
+      "portal": "https://silpasathi.wb.gov.in/",
+      "statutory_fee": "\u20b92,500 to \u20b915,000 depending on worker count and motor HP",
+      "validity_period": "1 to 5 years (renewable)",
+      "renewal_period_years": 1,
+      "required_documents": [
+        "Form 1 (Application for permission to construct or extend a factory)",
+        "Form 2 (Application for registration and grant of licence)",
+        "Factory architectural plan and machine layout drawings signed by chartered engineer",
+        "Electric power connection sanction letter / load certificate from WBSEDCL / CESC",
+        "Land possession deed / registered lease agreement / WBIIDC industrial allotment letter",
+        "List of partners / directors with address proofs and contact details",
+        "Detailed manufacturing process flowchart with raw material inputs"
+      ],
+      "application_steps": [
+        "Register on Silpa Sathi portal (https://silpasathi.wb.gov.in)",
+        "Submit factory building layout plan in Form 1 to Chief Inspector of Factories",
+        "Upon plan approval, complete machinery installation and safety guarding",
+        "Submit Notice of Occupation in Form 2 at least 15 days prior to commencement of manufacturing",
+        "Pay factory license fees online via GRIPS payment portal",
+        "Inspector of Factories conducts on-site safety audit",
+        "Download digitally signed Factory License from Silpa Sathi"
+      ],
+      "portal_name": "Silpa Sathi - West Bengal Single Window (Factory License)"
+    }
+  },
+  {
+    "requirement_id": "REQ-WBPCB-CTE",
+    "name": "WBPCB Consent to Establish (CTE)",
+    "category": "CONSENT",
+    "authority": "WBPCB",
+    "jurisdiction": "WEST_BENGAL",
+    "domain": "ENVIRONMENT",
+    "description": "Mandatory environmental clearance under Section 25 of Water Act 1974 & Section 21 of Air Act 1981 prior to setting up industrial or food processing machinery in West Bengal.",
+    "status": "PUBLISHED",
+    "evidence_refs": [
+      "EVD-WBPCB-CTE-FOOD"
+    ],
+    "metadata": {
+      "portal": "https://silpasathi.wb.gov.in/",
+      "statutory_fee": "\u20b95,000 to \u20b950,000 based on gross capital investment in plant & machinery",
+      "validity_period": "7 years for Green category, 5 years for Orange category (up to commercial commissioning)",
+      "renewal_period_years": 5,
+      "required_documents": [
+        "Detailed Project Report (DPR) with process flowchart, water balance, and material balance",
+        "Site blueprint showing location of production machinery, wastewater drainage, and stack emission vents",
+        "Land ownership / industrial lease deed / WBIIDC plot possession letter",
+        "Effluent treatment scheme / soak pit drawing or air pollution control specifications",
+        "Gross capital investment certificate from Chartered Accountant (CA certificate)"
+      ],
+      "application_steps": [
+        "Log in to West Bengal Silpa Sathi / WBPCB EMIS portal",
+        "Submit online CTE Form I (Water) and Form I (Air)",
+        "Upload project report, site plan, CA investment certificate, and wastewater disposal scheme",
+        "Pay statutory consent fee online through GRIPS portal",
+        "WBPCB Regional Officer conducts site inspection and reviews siting buffer distances",
+        "Board issues Consent to Establish (CTE)",
+        "Apply for Consent to Operate (CTO) after trial run notification prior to commercial dispatch"
+      ],
+      "portal_name": "Silpa Sathi - West Bengal Single Window Portal"
+    }
+  }
+]

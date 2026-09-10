@@ -9,6 +9,7 @@ import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import WhyThisAppliesModal from "@/components/WhyThisAppliesModal";
 import { api } from "@/lib/api";
+import { sanitizeExternalUrl } from "@/lib/url";
 import { ComplianceRequirementItem, CandidateRequirement, Business } from "@/types";
 
 type ViewTab = "action_required" | "verification_required" | "audit";
@@ -315,19 +316,55 @@ function ComplianceContent() {
                         </div>
                         <div>
                           <span className="text-slate-400 text-[10px] block uppercase font-bold">Submission Route</span>
-                          <span className="font-semibold text-indigo-600 truncate block">Official Portal</span>
+                          {(() => {
+                            const portalUrl = sanitizeExternalUrl(req.portal_url || req.source_url || req.portal || (req.citations && req.citations[0]?.canonical_url));
+                            const portalLabel = req.portal_name || `${req.authority} Portal`;
+                            return portalUrl ? (
+                              <a
+                                href={portalUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline truncate block"
+                                title={`Open official portal: ${portalLabel}`}
+                              >
+                                {portalLabel} ↗
+                              </a>
+                            ) : (
+                              <span className="font-semibold text-slate-700 truncate block">{portalLabel}</span>
+                            );
+                          })()}
                         </div>
                       </div>
 
                       {/* Action Bar */}
                       <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
-                        <button
-                          type="button"
-                          onClick={() => openProvenance(req)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
-                        >
-                          <span>ℹ️ Why do I need this?</span>
-                        </button>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => openProvenance(req)}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
+                          >
+                            <span>ℹ️ Why do I need this?</span>
+                          </button>
+
+                          {(() => {
+                            const statutoryUrl = sanitizeExternalUrl(req.source_url || req.portal_url || req.portal || (req.citations && req.citations[0]?.canonical_url));
+                            if (!statutoryUrl) return null;
+                            const portalLabel = req.portal_name || "Official Statutory Source";
+                            return (
+                              <a
+                                href={statutoryUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:border-emerald-300 transition-all shadow-2xs"
+                                title={`Open official statutory portal: ${portalLabel}`}
+                              >
+                                <span>🔗 Official Statutory Source</span>
+                                <span className="text-[11px]">↗</span>
+                              </a>
+                            );
+                          })()}
+                        </div>
 
                         <div className="flex items-center gap-3">
                           <Link
@@ -373,13 +410,31 @@ function ComplianceContent() {
                       <StatusBadge status={req.status} />
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                      <button
-                        type="button"
-                        onClick={() => openProvenance(req)}
-                        className="text-xs font-semibold text-slate-600 hover:text-indigo-600"
-                      >
-                        Why do I need this?
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => openProvenance(req)}
+                          className="text-xs font-semibold text-slate-600 hover:text-indigo-600"
+                        >
+                          Why do I need this?
+                        </button>
+                        {(() => {
+                          const statutoryUrl = sanitizeExternalUrl(req.source_url || req.portal_url || req.portal || (req.citations && req.citations[0]?.canonical_url));
+                          if (!statutoryUrl) return null;
+                          const portalLabel = req.portal_name || "Statutory Source";
+                          return (
+                            <a
+                              href={statutoryUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-bold text-emerald-700 hover:underline inline-flex items-center gap-1"
+                              title={`Open official portal: ${portalLabel}`}
+                            >
+                              <span>🔗 {portalLabel} ↗</span>
+                            </a>
+                          );
+                        })()}
+                      </div>
                       <Link
                         href={`/compliance/${req.requirement_id}?business_id=${businessId}`}
                         className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
@@ -432,16 +487,20 @@ function ComplianceContent() {
                       </div>
                       <h4 className="font-bold text-slate-900">{cand.requirement_name}</h4>
                       <p className="text-slate-600 line-clamp-2">{cand.applicability_statement}</p>
-                      {cand.source_url && (
-                        <a
-                          href={cand.source_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-indigo-600 hover:underline block pt-1 font-medium"
-                        >
-                          Source Portal ↗
-                        </a>
-                      )}
+                      {(() => {
+                        const cleanUrl = sanitizeExternalUrl(cand.source_url);
+                        if (!cleanUrl) return null;
+                        return (
+                          <a
+                            href={cleanUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 hover:underline block pt-1 font-medium"
+                          >
+                            Source Portal ↗
+                          </a>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>

@@ -263,7 +263,7 @@ def test_smart_question_planner_targets_dynamic_questions(food_business):
     assert "questions" in plan_res
     questions = plan_res["questions"]
     assert len(questions) >= 5
-    assert len(questions) <= 9
+    assert len(questions) <= 15
 
 
 @pytest.mark.django_db

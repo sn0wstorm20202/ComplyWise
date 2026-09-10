@@ -1,0 +1,30 @@
+[
+  {
+    "source_id": "SRC-FACTORIES-ACT-1948-WB",
+    "authority": "DISH_WB",
+    "title": "The Factories Act, 1948 and West Bengal Factories Rules, 1958",
+    "source_type": "STATUTE",
+    "canonical_url": "https://silpasathi.wb.gov.in",
+    "publication_date": "1948-09-23",
+    "effective_date": "1958-01-01",
+    "status": "ACTIVE",
+    "content_hash": "wb01fact1948",
+    "metadata": {
+      "jurisdiction": "WEST_BENGAL"
+    }
+  },
+  {
+    "source_id": "SRC-WATER-AIR-ACTS-WB",
+    "authority": "WBPCB",
+    "title": "Water (Prevention and Control of Pollution) Act 1974 & Air Act 1981 - West Bengal",
+    "source_type": "STATUTE",
+    "canonical_url": "https://wbpcb.gov.in",
+    "publication_date": "1974-03-23",
+    "effective_date": "1981-05-16",
+    "status": "ACTIVE",
+    "content_hash": "wb02pcb1974",
+    "metadata": {
+      "portal": "WBPCB EMIS Portal"
+    }
+  }
+]

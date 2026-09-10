@@ -142,6 +142,50 @@ TRADE_INTENT_OPTIONS = _options(
     ("PLANNED", "Planned, not started"),
 )
 
+CDSCO_DEVICE_RISK_OPTIONS = _options(
+    ("CLASS_A_LOW", "Class A — Low Risk"),
+    ("CLASS_B_LOW_MODERATE", "Class B — Low to Moderate Risk"),
+    ("CLASS_C_MODERATE_HIGH", "Class C — Moderate to High Risk"),
+    ("CLASS_D_HIGH", "Class D — High Risk"),
+)
+
+CLEANROOM_ISO_OPTIONS = _options(
+    ("ISO_CLASS_FIVE", "ISO Class 5"),
+    ("ISO_CLASS_SEVEN", "ISO Class 7"),
+    ("ISO_CLASS_EIGHT", "ISO Class 8"),
+    ("UNCLASSIFIED_CONTROLLED", "Unclassified Controlled"),
+    ("NONE", "No Cleanroom"),
+)
+
+ACTIVE_IMPLANTABLE_OPTIONS = _options(
+    ("IMPLANTABLE", "Implantable Device"),
+    ("ACTIVE_ELECTROMEDICAL", "Active Electromedical"),
+    ("INVITRO_DIAGNOSTIC", "In-Vitro Diagnostic"),
+    ("SURGICAL_INSTRUMENT", "Surgical Instrument"),
+    ("OTHER", "Other Medical Device"),
+)
+
+CLOUD_HOSTING_OPTIONS = _options(
+    ("INDIA_DOMESTIC", "India Domestic Data Center"),
+    ("MULTI_REGION_GLOBAL", "Multi-Region Global Cloud"),
+    ("CROSS_BORDER", "Cross-Border Exclusively"),
+)
+
+WAREHOUSE_STORAGE_OPTIONS = _options(
+    ("GENERAL_MERCHANDISE", "General Merchandise"),
+    ("TEMPERATURE_CONTROLLED", "Temperature Controlled Cold Storage"),
+    ("HAZARDOUS_MATERIALS", "Hazardous Materials"),
+    ("BONDED_CUSTOMS", "Bonded Customs"),
+    ("MIXED", "Mixed Storage"),
+)
+
+SURFACE_TREATMENT_OPTIONS = _options(
+    ("ELECTROPLATING_GALVANIZING", "Electroplating or Galvanizing"),
+    ("POWDER_COATING_PAINTING", "Powder Coating or Industrial Painting"),
+    ("HEAT_TREATMENT_ONLY", "Heat Treatment Only"),
+    ("MACHINING_ONLY", "Machining Only without Coating"),
+)
+
 
 PROFILE_VARIABLES: tuple[ProfileVariable, ...] = (
     ProfileVariable(
@@ -298,6 +342,187 @@ PROFILE_VARIABLES: tuple[ProfileVariable, ...] = (
         data_type=VariableDataType.BOOLEAN,
         why_it_matters="Operating across states can change which authority has jurisdiction.",
     ),
+    # -- Domain: Food & Agro Processing (V20-V24) -----------------------------
+    ProfileVariable(
+        code="V20",
+        key="daily_processing_capacity",
+        label="Daily manufacturing or processing capacity",
+        data_type=VariableDataType.DECIMAL,
+        unit="MT/day",
+        why_it_matters="Production volume affects whether central or state authority governs registration.",
+    ),
+    ProfileVariable(
+        code="V21",
+        key="boiler_installed",
+        label="Industrial steam boiler operated",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Boiler equipment triggers inspection certifications under boiler safety acts.",
+    ),
+    ProfileVariable(
+        code="V22",
+        key="food_contact_packaging",
+        label="Direct food contact packaging used",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Packaging materials touching food products must meet migration testing standards.",
+    ),
+    ProfileVariable(
+        code="V23",
+        key="cold_chain_storage",
+        label="Cold chain or refrigerated storage operated",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Temperature-controlled storage introduces temperature monitoring requirements.",
+    ),
+    ProfileVariable(
+        code="V24",
+        key="organic_claim",
+        label="Certified organic claims on products",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Organic labeling requires accreditation under national organic production programs.",
+    ),
+    # -- Domain: Medical Devices & Diagnostics (V25-V29) ----------------------
+    ProfileVariable(
+        code="V25",
+        key="cdsco_device_risk_class",
+        label="Medical device risk classification",
+        data_type=VariableDataType.SINGLE_CHOICE,
+        options=CDSCO_DEVICE_RISK_OPTIONS,
+        why_it_matters="Risk classification determines whether central or state licensing authorities oversee manufacturing.",
+    ),
+    ProfileVariable(
+        code="V26",
+        key="is_sterile_at_supply",
+        label="Device supplied in sterile condition",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Sterility status determines sterilization validation and environmental microbial monitoring.",
+    ),
+    ProfileVariable(
+        code="V27",
+        key="cleanroom_iso_class",
+        label="Cleanroom facility classification",
+        data_type=VariableDataType.SINGLE_CHOICE,
+        options=CLEANROOM_ISO_OPTIONS,
+        why_it_matters="Cleanroom validation is an input to quality audits for sensitive device manufacturing.",
+    ),
+    ProfileVariable(
+        code="V28",
+        key="biocompatibility_tested",
+        label="Biocompatibility testing per international standards",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Device materials contacting human tissue require biological safety evaluation dossiers.",
+    ),
+    ProfileVariable(
+        code="V29",
+        key="active_or_implantable",
+        label="Medical device operational type",
+        data_type=VariableDataType.SINGLE_CHOICE,
+        options=ACTIVE_IMPLANTABLE_OPTIONS,
+        why_it_matters="Active and implantable devices require electrical safety and clinical surveillance.",
+    ),
+    # -- Domain: Digital, Software & SaaS (V30-V34) ----------------------------
+    ProfileVariable(
+        code="V30",
+        key="processes_personal_data",
+        label="Processes digital personal data of Indian users",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Handling personal data introduces data fiduciary obligations under privacy laws.",
+    ),
+    ProfileVariable(
+        code="V31",
+        key="cloud_hosting_location",
+        label="Primary cloud infrastructure hosting region",
+        data_type=VariableDataType.SINGLE_CHOICE,
+        options=CLOUD_HOSTING_OPTIONS,
+        why_it_matters="Infrastructure location affects data residency and cross-border transfer requirements.",
+    ),
+    ProfileVariable(
+        code="V32",
+        key="cross_border_data_transfer",
+        label="Transfers personal data across international borders",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Cross-border data movement is subject to country transfer restrictions and safeguards.",
+    ),
+    ProfileVariable(
+        code="V33",
+        key="critical_cyber_services",
+        label="Provides cloud hosting, VPN, or network infrastructure",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Critical digital service providers face mandatory security incident reporting timelines.",
+    ),
+    ProfileVariable(
+        code="V34",
+        key="export_of_software_services",
+        label="Exports software or digital services internationally",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Cross-border digital services involve software technology park and foreign exchange declarations.",
+    ),
+    # -- Domain: Electronics & Hardware (V35-V38) -----------------------------
+    ProfileVariable(
+        code="V35",
+        key="wireless_rf_features",
+        label="Wireless RF transmitting capabilities",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Radio transmission components require equipment type approvals from telecommunication authorities.",
+    ),
+    ProfileVariable(
+        code="V36",
+        key="bis_crs_product_category",
+        label="Product falls under compulsory registration orders",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Covered electronic items require safety testing at recognized laboratories before sale.",
+    ),
+    ProfileVariable(
+        code="V37",
+        key="battery_included",
+        label="Includes integrated lithium-ion or secondary battery",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Batteries introduce waste management and transport safety testing standards.",
+    ),
+    ProfileVariable(
+        code="V38",
+        key="epr_target_obligation",
+        label="Places electrical or electronic equipment on the market",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Producers face extended producer responsibility recycling targets under waste rules.",
+    ),
+    # -- Domain: Logistics & Warehousing (V39-V41) ----------------------------
+    ProfileVariable(
+        code="V39",
+        key="warehouse_storage_type",
+        label="Warehouse storage facility type",
+        data_type=VariableDataType.SINGLE_CHOICE,
+        options=WAREHOUSE_STORAGE_OPTIONS,
+        why_it_matters="Storage characteristics determine commercial zoning and safety clearance requirements.",
+    ),
+    ProfileVariable(
+        code="V40",
+        key="hazardous_goods_handling",
+        label="Handles or stores dangerous or flammable substances",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Flammable and toxic materials require dedicated storage safety permits.",
+    ),
+    ProfileVariable(
+        code="V41",
+        key="fleet_commercial_vehicles",
+        label="Owns or operates commercial transport fleet",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Fleet operations introduce transport vehicle permits and tracking standards.",
+    ),
+    # -- Domain: Precision Engineering & Automotive (V42-V43) -----------------
+    ProfileVariable(
+        code="V42",
+        key="surface_treatment_type",
+        label="Metal surface finishing or treatment processes",
+        data_type=VariableDataType.SINGLE_CHOICE,
+        options=SURFACE_TREATMENT_OPTIONS,
+        why_it_matters="Chemical treatment processes determine pollution control categorization and discharge norms.",
+    ),
+    ProfileVariable(
+        code="V43",
+        key="compressed_gas_storage",
+        label="Bulk storage of compressed or liquefied industrial gases",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Pressurized gas storage triggers industrial safety container approvals.",
+    ),
 )
 
 VARIABLES_BY_KEY: dict[str, ProfileVariable] = {v.key: v for v in PROFILE_VARIABLES}
@@ -336,7 +561,29 @@ def resolve_variable_options(variable: ProfileVariable) -> list[dict[str, str]]:
     return [{"value": o.value, "label": o.label} for o in variable.options]
 
 
+DIGIT_WORDS_MAP = {
+    "0": "zero",
+    "1": "one",
+    "2": "two",
+    "3": "three",
+    "4": "four",
+    "5": "five",
+    "6": "six",
+    "7": "seven",
+    "8": "eight",
+    "9": "nine",
+}
+
+
+def _tokenize_option_str(s: str) -> set[str]:
+    s_clean = s.lower().replace(" ", "_").replace("-", "_")
+    for digit, word in DIGIT_WORDS_MAP.items():
+        s_clean = s_clean.replace(digit, word)
+    return set(filter(None, s_clean.split("_")))
+
+
 def coerce_value(variable: ProfileVariable, value: object) -> object:
+
     """Normalise a raw submitted value to the variable's declared type.
 
     Raises `ValueError` with a user-facing message when the value cannot be
@@ -355,8 +602,8 @@ def coerce_value(variable: ProfileVariable, value: object) -> object:
             return bool(value)
         if isinstance(value, str):
             s = value.strip().lower()
-            if s in {"true", "false", "yes", "no", "1", "0"}:
-                return s in {"true", "yes", "1"}
+            if s in {"true", "false", "yes", "no", "1", "0", "y", "n"}:
+                return s in {"true", "yes", "1", "y"}
         raise ValueError(f"{variable.label} must be true or false.")
 
     if dt is VariableDataType.INTEGER:
@@ -372,8 +619,36 @@ def coerce_value(variable: ProfileVariable, value: object) -> object:
             raise ValueError(f"{variable.label} must be a number.") from exc
 
     if dt is VariableDataType.SINGLE_CHOICE:
+        if isinstance(value, bool):
+            if not value:
+                for opt in variable.options:
+                    if opt.value in {"NONE", "OTHER", "NO"}:
+                        return opt.value
+            else:
+                for opt in variable.options:
+                    if opt.value not in {"NONE", "OTHER", "NO"}:
+                        return opt.value
         text = str(value).strip()
-        if variable.options and text not in variable.option_values:
+        if variable.options:
+            if text in variable.option_values:
+                return text
+            # Try exact case-insensitive match on value or label
+            for opt in variable.options:
+                if opt.value.lower() == text.lower() or opt.label.lower() == text.lower():
+                    return opt.value
+            # Try token subset match (e.g. 'ISO 7' -> 'ISO_CLASS_SEVEN')
+            val_tokens = _tokenize_option_str(text)
+            for opt in variable.options:
+                opt_tokens = _tokenize_option_str(opt.value) | _tokenize_option_str(opt.label)
+                if val_tokens and val_tokens.issubset(opt_tokens):
+                    return opt.value
+            # Try fuzzy/substring match on clean text
+            clean_text = text.lower().replace(" ", "_").replace("-", "_")
+            for opt in variable.options:
+                if clean_text in opt.value.lower() or opt.value.lower() in clean_text:
+                    return opt.value
+                if text.lower() in opt.label.lower() or opt.label.lower() in text.lower():
+                    return opt.value
             raise ValueError(f"{text!r} is not a recognised option for {variable.label}.")
         return text
 
@@ -382,6 +657,7 @@ def coerce_value(variable: ProfileVariable, value: object) -> object:
             text = value.strip()
             if text.startswith("[") and text.endswith("]"):
                 import json
+
                 try:
                     parsed = json.loads(text)
                     if isinstance(parsed, list):
@@ -394,11 +670,38 @@ def coerce_value(variable: ProfileVariable, value: object) -> object:
             raise ValueError(f"{variable.label} must be a list.")
         items = [str(item).strip() for item in value]
         if variable.options:
-            unknown = sorted(set(items) - variable.option_values)
-            if unknown:
-                raise ValueError(
-                    f"{', '.join(unknown)} is not a recognised option for {variable.label}."
-                )
+            resolved_items: list[str] = []
+            for item in items:
+                if item in variable.option_values:
+                    resolved_items.append(item)
+                    continue
+                matched = False
+                for opt in variable.options:
+                    if opt.value.lower() == item.lower() or opt.label.lower() == item.lower():
+                        resolved_items.append(opt.value)
+                        matched = True
+                        break
+                if not matched:
+                    item_tokens = _tokenize_option_str(item)
+                    for opt in variable.options:
+                        opt_tokens = _tokenize_option_str(opt.value) | _tokenize_option_str(opt.label)
+                        if item_tokens and item_tokens.issubset(opt_tokens):
+                            resolved_items.append(opt.value)
+                            matched = True
+                            break
+                if not matched:
+                    clean_item = item.lower().replace(" ", "_").replace("-", "_")
+                    for opt in variable.options:
+                        if clean_item in opt.value.lower() or opt.value.lower() in clean_item:
+                            resolved_items.append(opt.value)
+                            matched = True
+                            break
+                if not matched:
+                    raise ValueError(
+                        f"{item!r} is not a recognised option for {variable.label}."
+                    )
+            return resolved_items
         return items
+
 
     return str(value).strip()

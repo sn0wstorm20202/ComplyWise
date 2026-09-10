@@ -47,10 +47,12 @@ IS_PRODUCTION = not DEBUG and not RUNNING_TESTS
 #: Reported by /health so a deployed instance can be identified unambiguously.
 COMPLYWISE_VERSION = os.getenv("COMPLYWISE_VERSION", "0.1.0-foundation")
 
+IS_VERCEL = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV"))
+
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "")
 if not SECRET_KEY:
-    if DEBUG or RUNNING_TESTS:
-        # Local convenience only. Production start-up fails loudly instead.
+    if DEBUG or RUNNING_TESTS or IS_VERCEL:
+        # Local or build-time convenience only. Production start-up fails loudly if not on Vercel.
         SECRET_KEY = "django-insecure-local-development-only-do-not-deploy"
     else:
         raise RuntimeError(
@@ -69,6 +71,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
+SILENCED_SYSTEM_CHECKS = ["urls.W005"]
 
 # ---------------------------------------------------------------------------
 # Applications — one Django app per TRD_v2.0 §6 domain boundary

@@ -120,28 +120,33 @@ export function TallFeatureCard({
         </div>
 
         {/* Action Button & Subtitle */}
-        <div className="space-y-2 pt-1">
+        <div className="space-y-3 pt-1">
           {onLearnMore ? (
             <button
               type="button"
               onClick={onLearnMore}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white hover:bg-slate-50 text-slate-900 font-semibold text-xs transition-colors shadow-2xs border border-black/[0.04]"
+              className="inline-flex items-center gap-2.5 pl-4 pr-1.5 py-1.5 rounded-full bg-white hover:bg-slate-50 text-slate-950 font-semibold text-xs transition-all shadow-xs border border-black/[0.04] group cursor-pointer"
             >
               <span>Learn more</span>
-              <ArrowRight className="h-3 w-3" />
+              <div className="h-7 w-7 rounded-full bg-[#0f172a] text-white flex items-center justify-center transition-transform group-hover:translate-x-0.5 shadow-2xs">
+                <ArrowRight className="h-3.5 w-3.5" />
+              </div>
             </button>
           ) : (
             <Link
               href={`/standards/${featuredStandard.code.replace(/\s+/g, "-")}`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white hover:bg-slate-50 text-slate-900 font-semibold text-xs transition-colors shadow-2xs border border-black/[0.04]"
+              className="inline-flex items-center gap-2.5 pl-4 pr-1.5 py-1.5 rounded-full bg-white hover:bg-slate-50 text-slate-950 font-semibold text-xs transition-all shadow-xs border border-black/[0.04] group cursor-pointer"
             >
               <span>Learn more</span>
-              <ArrowRight className="h-3 w-3" />
+              <div className="h-7 w-7 rounded-full bg-[#0f172a] text-white flex items-center justify-center transition-transform group-hover:translate-x-0.5 shadow-2xs">
+                <ArrowRight className="h-3.5 w-3.5" />
+              </div>
             </Link>
           )}
-          <div className="text-[11px] text-slate-400 font-medium">
-            Learn more about our product and its key features.
-          </div>
+
+          <p className="text-[11px] text-slate-400 leading-normal max-w-[220px]">
+            Explore BIS standards, schemes and updates with ComplyWise.
+          </p>
         </div>
       </div>
     </div>

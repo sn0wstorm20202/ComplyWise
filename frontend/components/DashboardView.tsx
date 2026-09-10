@@ -2,16 +2,10 @@
 
 import React, { useState } from "react";
 import {
-  Folder,
-  ChevronRight,
-  Search,
-  ArrowUpDown,
-  Calendar,
-  ChevronDown,
-  Plus,
   Building2,
   Sparkles,
 } from "lucide-react";
+import PageHeader from "./dashboard/PageHeader";
 import TallFeatureCard from "./dashboard/TallFeatureCard";
 import ComplianceActivityCard from "./dashboard/ComplianceActivityCard";
 import ComplianceActionsCard from "./dashboard/ComplianceActionsCard";
@@ -72,80 +66,15 @@ export function DashboardView({
       )}
 
       {/* Page Header Area */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-1">
-        {/* Left: Breadcrumb + Page Title */}
-        <div className="space-y-1.5">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-            <Folder className="h-3.5 w-3.5 text-slate-400" />
-            <span>Home Page</span>
-            <ChevronRight className="h-3 w-3 text-slate-300" />
-            <Folder className="h-3.5 w-3.5 text-slate-400" />
-            <span className="text-slate-600 font-semibold">Dashboard</span>
-          </div>
-
-          {/* Title */}
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950 font-sans">
-            Compliance Dashboard
-          </h1>
-        </div>
-
-        {/* Right Action Controls */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Search circle button */}
-          <button
-            type="button"
-            aria-label="Search"
-            onClick={onOpenNewQuery}
-            title="Open Regulatory Search (Cmd+K)"
-            className="h-10 w-10 rounded-full bg-white hover:bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-600 transition-colors shadow-2xs cursor-pointer"
-          >
-            <Search className="h-4 w-4" />
-          </button>
-
-          {/* Sort / Filter circle button */}
-          <button
-            type="button"
-            aria-label="Filter"
-            onClick={() => setActionsDrawerOpen(true)}
-            title="Sort and filter priority actions"
-            className="h-10 w-10 rounded-full bg-white hover:bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-600 transition-colors shadow-2xs cursor-pointer"
-          >
-            <ArrowUpDown className="h-4 w-4" />
-          </button>
-
-          {/* Date Selector Pill */}
-          <button
-            type="button"
-            onClick={() => setDateRangeModalOpen(true)}
-            title="Select audit period"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-slate-50 border border-slate-200/80 text-xs font-semibold text-slate-800 transition-colors shadow-2xs cursor-pointer"
-          >
-            <Calendar className="h-3.5 w-3.5 text-slate-500" />
-            <span>{selectedDateRange}</span>
-            <ChevronDown className="h-3 w-3 text-slate-400" />
-          </button>
-
-          {/* Add Widget Ghost Button */}
-          <button
-            type="button"
-            onClick={() => setAddWidgetModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-slate-300/80 hover:bg-white text-xs font-semibold text-slate-700 transition-colors cursor-pointer"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Add Widget</span>
-          </button>
-
-          {/* Create a Report Pill Button */}
-          <button
-            type="button"
-            onClick={() => setReportModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 rounded-full bg-[#f1f5f9] hover:bg-slate-200/80 text-xs font-semibold text-slate-900 transition-colors shadow-2xs cursor-pointer"
-          >
-            <span>Create a Report</span>
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Compliance Dashboard"
+        selectedDateRange={selectedDateRange}
+        onOpenSearch={onOpenNewQuery}
+        onToggleSort={() => setActionsDrawerOpen(true)}
+        onOpenDateRange={() => setDateRangeModalOpen(true)}
+        onAddWidget={() => setAddWidgetModalOpen(true)}
+        onCreateReport={() => setReportModalOpen(true)}
+      />
 
       {/* Main 3-Column Card Layout Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">

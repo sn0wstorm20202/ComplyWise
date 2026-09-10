@@ -78,10 +78,10 @@ export function ComplianceActionsCard({
               onClick={handleSortClick}
               aria-label="Sort actions"
               title={`Filter: currently ${activeFilter === "all" ? "All Actions" : "High Priority Only"}`}
-              className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
+              className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
                 activeFilter === "high"
                   ? "bg-slate-900 text-white"
-                  : "bg-slate-100 hover:bg-slate-200/70 text-slate-600"
+                  : "bg-[#f1f5f9] hover:bg-slate-200/80 text-slate-600"
               }`}
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
@@ -90,7 +90,7 @@ export function ComplianceActionsCard({
               type="button"
               onClick={onExpand}
               aria-label="Expand actions details"
-              className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200/70 flex items-center justify-center text-slate-600 transition-colors"
+              className="h-8 w-8 rounded-full bg-[#f1f5f9] hover:bg-slate-200/80 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
             >
               <ArrowUpRight className="h-3.5 w-3.5" />
             </button>
@@ -118,26 +118,26 @@ export function ComplianceActionsCard({
           <button
             type="button"
             onClick={() => setActiveFilter("high")}
-            className={`px-3 py-1.5 rounded-full border flex items-center justify-between text-xs shadow-2xs transition-all ${
+            className={`px-3 py-1.5 rounded-full border flex items-center justify-between text-xs shadow-2xs transition-all cursor-pointer ${
               activeFilter === "high"
                 ? "bg-rose-50 border-rose-300 ring-2 ring-rose-200 text-rose-900 font-bold"
-                : "bg-[#f8fafc] border-slate-200/60 hover:bg-slate-100 text-slate-900"
+                : "bg-white border-slate-200/80 hover:bg-slate-50 text-slate-900"
             }`}
           >
             <span className="font-bold">{actionsData.highPriorityCount}</span>
-            <span className="text-[11px] text-slate-400 font-medium">High</span>
+            <span className="text-[11px] text-slate-400 font-medium ml-1">High</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveFilter("all")}
-            className={`px-3 py-1.5 rounded-full border flex items-center justify-between text-xs shadow-2xs transition-all ${
+            className={`px-3 py-1.5 rounded-full border flex items-center justify-between text-xs shadow-2xs transition-all cursor-pointer ${
               activeFilter === "all"
                 ? "bg-slate-900 border-slate-900 text-white font-bold"
-                : "bg-[#f8fafc] border-slate-200/60 hover:bg-slate-100 text-slate-900"
+                : "bg-white border-slate-200/80 hover:bg-slate-50 text-slate-900"
             }`}
           >
             <span className="font-bold">{actionsData.totalCount}</span>
-            <span className={`text-[11px] font-medium ${activeFilter === "all" ? "text-slate-300" : "text-slate-400"}`}>
+            <span className={`text-[11px] font-medium ml-1 ${activeFilter === "all" ? "text-slate-300" : "text-slate-400"}`}>
               Total
             </span>
           </button>
@@ -153,7 +153,7 @@ export function ComplianceActionsCard({
           )}
 
           {/* Chart SVG */}
-          <div className="relative h-24 w-full">
+          <div className="relative h-22 w-full">
             <svg
               className="w-full h-full overflow-visible"
               viewBox="0 0 300 100"
@@ -161,22 +161,13 @@ export function ComplianceActionsCard({
             >
               <defs>
                 <linearGradient id="actionGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#dbeafe" stopOpacity="0.7" />
-                  <stop offset="100%" stopColor="#eff6ff" stopOpacity="0.05" />
+                  <stop offset="0%" stopColor="#f1f5f9" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0.05" />
                 </linearGradient>
               </defs>
 
               {/* Area Fill */}
               <path d={areaD} fill="url(#actionGradient)" />
-
-              {/* Spline Line */}
-              <path
-                d={pathD}
-                fill="none"
-                stroke="#3b82f6"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
 
               {/* Vertical Dashed Line at Peak */}
               <line
@@ -184,34 +175,41 @@ export function ComplianceActionsCard({
                 y1={peakPoint.y}
                 x2={peakPoint.x}
                 y2="98"
-                stroke="#64748b"
+                stroke="#ecfa98"
                 strokeWidth="1.5"
                 strokeDasharray="3 3"
-                opacity="0.6"
               />
 
-              {/* Highlight Circle Dot on Peak */}
-              <circle
-                cx={peakPoint.x}
-                cy={peakPoint.y}
-                r="4.5"
-                fill="#ffffff"
-                stroke="#3b82f6"
+              {/* Spline Line */}
+              <path
+                d={pathD}
+                fill="none"
+                stroke="#0f172a"
                 strokeWidth="2.5"
+                strokeLinecap="round"
               />
 
-              {/* Interactive Dots for other points */}
+              {/* Dots on each day point */}
               {points.map((p, idx) => (
-                <circle
-                  key={idx}
-                  cx={p.x}
-                  cy={p.y}
-                  r="5"
-                  className="cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
-                  fill="#1d4ed8"
-                  onMouseEnter={() => setHoveredPoint(p)}
-                  onMouseLeave={() => setHoveredPoint(null)}
-                />
+                <g key={idx}>
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={p.isPeak ? "4" : "3"}
+                    fill="#0f172a"
+                  />
+                  {p.isPeak && (
+                    <circle
+                      cx={p.x}
+                      cy={p.y}
+                      r="7"
+                      fill="none"
+                      stroke="#0f172a"
+                      strokeWidth="1"
+                      opacity="0.25"
+                    />
+                  )}
+                </g>
               ))}
             </svg>
 
@@ -220,13 +218,22 @@ export function ComplianceActionsCard({
               className="absolute z-10 -translate-x-1/2 -translate-y-full"
               style={{
                 left: `${(peakPoint.x / 300) * 100}%`,
-                top: `${(peakPoint.y / 100) * 100 - 8}%`,
+                top: `${(peakPoint.y / 100) * 100 - 6}%`,
               }}
             >
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#ecfa98] text-[#1c2e0b] font-bold text-[11px] shadow-sm whitespace-nowrap">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#ecfa98] text-[#1c2e0b] font-bold text-[11px] shadow-2xs whitespace-nowrap">
                 {actionsData.openCount} actions
               </span>
             </div>
+          </div>
+
+          {/* Weekday Labels matching X positions */}
+          <div className="flex items-center justify-between px-1 pt-1 text-[10px] font-semibold text-slate-400">
+            {actionsData.timeline.map((d) => (
+              <span key={d.day} className={d.isPeak ? "text-slate-900 font-bold" : ""}>
+                {d.day}
+              </span>
+            ))}
           </div>
         </div>
       </div>

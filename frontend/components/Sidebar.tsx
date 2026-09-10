@@ -87,10 +87,10 @@ export function Sidebar({ activeView, onSelectView }: SidebarProps) {
               key={item.id}
               onClick={() => onSelectView(item.id)}
               type="button"
-              className="w-full flex items-center gap-3 px-2.5 py-2 rounded-2xl text-slate-500 hover:text-slate-900 hover:bg-white/60 text-xs font-medium transition-colors group text-left"
+              className="w-full flex items-center gap-3.5 px-3 py-2 rounded-2xl text-slate-500 hover:text-slate-900 hover:bg-black/[0.03] text-xs font-medium transition-colors group text-left cursor-pointer"
             >
-              <div className="h-8 w-8 rounded-xl bg-transparent border border-slate-200/80 group-hover:border-slate-300 group-hover:bg-white flex items-center justify-center shrink-0 text-slate-500 group-hover:text-slate-800 transition-all">
-                <Icon className="h-4 w-4" />
+              <div className="h-8 w-8 flex items-center justify-center shrink-0">
+                <Icon className="h-4 w-4 text-slate-500 group-hover:text-slate-800 transition-colors" />
               </div>
               <span className="truncate">{item.label}</span>
             </button>
@@ -104,25 +104,31 @@ export function Sidebar({ activeView, onSelectView }: SidebarProps) {
           const Icon = item.icon;
           const isActive = activeView === item.id;
 
+          if (isActive) {
+            return (
+              <button
+                key={item.id}
+                onClick={() => onSelectView(item.id)}
+                type="button"
+                className="w-full flex items-center gap-3 px-2.5 py-2 rounded-2xl bg-[#eceff3] text-[#0f172a] font-semibold text-xs transition-colors group text-left cursor-pointer"
+              >
+                <div className="h-8 w-8 rounded-xl bg-[#0f172a] text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Icon className="h-4 w-4 text-white" />
+                </div>
+                <span className="truncate">{item.label}</span>
+              </button>
+            );
+          }
+
           return (
             <button
               key={item.id}
               onClick={() => onSelectView(item.id)}
               type="button"
-              className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-2xl text-xs font-medium transition-colors group text-left ${
-                isActive
-                  ? "bg-[#eceff3] text-[#0f172a] font-semibold"
-                  : "text-slate-500 hover:text-slate-900 hover:bg-white/60"
-              }`}
+              className="w-full flex items-center gap-3.5 px-3 py-2 rounded-2xl text-slate-500 hover:text-slate-900 hover:bg-black/[0.03] text-xs font-medium transition-colors group text-left cursor-pointer"
             >
-              <div
-                className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 transition-all ${
-                  isActive
-                    ? "bg-[#0f172a] text-white"
-                    : "border border-slate-200/80 group-hover:border-slate-300 group-hover:bg-white text-slate-500 group-hover:text-slate-800"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
+              <div className="h-8 w-8 flex items-center justify-center shrink-0">
+                <Icon className="h-4 w-4 text-slate-500 group-hover:text-slate-800 transition-colors" />
               </div>
               <span className="truncate">{item.label}</span>
             </button>

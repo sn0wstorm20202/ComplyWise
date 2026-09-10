@@ -50,9 +50,14 @@ export function TopBar({
           className="flex items-center gap-2.5 group cursor-pointer"
         >
           <ComplyWiseLogo className="h-7 w-7 text-slate-900 transition-transform group-hover:scale-105" />
-          <span className="font-bold text-lg tracking-tight text-slate-950 font-sans">
-            ComplyWise
-          </span>
+          <div className="flex flex-col">
+            <span className="font-bold text-base tracking-tight text-slate-950 font-sans leading-none">
+              ComplyWise
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium tracking-tight mt-0.5">
+              BIS Compliance
+            </span>
+          </div>
         </Link>
 
         {/* Primary Segmented Navigation Pills */}
@@ -65,11 +70,11 @@ export function TopBar({
             onClick={() => onSelectPill("dashboard")}
             className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full transition-all cursor-pointer ${
               activePill === "dashboard"
-                ? "bg-white text-slate-950 shadow-xs font-bold"
-                : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+                ? "bg-[#0f172a] text-white shadow-xs font-bold"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
             }`}
           >
-            <LayoutDashboard className="h-3.5 w-3.5" />
+            <LayoutDashboard className={`h-3.5 w-3.5 ${activePill === "dashboard" ? "text-white" : "text-slate-500"}`} />
             <span>Dashboard</span>
           </button>
 
@@ -78,11 +83,11 @@ export function TopBar({
             onClick={() => onSelectPill("compliance")}
             className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full transition-all cursor-pointer ${
               activePill === "compliance"
-                ? "bg-white text-slate-950 shadow-xs font-bold"
-                : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+                ? "bg-[#0f172a] text-white shadow-xs font-bold"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
             }`}
           >
-            <ShieldCheck className="h-3.5 w-3.5" />
+            <ShieldCheck className={`h-3.5 w-3.5 ${activePill === "compliance" ? "text-white" : "text-slate-500"}`} />
             <span>Compliance</span>
           </button>
 
@@ -91,11 +96,11 @@ export function TopBar({
             onClick={() => onSelectPill("reports")}
             className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full transition-all cursor-pointer ${
               activePill === "reports"
-                ? "bg-white text-slate-950 shadow-xs font-bold"
-                : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+                ? "bg-[#0f172a] text-white shadow-xs font-bold"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
             }`}
           >
-            <Flag className="h-3.5 w-3.5" />
+            <Flag className={`h-3.5 w-3.5 ${activePill === "reports" ? "text-white" : "text-slate-500"}`} />
             <span>Reports</span>
           </button>
         </nav>
@@ -125,10 +130,10 @@ export function TopBar({
               AM
             </div>
             <div
-              title="2 more members"
-              className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center justify-center cursor-pointer shadow-2xs"
+              title="3 more members"
+              className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-[#0f172a] text-white text-[10px] font-bold flex items-center justify-center cursor-pointer shadow-2xs"
             >
-              +2
+              +3
             </div>
           </div>
 
@@ -136,7 +141,7 @@ export function TopBar({
           <button
             type="button"
             onClick={() => setInviteModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-200/50 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200/80 border border-slate-200/70 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5 text-slate-500" />
             <span>Add Member</span>

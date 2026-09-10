@@ -65,10 +65,10 @@ export function ComplianceActivityCard({
               onClick={handleSortClick}
               title={`Sort: currently ${sortOrder === "standard" ? "Chronological" : "By Volume"}`}
               aria-label="Sort activity"
-              className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
+              className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
                 sortOrder === "volume"
                   ? "bg-slate-900 text-white"
-                  : "bg-slate-100 hover:bg-slate-200/70 text-slate-600"
+                  : "bg-[#f1f5f9] hover:bg-slate-200/80 text-slate-600"
               }`}
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
@@ -77,7 +77,7 @@ export function ComplianceActivityCard({
               type="button"
               onClick={onExpand}
               aria-label="Expand activity details"
-              className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200/70 flex items-center justify-center text-slate-600 transition-colors"
+              className="h-8 w-8 rounded-full bg-[#f1f5f9] hover:bg-slate-200/80 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
             >
               <ArrowUpRight className="h-3.5 w-3.5" />
             </button>
@@ -123,7 +123,7 @@ export function ComplianceActivityCard({
                 className="flex-1 flex flex-col items-center gap-2 h-full justify-end group cursor-pointer"
               >
                 <div
-                  className={`w-full max-w-[26px] rounded-t-lg transition-all duration-300 group-hover:scale-y-105 origin-bottom ${
+                  className={`w-full max-w-[26px] rounded-full transition-all duration-300 group-hover:scale-y-105 origin-bottom ${
                     d.isHighlight
                       ? "bg-[#ecfa98] group-hover:bg-[#e4f67c] shadow-xs"
                       : "bg-[#f1f5f9] group-hover:bg-slate-300/80"

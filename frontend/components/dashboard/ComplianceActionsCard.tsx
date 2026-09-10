@@ -1,19 +1,71 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { ArrowUpDown, ArrowUpRight } from "lucide-react";
+import { ActionTimelinePoint } from "@/data/demo";
 
 interface ComplianceActionsCardProps {
+  actionsData?: {
+    openCount: number;
+    changeFromLastWeek: string;
+    highPriorityCount: number;
+    totalCount: number;
+    timeline: ActionTimelinePoint[];
+  };
   onSort?: () => void;
   onExpand?: () => void;
 }
 
 export function ComplianceActionsCard({
+  actionsData = {
+    openCount: 3,
+    changeFromLastWeek: "↑ 2 from last week",
+    highPriorityCount: 10,
+    totalCount: 26,
+    timeline: [
+      { day: "Mon", count: 2 },
+      { day: "Tue", count: 1 },
+      { day: "Wed", count: 3, isPeak: true },
+      { day: "Thu", count: 2 },
+      { day: "Fri", count: 4 },
+      { day: "Sat", count: 3 },
+      { day: "Sun", count: 3 },
+    ],
+  },
   onSort,
   onExpand,
 }: ComplianceActionsCardProps) {
+  const [activeFilter, setActiveFilter] = useState<"all" | "high">("all");
+  const [hoveredPoint, setHoveredPoint] = useState<ActionTimelinePoint | null>(null);
+
+  function handleSortClick() {
+    if (onSort) {
+      onSort();
+    } else {
+      setActiveFilter((prev) => (prev === "all" ? "high" : "all"));
+    }
+  }
+
+  // Calculate coordinates for spline curve
+  // ViewBox: 0 0 300 100.
+  // We have 7 points along X: 15, 60, 110, 160, 205, 250, 290.
+  // Y maps count 0..5 -> 90..15.
+  const xCoords = [15, 60, 110, 160, 205, 250, 290];
+  const maxCount = 5;
+  const points = actionsData.timeline.map((item, idx) => {
+    const x = xCoords[idx] || (idx / (actionsData.timeline.length - 1)) * 280 + 10;
+    const y = 90 - (item.count / maxCount) * 70;
+    return { ...item, x, y };
+  });
+
+  // Construct SVG Path
+  const pathD = `M ${points[0].x} ${points[0].y} C ${points[1].x} ${points[1].y}, ${points[2].x} 18, ${points[2].x} 22 C 145 28, 175 62, ${points[4].x} ${points[4].y} C 230 45, 260 52, ${points[6].x} ${points[6].y}`;
+  const areaD = `${pathD} L ${points[6].x} 100 L ${points[0].x} 100 Z`;
+
+  const peakPoint = points.find((p) => p.isPeak) || points[2];
+
   return (
-    <div className="bg-white rounded-[28px] p-6 border border-slate-200/60 shadow-xs flex flex-col justify-between h-[280px]">
+    <div className="bg-white rounded-[28px] p-6 border border-slate-200/60 shadow-xs flex flex-col justify-between h-[280px] relative">
       {/* Header */}
       <div>
         <div className="flex items-center justify-between">
@@ -23,9 +75,14 @@ export function ComplianceActionsCard({
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={onSort}
+              onClick={handleSortClick}
               aria-label="Sort actions"
-              className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200/70 flex items-center justify-center text-slate-600 transition-colors"
+              title={`Filter: currently ${activeFilter === "all" ? "All Actions" : "High Priority Only"}`}
+              className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
+                activeFilter === "high"
+                  ? "bg-slate-900 text-white"
+                  : "bg-slate-100 hover:bg-slate-200/70 text-slate-600"
+              }`}
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
             </button>
@@ -46,10 +103,10 @@ export function ComplianceActionsCard({
         </div>
         <div className="flex items-baseline gap-2.5">
           <span className="text-3xl font-bold text-slate-900 tracking-tight leading-none">
-            3
+            {activeFilter === "high" ? actionsData.highPriorityCount : actionsData.openCount}
           </span>
           <span className="text-xs font-medium text-rose-500">
-            ↑ 2 from last week
+            {actionsData.changeFromLastWeek}
           </span>
         </div>
       </div>
@@ -58,18 +115,43 @@ export function ComplianceActionsCard({
       <div className="grid grid-cols-12 gap-3 items-end mt-1">
         {/* Left Pills Column */}
         <div className="col-span-3 flex flex-col gap-2 pb-5">
-          <div className="px-3 py-1.5 rounded-full bg-[#f8fafc] border border-slate-200/60 flex items-center justify-between text-xs shadow-2xs">
-            <span className="font-bold text-slate-900">10</span>
+          <button
+            type="button"
+            onClick={() => setActiveFilter("high")}
+            className={`px-3 py-1.5 rounded-full border flex items-center justify-between text-xs shadow-2xs transition-all ${
+              activeFilter === "high"
+                ? "bg-rose-50 border-rose-300 ring-2 ring-rose-200 text-rose-900 font-bold"
+                : "bg-[#f8fafc] border-slate-200/60 hover:bg-slate-100 text-slate-900"
+            }`}
+          >
+            <span className="font-bold">{actionsData.highPriorityCount}</span>
             <span className="text-[11px] text-slate-400 font-medium">High</span>
-          </div>
-          <div className="px-3 py-1.5 rounded-full bg-[#f8fafc] border border-slate-200/60 flex items-center justify-between text-xs shadow-2xs">
-            <span className="font-bold text-slate-900">26</span>
-            <span className="text-[11px] text-slate-400 font-medium">Total</span>
-          </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter("all")}
+            className={`px-3 py-1.5 rounded-full border flex items-center justify-between text-xs shadow-2xs transition-all ${
+              activeFilter === "all"
+                ? "bg-slate-900 border-slate-900 text-white font-bold"
+                : "bg-[#f8fafc] border-slate-200/60 hover:bg-slate-100 text-slate-900"
+            }`}
+          >
+            <span className="font-bold">{actionsData.totalCount}</span>
+            <span className={`text-[11px] font-medium ${activeFilter === "all" ? "text-slate-300" : "text-slate-400"}`}>
+              Total
+            </span>
+          </button>
         </div>
 
         {/* Right Spline Chart Area */}
         <div className="col-span-9 relative h-32 flex flex-col justify-end">
+          {/* Hover Tooltip */}
+          {hoveredPoint && (
+            <div className="absolute top-0 right-4 z-20 bg-slate-900 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-md">
+              {hoveredPoint.day}: {hoveredPoint.count} open actions
+            </div>
+          )}
+
           {/* Chart SVG */}
           <div className="relative h-24 w-full">
             <svg
@@ -78,74 +160,73 @@ export function ComplianceActionsCard({
               preserveAspectRatio="none"
             >
               <defs>
-                <linearGradient id="actionAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f1f5f9" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0.1" />
+                <linearGradient id="actionGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#dbeafe" stopOpacity="0.7" />
+                  <stop offset="100%" stopColor="#eff6ff" stopOpacity="0.05" />
                 </linearGradient>
               </defs>
 
               {/* Area Fill */}
-              <path
-                d="M 15 75 
-                   C 35 60, 55 45, 75 48 
-                   C 95 52, 115 65, 135 40 
-                   C 155 42, 175 60, 195 55 
-                   C 215 50, 235 38, 255 35 
-                   C 275 32, 285 20, 290 15 
-                   L 290 100 L 15 100 Z"
-                fill="url(#actionAreaGradient)"
-              />
+              <path d={areaD} fill="url(#actionGradient)" />
 
               {/* Spline Line */}
               <path
-                d="M 15 75 
-                   C 35 60, 55 45, 75 48 
-                   C 95 52, 115 65, 135 40 
-                   C 155 42, 175 60, 195 55 
-                   C 215 50, 235 38, 255 35 
-                   C 275 32, 285 20, 290 15"
+                d={pathD}
                 fill="none"
-                stroke="#cbd5e1"
-                strokeWidth="1.75"
+                stroke="#3b82f6"
+                strokeWidth="2.5"
+                strokeLinecap="round"
               />
 
-              {/* Wednesday Vertical Dashed Guideline */}
+              {/* Vertical Dashed Line at Peak */}
               <line
-                x1="135"
-                y1="40"
-                x2="135"
-                y2="100"
-                stroke="#ecfa98"
+                x1={peakPoint.x}
+                y1={peakPoint.y}
+                x2={peakPoint.x}
+                y2="98"
+                stroke="#64748b"
                 strokeWidth="1.5"
                 strokeDasharray="3 3"
+                opacity="0.6"
               />
 
-              {/* Data Points (Black Circles) */}
-              <circle cx="15" cy="75" r="3.5" fill="#0f172a" />
-              <circle cx="75" cy="48" r="3.5" fill="#0f172a" />
-              <circle cx="135" cy="40" r="3.5" fill="#0f172a" />
-              <circle cx="195" cy="55" r="3.5" fill="#0f172a" />
-              <circle cx="255" cy="35" r="3.5" fill="#0f172a" />
-              <circle cx="290" cy="15" r="3.5" fill="#0f172a" />
+              {/* Highlight Circle Dot on Peak */}
+              <circle
+                cx={peakPoint.x}
+                cy={peakPoint.y}
+                r="4.5"
+                fill="#ffffff"
+                stroke="#3b82f6"
+                strokeWidth="2.5"
+              />
+
+              {/* Interactive Dots for other points */}
+              {points.map((p, idx) => (
+                <circle
+                  key={idx}
+                  cx={p.x}
+                  cy={p.y}
+                  r="5"
+                  className="cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
+                  fill="#1d4ed8"
+                  onMouseEnter={() => setHoveredPoint(p)}
+                  onMouseLeave={() => setHoveredPoint(null)}
+                />
+              ))}
             </svg>
 
-            {/* Pinned "3 actions" Lime Pill attached above Wednesday point */}
+            {/* Floating Action Pill Badge pinned directly above peak dot */}
             <div
-              className="absolute left-[45%] -top-4 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-[#ecfa98] text-[#1c2e0b] font-bold text-[10px] shadow-xs z-10 pointer-events-none whitespace-nowrap"
+              className="absolute z-10 -translate-x-1/2 -translate-y-full"
+              style={{
+                left: `${(peakPoint.x / 300) * 100}%`,
+                top: `${(peakPoint.y / 100) * 100 - 8}%`,
+              }}
             >
-              3 actions
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#ecfa98] text-[#1c2e0b] font-bold text-[11px] shadow-sm whitespace-nowrap">
+                {actionsData.openCount} actions
+              </span>
             </div>
-          </div>
-
-          {/* X-axis Day Labels */}
-          <div className="flex justify-between px-2 pt-2 text-[11px] font-medium text-slate-400">
-            <span>Mon</span>
-            <span>Tue</span>
-            <span>Wed</span>
-            <span>Thu</span>
-            <span>Fri</span>
-            <span>Sat</span>
-            <span>Sun</span>
           </div>
         </div>
       </div>

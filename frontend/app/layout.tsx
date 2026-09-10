@@ -15,6 +15,8 @@ export const metadata: Metadata = {
     "Enterprise-grade Bureau of Indian Standards (BIS) compliance intelligence, quality control orders, and statutory workflows.",
 };
 
+import { BusinessProvider } from "@/context/BusinessContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -23,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${plusJakarta.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans bg-[#edf0f6] text-slate-900 selection:bg-slate-200">
-        {children}
+        <BusinessProvider>{children}</BusinessProvider>
       </body>
     </html>
   );

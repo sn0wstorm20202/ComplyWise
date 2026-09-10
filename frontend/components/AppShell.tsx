@@ -25,8 +25,6 @@ export function AppShell({
   const [searchOpen, setSearchOpen] = useState(false);
   const [newQueryOpen, setNewQueryOpen] = useState(false);
 
-  const activeView = controlledActiveView || internalActiveView;
-
   function handleSelectView(view: NavView) {
     if (controlledOnSelectView) {
       controlledOnSelectView(view);
@@ -36,11 +34,19 @@ export function AppShell({
         view === "dashboard"
           ? "/dashboard"
           : view === "updates"
-          ? "/compliance"
+          ? "/regulatory-updates"
+          : view === "assistant"
+          ? "/ai-assistant"
+          : view === "profile"
+          ? "/business-profile"
+          : view === "settings"
+          ? "/settings"
           : `/${view}`;
       router.push(targetPath);
     }
   }
+
+  const activeView = controlledActiveView || internalActiveView;
 
   // Derive top bar pill state from activeView
   const activePill =

@@ -2,14 +2,36 @@
 
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { X, ArrowRight, Star } from "lucide-react";
 
 interface TallFeatureCardProps {
+  featuredStandard?: {
+    code: string;
+    title: string;
+    badge: string;
+    description: string;
+    authority: string;
+    points: number[];
+  };
   onLearnMore?: () => void;
   onDismiss?: () => void;
 }
 
-export function TallFeatureCard({ onLearnMore, onDismiss }: TallFeatureCardProps) {
+export function TallFeatureCard({
+  featuredStandard = {
+    code: "IS 3055",
+    title: "Stay Compliant",
+    badge: "★ IS 3055",
+    description: "Simplify your regulatory journey with expert insights.",
+    authority: "Bureau of Indian Standards",
+    points: [18, 22, 25, 29, 34, 38, 44, 49, 55, 62, 70, 78, 85, 92, 98],
+  },
+  onLearnMore,
+  onDismiss,
+}: TallFeatureCardProps) {
+  const points = featuredStandard.points;
+
   return (
     <div className="bg-gradient-to-b from-[#e7edf6] via-[#ecf2f9] to-[#edf1f8] rounded-[28px] p-6 flex flex-col justify-between relative overflow-hidden border border-slate-200/50 shadow-xs h-full min-h-[580px]">
       {/* Top Header */}
@@ -49,72 +71,77 @@ export function TallFeatureCard({ onLearnMore, onDismiss }: TallFeatureCardProps
       <div className="space-y-4 pt-2">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-bold text-slate-900">
-            Stay Compliant
+            {featuredStandard.title}
           </h3>
           {/* IS Standard Badge */}
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#fef08a] text-slate-900 font-bold text-[11px] shadow-2xs">
             <Star className="h-3 w-3 fill-slate-900 text-slate-900" />
-            <span>IS 3055</span>
+            <span>{featuredStandard.code}</span>
           </span>
         </div>
 
         <p className="text-xs text-slate-500 leading-relaxed -mt-2">
-          Simplify your regulatory journey with expert insights.
+          {featuredStandard.description}
         </p>
 
         {/* Trend Area with vertical background bar grid and upward line */}
         <div className="relative h-20 w-full flex items-end">
           {/* Ascending vertical bar grid lines */}
           <div className="absolute inset-0 flex items-end justify-between px-1 opacity-25">
-            {[18, 22, 25, 29, 34, 38, 44, 49, 55, 62, 70, 78, 85, 92, 98].map(
-              (heightPercent, idx) => (
-                <div
-                  key={idx}
-                  className="w-1 bg-slate-400/80 rounded-t"
-                  style={{ height: `${heightPercent}%` }}
-                />
-              )
-            )}
+            {points.map((heightPercent, idx) => (
+              <div
+                key={idx}
+                className="w-1 bg-slate-400/80 rounded-t"
+                style={{ height: `${heightPercent}%` }}
+              />
+            ))}
           </div>
 
           {/* SVG Smooth Curve with Start and End Dots */}
           <svg
-            className="w-full h-full overflow-visible z-10"
-            viewBox="0 0 200 60"
-            fill="none"
+            className="w-full h-full relative z-10 overflow-visible"
+            viewBox="0 0 200 80"
+            preserveAspectRatio="none"
           >
             <path
-              d="M 10 48 Q 50 48 80 40 T 140 22 T 190 8"
-              stroke="#94a3b8"
-              strokeWidth="1.5"
+              d="M 5 68 C 50 62, 90 48, 130 28 C 160 14, 185 8, 195 6"
+              fill="none"
+              stroke="#0f172a"
+              strokeWidth="2.5"
               strokeLinecap="round"
             />
             {/* Start Dot */}
-            <circle cx="10" cy="48" r="3" fill="#0f172a" />
+            <circle cx="5" cy="68" r="4" fill="#0f172a" />
+            <circle cx="5" cy="68" r="7" fill="none" stroke="#0f172a" strokeWidth="1.5" opacity="0.3" />
             {/* End Dot */}
-            <circle cx="190" cy="8" r="3" fill="#0f172a" />
+            <circle cx="195" cy="6" r="4.5" fill="#0f172a" />
+            <circle cx="195" cy="6" r="8" fill="none" stroke="#0f172a" strokeWidth="1.5" opacity="0.4" />
           </svg>
         </div>
 
-        {/* Floating "Learn more" pill button */}
-        <div className="flex justify-center -mt-2">
-          <button
-            type="button"
-            onClick={onLearnMore}
-            className="inline-flex items-center gap-3 pl-5 pr-1.5 py-1.5 rounded-full bg-white hover:bg-slate-50 text-slate-900 text-xs font-semibold shadow-xs border border-slate-200/60 transition-all group"
-          >
-            <span>Learn more</span>
-            <div className="h-7 w-7 rounded-full bg-[#0f172a] text-white flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
-              <ArrowRight className="h-3.5 w-3.5" />
-            </div>
-          </button>
-        </div>
-
-        {/* Card Footer Caption */}
-        <div className="rounded-xl bg-white/40 border border-white/60 p-2.5 text-center mt-2">
-          <p className="text-[11px] text-slate-500 font-medium">
-            Explore BIS standards, schemes and updates with ComplyWise.
-          </p>
+        {/* Action Button & Subtitle */}
+        <div className="space-y-2 pt-1">
+          {onLearnMore ? (
+            <button
+              type="button"
+              onClick={onLearnMore}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white hover:bg-slate-50 text-slate-900 font-semibold text-xs transition-colors shadow-2xs border border-black/[0.04]"
+            >
+              <span>Learn more</span>
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          ) : (
+            <Link
+              href={`/standards/${featuredStandard.code.replace(/\s+/g, "-")}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white hover:bg-slate-50 text-slate-900 font-semibold text-xs transition-colors shadow-2xs border border-black/[0.04]"
+            >
+              <span>Learn more</span>
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          )}
+          <div className="text-[11px] text-slate-400 font-medium">
+            Learn more about our product and its key features.
+          </div>
         </div>
       </div>
     </div>

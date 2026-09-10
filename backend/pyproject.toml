@@ -45,4 +45,4 @@ ignore = [
 known-first-party = ["apps", "common", "config", "domain"]
 
 [tool.vercel]
-entrypoint = "config.wsgi:application"
+entrypoint = "wsgi.py:application"

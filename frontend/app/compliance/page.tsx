@@ -3,7 +3,7 @@
 import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import AppShell from "@/components/AppShell";
 import StatusBadge from "@/components/StatusBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
@@ -113,10 +113,8 @@ function ComplianceContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      <Navbar />
-
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <AppShell activeView="compliance">
+      <div className="space-y-6">
         {/* Header Banner */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -254,7 +252,7 @@ function ComplianceContent() {
             {actionRequiredItems.length === 0 ? (
               <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center shadow-xs">
                 <p className="text-sm font-semibold text-slate-700">No active requirements identified for this filter.</p>
-                <p className="text-xs text-slate-500 mt-1">Check the "Under Review" or "Regulatory Intelligence" tabs for other items.</p>
+                <p className="text-xs text-slate-500 mt-1">Check the &quot;Under Review&quot; or &quot;Regulatory Intelligence&quot; tabs for other items.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -513,7 +511,7 @@ function ComplianceContent() {
             </div>
           </div>
         )}
-      </main>
+      </div>
 
       {/* Why This Applies Modal */}
       <WhyThisAppliesModal
@@ -523,7 +521,7 @@ function ComplianceContent() {
         businessName={business?.name}
         businessState={(business as any)?.current_profile?.profile_data?.state}
       />
-    </div>
+    </AppShell>
   );
 }
 

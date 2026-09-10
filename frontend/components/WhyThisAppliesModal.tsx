@@ -109,7 +109,7 @@ export default function WhyThisAppliesModal({
                 </div>
                 {primaryCitation.excerpt && (
                   <blockquote className="border-l-2 border-amber-400 pl-3 italic text-amber-900 text-xs">
-                    "{String(primaryCitation.excerpt)}"
+                    &quot;{String(primaryCitation.excerpt)}&quot;
                   </blockquote>
                 )}
               </div>

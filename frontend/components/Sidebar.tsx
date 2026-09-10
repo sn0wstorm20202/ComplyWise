@@ -7,13 +7,13 @@ import {
   FileText,
   GitFork,
   Calendar,
-  BookOpen,
-  Coins,
-  BellRing,
+  Target,
+  Award,
+  Info,
   Sparkles,
-  Building2,
+  FileSpreadsheet,
   Settings,
-  ChevronRight,
+  Headphones,
 } from "lucide-react";
 
 export type NavView =
@@ -32,241 +32,112 @@ export type NavView =
 interface SidebarProps {
   activeView: NavView;
   onSelectView: (view: NavView) => void;
-  actionRequiredCount?: number;
-  deadlinesCount?: number;
-  updatesCount?: number;
 }
 
-interface NavItemConfig {
+interface NavItem {
   id: NavView;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  badge?: number | string;
-  badgeVariant?: "warning" | "neutral" | "info";
 }
 
-export function Sidebar({
-  activeView,
-  onSelectView,
-  actionRequiredCount = 3,
-  deadlinesCount = 4,
-  updatesCount = 2,
-}: SidebarProps) {
-  const primaryNav: NavItemConfig[] = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      id: "compliance",
-      label: "Compliance",
-      icon: ShieldCheck,
-      badge: actionRequiredCount > 0 ? actionRequiredCount : undefined,
-      badgeVariant: "warning",
-    },
-    {
-      id: "documents",
-      label: "Documents",
-      icon: FileText,
-      badge: 11,
-      badgeVariant: "neutral",
-    },
-    {
-      id: "workflows",
-      label: "Workflows",
-      icon: GitFork,
-      badge: 3,
-      badgeVariant: "neutral",
-    },
-    {
-      id: "calendar",
-      label: "Calendar",
-      icon: Calendar,
-      badge: deadlinesCount > 0 ? deadlinesCount : undefined,
-      badgeVariant: "info",
-    },
-    {
-      id: "standards",
-      label: "Standards",
-      icon: BookOpen,
-    },
-    {
-      id: "schemes",
-      label: "Schemes & Benefits",
-      icon: Coins,
-    },
-    {
-      id: "updates",
-      label: "Regulatory Updates",
-      icon: BellRing,
-      badge: updatesCount > 0 ? updatesCount : undefined,
-      badgeVariant: "info",
-    },
-    {
-      id: "assistant",
-      label: "AI Assistant",
-      icon: Sparkles,
-    },
+export function Sidebar({ activeView, onSelectView }: SidebarProps) {
+  const primaryItems: NavItem[] = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "compliance", label: "Compliance", icon: ShieldCheck },
+    { id: "documents", label: "Documents", icon: FileText },
+    { id: "workflows", label: "Workflows", icon: GitFork },
+    { id: "calendar", label: "Calendar", icon: Calendar },
+    { id: "standards", label: "Standards", icon: Target },
+    { id: "schemes", label: "Schemes & Benefits", icon: Award },
+    { id: "updates", label: "Regulatory Updates", icon: Info },
+    { id: "assistant", label: "AI Assistant", icon: Sparkles },
   ];
 
-  const secondaryNav: NavItemConfig[] = [
-    {
-      id: "profile",
-      label: "Business Profile",
-      icon: Building2,
-    },
-    {
-      id: "settings",
-      label: "Settings",
-      icon: Settings,
-    },
+  const secondaryItems: NavItem[] = [
+    { id: "profile", label: "Business Profile", icon: FileSpreadsheet },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   return (
-    <aside className="w-64 shrink-0 bg-white border-r border-slate-200/90 flex flex-col justify-between h-screen sticky top-0 select-none z-30">
-      {/* Brand & Organization Identity */}
-      <div className="p-4 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-slate-900 flex items-center justify-center text-white font-bold text-base shadow-xs tracking-tight">
-            CW
-          </div>
-          <div className="leading-tight">
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-950 text-base tracking-tight">
-                ComplyWise
-              </span>
-              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                BIS
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 font-medium">
-              Compliance Intelligence
-            </p>
-          </div>
-        </div>
+    <aside className="w-56 lg:w-60 shrink-0 px-4 py-4 flex flex-col justify-between select-none">
+      {/* Primary Navigation List */}
+      <nav aria-label="Main Navigation" className="space-y-1.5">
+        {primaryItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeView === item.id;
 
-        {/* Enterprise Context Mini-Card */}
-        <div className="mt-3.5 px-2.5 py-2 rounded-lg bg-slate-50 border border-slate-200/70">
-          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-            Active Enterprise
-          </div>
-          <div className="text-xs font-semibold text-slate-900 truncate mt-0.5" title="Apex Industrial Electro-Mechanicals Ltd.">
-            Apex Industrial Ltd.
-          </div>
-          <div className="text-[10px] text-slate-500 font-mono flex items-center justify-between mt-0.5">
-            <span>CM/L-8492019</span>
-            <span className="text-emerald-600 font-medium">● Verified</span>
-          </div>
-        </div>
-      </div>
+          if (isActive) {
+            return (
+              <button
+                key={item.id}
+                onClick={() => onSelectView(item.id)}
+                type="button"
+                className="w-full flex items-center gap-3 px-2.5 py-2 rounded-2xl bg-[#eceff3] text-[#0f172a] font-semibold text-xs transition-colors group text-left"
+              >
+                <div className="h-8 w-8 rounded-xl bg-[#0f172a] text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Icon className="h-4 w-4 text-white" />
+                </div>
+                <span className="truncate">{item.label}</span>
+              </button>
+            );
+          }
 
-      {/* Main Navigation List */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-6">
-        <div>
-          <div className="px-3 pb-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-            Workspace
-          </div>
-          <nav className="space-y-0.5">
-            {primaryNav.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeView === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onSelectView(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all group ${
-                    isActive
-                      ? "bg-slate-900 text-white shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Icon
-                      className={`h-4 w-4 shrink-0 transition-colors ${
-                        isActive
-                          ? "text-white"
-                          : "text-slate-400 group-hover:text-slate-700"
-                      }`}
-                    />
-                    <span>{item.label}</span>
-                  </div>
+          return (
+            <button
+              key={item.id}
+              onClick={() => onSelectView(item.id)}
+              type="button"
+              className="w-full flex items-center gap-3 px-2.5 py-2 rounded-2xl text-slate-500 hover:text-slate-900 hover:bg-white/60 text-xs font-medium transition-colors group text-left"
+            >
+              <div className="h-8 w-8 rounded-xl bg-transparent border border-slate-200/80 group-hover:border-slate-300 group-hover:bg-white flex items-center justify-center shrink-0 text-slate-500 group-hover:text-slate-800 transition-all">
+                <Icon className="h-4 w-4" />
+              </div>
+              <span className="truncate">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
 
-                  {item.badge !== undefined && (
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors ${
-                        isActive
-                          ? "bg-slate-800 text-slate-200"
-                          : item.badgeVariant === "warning"
-                          ? "bg-amber-100 text-amber-800"
-                          : item.badgeVariant === "info"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-slate-100 text-slate-600"
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+      {/* Bottom Section */}
+      <div className="pt-6 mt-6 border-t border-slate-200/60 space-y-1.5">
+        {secondaryItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeView === item.id;
 
-        <div>
-          <div className="px-3 pb-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-            Management
-          </div>
-          <nav className="space-y-0.5">
-            {secondaryNav.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeView === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onSelectView(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all group ${
-                    isActive
-                      ? "bg-slate-900 text-white shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Icon
-                      className={`h-4 w-4 shrink-0 transition-colors ${
-                        isActive
-                          ? "text-white"
-                          : "text-slate-400 group-hover:text-slate-700"
-                      }`}
-                    />
-                    <span>{item.label}</span>
-                  </div>
-                  <ChevronRight
-                    className={`h-3.5 w-3.5 transition-transform ${
-                      isActive ? "text-slate-300" : "text-transparent group-hover:text-slate-400"
-                    }`}
-                  />
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
+          return (
+            <button
+              key={item.id}
+              onClick={() => onSelectView(item.id)}
+              type="button"
+              className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-2xl text-xs font-medium transition-colors group text-left ${
+                isActive
+                  ? "bg-[#eceff3] text-[#0f172a] font-semibold"
+                  : "text-slate-500 hover:text-slate-900 hover:bg-white/60"
+              }`}
+            >
+              <div
+                className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                  isActive
+                    ? "bg-[#0f172a] text-white"
+                    : "border border-slate-200/80 group-hover:border-slate-300 group-hover:bg-white text-slate-500 group-hover:text-slate-800"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+              </div>
+              <span className="truncate">{item.label}</span>
+            </button>
+          );
+        })}
 
-      {/* Footer / User Profile Info */}
-      <div className="p-3 border-t border-slate-100 bg-slate-50/50">
-        <div className="flex items-center gap-2.5 p-1.5 rounded-lg">
-          <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-900 border border-blue-200 flex items-center justify-center text-xs font-bold shrink-0">
-            VS
-          </div>
-          <div className="min-w-0 flex-1 leading-tight">
-            <div className="text-xs font-semibold text-slate-900 truncate">
-              Dr. V. Sharma
-            </div>
-            <div className="text-[10px] text-slate-500 truncate">
-              Head of Quality & Reg
-            </div>
-          </div>
+        {/* Floating Support Button at bottom */}
+        <div className="pt-3 pl-2.5">
+          <button
+            type="button"
+            aria-label="Help & Support"
+            className="h-9 w-9 rounded-full bg-white border border-slate-200/80 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors shadow-2xs"
+          >
+            <Headphones className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </aside>

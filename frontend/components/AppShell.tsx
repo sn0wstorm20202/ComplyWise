@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar, { NavView } from "./Sidebar";
-import Header from "./Header";
+import TopBar from "./TopBar";
 import SearchModal from "./SearchModal";
 import NewQueryModal from "./NewQueryModal";
 
@@ -19,6 +20,7 @@ export function AppShell({
   onSelectView: controlledOnSelectView,
   renderViewContent,
 }: AppShellProps) {
+  const router = useRouter();
   const [internalActiveView, setInternalActiveView] = useState<NavView>("dashboard");
   const [searchOpen, setSearchOpen] = useState(false);
   const [newQueryOpen, setNewQueryOpen] = useState(false);
@@ -30,31 +32,55 @@ export function AppShell({
       controlledOnSelectView(view);
     } else {
       setInternalActiveView(view);
+      const targetPath =
+        view === "dashboard"
+          ? "/dashboard"
+          : view === "updates"
+          ? "/compliance"
+          : `/${view}`;
+      router.push(targetPath);
     }
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      {/* Desktop Sidebar */}
-      <Sidebar
-        activeView={activeView}
-        onSelectView={handleSelectView}
-        actionRequiredCount={3}
-        deadlinesCount={4}
-        updatesCount={2}
-      />
+  // Derive top bar pill state from activeView
+  const activePill =
+    activeView === "dashboard"
+      ? "dashboard"
+      : activeView === "compliance"
+      ? "compliance"
+      : activeView === "updates"
+      ? "reports"
+      : "dashboard";
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <Header
-          onOpenSearch={() => setSearchOpen(true)}
-          onOpenNewQuery={() => setNewQueryOpen(true)}
-          unreadCount={2}
+  return (
+    <div className="min-h-screen bg-[#edf0f6] p-2 sm:p-4 lg:p-6 flex flex-col justify-center">
+      {/* Floating Application Window Container */}
+      <div className="w-full max-w-[1536px] mx-auto bg-[#f6f7fb] rounded-[32px] border border-black/[0.04] shadow-[0_20px_50px_-15px_rgba(15,23,42,0.07)] overflow-hidden flex flex-col min-h-[900px]">
+        {/* Top Header Navigation */}
+        <TopBar
+          activePill={activePill}
+          onSelectPill={(pill) => {
+            if (pill === "dashboard") handleSelectView("dashboard");
+            if (pill === "compliance") handleSelectView("compliance");
+            if (pill === "reports") handleSelectView("updates");
+          }}
+          onNavigateToView={handleSelectView}
+          onAddMember={() => {}}
         />
 
-        <main className="flex-1 p-6 md:p-8 max-w-[1440px] w-full mx-auto">
-          {renderViewContent ? renderViewContent(activeView) : children}
-        </main>
+        {/* Main Body: Left Sidebar + Right Content Area */}
+        <div className="flex flex-1 min-h-0">
+          {/* Left Navigation Sidebar */}
+          <Sidebar
+            activeView={activeView}
+            onSelectView={handleSelectView}
+          />
+
+          {/* Right Scrollable Content Canvas */}
+          <main className="flex-1 px-6 lg:px-8 py-5 overflow-y-auto min-w-0">
+            {renderViewContent ? renderViewContent(activeView) : children}
+          </main>
+        </div>
       </div>
 
       {/* Global Search Command Palette */}
@@ -71,7 +97,7 @@ export function AppShell({
       <NewQueryModal
         isOpen={newQueryOpen}
         onClose={() => setNewQueryOpen(false)}
-        onViewStandard={(code) => {
+        onViewStandard={() => {
           handleSelectView("standards");
           setNewQueryOpen(false);
         }}

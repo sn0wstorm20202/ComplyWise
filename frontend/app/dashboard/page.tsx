@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { NavView } from "@/components/Sidebar";
 import DashboardView from "@/components/DashboardView";
@@ -17,9 +18,18 @@ import {
   SettingsView,
 } from "@/components/ComplianceViews";
 
-export default function DashboardPage() {
-  const [activeView, setActiveView] = useState<NavView>("dashboard");
-  const [newQueryOpen, setNewQueryOpen] = useState<boolean>(false);
+function DashboardContent() {
+  const searchParams = useSearchParams();
+  const initialView = (searchParams.get("view") as NavView) || "dashboard";
+  const [activeView, setActiveView] = useState<NavView>(initialView);
+  const [_newQueryOpen, setNewQueryOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const qView = searchParams.get("view") as NavView;
+    if (qView) {
+      setActiveView(qView);
+    }
+  }, [searchParams]);
 
   function renderView(view: NavView) {
     switch (view) {
@@ -66,5 +76,13 @@ export default function DashboardPage() {
       onSelectView={(view) => setActiveView(view)}
       renderViewContent={renderView}
     />
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#edf0f6]" />}>
+      <DashboardContent />
+    </Suspense>
   );
 }

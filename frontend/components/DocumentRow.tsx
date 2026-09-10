@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { FileText, Download, Eye, AlertCircle, CheckCircle2, ShieldCheck } from "lucide-react";
+import { FileText, Eye } from "lucide-react";
 import { DocumentItem } from "@/lib/mockData";
 import StatusBadge from "@/components/StatusBadge";
 
@@ -12,15 +12,15 @@ interface DocumentRowProps {
 
 export function DocumentRow({ document, onInspect }: DocumentRowProps) {
   return (
-    <div className="p-3.5 rounded-lg border border-slate-200/80 bg-slate-50/40 hover:bg-white hover:border-slate-300 hover:shadow-xs transition-all space-y-2">
+    <div className="p-5 rounded-2xl border border-slate-200/70 bg-white hover:border-slate-300 hover:shadow-xs transition-all space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
-          <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-900 border border-blue-200 flex items-center justify-center shrink-0 mt-0.5">
+          <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-900 border border-blue-200 flex items-center justify-center shrink-0 mt-0.5">
             <FileText className="h-4 w-4" />
           </div>
 
-          <div className="space-y-0.5 min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
+          <div className="space-y-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-bold text-slate-950 truncate">
                 {document.name}
               </span>
@@ -45,29 +45,29 @@ export function DocumentRow({ document, onInspect }: DocumentRowProps) {
             <button
               onClick={() => onInspect(document)}
               type="button"
-              className="p-1.5 text-slate-400 hover:text-slate-700 rounded transition-colors"
+              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
               title="Inspect Document"
             >
-              <Eye className="h-3.5 w-3.5" />
+              <Eye className="h-4 w-4" />
             </button>
           )}
         </div>
       </div>
 
       {/* Linked Clause & Expiry Metadata */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100/80 text-[11px]">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[11px]">
         <div className="text-slate-500 truncate">
           <span className="font-semibold text-slate-600">Statutory Link:</span>{" "}
-          <span className="font-mono text-slate-700">{document.clause_linked}</span>
+          <span className="font-mono text-slate-700 font-semibold">{document.clause_linked}</span>
         </div>
 
         {document.valid_until && (
           <div
-            className={`font-mono text-[10px] font-medium ${
+            className={`font-mono text-[11px] font-medium ${
               document.status === "ISSUE"
                 ? "text-rose-600 font-bold"
                 : document.status === "NEEDS_REVIEW"
-                ? "text-amber-600"
+                ? "text-amber-600 font-semibold"
                 : "text-slate-500"
             }`}
           >
@@ -77,7 +77,7 @@ export function DocumentRow({ document, onInspect }: DocumentRowProps) {
       </div>
 
       {document.notes && (
-        <div className="text-[11px] text-slate-500 bg-white p-2 rounded border border-slate-100 italic">
+        <div className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 leading-relaxed">
           {document.notes}
         </div>
       )}

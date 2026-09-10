@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import AppShell from "@/components/AppShell";
 import StatusBadge from "@/components/StatusBadge";
 import MetricCard from "@/components/MetricCard";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
@@ -86,27 +86,25 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <Navbar />
-        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <AppShell activeView="profile">
+        <div className="p-6">
           <LoadingSkeleton />
-        </main>
-      </div>
+        </div>
+      </AppShell>
     );
   }
 
   if (error || !profileData) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <Navbar />
-        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <AppShell activeView="profile">
+        <div className="p-6">
           <ErrorState
             title="Unable to load Profile Home"
             message={error || "Profile data could not be retrieved."}
             onRetry={loadProfileHome}
           />
-        </main>
-      </div>
+        </div>
+      </AppShell>
     );
   }
 
@@ -115,10 +113,8 @@ export default function ProfilePage() {
   const inProgressCount = recent_assessments.filter((a) => a.status === "IN_PROGRESS" || a.status === "DRAFT").length;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Navbar />
-
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <AppShell activeView="profile">
+      <div className="space-y-8 pb-8">
         {/* User Greeting & Header Banner */}
         <div className="mb-8 rounded-2xl bg-white p-6 shadow-xs border border-slate-200/80 sm:p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -476,7 +472,7 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

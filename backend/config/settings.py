@@ -59,8 +59,16 @@ if not SECRET_KEY:
             "See .env.example."
         )
 
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1],.vercel.app")
-CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "*")
+if "*" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.extend(["*", ".vercel.app", "localhost", "127.0.0.1"])
+
+CSRF_TRUSTED_ORIGINS = env_list(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,https://*.vercel.app,https://*.now.sh",
+)
+if "https://*.vercel.app" not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.extend(["https://*.vercel.app", "https://*.now.sh"])
 
 #: The Django admin is an internal knowledge-curation tool (TRD_v2.0 §21), not a
 #: public surface. Always on in DEBUG; opt-in elsewhere.
@@ -71,6 +79,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
+SILENCED_SYSTEM_CHECKS = ["urls.W005"]
 
 # ---------------------------------------------------------------------------
 # Applications — one Django app per TRD_v2.0 §6 domain boundary
@@ -228,6 +237,10 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = env_list(
     "CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
 )
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+]
+CORS_ALLOW_ALL_ORIGINS = bool(DEBUG or IS_VERCEL)
 CORS_ALLOW_CREDENTIALS = True
 
 # ---------------------------------------------------------------------------

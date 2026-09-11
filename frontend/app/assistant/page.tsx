@@ -111,35 +111,37 @@ function AssistantContent() {
 
   return (
     <AppShell activeView="assistant">
-      <div className="flex flex-col space-y-6">
+      <div className="flex flex-col space-y-6 max-w-5xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-indigo-600 tracking-wide uppercase">
+        <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-32 bg-radial from-[#cc9166]/10 to-transparent blur-2xl pointer-events-none" />
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#cc9166]/30 bg-[#cc9166]/10 text-[#cc9166] text-[11px] font-semibold tracking-wider uppercase">
                 Screen 15 · AI Regulatory Copilot
               </span>
-              <span className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700 border border-indigo-200">
+              <span className="inline-flex items-center rounded-full bg-[#121317] px-2.5 py-0.5 text-[11px] font-mono text-[#9194a1] border border-[#1c1d22]">
                 Source Grounded
               </span>
               {business && (
-                <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                  {business.name} Context Active
+                <span className="inline-flex items-center rounded-full bg-emerald-950/40 px-2.5 py-0.5 text-[11px] font-mono text-emerald-300 border border-emerald-800/50">
+                  {business.name} Active
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950 mt-1">
+            <h1 className="font-serif text-2xl sm:text-3xl text-[#ffffff] tracking-tight">
               Statutory Evidence Copilot
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Natural language regulatory advice strictly anchored in verified central and state statutory citations.
+            <p className="text-xs text-[#9194a1] mt-1.5 max-w-2xl leading-relaxed">
+              In-depth conversational advisory grounded exclusively in verified central and state gazette citations, BIS standards, and industrial rulebooks.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 relative z-10 shrink-0">
             <Link
               href={businessId ? `/dashboard?business_id=${businessId}` : "/dashboard"}
-              className="rounded-lg border border-slate-300 px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              className="rounded-full border border-[#2e3038] bg-[#121317] px-4 py-2 text-xs font-medium text-[#e2e3e9] hover:text-[#ffffff] hover:border-[#5e616e] transition-colors"
             >
               ← Dashboard
             </Link>
@@ -155,7 +157,7 @@ function AssistantContent() {
         )}
 
         {/* Chat History Box */}
-        <div className="flex-1 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-6 min-h-[450px] overflow-y-auto">
+        <div className="flex-1 bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 shadow-2xl space-y-6 min-h-[450px] overflow-y-auto">
           {messages.map((m) => (
             <div
               key={m.id}
@@ -164,36 +166,36 @@ function AssistantContent() {
               }`}
             >
               <div
-                className={`max-w-2xl rounded-2xl p-4 text-xs sm:text-sm leading-relaxed ${
+                className={`max-w-2xl rounded-[10px] p-5 text-xs sm:text-sm leading-relaxed ${
                   m.sender === "user"
-                    ? "bg-indigo-600 text-white shadow-xs rounded-br-xs"
-                    : "bg-slate-50 border border-slate-200/80 text-slate-800 rounded-bl-xs space-y-3"
+                    ? "bg-[#1c1d22] text-[#ffffff] border border-[#2e3038]"
+                    : "bg-[#121317] border border-[#1c1d22] text-[#e2e3e9] space-y-3"
                 }`}
               >
-                <div className="whitespace-pre-wrap">{m.content}</div>
+                <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
 
                 {/* Grounding & Citations */}
                 {m.sender === "copilot" && m.citations && m.citations.length > 0 && (
-                  <div className="pt-3 border-t border-slate-200 space-y-2 text-xs">
-                    <div className="flex items-center justify-between font-semibold text-slate-700">
-                      <span>Statutory Citations ({m.citations.length}):</span>
+                  <div className="pt-3 border-t border-[#1c1d22] space-y-2 text-xs">
+                    <div className="flex items-center justify-between font-semibold text-[#ffffff]">
+                      <span className="text-[11px] uppercase tracking-wider text-[#777a88]">Statutory Citations ({m.citations.length}):</span>
                       {m.groundingLevel && (
-                        <span className="text-[10px] uppercase font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                        <span className="text-[10px] uppercase font-mono text-[#cc9166] bg-[#cc9166]/10 px-2 py-0.5 rounded-full border border-[#cc9166]/30">
                           {m.groundingLevel}
                         </span>
                       )}
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {m.citations.map((c, i) => (
                         <div
                           key={i}
-                          className="bg-white p-2.5 rounded-lg border border-slate-200/90 text-slate-600 space-y-1"
+                          className="bg-[#040406] p-3 rounded-lg border border-[#1c1d22] text-[#9194a1] space-y-1.5"
                         >
-                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-800">
-                            <span>{c.source_title}</span>
-                            <span className="font-mono text-indigo-600">{c.locator}</span>
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="font-semibold text-[#ffffff]">{c.source_title}</span>
+                            <span className="font-mono text-[#cc9166]">{c.locator}</span>
                           </div>
-                          <p className="text-[11px] italic text-slate-500">
+                          <p className="text-[11px] italic text-[#777a88] leading-relaxed">
                             &ldquo;{c.excerpt}&rdquo;
                           </p>
                           {c.canonical_url && (
@@ -201,9 +203,10 @@ function AssistantContent() {
                               href={c.canonical_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[10px] text-indigo-600 hover:underline block pt-0.5"
+                              className="text-[10px] text-[#cc9166] hover:underline inline-flex items-center gap-1 pt-0.5"
                             >
-                              Official Gazette Source ↗
+                              <span>Official Gazette Source</span>
+                              <span>↗</span>
                             </a>
                           )}
                         </div>
@@ -212,21 +215,21 @@ function AssistantContent() {
                   </div>
                 )}
               </div>
-              <span className="text-[10px] text-slate-400 mt-1 px-1">{m.timestamp}</span>
+              <span className="text-[10px] font-mono text-[#5e616e] mt-1.5 px-1">{m.timestamp}</span>
             </div>
           ))}
           {loading && (
-            <div className="flex items-center gap-2 text-xs text-slate-500 p-2">
-              <span className="animate-spin text-indigo-600">⚙️</span>
-              <span>Consulting statutory knowledge base and official citations...</span>
+            <div className="flex items-center gap-3 text-xs text-[#9194a1] p-3 rounded-lg bg-[#121317] border border-[#1c1d22]">
+              <span className="animate-spin text-[#cc9166]">⚙️</span>
+              <span>Consulting statutory corpus and verifying legal gazette citations...</span>
             </div>
           )}
         </div>
 
         {/* Suggested Prompt Chips */}
         <div className="space-y-2">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-            Suggested Prompts:
+          <span className="text-[11px] font-semibold text-[#777a88] uppercase tracking-wider">
+            Suggested Statutory Queries:
           </span>
           <div className="flex flex-wrap gap-2">
             {SAMPLE_PROMPTS.map((p) => (
@@ -235,7 +238,7 @@ function AssistantContent() {
                 type="button"
                 onClick={() => handleSend(p)}
                 disabled={loading}
-                className="text-xs bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 rounded-lg px-3 py-1.5 text-slate-700 transition-all text-left disabled:opacity-50"
+                className="text-xs bg-[#121317] border border-[#1c1d22] hover:border-[#cc9166] hover:text-[#ffffff] rounded-full px-4 py-2 text-[#9194a1] transition-all text-left disabled:opacity-50 cursor-pointer"
               >
                 {p}
               </button>
@@ -249,22 +252,22 @@ function AssistantContent() {
             e.preventDefault();
             handleSend(inputPrompt);
           }}
-          className="bg-white rounded-2xl border border-slate-200/80 p-2 shadow-xs flex items-center gap-2"
+          className="bg-[#040406] rounded-full border border-[#1c1d22] p-1.5 shadow-2xl flex items-center gap-2 focus-within:border-[#cc9166] transition-colors"
         >
           <input
             type="text"
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
-            placeholder="Ask anything about statutory compliance, permits, documents, or subsidies..."
+            placeholder="Ask about factory licensing, IS standards, environmental consents, or subsidy schemes..."
             disabled={loading}
-            className="flex-1 px-4 py-2.5 text-xs sm:text-sm focus:outline-none bg-transparent"
+            className="flex-1 px-5 py-2 text-xs sm:text-sm text-[#ffffff] placeholder-[#5e616e] focus:outline-none bg-transparent"
           />
           <button
             type="submit"
             disabled={loading || !inputPrompt.trim()}
-            className="rounded-xl bg-indigo-600 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-xs"
+            className="rounded-full bg-[#ffffff] px-6 py-2 text-xs font-semibold text-[#08080a] hover:bg-[#e2e3e9] disabled:opacity-40 transition-all shadow-md shrink-0 cursor-pointer"
           >
-            Send
+            Send Query
           </button>
         </form>
       </div>
@@ -276,7 +279,7 @@ export default function AssistantPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center text-sm text-slate-500">
+        <div className="min-h-screen bg-[#08080a] flex items-center justify-center text-xs text-[#9194a1]">
           Loading AI Copilot...
         </div>
       }

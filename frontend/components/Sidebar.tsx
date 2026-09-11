@@ -59,7 +59,7 @@ export function Sidebar({ activeView, onSelectView }: SidebarProps) {
   ];
 
   return (
-    <aside className="w-60 shrink-0 px-3 py-4 flex flex-col justify-between select-none bg-[#0D0E10] border-r border-white/[0.07]">
+    <aside className="w-60 shrink-0 px-3 py-4 flex flex-col justify-between select-none bg-[#040406] border-r border-[#1c1d22]">
       {/* Primary Navigation List */}
       <nav aria-label="Main Navigation" className="space-y-1">
         {primaryItems.map((item) => {
@@ -72,10 +72,11 @@ export function Sidebar({ activeView, onSelectView }: SidebarProps) {
                 key={item.id}
                 onClick={() => onSelectView(item.id)}
                 type="button"
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] bg-white/[0.06] border border-white/[0.07] text-[#F5F5F3] font-medium text-[13px] transition-colors group text-left cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] bg-[#121317] border border-[#1c1d22] text-[#ffffff] font-medium text-[13px] transition-colors group text-left cursor-pointer relative"
               >
-                <div className="h-4 w-4 flex items-center justify-center shrink-0">
-                  <Icon className="h-4 w-4 text-[#F5F5F3]" />
+                <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-[#cc9166] rounded-[2px]" />
+                <div className="h-4 w-4 flex items-center justify-center shrink-0 ml-1">
+                  <Icon className="h-4 w-4 text-[#ffffff]" />
                 </div>
                 <span className="truncate">{item.label}</span>
               </button>
@@ -87,10 +88,10 @@ export function Sidebar({ activeView, onSelectView }: SidebarProps) {
               key={item.id}
               onClick={() => onSelectView(item.id)}
               type="button"
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] text-[#71717A] hover:text-[#A1A1AA] hover:bg-white/[0.03] text-[13px] font-normal transition-colors group text-left cursor-pointer"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-[#9194a1] hover:text-[#e2e3e9] hover:bg-white/[0.02] text-[13px] font-normal transition-colors group text-left cursor-pointer"
             >
-              <div className="h-4 w-4 flex items-center justify-center shrink-0">
-                <Icon className="h-4 w-4 text-[#71717A] group-hover:text-[#A1A1AA] transition-colors" />
+              <div className="h-4 w-4 flex items-center justify-center shrink-0 ml-1">
+                <Icon className="h-4 w-4 text-[#777a88] group-hover:text-[#e2e3e9] transition-colors" />
               </div>
               <span className="truncate">{item.label}</span>
             </button>
@@ -99,7 +100,7 @@ export function Sidebar({ activeView, onSelectView }: SidebarProps) {
       </nav>
 
       {/* Bottom Section */}
-      <div className="pt-4 mt-4 border-t border-white/[0.07] space-y-1">
+      <div className="pt-4 mt-4 border-t border-[#1c1d22] space-y-1">
         {secondaryItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeView === item.id;
@@ -110,10 +111,11 @@ export function Sidebar({ activeView, onSelectView }: SidebarProps) {
                 key={item.id}
                 onClick={() => onSelectView(item.id)}
                 type="button"
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] bg-white/[0.06] border border-white/[0.07] text-[#F5F5F3] font-medium text-[13px] transition-colors group text-left cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] bg-[#121317] border border-[#1c1d22] text-[#ffffff] font-medium text-[13px] transition-colors group text-left cursor-pointer relative"
               >
-                <div className="h-4 w-4 flex items-center justify-center shrink-0">
-                  <Icon className="h-4 w-4 text-[#F5F5F3]" />
+                <div className="absolute left-1 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-[#cc9166] rounded-[2px]" />
+                <div className="h-4 w-4 flex items-center justify-center shrink-0 ml-1">
+                  <Icon className="h-4 w-4 text-[#ffffff]" />
                 </div>
                 <span className="truncate">{item.label}</span>
               </button>
@@ -125,10 +127,10 @@ export function Sidebar({ activeView, onSelectView }: SidebarProps) {
               key={item.id}
               onClick={() => onSelectView(item.id)}
               type="button"
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] text-[#71717A] hover:text-[#A1A1AA] hover:bg-white/[0.03] text-[13px] font-normal transition-colors group text-left cursor-pointer"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-[#9194a1] hover:text-[#e2e3e9] hover:bg-white/[0.02] text-[13px] font-normal transition-colors group text-left cursor-pointer"
             >
-              <div className="h-4 w-4 flex items-center justify-center shrink-0">
-                <Icon className="h-4 w-4 text-[#71717A] group-hover:text-[#A1A1AA] transition-colors" />
+              <div className="h-4 w-4 flex items-center justify-center shrink-0 ml-1">
+                <Icon className="h-4 w-4 text-[#777a88] group-hover:text-[#e2e3e9] transition-colors" />
               </div>
               <span className="truncate">{item.label}</span>
             </button>
@@ -140,7 +142,7 @@ export function Sidebar({ activeView, onSelectView }: SidebarProps) {
           <button
             type="button"
             aria-label="Help & Support"
-            className="h-8 w-8 rounded-[8px] bg-[#17191C] border border-white/[0.08] hover:bg-white/[0.06] flex items-center justify-center text-[#71717A] hover:text-[#F5F5F3] transition-colors cursor-pointer"
+            className="h-8 w-8 rounded-[10px] bg-[#121317] border border-[#1c1d22] hover:bg-[#1c1d22] flex items-center justify-center text-[#777a88] hover:text-[#ffffff] transition-colors cursor-pointer"
           >
             <Headphones className="h-4 w-4" />
           </button>

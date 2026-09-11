@@ -19,12 +19,12 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 p-10 text-center bg-slate-50/50 ${className}`}
+      className={`flex flex-col items-center justify-center rounded-[10px] border border-dashed border-[#2e3038] p-10 text-center bg-[#040406]/50 ${className}`}
     >
       {icon ? (
-        <div className="mb-3 text-slate-400">{icon}</div>
+        <div className="mb-3 text-[#777a88]">{icon}</div>
       ) : (
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#121317] border border-[#1c1d22] text-[#9194a1]">
           <svg
             className="h-6 w-6"
             fill="none"
@@ -40,13 +40,13 @@ export function EmptyState({
           </svg>
         </div>
       )}
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-      <p className="mt-1 max-w-sm text-xs text-slate-500">{description}</p>
+      <h3 className="text-sm font-semibold text-[#ffffff]">{title}</h3>
+      <p className="mt-1 max-w-sm text-xs text-[#777a88]">{description}</p>
       {actionText && onAction && (
         <button
           type="button"
           onClick={onAction}
-          className="mt-4 inline-flex items-center rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-medium text-white shadow-xs hover:bg-indigo-700 transition-colors"
+          className="mt-4 inline-flex items-center rounded-full bg-[#ffffff] px-4 py-2 text-xs font-semibold text-[#08080a] hover:bg-[#e2e3e9] transition-colors shadow-xs cursor-pointer"
         >
           {actionText}
         </button>

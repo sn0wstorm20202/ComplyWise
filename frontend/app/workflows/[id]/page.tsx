@@ -32,21 +32,21 @@ export default function WorkflowDetailPage({ params }: PageProps) {
       <div className="space-y-6 pb-6 select-none max-w-5xl mx-auto">
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-            <Folder className="h-3.5 w-3.5 text-slate-400" />
-            <Link href="/workflows" className="hover:text-slate-600">
+          <div className="flex items-center gap-2 text-xs text-[#777a88]">
+            <Folder className="h-3.5 w-3.5 text-[#5e616e]" />
+            <Link href="/workflows" className="hover:text-[#ffffff] transition-colors">
               Workflows
             </Link>
-            <ChevronRight className="h-3 w-3 text-slate-300" />
-            <span className="text-slate-600 font-semibold">{wf.standardCode}</span>
+            <ChevronRight className="h-3 w-3 text-[#5e616e]" />
+            <span className="text-[#e2e3e9] font-mono font-medium">{wf.standardCode}</span>
           </div>
 
           <Link
             href="/workflows"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#9194a1] hover:text-[#ffffff] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Workflows</span>
+            <span>Back to Roadmaps</span>
           </Link>
         </div>
 
@@ -54,7 +54,7 @@ export default function WorkflowDetailPage({ params }: PageProps) {
         <WorkflowPipeline
           workflow={wf}
           onActionClick={(stage) => {
-            alert(`Opening action drawer for Stage ${stage.number}: ${stage.name}`);
+            alert(`Opening statutory action dossier for Stage ${stage.number}: ${stage.name}`);
           }}
         />
       </div>

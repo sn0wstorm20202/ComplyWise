@@ -1,29 +1,74 @@
 @import "tailwindcss";
 
 :root {
-  --background: #09090B;
-  --background-secondary: #0D0E10;
-  --surface: #111214;
-  --surface-elevated: #17191C;
-  --surface-hover: #1B1D21;
+  /* Refero Slash Color Palette */
+  --color-obsidian: #08080a;
+  --color-onyx: #040406;
+  --color-carbon: #121317;
+  --color-graphite: #1c1d22;
+  --color-slate: #2e3038;
+  --color-smoke: #464853;
+  --color-ash: #5e616e;
+  --color-steel: #777a88;
+  --color-fog: #9194a1;
+  --color-mist: #acafb9;
+  --color-silver: #c7c9d1;
+  --color-bone: #e2e3e9;
+  --color-paper-white: #ffffff;
+  --color-copper: #cc9166;
+  --color-copper-soft: rgba(204, 145, 102, 0.15);
 
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-default: rgba(255, 255, 255, 0.10);
-  --border-strong: rgba(255, 255, 255, 0.14);
+  /* Gilded Gold Gradient for Charts and Visual Data Accents */
+  --color-gilded-gradient: linear-gradient(103deg, rgb(174, 147, 87), rgb(255, 240, 204) 40%, rgb(174, 147, 87) 70%, rgba(189, 157, 79, 0));
 
-  --text-primary: #F5F5F3;
-  --text-secondary: #A1A1AA;
-  --text-tertiary: #71717A;
+  /* Status Colors */
+  --success: #75d69c;
+  --warning: #f2c96d;
+  --danger: #ed7c7c;
+  --info: #82a8f8;
 
-  --accent: #6D8CFF;
-  --accent-soft: rgba(109, 140, 255, 0.14);
+  /* Surfaces */
+  --surface-void: #08080a;
+  --surface-card: #040406;
+  --surface-panel: #121317;
+  --surface-floating: #1c1d22;
 
-  --success: #75D69C;
-  --warning: #F2C96D;
-  --danger: #ED7C7C;
+  /* Semantic mappings */
+  --background: #08080a;
+  --background-secondary: #040406;
+  --surface: #040406;
+  --surface-elevated: #121317;
+  --surface-hover: #1c1d22;
+
+  --border-subtle: #1c1d22;
+  --border-default: #2e3038;
+  --border-strong: #464853;
+
+  --text-primary: #ffffff;
+  --text-body: #e2e3e9;
+  --text-secondary: #9194a1;
+  --text-tertiary: #5e616e;
+
+  --accent: #cc9166;
+  --accent-soft: rgba(204, 145, 102, 0.12);
 }
 
 @theme inline {
+  --color-obsidian: #08080a;
+  --color-onyx: #040406;
+  --color-carbon: #121317;
+  --color-graphite: #1c1d22;
+  --color-slate: #2e3038;
+  --color-smoke: #464853;
+  --color-ash: #5e616e;
+  --color-steel: #777a88;
+  --color-fog: #9194a1;
+  --color-mist: #acafb9;
+  --color-silver: #c7c9d1;
+  --color-bone: #e2e3e9;
+  --color-paper-white: #ffffff;
+  --color-copper: #cc9166;
+
   --color-background: var(--background);
   --color-background-secondary: var(--background-secondary);
   --color-surface: var(--surface);
@@ -35,6 +80,7 @@
   --color-border-strong: var(--border-strong);
 
   --color-text-primary: var(--text-primary);
+  --color-text-body: var(--text-body);
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
 
@@ -44,30 +90,54 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-info: var(--info);
 
-  --font-sans: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-display), "Ivy Presto", "Playfair Display", "DM Serif Display", serif;
 }
 
 body {
   background-color: var(--background);
-  color: var(--text-primary);
-  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--text-body);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Hairline borders & quiet cards */
+.slash-card {
+  background-color: #040406;
+  border: 1px solid #1c1d22;
+  border-radius: 10px;
+}
+
+.slash-panel {
+  background-color: #121317;
+  border: 1px solid #1c1d22;
+  border-radius: 10px;
+}
+
+.slash-pill {
+  border-radius: 9999px;
+}
+
+/* Gilded chart accent gradient */
+.bg-gilded-gradient {
+  background: linear-gradient(103deg, rgb(174, 147, 87), rgb(255, 240, 204) 40%, rgb(174, 147, 87) 70%, rgba(189, 157, 79, 0));
+}
+
 /* Restrained subtle dark scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.2);
 }

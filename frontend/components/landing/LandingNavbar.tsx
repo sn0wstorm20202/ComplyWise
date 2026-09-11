@@ -19,38 +19,38 @@ export function LandingNavbar({ onRequestDemo }: LandingNavbarProps) {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-xs">
+    <header className="sticky top-0 z-40 w-full border-b border-[#1c1d22] bg-[#08080a]/95 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand */}
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white font-bold text-sm shadow-xs transition-transform group-hover:scale-102">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#cc9166] text-black font-bold text-xs shadow-md transition-transform group-hover:scale-105">
               CW
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold tracking-tight text-slate-950">
+              <span className="font-serif text-sm font-semibold tracking-wide text-[#ffffff]">
                 ComplyWise
               </span>
-              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+              <span className="inline-flex items-center rounded-full px-2 py-0.2 text-[10px] font-mono font-medium bg-[#121317] text-[#cc9166] border border-[#cc9166]/30">
                 BIS
               </span>
             </div>
           </Link>
 
           {/* Subtle Development Status Signal */}
-          <div className="hidden xl:inline-flex items-center gap-1.5 rounded-full bg-stone-50 border border-stone-200 px-2.5 py-0.5 text-[11px] font-medium text-stone-600">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
-            <span>Platform in active development</span>
+          <div className="hidden xl:inline-flex items-center gap-2 rounded-full bg-[#121317] border border-[#1c1d22] px-3 py-0.5 text-[11px] font-medium text-[#9194a1]">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Problem Statement 26130 · Active Build</span>
           </div>
         </div>
 
         {/* Center Nav Links (Desktop) */}
-        <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-slate-600">
+        <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-[#9194a1]">
           {navLinks.map((link) => (
             <a
               key={link.label}
               href={link.href}
-              className="hover:text-slate-950 transition-colors"
+              className="hover:text-[#ffffff] transition-colors"
             >
               {link.label}
             </a>
@@ -61,19 +61,18 @@ export function LandingNavbar({ onRequestDemo }: LandingNavbarProps) {
         <div className="hidden sm:flex items-center gap-3">
           <Link
             href="/auth/signin"
-            className="text-xs font-semibold text-slate-600 hover:text-slate-950 px-2.5 py-1.5 transition-colors"
+            className="text-xs font-medium text-[#9194a1] hover:text-[#ffffff] px-3 py-1.5 transition-colors"
           >
             Sign In
           </Link>
 
-          <button
-            onClick={onRequestDemo}
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-900 hover:bg-blue-950 text-white px-3.5 py-1.5 text-xs font-semibold shadow-xs transition-colors"
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#ffffff] hover:bg-[#e2e3e9] text-[#08080a] px-4 py-1.5 text-xs font-semibold shadow-md transition-all"
           >
-            <span>Request Demo</span>
+            <span>Live Dashboard</span>
             <ArrowRight className="h-3 w-3" />
-          </button>
+          </Link>
         </div>
 
         {/* Mobile Hamburger Toggle */}
@@ -81,7 +80,7 @@ export function LandingNavbar({ onRequestDemo }: LandingNavbarProps) {
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           type="button"
           aria-label="Toggle navigation menu"
-          className="md:hidden p-1.5 text-slate-600 hover:text-slate-900 rounded-md"
+          className="md:hidden p-1.5 text-[#9194a1] hover:text-[#ffffff] rounded-md"
         >
           {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
@@ -89,33 +88,30 @@ export function LandingNavbar({ onRequestDemo }: LandingNavbarProps) {
 
       {/* Mobile Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-slate-200 bg-white px-4 py-3 space-y-2 text-xs">
+        <div className="md:hidden border-b border-[#1c1d22] bg-[#040406] px-4 py-3 space-y-2 text-xs">
           {navLinks.map((link) => (
             <a
               key={link.label}
               href={link.href}
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-slate-700 font-medium hover:text-blue-900"
+              className="block py-2 text-[#9194a1] font-medium hover:text-[#ffffff]"
             >
               {link.label}
             </a>
           ))}
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+          <div className="pt-2 border-t border-[#1c1d22] flex items-center justify-between">
             <Link
               href="/auth/signin"
-              className="font-semibold text-slate-700"
+              className="font-semibold text-[#9194a1]"
             >
               Sign In
             </Link>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onRequestDemo();
-              }}
-              className="rounded-lg bg-blue-900 text-white px-3.5 py-1.5 font-semibold"
+            <Link
+              href="/dashboard"
+              className="rounded-full bg-[#ffffff] text-[#08080a] px-4 py-1.5 font-semibold text-xs"
             >
-              Request Demo
-            </button>
+              Live Dashboard
+            </Link>
           </div>
         </div>
       )}

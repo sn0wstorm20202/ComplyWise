@@ -1,22 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
-
-import PageHeader from "./dashboard/PageHeader";
-import TallFeatureCard from "./dashboard/TallFeatureCard";
-import ComplianceActivityCard from "./dashboard/ComplianceActivityCard";
-import ComplianceActionsCard from "./dashboard/ComplianceActionsCard";
-import DocumentsCard from "./dashboard/DocumentsCard";
-import ApplicableRequirementsCard from "./dashboard/ApplicableRequirementsCard";
-import ComplianceStatusCard from "./dashboard/ComplianceStatusCard";
+import { Search, Calendar as CalendarIcon, Sparkles } from "lucide-react";
+import DashboardMetricsRow from "./dashboard/DashboardMetricsRow";
+import ComplianceOverviewTable from "./dashboard/ComplianceOverviewTable";
+import DashboardDeadlinesWidget from "./dashboard/DashboardDeadlinesWidget";
+import QuickActionsGrid from "./dashboard/QuickActionsGrid";
+import RequirementCategoriesDonut from "./dashboard/RequirementCategoriesDonut";
+import DashboardAssistantCard from "./dashboard/DashboardAssistantCard";
+import DashboardTrustFooter from "./dashboard/DashboardTrustFooter";
 import {
-  ActivityTimelineDrawer,
-  ActionsListDrawer,
-  RequirementsListDrawer,
   DocumentsPreviewDrawer,
+  RequirementsListDrawer,
+  ActionsListDrawer,
   DateRangeModal,
-  AddWidgetModal,
-  CreateReportModal,
 } from "./dashboard/DashboardDrawers";
 import { NavView } from "./Sidebar";
 import { useBusinessContext } from "@/context/BusinessContext";
@@ -30,87 +27,113 @@ export function DashboardView({
   onNavigateToView,
   onOpenNewQuery,
 }: DashboardViewProps) {
-  const { profile, dashboardData, isDemoMode } = useBusinessContext();
+  const { profile, dashboardData } = useBusinessContext();
 
-  // Drawer and modal states
-  const [activityDrawerOpen, setActivityDrawerOpen] = useState(false);
-  const [actionsDrawerOpen, setActionsDrawerOpen] = useState(false);
-  const [requirementsDrawerOpen, setRequirementsDrawerOpen] = useState(false);
+  // Slide-over drawers & modal states
   const [documentsDrawerOpen, setDocumentsDrawerOpen] = useState(false);
+  const [requirementsDrawerOpen, setRequirementsDrawerOpen] = useState(false);
+  const [actionsDrawerOpen, setActionsDrawerOpen] = useState(false);
   const [dateRangeModalOpen, setDateRangeModalOpen] = useState(false);
-  const [addWidgetModalOpen, setAddWidgetModalOpen] = useState(false);
-  const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [selectedDateRange, setSelectedDateRange] = useState("20-27 Jan 2025");
+  const [selectedDateRange, setSelectedDateRange] = useState("Aug - Sep 2026");
+
+  const handleNavigate = (view: string) => onNavigateToView(view as NavView);
 
   return (
-    <div className="space-y-6 pb-6 select-none">
-
-      {/* Page Header Area */}
-      <PageHeader
-        title="Compliance Dashboard"
-        selectedDateRange={selectedDateRange}
-        onOpenSearch={onOpenNewQuery}
-        onToggleSort={() => setActionsDrawerOpen(true)}
-        onOpenDateRange={() => setDateRangeModalOpen(true)}
-        onAddWidget={() => setAddWidgetModalOpen(true)}
-        onCreateReport={() => setReportModalOpen(true)}
-      />
-
-      {/* Main 3-Column Card Layout Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
-        {/* Column 1: Feature Card (4 cols, approx 33% width for generous breathing room) */}
-        <div className="lg:col-span-4">
-          <TallFeatureCard
-            featuredStandard={dashboardData.standards.featured}
-            onLearnMore={() => onNavigateToView("standards")}
-            onDismiss={() => {}}
-          />
-        </div>
-
-        {/* Column 2: Center Column (4 cols) */}
-        <div className="lg:col-span-4 space-y-4 sm:space-y-5 flex flex-col justify-between">
-          <ComplianceActivityCard
-            activityData={dashboardData.activity}
-            onExpand={() => setActivityDrawerOpen(true)}
-          />
-          <ComplianceActionsCard
-            actionsData={dashboardData.actions}
-            onExpand={() => setActionsDrawerOpen(true)}
-          />
-        </div>
-
-        {/* Column 3: Right Column (4 cols) */}
-        <div className="lg:col-span-4 space-y-4 sm:space-y-5 flex flex-col justify-between">
-          {/* Top Split Row: Documents (Left) and Applicable Requirements (Right) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <DocumentsCard
-              documentsData={dashboardData.documents}
-              onOpen={() => setDocumentsDrawerOpen(true)}
-            />
-            <ApplicableRequirementsCard
-              requirementsData={dashboardData.requirements}
-              onOpen={() => setRequirementsDrawerOpen(true)}
+    <div className="space-y-4 sm:space-y-5 pb-8 select-none">
+      {/* Search Header Bar (From Screenshot) */}
+      <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-2.5 sm:p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xl">
+        <div className="flex items-center gap-2.5 flex-1 max-w-xl">
+          <div className="relative w-full">
+            <Search className="absolute left-3.5 top-2.5 h-3.5 w-3.5 text-[#5e616e]" />
+            <input
+              type="text"
+              placeholder="Ask anything about your statutory obligations, IS standards, or clearances..."
+              onClick={onOpenNewQuery}
+              readOnly
+              className="w-full rounded-full border border-[#1c1d22] bg-[#121317] pl-9 pr-4 py-1.5 text-xs text-[#ffffff] placeholder-[#5e616e] hover:border-[#2e3038] cursor-pointer transition-colors"
             />
           </div>
+        </div>
 
-          {/* Bottom Card: Compliance Status */}
-          <ComplianceStatusCard
-            categoryBreakdown={dashboardData.categoryBreakdown}
-            onExpand={() => onNavigateToView("compliance")}
-          />
+        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+          <button
+            type="button"
+            onClick={onOpenNewQuery}
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#121317] border border-[#2e3038] hover:border-[#cc9166] text-[#e2e3e9] hover:text-[#ffffff] px-3.5 py-1.5 text-xs font-medium transition-all shadow-xs"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-[#cc9166]" />
+            <span>AI Query</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDateRangeModalOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full border border-[#1c1d22] bg-[#121317] px-3.5 py-1.5 text-xs font-medium text-[#e2e3e9] hover:bg-[#1c1d22] transition-colors"
+          >
+            <CalendarIcon className="h-3.5 w-3.5 text-[#777a88]" />
+            <span>{selectedDateRange}</span>
+          </button>
         </div>
       </div>
 
-      {/* Slide-over Drawers & Modals */}
-      <ActivityTimelineDrawer
-        isOpen={activityDrawerOpen}
-        onClose={() => setActivityDrawerOpen(false)}
-        data={dashboardData}
+      {/* 1. TOP METRICS ROW (5 Cards) */}
+      <DashboardMetricsRow
+        profile={profile}
+        onNavigateToView={handleNavigate}
+        onOpenCalendar={() => onNavigateToView("calendar")}
+        onOpenDocuments={() => setDocumentsDrawerOpen(true)}
+        onOpenTasks={() => setActionsDrawerOpen(true)}
       />
 
-      <ActionsListDrawer
-        isOpen={actionsDrawerOpen}
-        onClose={() => setActionsDrawerOpen(false)}
+      {/* 2. MIDDLE ROW (8 Cols: Compliance Overview Table | 4 Cols: Upcoming Deadlines Widget) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 items-stretch">
+        <div className="lg:col-span-8 flex">
+          <div className="w-full flex flex-col">
+            <ComplianceOverviewTable
+              onNavigateToView={handleNavigate}
+              onSelectRequirement={() => setRequirementsDrawerOpen(true)}
+            />
+          </div>
+        </div>
+
+        <div className="lg:col-span-4 flex">
+          <div className="w-full flex flex-col">
+            <DashboardDeadlinesWidget onNavigateToView={handleNavigate} />
+          </div>
+        </div>
+      </div>
+
+      {/* 3. BOTTOM ROW (3 Columns: 4 Cols Quick Actions | 4 Cols Category Donut | 4 Cols AI Assistant) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4 items-stretch">
+        <div className="flex">
+          <div className="w-full flex flex-col">
+            <QuickActionsGrid
+              onNavigateToView={handleNavigate}
+              onOpenUploadDrawer={() => setDocumentsDrawerOpen(true)}
+            />
+          </div>
+        </div>
+
+        <div className="flex">
+          <div className="w-full flex flex-col">
+            <RequirementCategoriesDonut onNavigateToView={handleNavigate} />
+          </div>
+        </div>
+
+        <div className="flex">
+          <div className="w-full flex flex-col">
+            <DashboardAssistantCard onNavigateToView={handleNavigate} />
+          </div>
+        </div>
+      </div>
+
+      {/* 4. BOTTOM TRUST FOOTER (4 Badges) */}
+      <DashboardTrustFooter />
+
+      {/* Drawers & Modals */}
+      <DocumentsPreviewDrawer
+        isOpen={documentsDrawerOpen}
+        onClose={() => setDocumentsDrawerOpen(false)}
         data={dashboardData}
       />
 
@@ -120,9 +143,9 @@ export function DashboardView({
         data={dashboardData}
       />
 
-      <DocumentsPreviewDrawer
-        isOpen={documentsDrawerOpen}
-        onClose={() => setDocumentsDrawerOpen(false)}
+      <ActionsListDrawer
+        isOpen={actionsDrawerOpen}
+        onClose={() => setActionsDrawerOpen(false)}
         data={dashboardData}
       />
 
@@ -132,19 +155,9 @@ export function DashboardView({
         selectedRange={selectedDateRange}
         onSelectRange={(r) => setSelectedDateRange(r)}
       />
-
-      <AddWidgetModal
-        isOpen={addWidgetModalOpen}
-        onClose={() => setAddWidgetModalOpen(false)}
-      />
-
-      <CreateReportModal
-        isOpen={reportModalOpen}
-        onClose={() => setReportModalOpen(false)}
-        data={dashboardData}
-      />
     </div>
   );
 }
 
 export default DashboardView;
+

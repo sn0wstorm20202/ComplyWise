@@ -855,45 +855,45 @@ function OnboardingContent() {
   ).length;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-[#08080a] text-[#e2e3e9] flex flex-col">
       <Navbar />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Stepper Header */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+        <div className="bg-[#040406] rounded-2xl border border-[#1c1d22] p-6 shadow-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1c1d22] pb-4">
             <div>
-              <span className="text-xs font-semibold text-indigo-600 tracking-wide uppercase">
+              <span className="text-xs font-semibold text-[#cc9166] tracking-wide uppercase">
                 Problem Statement 26130 · Compliance Onboarding
               </span>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-950 mt-0.5">
+              <h1 className="text-xl sm:text-2xl font-serif tracking-tight text-[#ffffff] mt-0.5">
                 {STEPS.find((s) => s.num === step)?.label}
               </h1>
             </div>
             {business ? (
               <div className="flex flex-wrap items-center gap-2.5">
-                <div className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-xs text-slate-700">
-                  <span className="font-semibold text-slate-900">{business.name}</span>
-                  <span className="text-slate-400">·</span>
-                  <span className="font-mono text-slate-500">ID: {business.id.slice(0, 8)}</span>
+                <div className="flex items-center gap-2 rounded-full bg-[#121317] border border-[#1c1d22] px-3 py-1.5 text-xs text-[#9194a1]">
+                  <span className="font-semibold text-[#ffffff]">{business.name}</span>
+                  <span className="text-[#5e616e]">·</span>
+                  <span className="font-mono text-[#777a88]">ID: {business.id.slice(0, 8)}</span>
                 </div>
                 {assessment && (
-                  <div className="flex items-center gap-1.5 rounded-lg bg-indigo-50 border border-indigo-200 px-2.5 py-1 text-xs font-bold text-indigo-700">
+                  <div className="flex items-center gap-1.5 rounded-full bg-[#1c140d] border border-[#cc9166]/40 px-3 py-1 text-xs font-bold text-[#cc9166]">
                     <span>Assessment #{assessment.assessment_number}</span>
-                    <span className="text-indigo-400">·</span>
+                    <span className="text-[#cc9166]/50">·</span>
                     <span className="uppercase text-[10px] font-semibold">{assessment.status}</span>
                   </div>
                 )}
                 <button
                   type="button"
                   onClick={handleStartFresh}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                  className="rounded-full border border-[#2e3038] bg-[#121317] px-3 py-1 text-xs font-semibold text-[#e2e3e9] hover:border-[#cc9166]/60 transition-colors cursor-pointer"
                 >
                   + New Entity
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-1.5 text-xs text-indigo-700 font-medium">
+              <div className="flex items-center gap-2 rounded-full bg-[#1c140d] border border-[#cc9166]/40 px-3 py-1.5 text-xs text-[#cc9166] font-medium">
                 <span>New Entity Assessment</span>
               </div>
             )}
@@ -913,24 +913,24 @@ function OnboardingContent() {
                       onClick={() => s.num < step && setStep(s.num)}
                       className={`w-full flex items-center gap-2.5 p-2 rounded-xl text-left transition-all ${
                         isCurrent
-                          ? "bg-indigo-50 border border-indigo-200"
+                          ? "bg-[#121317] border border-[#cc9166]/50"
                           : isCompleted
-                          ? "hover:bg-slate-50 cursor-pointer"
+                          ? "hover:bg-[#121317]/50 cursor-pointer"
                           : "opacity-40 cursor-not-allowed"
                       }`}
                     >
                       <span
                         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                           isCurrent
-                            ? "bg-indigo-600 text-white"
+                            ? "bg-[#cc9166] text-[#08080a]"
                             : isCompleted
-                            ? "bg-emerald-600 text-white"
-                            : "bg-slate-200 text-slate-600"
+                            ? "bg-emerald-500 text-[#08080a]"
+                            : "bg-[#121317] border border-[#1c1d22] text-[#5e616e]"
                         }`}
                       >
                         {isCompleted ? "✓" : s.num}
                       </span>
-                      <span className="text-xs font-semibold truncate text-slate-800">
+                      <span className={`text-xs font-semibold truncate ${isCurrent || isCompleted ? "text-[#ffffff]" : "text-[#777a88]"}`}>
                         {s.label}
                       </span>
                     </button>
@@ -967,20 +967,20 @@ function OnboardingContent() {
         {step === 1 && varDefs.length > 0 && (
           <form
             onSubmit={handleProfileSubmit}
-            className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6"
+            className="bg-[#040406] rounded-2xl border border-[#1c1d22] p-6 sm:p-8 shadow-2xl space-y-6"
           >
-            <div className="border-b border-slate-100 pb-4">
-              <h2 className="text-base font-bold text-slate-900">
-                Establish Entity Identity & Jurisdiction Scope
+            <div className="border-b border-[#1c1d22] pb-4">
+              <h2 className="text-base font-serif font-bold text-[#ffffff]">
+                Establish Entity Identity &amp; Jurisdiction Scope
               </h2>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-[#777a88] mt-1">
                 Canonical parameters define statutory jurisdiction, micro/small/medium scale, and applicable statutory authorities.
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
                   Legal Enterprise / Operating Name *
                 </label>
                 <input
@@ -989,23 +989,23 @@ function OnboardingContent() {
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
                   placeholder="e.g. Apex Biotech Formulations LLP"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
                   Legal Constitution *
                 </label>
                 <select
                   required
                   value={legalConstitution}
                   onChange={(e) => setLegalConstitution(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
                 >
-                  <option value="">Select…</option>
+                  <option value="" className="bg-[#121317] text-[#9194a1]">Select…</option>
                   {legalConstitutionOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.value} value={opt.value} className="bg-[#121317] text-[#ffffff]">
                       {opt.label}
                     </option>
                   ))}
@@ -1013,29 +1013,29 @@ function OnboardingContent() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
                   Operating State / Jurisdiction *
                 </label>
                 <select
                   required
                   value={registeredState}
                   onChange={(e) => setRegisteredState(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
                 >
-                  <option value="">Select a jurisdiction…</option>
+                  <option value="" className="bg-[#121317] text-[#9194a1]">Select a jurisdiction…</option>
                   {stateOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.value} value={opt.value} className="bg-[#121317] text-[#ffffff]">
                       {opt.label}
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-[#777a88] mt-1">
                   Only jurisdictions present in the loaded knowledge base are listed.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
                   District / Industrial Hub *
                 </label>
                 <input
@@ -1044,22 +1044,22 @@ function OnboardingContent() {
                   value={district}
                   onChange={(e) => setDistrict(e.target.value)}
                   placeholder="e.g. Ahmedabad, Pune, Bengaluru"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
                   Industrial Zone Siting *
                 </label>
                 <select
                   value={industrialZone}
                   onChange={(e) => setIndustrialZone(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
                 >
-                  <option value="">Not specified</option>
+                  <option value="" className="bg-[#121317] text-[#9194a1]">Not specified</option>
                   {industrialZoneOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.value} value={opt.value} className="bg-[#121317] text-[#ffffff]">
                       {opt.label}
                     </option>
                   ))}
@@ -1067,18 +1067,18 @@ function OnboardingContent() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
                   Enterprise Lifecycle Stage *
                 </label>
                 <select
                   required
                   value={lifecycleStage}
                   onChange={(e) => setLifecycleStage(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
                 >
-                  <option value="">Select…</option>
+                  <option value="" className="bg-[#121317] text-[#9194a1]">Select…</option>
                   {lifecycleStageOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.value} value={opt.value} className="bg-[#121317] text-[#ffffff]">
                       {opt.label}
                     </option>
                   ))}
@@ -1086,8 +1086,8 @@ function OnboardingContent() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Plant & Machinery Investment (₹ Lakhs)
+                <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
+                  Plant &amp; Machinery Investment (₹ Lakhs)
                 </label>
                 <input
                   type="number"
@@ -1095,12 +1095,12 @@ function OnboardingContent() {
                   value={plantInvestmentLakhs}
                   onChange={(e) => setPlantInvestmentLakhs(e.target.value)}
                   placeholder="Leave blank if not known"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
                   Estimated / Actual Annual Turnover (₹ Lakhs)
                 </label>
                 <input
@@ -1109,13 +1109,13 @@ function OnboardingContent() {
                   value={turnoverLakhs}
                   onChange={(e) => setTurnoverLakhs(e.target.value)}
                   placeholder="Leave blank if not known"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Direct Employees & Workers (Count)
+                <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
+                  Direct Employees &amp; Workers (Count)
                 </label>
                 <input
                   type="number"
@@ -1123,16 +1123,16 @@ function OnboardingContent() {
                   value={employeeCount}
                   onChange={(e) => setEmployeeCount(e.target.value)}
                   placeholder="Leave blank if not known"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end pt-4 border-t border-slate-100">
+            <div className="flex justify-end pt-4 border-t border-[#1c1d22]">
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-2 rounded-full bg-[#ffffff] px-6 py-2.5 text-sm font-semibold text-[#08080a] hover:bg-[#e2e3e9] disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
               >
                 {loading ? "Saving Profile..." : "Continue to Products & Activities →"}
               </button>
@@ -1146,20 +1146,20 @@ function OnboardingContent() {
         {step === 2 && (
           <form
             onSubmit={handleProductsSubmit}
-            className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6"
+            className="bg-[#040406] rounded-2xl border border-[#1c1d22] p-6 sm:p-8 shadow-2xl space-y-6"
           >
-            <div className="border-b border-slate-100 pb-4">
-              <h2 className="text-base font-bold text-slate-900">
-                Products, Manufacturing Operations & Trade Intent
+            <div className="border-b border-[#1c1d22] pb-4">
+              <h2 className="text-base font-serif font-bold text-[#ffffff]">
+                Products, Manufacturing Operations &amp; Trade Intent
               </h2>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-[#777a88] mt-1">
                 Provide natural-language descriptions of operations. The system detects regulatory keywords and prompts for missing statutory triggers dynamically.
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
                   Describe your manufacturing processes, product lines, and plant operations *
                 </label>
                 <textarea
@@ -1168,25 +1168,25 @@ function OnboardingContent() {
                   value={productDescription}
                   onChange={(e) => setProductDescription(e.target.value)}
                   placeholder="e.g. Processing and packaging of roasted snacks, operating a continuous frying furnace, packaging in nitrogen sealed pouches, storing raw grains in on-site warehouse..."
-                  className="w-full rounded-lg border border-slate-300 p-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 leading-relaxed"
+                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] p-3 text-sm text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] leading-relaxed"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-[#777a88] mt-1">
                   Mention raw materials, industrial power, effluent generation, storage, and packaging.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
                   Import or export intent
                 </label>
                 <select
                   value={tradeIntent}
                   onChange={(e) => setTradeIntent(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
                 >
-                  <option value="">Not specified</option>
+                  <option value="" className="bg-[#121317] text-[#9194a1]">Not specified</option>
                   {tradeIntentOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.value} value={opt.value} className="bg-[#121317] text-[#ffffff]">
                       {opt.label}
                     </option>
                   ))}
@@ -1195,15 +1195,15 @@ function OnboardingContent() {
             </div>
 
             {detectedActivities.length > 0 && (
-              <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
-                <span className="text-xs font-semibold text-indigo-900 block mb-2">
+              <div className="rounded-xl border border-[#2e3038] bg-[#121317] p-4">
+                <span className="text-xs font-semibold text-[#ffffff] block mb-2">
                   Detected Activity Domains:
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {detectedActivities.map((act, idx) => (
                     <span
                       key={`${act}-${idx}`}
-                      className="inline-flex items-center rounded-md bg-white px-2.5 py-1 text-xs font-semibold text-indigo-700 border border-indigo-200 shadow-2xs"
+                      className="inline-flex items-center rounded-full bg-[#1c140d] px-3 py-1 text-xs font-semibold text-[#cc9166] border border-[#cc9166]/40"
                     >
                       {act}
                     </span>
@@ -1212,11 +1212,11 @@ function OnboardingContent() {
               </div>
             )}
 
-            <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+            <div className="flex justify-between items-center pt-4 border-t border-[#1c1d22]">
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                className="rounded-full border border-[#2e3038] bg-[#121317] px-5 py-2 text-xs font-semibold text-[#e2e3e9] hover:border-[#cc9166]/50 transition-colors cursor-pointer"
               >
                 ← Back to Profile
               </button>
@@ -1224,7 +1224,7 @@ function OnboardingContent() {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-2 rounded-full bg-[#ffffff] px-6 py-2.5 text-sm font-semibold text-[#08080a] hover:bg-[#e2e3e9] disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
               >
                 {loading ? "Analyzing Operations..." : "Generate Smart Questions →"}
               </button>
@@ -1238,29 +1238,29 @@ function OnboardingContent() {
         {step === 3 && (
           <form
             onSubmit={handleQuestionsSubmit}
-            className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6"
+            className="bg-[#040406] rounded-2xl border border-[#1c1d22] p-6 sm:p-8 shadow-2xl space-y-6"
           >
-            <div className="border-b border-slate-100 pb-4">
+            <div className="border-b border-[#1c1d22] pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                  <h2 className="text-base sm:text-lg font-serif font-bold text-[#ffffff]">
                     Questions formulated specifically for {business?.name || "your enterprise"}
                   </h2>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-[#777a88] mt-1">
                     Tailored smart questions targeting missing statutory variables to identify your exact permits, clearances, and compliance mandates.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-indigo-50 border border-indigo-200 px-3 py-1 text-xs font-semibold text-indigo-700">
+                  <span className="inline-flex items-center rounded-full bg-[#1c140d] border border-[#cc9166]/40 px-3 py-1 text-xs font-semibold text-[#cc9166]">
                     {answeredCount} of {smartQuestions.length} answered
                   </span>
                 </div>
               </div>
 
               {smartQuestions.length > 0 && (
-                <div className="w-full bg-slate-100 h-2 rounded-full mt-4 overflow-hidden">
+                <div className="w-full bg-[#121317] border border-[#1c1d22] h-2 rounded-full mt-4 overflow-hidden">
                   <div
-                    className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-[#cc9166] h-2 rounded-full transition-all duration-300"
                     style={{
                       width: `${Math.min(
                         100,
@@ -1273,7 +1273,7 @@ function OnboardingContent() {
             </div>
 
             {smartQuestions.length === 0 ? (
-              <div className="py-8 text-center text-slate-500 text-sm">
+              <div className="py-8 text-center text-[#777a88] text-sm">
                 All decision-critical profile variables are already satisfied! You can proceed to statutory evaluation.
               </div>
             ) : (
@@ -1289,44 +1289,44 @@ function OnboardingContent() {
                   return (
                     <div
                       key={qKey || `sq-${qIdx}`}
-                      className="p-4 sm:p-5 rounded-xl border border-slate-200/90 bg-slate-50/40 hover:bg-white hover:border-indigo-200 transition-all space-y-3"
+                      className="p-4 sm:p-5 rounded-xl border border-[#1c1d22] bg-[#121317]/50 hover:bg-[#121317] hover:border-[#2e3038] transition-all space-y-3"
                     >
                       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                         <div className="space-y-1.5 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center rounded-md bg-indigo-100/80 px-2 py-0.5 text-[11px] font-bold text-indigo-800">
+                            <span className="inline-flex items-center rounded-full bg-[#1c140d] px-2.5 py-0.5 text-[11px] font-bold text-[#cc9166] border border-[#cc9166]/40">
                               Question {qIdx + 1} of {smartQuestions.length}
                             </span>
-                            <span className="font-mono text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                            <span className="font-mono text-[11px] font-bold text-[#ffffff] bg-[#040406] px-2.5 py-0.5 rounded-full border border-[#1c1d22]">
                               {qKey}
                             </span>
                             {domains.map((dom, dIdx) => (
                               <span
                                 key={`${dom}-${dIdx}`}
-                                className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 border border-emerald-200"
+                                className="inline-flex items-center rounded-full bg-emerald-950/40 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-800/40"
                               >
                                 {dom}
                               </span>
                             ))}
                             {q.priority && (
-                              <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200">
+                              <span className="inline-flex items-center rounded-full bg-amber-950/40 px-2.5 py-0.5 text-[10px] font-bold text-amber-400 border border-amber-800/40">
                                 Priority {q.priority}
                               </span>
                             )}
                             {ruleCount > 0 && (
-                              <span className="text-[11px] text-slate-400">
+                              <span className="text-[11px] text-[#777a88]">
                                 ({ruleCount} rule{ruleCount > 1 ? "s" : ""} depend on this)
                               </span>
                             )}
                           </div>
-                          <h3 className="text-sm font-bold text-slate-900 leading-snug">
+                          <h3 className="text-sm font-semibold text-[#ffffff] leading-snug">
                             {questionText}
                           </h3>
                         </div>
 
                         {questionReason && (
-                          <div className="sm:max-w-xs text-[11px] text-slate-600 bg-white border border-slate-200/80 rounded-lg p-2.5 leading-relaxed shrink-0">
-                            <span className="font-bold text-slate-700 block mb-0.5">Statutory Rationale:</span> {questionReason}
+                          <div className="sm:max-w-xs text-[11px] text-[#9194a1] bg-[#040406] border border-[#1c1d22] rounded-lg p-2.5 leading-relaxed shrink-0">
+                            <span className="font-bold text-[#ffffff] block mb-0.5">Statutory Rationale:</span> {questionReason}
                           </div>
                         )}
                       </div>
@@ -1343,10 +1343,10 @@ function OnboardingContent() {
                                   [qKey]: true,
                                 }))
                               }
-                              className={`px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                              className={`px-5 py-2 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                                 val === true
-                                  ? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
-                                  : "bg-white text-slate-700 border-slate-300 hover:border-slate-400"
+                                  ? "bg-[#ffffff] text-[#08080a] border-[#ffffff] shadow-sm"
+                                  : "bg-[#121317] text-[#9194a1] border-[#1c1d22] hover:border-[#2e3038] hover:text-[#ffffff]"
                               }`}
                             >
                               Yes
@@ -1359,10 +1359,10 @@ function OnboardingContent() {
                                   [qKey]: false,
                                 }))
                               }
-                              className={`px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                              className={`px-5 py-2 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                                 val === false
-                                  ? "bg-slate-800 text-white border-slate-800 shadow-2xs"
-                                  : "bg-white text-slate-700 border-slate-300 hover:border-slate-400"
+                                  ? "bg-[#ffffff] text-[#08080a] border-[#ffffff] shadow-sm"
+                                  : "bg-[#121317] text-[#9194a1] border-[#1c1d22] hover:border-[#2e3038] hover:text-[#ffffff]"
                               }`}
                             >
                               No
@@ -1377,13 +1377,11 @@ function OnboardingContent() {
                                   [qKey]: e.target.value,
                               }))
                             }
-                            className="w-full sm:max-w-md rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                            className="w-full sm:max-w-md rounded-lg border border-[#1c1d22] px-3 py-2 text-xs focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] bg-[#121317] text-[#ffffff]"
                           >
-                            {/* No pre-selected option: an unchosen select must not
-                                silently answer the question with option[0]. */}
-                            <option value="">Select an answer…</option>
+                            <option value="" className="bg-[#121317] text-[#9194a1]">Select an answer…</option>
                             {q.options.map((opt: any, optIdx: number) => (
-                              <option key={`${opt.value}-${optIdx}`} value={opt.value}>
+                              <option key={`${opt.value}-${optIdx}`} value={opt.value} className="bg-[#121317] text-[#ffffff]">
                                 {opt.label}
                               </option>
                             ))}
@@ -1397,15 +1395,13 @@ function OnboardingContent() {
                               onChange={(e) =>
                                 setQuestionAnswers((prev) => ({
                                   ...prev,
-                                  // Empty input stays absent (UNKNOWN); never coerce
-                                  // it to 0, which would be a fabricated answer.
                                   [qKey]: e.target.value === "" ? "" : Number(e.target.value),
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                              className="w-full rounded-lg border border-[#1c1d22] px-3 py-1.5 text-xs focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] bg-[#121317] text-[#ffffff]"
                             />
                             {q.unit && (
-                              <span className="text-xs font-semibold text-slate-500">
+                              <span className="text-xs font-semibold text-[#777a88]">
                                 {q.unit}
                               </span>
                             )}
@@ -1426,9 +1422,9 @@ function OnboardingContent() {
                                   [qKey]: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                              className="w-full rounded-lg border border-[#1c1d22] px-3 py-1.5 text-xs focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] bg-[#121317] text-[#ffffff] placeholder-[#5e616e]"
                             />
-                            <p className="text-[11px] text-slate-500">
+                            <p className="text-[11px] text-[#777a88]">
                               Separate multiple destinations or choices with commas.
                             </p>
                           </div>
@@ -1442,7 +1438,7 @@ function OnboardingContent() {
                                 [qKey]: e.target.value,
                               }))
                             }
-                            className="w-full sm:max-w-md rounded-lg border border-slate-300 px-3 py-1.5 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                            className="w-full sm:max-w-md rounded-lg border border-[#1c1d22] px-3 py-1.5 text-xs focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] bg-[#121317] text-[#ffffff]"
                           />
                         )}
                       </div>
@@ -1452,11 +1448,11 @@ function OnboardingContent() {
               </div>
             )}
 
-            <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+            <div className="flex justify-between items-center pt-4 border-t border-[#1c1d22]">
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                className="rounded-full border border-[#2e3038] bg-[#121317] px-5 py-2 text-xs font-semibold text-[#e2e3e9] hover:border-[#cc9166]/50 transition-colors cursor-pointer"
               >
                 ← Back to Products
               </button>
@@ -1464,7 +1460,7 @@ function OnboardingContent() {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-2 rounded-full bg-[#ffffff] px-6 py-2.5 text-sm font-semibold text-[#08080a] hover:bg-[#e2e3e9] disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
               >
                 {loading ? "Recording Responses..." : "Build My Compliance Plan →"}
               </button>
@@ -1475,20 +1471,20 @@ function OnboardingContent() {
         {/* ------------------------------------------------------------- */}
         {/* STEP 4: REGULATORY ANALYSIS (8-STAGE ORCHESTRATION PIPELINE) */}
         {step === 4 && (
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-8 shadow-xs space-y-6 text-center">
+          <div className="bg-[#040406] rounded-2xl border border-[#1c1d22] p-8 shadow-2xl space-y-6 text-center">
             <div className="max-w-md mx-auto space-y-3">
-              <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-600 font-bold text-2xl animate-pulse">
+              <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1c140d] border border-[#cc9166]/40 text-[#cc9166] font-bold text-2xl animate-pulse">
                 ⚙️
               </div>
-              <h2 className="text-xl font-bold tracking-tight text-slate-950">
+              <h2 className="text-xl font-serif font-bold tracking-tight text-[#ffffff]">
                 Building Your Compliance Plan
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[#777a88]">
                 Orchestrating deterministic AST applicability, statutory document checklists, clearance workflows, and official web harvesting for {business?.name || "your enterprise"}.
               </p>
               {/* Dynamic query feedback strip */}
-              <div className="p-2.5 rounded-lg bg-indigo-50/60 border border-indigo-100 text-xs font-medium text-indigo-800 flex items-center justify-center gap-2">
-                <span className="inline-block h-2 w-2 rounded-full bg-indigo-600 animate-ping" />
+              <div className="p-2.5 rounded-full bg-[#121317] border border-[#2e3038] text-xs font-medium text-[#cc9166] flex items-center justify-center gap-2">
+                <span className="inline-block h-2 w-2 rounded-full bg-[#cc9166] animate-ping" />
                 <span className="truncate">{activeQueryText}</span>
               </div>
             </div>
@@ -1500,29 +1496,29 @@ function OnboardingContent() {
                   key={`${stage.name}-${idx}`}
                   className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                     stage.done
-                      ? "bg-emerald-50/70 border-emerald-200"
-                      : "bg-slate-50 border-slate-200/80"
+                      ? "bg-[#121317] border-emerald-800/40"
+                      : "bg-[#08080a] border-[#1c1d22]"
                   }`}
                 >
                   <span
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                       stage.done
-                        ? "bg-emerald-600 text-white"
-                        : "bg-slate-200 text-slate-600 animate-pulse"
+                        ? "bg-emerald-500 text-[#08080a]"
+                        : "bg-[#121317] text-[#5e616e] border border-[#1c1d22] animate-pulse"
                     }`}
                   >
                     {stage.done ? "✓" : idx + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-slate-900 truncate">{stage.name}</div>
-                    <div className="text-[11px] text-slate-500 truncate">{stage.detail}</div>
+                    <div className="text-xs font-semibold text-[#ffffff] truncate">{stage.name}</div>
+                    <div className="text-[11px] text-[#777a88] truncate">{stage.detail}</div>
                   </div>
                   {stage.done ? (
-                    <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded">
+                    <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-800/30">
                       Completed
                     </span>
                   ) : (
-                    <span className="text-[11px] font-medium text-slate-400">
+                    <span className="text-[11px] font-medium text-[#5e616e]">
                       Processing...
                     </span>
                   )}
@@ -1530,7 +1526,7 @@ function OnboardingContent() {
               ))}
             </div>
 
-            <div className="text-[11px] text-slate-400 pt-2">
+            <div className="text-[11px] text-[#5e616e] pt-2">
               Statutory truth guarantee: zero hallucinations, fully deterministically evaluated with legal citations.
             </div>
           </div>
@@ -1541,17 +1537,17 @@ function OnboardingContent() {
         {step === 5 && (
           <div className="space-y-6">
             {/* Executive Summary Hero Card */}
-            <div className="bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-lg space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-indigo-800/60 pb-6">
+            <div className="bg-[#040406] border border-[#1c1d22] rounded-2xl p-6 sm:p-8 text-white shadow-2xl space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1c1d22] pb-6">
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/30 mb-2">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-emerald-400 border border-emerald-800/40 mb-2">
                     <span>✓</span>
                     <span>Compliance Plan Generated</span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                  <h2 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-[#ffffff]">
                     Compliance Plan for {business?.name || "Your Enterprise"}
                   </h2>
-                  <p className="text-xs text-indigo-200 mt-1 max-w-xl">
+                  <p className="text-xs text-[#777a88] mt-1 max-w-xl">
                     Evaluated across Central Acts, {registeredState || "State"} statutory notifications, and official regulatory requirements.
                   </p>
                 </div>
@@ -1559,14 +1555,14 @@ function OnboardingContent() {
                 <div className="flex items-center gap-3">
                   <Link
                     href={`/compliance?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
-                    className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-900 shadow-md hover:bg-indigo-50 transition-colors"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#ffffff] px-5 py-2.5 text-xs font-semibold text-[#08080a] shadow-sm hover:bg-[#e2e3e9] transition-colors cursor-pointer"
                   >
                     <span>View Compliance Plan</span>
                     <span>→</span>
                   </Link>
                   <Link
                     href={`/dashboard?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
-                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600/60 border border-indigo-400/40 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-600 transition-colors"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#121317] border border-[#2e3038] px-5 py-2.5 text-xs font-semibold text-[#cc9166] hover:border-[#cc9166]/60 transition-colors cursor-pointer"
                   >
                     <span>Founder Dashboard</span>
                   </Link>
@@ -1575,33 +1571,33 @@ function OnboardingContent() {
 
               {/* 4 Headline Metrics */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-                <div className="bg-white/10 rounded-xl p-4 border border-white/10 backdrop-blur-xs">
-                  <span className="text-indigo-200 text-xs font-medium block">Applicable Mandates</span>
-                  <span className="text-2xl sm:text-3xl font-bold text-white mt-1 block">
+                <div className="bg-[#121317] rounded-xl p-4 border border-[#1c1d22]">
+                  <span className="text-[#777a88] text-xs font-medium block">Applicable Mandates</span>
+                  <span className="text-2xl sm:text-3xl font-serif font-medium text-[#ffffff] mt-1 block">
                     {applicableCount}
                   </span>
-                  <span className="text-[11px] text-indigo-300 mt-1 block">Obligations Required</span>
+                  <span className="text-[11px] text-[#cc9166] mt-1 block">Obligations Required</span>
                 </div>
-                <div className="bg-white/10 rounded-xl p-4 border border-white/10 backdrop-blur-xs">
-                  <span className="text-indigo-200 text-xs font-medium block">Required Documents</span>
-                  <span className="text-2xl sm:text-3xl font-bold text-white mt-1 block">
+                <div className="bg-[#121317] rounded-xl p-4 border border-[#1c1d22]">
+                  <span className="text-[#777a88] text-xs font-medium block">Required Documents</span>
+                  <span className="text-2xl sm:text-3xl font-serif font-medium text-[#ffffff] mt-1 block">
                     {executiveSummary?.documents_count ?? (applicableCount > 0 ? applicableCount * 2 + 2 : 0)}
                   </span>
-                  <span className="text-[11px] text-indigo-300 mt-1 block">Statutory Proofs</span>
+                  <span className="text-[11px] text-[#cc9166] mt-1 block">Statutory Proofs</span>
                 </div>
-                <div className="bg-white/10 rounded-xl p-4 border border-white/10 backdrop-blur-xs">
-                  <span className="text-indigo-200 text-xs font-medium block">Clearance Workflows</span>
-                  <span className="text-2xl sm:text-3xl font-bold text-white mt-1 block">
+                <div className="bg-[#121317] rounded-xl p-4 border border-[#1c1d22]">
+                  <span className="text-[#777a88] text-xs font-medium block">Clearance Workflows</span>
+                  <span className="text-2xl sm:text-3xl font-serif font-medium text-[#ffffff] mt-1 block">
                     {executiveSummary?.workflows_count ?? (applicableCount > 0 ? Math.min(applicableCount, 3) : 0)}
                   </span>
-                  <span className="text-[11px] text-indigo-300 mt-1 block">Approval Procedures</span>
+                  <span className="text-[11px] text-[#cc9166] mt-1 block">Approval Procedures</span>
                 </div>
-                <div className="bg-white/10 rounded-xl p-4 border border-white/10 backdrop-blur-xs">
-                  <span className="text-indigo-200 text-xs font-medium block">Statutory Deadlines</span>
-                  <span className="text-2xl sm:text-3xl font-bold text-white mt-1 block">
+                <div className="bg-[#121317] rounded-xl p-4 border border-[#1c1d22]">
+                  <span className="text-[#777a88] text-xs font-medium block">Statutory Deadlines</span>
+                  <span className="text-2xl sm:text-3xl font-serif font-medium text-[#ffffff] mt-1 block">
                     {executiveSummary?.deadlines_count ?? (applicableCount > 0 ? 3 : 0)}
                   </span>
-                  <span className="text-[11px] text-indigo-300 mt-1 block">Filings & Renewals</span>
+                  <span className="text-[11px] text-[#cc9166] mt-1 block">Filings &amp; Renewals</span>
                 </div>
               </div>
             </div>
@@ -1635,59 +1631,59 @@ function OnboardingContent() {
             </div>
 
             {/* Live Discovery Audit Summary (Part L) */}
-            <div className="bg-white rounded-2xl border border-indigo-100 p-5 shadow-xs space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-50 pb-3">
+            <div className="bg-[#040406] rounded-2xl border border-[#1c1d22] p-5 shadow-2xl space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1c1d22] pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-white text-xs font-bold">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#cc9166] text-[#08080a] text-xs font-bold">
                     ✓
                   </span>
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">
+                    <h3 className="text-sm font-semibold text-[#ffffff]">
                       Regulatory Discovery Complete
                     </h3>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-[#777a88]">
                       Real web discovery executed for {business?.name || "enterprise"} with official source prioritization.
                     </p>
                   </div>
                 </div>
-                <span className="inline-flex items-center rounded-full bg-indigo-50 border border-indigo-200 px-3 py-1 text-xs font-semibold text-indigo-700">
+                <span className="inline-flex items-center rounded-full bg-[#1c140d] border border-[#cc9166]/40 px-3 py-1 text-xs font-semibold text-[#cc9166]">
                   {discoveryResult?.ran ? "Live Web Discovery Active" : "Knowledge Base Only"}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <span className="text-slate-500 block text-[11px]">Queries Planned</span>
-                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.queries?.length || 0}</span>
+                <div className="bg-[#121317] p-3 rounded-xl border border-[#1c1d22]">
+                  <span className="text-[#777a88] block text-[11px]">Queries Planned</span>
+                  <span className="font-serif font-semibold text-[#ffffff] text-base">{discoveryResult?.queries?.length || 0}</span>
                 </div>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <span className="text-slate-500 block text-[11px]">Sources Reviewed</span>
-                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.candidate_urls_count || 0}</span>
+                <div className="bg-[#121317] p-3 rounded-xl border border-[#1c1d22]">
+                  <span className="text-[#777a88] block text-[11px]">Sources Reviewed</span>
+                  <span className="font-serif font-semibold text-[#ffffff] text-base">{discoveryResult?.candidate_urls_count || 0}</span>
                 </div>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <span className="text-slate-500 block text-[11px]">Official Portals</span>
-                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.official_sources_count || 0}</span>
+                <div className="bg-[#121317] p-3 rounded-xl border border-[#1c1d22]">
+                  <span className="text-[#777a88] block text-[11px]">Official Portals</span>
+                  <span className="font-serif font-semibold text-[#ffffff] text-base">{discoveryResult?.official_sources_count || 0}</span>
                 </div>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <span className="text-slate-500 block text-[11px]">Claims Quarantined</span>
-                  <span className="font-bold text-slate-900 text-base">{discoveryResult?.candidate_requirements_count || 0}</span>
+                <div className="bg-[#121317] p-3 rounded-xl border border-[#1c1d22]">
+                  <span className="text-[#777a88] block text-[11px]">Claims Quarantined</span>
+                  <span className="font-serif font-semibold text-[#ffffff] text-base">{discoveryResult?.candidate_requirements_count || 0}</span>
                 </div>
               </div>
             </div>
 
             {/* Quarantined Candidate Regulatory Claims (Part D, E, F) */}
             {discoveryResult?.candidate_requirements && discoveryResult.candidate_requirements.length > 0 && (
-              <div className="bg-amber-50/60 border border-amber-200/90 rounded-2xl p-6 shadow-xs space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-200/60 pb-3">
+              <div className="bg-[#1c140d] border border-amber-800/40 rounded-2xl p-6 shadow-2xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-800/30 pb-3">
                   <div>
-                    <h3 className="text-sm font-bold text-amber-950 flex items-center gap-2">
-                      <span>⚠ Quarantined Discovered Sources & Claims ({discoveryResult.candidate_requirements.length})</span>
+                    <h3 className="text-sm font-serif font-semibold text-amber-300 flex items-center gap-2">
+                      <span>⚠ Quarantined Discovered Sources &amp; Claims ({discoveryResult.candidate_requirements.length})</span>
                     </h3>
-                    <p className="text-xs text-amber-800 mt-0.5">
+                    <p className="text-xs text-amber-400/80 mt-0.5">
                       Candidate statutory claims scraped from official portals. Quarantined as UNVERIFIED until statutory review; cannot produce APPLICABLE decisions.
                     </p>
                   </div>
-                  <span className="text-[11px] font-mono font-bold uppercase bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md border border-amber-300">
+                  <span className="text-[11px] font-mono font-bold uppercase bg-amber-950/60 text-amber-400 px-3 py-1 rounded-full border border-amber-800/50">
                     Governance Active
                   </span>
                 </div>
@@ -1696,22 +1692,22 @@ function OnboardingContent() {
                   {discoveryResult.candidate_requirements.map((cr, crIdx) => (
                     <div
                       key={cr.id || `${cr.name}-${crIdx}`}
-                      className="p-3.5 bg-white border border-amber-200 rounded-xl space-y-1.5 shadow-2xs"
+                      className="p-3.5 bg-[#040406] border border-amber-800/30 rounded-xl space-y-1.5"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <span className="font-bold text-xs text-slate-900 leading-snug">
+                        <span className="font-semibold text-xs text-[#ffffff] leading-snug">
                           {cr.name}
                         </span>
-                        <span className="shrink-0 text-[10px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded border border-amber-300">
+                        <span className="shrink-0 text-[10px] font-bold uppercase bg-amber-950/60 text-amber-400 px-2 py-0.5 rounded-full border border-amber-800/40">
                           Quarantined
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-600 line-clamp-2">
+                      <p className="text-[11px] text-[#9194a1] line-clamp-2">
                         {cr.applicability_statement}
                       </p>
-                      <div className="text-[10px] text-slate-500 font-mono flex items-center justify-between pt-1">
+                      <div className="text-[10px] text-[#777a88] font-mono flex items-center justify-between pt-1">
                         <span>Authority: {cr.authority}</span>
-                        <span className="text-amber-700 font-semibold">Evidence Extracted</span>
+                        <span className="text-[#cc9166] font-semibold">Evidence Extracted</span>
                       </div>
                     </div>
                   ))}
@@ -1720,27 +1716,27 @@ function OnboardingContent() {
             )}
 
             {/* Categorized Requirements List (Part N — Filtered presentation) */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div className="bg-[#040406] rounded-2xl border border-[#1c1d22] p-6 shadow-2xl space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1c1d22] pb-4">
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">
+                  <h2 className="text-base font-serif font-bold text-[#ffffff]">
                     Statutory Applicability Results
                   </h2>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-[#777a88]">
                     Evaluated deterministically against Central Acts and {registeredState} state notifications.
                   </p>
                 </div>
 
                 <Link
                   href={`/dashboard?business_id=${business?.id}`}
-                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 transition-colors"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#ffffff] px-5 py-2 text-xs font-semibold text-[#08080a] hover:bg-[#e2e3e9] transition-colors cursor-pointer shadow-sm"
                 >
                   Enter Overview Dashboard →
                 </Link>
               </div>
 
               {results.length === 0 ? (
-                <div className="py-8 text-center text-slate-500 text-xs">
+                <div className="py-8 text-center text-[#777a88] text-xs">
                   No decision rules were triggered for the current profile parameters.
                 </div>
               ) : (
@@ -1748,7 +1744,7 @@ function OnboardingContent() {
                   {/* Action Required: APPLICABLE & NEEDS_INFORMATION */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-[#9194a1]">
                         Action Required ({results.filter((r) => r.status === "APPLICABLE" || r.status === "NEEDS_INFORMATION").length})
                       </span>
                     </div>
@@ -1758,26 +1754,26 @@ function OnboardingContent() {
                       .map((r, idx) => (
                         <div
                           key={r.id || `${r.requirement_id}-${idx}`}
-                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-[#1c1d22] bg-[#121317]/50 hover:bg-[#121317] hover:border-[#2e3038] transition-colors"
                         >
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs font-bold text-indigo-700">
+                              <span className="font-mono text-xs font-bold text-[#cc9166]">
                                 {r.requirement_id}
                               </span>
-                              <span className="text-slate-300">·</span>
-                              <span className="text-xs font-semibold text-slate-900">
+                              <span className="text-[#5e616e]">·</span>
+                              <span className="text-xs font-semibold text-[#ffffff]">
                                 {r.requirement_name}
                               </span>
                             </div>
-                            <div className="text-[11px] text-slate-500 flex items-center gap-2">
+                            <div className="text-[11px] text-[#777a88] flex items-center gap-2">
                               <span>
                                 Evidence: {r.evidence_refs ? r.evidence_refs.length : 0} statutory citation(s)
                               </span>
                               {Boolean(r.explanation_trace?.reason) && (
                                 <>
                                   <span>·</span>
-                                  <span className="italic">
+                                  <span className="italic text-[#9194a1]">
                                     {String(r.explanation_trace.reason)}
                                   </span>
                                 </>
@@ -1789,14 +1785,14 @@ function OnboardingContent() {
                             <button
                               type="button"
                               onClick={() => openWhyModal(r)}
-                              className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+                              className="text-xs font-semibold text-[#cc9166] hover:underline cursor-pointer"
                             >
                               Why do I need this?
                             </button>
                             <StatusBadge status={r.status as ApplicabilityStatus} size="sm" />
                             <Link
                               href={`/compliance/${r.requirement_id}?business_id=${business?.id}`}
-                              className="text-xs font-semibold text-slate-600 hover:text-slate-900"
+                              className="text-xs font-semibold text-[#9194a1] hover:text-[#ffffff]"
                             >
                               Details →
                             </Link>
@@ -1809,7 +1805,7 @@ function OnboardingContent() {
                   {results.filter((r) => r.status === "UNVERIFIED" || r.status === "CONFLICT_REVIEW").length > 0 && (
                     <div className="space-y-3 pt-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-amber-700">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">
                           Verification Required ({results.filter((r) => r.status === "UNVERIFIED" || r.status === "CONFLICT_REVIEW").length})
                         </span>
                       </div>
@@ -1819,19 +1815,19 @@ function OnboardingContent() {
                         .map((r, idx) => (
                           <div
                             key={r.id || `${r.requirement_id}-${idx}`}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-amber-200/80 bg-amber-50/40 hover:bg-amber-50/60 transition-colors"
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-amber-900/40 bg-amber-950/20 hover:bg-amber-950/30 transition-colors"
                           >
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
-                                <span className="font-mono text-xs font-bold text-amber-800">
+                                <span className="font-mono text-xs font-bold text-amber-400">
                                   {r.requirement_id}
                                 </span>
-                                <span className="text-slate-300">·</span>
-                                <span className="text-xs font-semibold text-slate-900">
+                                <span className="text-[#5e616e]">·</span>
+                                <span className="text-xs font-semibold text-[#ffffff]">
                                   {r.requirement_name}
                                 </span>
                               </div>
-                              <div className="text-[11px] text-slate-500">
+                              <div className="text-[11px] text-[#9194a1]">
                                 {String(r.explanation_trace?.reason || "Verification required")}
                               </div>
                             </div>
@@ -1840,7 +1836,7 @@ function OnboardingContent() {
                               <StatusBadge status={r.status as ApplicabilityStatus} size="sm" />
                               <Link
                                 href={`/compliance/${r.requirement_id}?business_id=${business?.id}`}
-                                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+                                className="text-xs font-semibold text-[#cc9166] hover:underline"
                               >
                                 View Detail →
                               </Link>
@@ -1852,16 +1848,16 @@ function OnboardingContent() {
 
                   {/* Not Applicable Requirements: Collapsible / Hidden by default (Part N) */}
                   {results.filter((r) => r.status === "NOT_APPLICABLE").length > 0 && (
-                    <div className="pt-2 border-t border-slate-100">
+                    <div className="pt-2 border-t border-[#1c1d22]">
                       <button
                         type="button"
                         onClick={() => setShowNotApplicable((prev) => !prev)}
-                        className="flex items-center justify-between w-full py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+                        className="flex items-center justify-between w-full py-2 text-xs font-semibold text-[#777a88] hover:text-[#ffffff] transition-colors cursor-pointer"
                       >
                         <span>
                           {showNotApplicable ? "▾ Hide" : "▸ Show"} Not Applicable Requirements ({results.filter((r) => r.status === "NOT_APPLICABLE").length} hidden by default)
                         </span>
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-[#5e616e]">
                           {showNotApplicable ? "Click to collapse" : "Click to view full audit trail"}
                         </span>
                       </button>
@@ -1873,19 +1869,19 @@ function OnboardingContent() {
                             .map((r, idx) => (
                               <div
                                 key={r.id || `${r.requirement_id}-${idx}`}
-                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/40 hover:bg-slate-50 transition-colors opacity-85"
+                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-[#1c1d22] bg-[#08080a] opacity-75"
                               >
                                 <div className="space-y-0.5">
                                   <div className="flex items-center gap-2">
-                                    <span className="font-mono text-[11px] font-bold text-slate-500">
+                                    <span className="font-mono text-[11px] font-bold text-[#777a88]">
                                       {r.requirement_id}
                                     </span>
-                                    <span className="text-slate-300">·</span>
-                                    <span className="text-xs font-medium text-slate-700">
+                                    <span className="text-[#5e616e]">·</span>
+                                    <span className="text-xs font-medium text-[#9194a1]">
                                       {r.requirement_name}
                                     </span>
                                   </div>
-                                  <div className="text-[10px] text-slate-400">
+                                  <div className="text-[10px] text-[#5e616e]">
                                     Reason: {String(r.explanation_trace?.reason || "Not triggered by business profile parameters")}
                                   </div>
                                 </div>
@@ -1900,11 +1896,11 @@ function OnboardingContent() {
               )}
 
               {/* Bottom CTAs */}
-              <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="pt-4 border-t border-[#1c1d22] flex flex-col sm:flex-row items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="text-xs font-semibold text-slate-600 hover:text-slate-900"
+                  className="text-xs font-semibold text-[#777a88] hover:text-[#ffffff] cursor-pointer"
                 >
                   ← Refine Smart Questions
                 </button>
@@ -1912,14 +1908,14 @@ function OnboardingContent() {
                 <div className="flex items-center gap-3">
                   <Link
                     href={`/compliance?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
-                    className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                    className="rounded-full border border-[#2e3038] bg-[#121317] px-5 py-2 text-xs font-semibold text-[#e2e3e9] hover:border-[#cc9166]/50 transition-colors"
                   >
                     View All Compliance Mandates
                   </Link>
 
                   <Link
                     href={`/dashboard?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
-                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 transition-colors"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#ffffff] px-6 py-2 text-xs font-semibold text-[#08080a] hover:bg-[#e2e3e9] transition-colors shadow-sm"
                   >
                     Enter Overview Dashboard →
                   </Link>

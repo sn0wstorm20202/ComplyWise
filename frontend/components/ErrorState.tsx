@@ -15,9 +15,9 @@ export function ErrorState({
 }: ErrorStateProps) {
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50/50 p-8 text-center ${className}`}
+      className={`flex flex-col items-center justify-center rounded-[10px] border border-rose-900/50 bg-rose-950/20 p-8 text-center ${className}`}
     >
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-rose-950/40 border border-rose-800/50 text-rose-400">
         <svg
           className="h-5 w-5"
           fill="none"
@@ -32,13 +32,13 @@ export function ErrorState({
           />
         </svg>
       </div>
-      <h3 className="text-sm font-semibold text-rose-900">{title}</h3>
-      <p className="mt-1 max-w-md text-xs text-rose-700">{message}</p>
+      <h3 className="text-sm font-semibold text-rose-200">{title}</h3>
+      <p className="mt-1 max-w-md text-xs text-rose-400/80">{message}</p>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
-          className="mt-4 inline-flex items-center rounded-lg border border-rose-300 bg-white px-3.5 py-1.5 text-xs font-medium text-rose-800 shadow-xs hover:bg-rose-50 transition-colors"
+          className="mt-4 inline-flex items-center rounded-full border border-rose-800/60 bg-[#121317] px-4 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-950/40 transition-colors cursor-pointer"
         >
           Try Again
         </button>

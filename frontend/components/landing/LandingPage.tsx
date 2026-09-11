@@ -17,7 +17,7 @@ export function LandingPage() {
   const [demoModalOpen, setDemoModalOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#fcfcfb] text-[#18181b] font-sans selection:bg-stone-200 selection:text-stone-900 flex flex-col">
+    <div className="min-h-screen bg-[#08080a] text-[#ffffff] font-sans selection:bg-[#cc9166]/30 selection:text-white flex flex-col">
       {/* Top Compact Navigation */}
       <LandingNavbar onRequestDemo={() => setDemoModalOpen(true)} />
 

@@ -35,102 +35,110 @@ export default function DocumentDetailPage({ params }: PageProps) {
       <div className="space-y-6 pb-6 select-none max-w-4xl mx-auto">
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-            <Folder className="h-3.5 w-3.5 text-slate-400" />
-            <Link href="/documents" className="hover:text-slate-600">
+          <div className="flex items-center gap-2 text-xs text-[#777a88]">
+            <Folder className="h-3.5 w-3.5 text-[#5e616e]" />
+            <Link href="/documents" className="hover:text-[#ffffff] transition-colors">
               Documents
             </Link>
-            <ChevronRight className="h-3 w-3 text-slate-300" />
-            <span className="text-slate-600 font-semibold">{doc.code}</span>
+            <ChevronRight className="h-3 w-3 text-[#5e616e]" />
+            <span className="text-[#e2e3e9] font-mono font-medium">{doc.code}</span>
           </div>
 
           <Link
             href="/documents"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#9194a1] hover:text-[#ffffff] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Documents</span>
+            <span>Back to Checklist</span>
           </Link>
         </div>
 
         {/* Main Document Details Card */}
-        <div className="bg-white rounded-[28px] border border-slate-200/70 p-8 shadow-xs space-y-6">
-          <div className="border-b border-slate-100 pb-6 space-y-3">
+        <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 sm:p-8 shadow-2xl space-y-6">
+          <div className="border-b border-[#1c1d22] pb-6 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full">
+              <span className="font-mono text-xs font-semibold text-[#e2e3e9] bg-[#121317] border border-[#2e3038] px-3 py-1 rounded-full">
                 {doc.code}
               </span>
               <span
-                className={`px-3 py-1 rounded-full font-bold text-xs ${
+                className={`px-3 py-1 rounded-full font-semibold text-xs border ${
                   doc.status === "VERIFIED"
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-amber-100 text-amber-800"
+                    ? "bg-emerald-950/40 text-emerald-300 border-emerald-800/60"
+                    : "bg-amber-950/40 text-amber-300 border-amber-800/60"
                 }`}
               >
                 {doc.status}
               </span>
-              <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full">
+              <span className="text-xs font-semibold text-[#cc9166] bg-[#cc9166]/10 border border-[#cc9166]/30 px-3 py-1 rounded-full">
                 {doc.category}
               </span>
             </div>
 
-            <h1 className="text-2xl font-bold text-slate-950">
+            <h1 className="font-serif text-2xl sm:text-3xl text-[#ffffff] font-normal">
               {doc.name}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-6 text-xs text-slate-500 pt-1">
+            <div className="flex flex-wrap items-center gap-6 text-xs text-[#9194a1] pt-2">
               <div>
-                Issuing Authority: <strong className="text-slate-900">{doc.authority}</strong>
+                Authority: <strong className="text-[#ffffff] font-medium">{doc.authority}</strong>
               </div>
               <div>
-                Format: <strong className="text-slate-900">{doc.fileFormat} ({doc.fileSize})</strong>
+                Format: <strong className="text-[#ffffff] font-medium">{doc.fileFormat} ({doc.fileSize})</strong>
               </div>
               <div>
-                Valid Until: <strong className="text-emerald-700">{doc.validUntil}</strong>
+                Valid Until: <strong className="text-emerald-400 font-medium">{doc.validUntil}</strong>
               </div>
             </div>
           </div>
 
-          {/* Audit Verification Log */}
+          {/* Statutory Verification Log */}
           <div className="space-y-3">
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+            <h2 className="text-xs font-semibold text-[#ffffff] uppercase tracking-wider">
               Statutory Verification Details
             </h2>
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2 text-xs">
+            <div className="p-5 rounded-[10px] bg-[#121317] border border-[#1c1d22] space-y-3 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Statutory Linked Clause:</span>
-                <span className="font-mono font-bold text-indigo-700">{doc.clauseLinked}</span>
+                <span className="text-[#777a88]">Statutory Linked Clause:</span>
+                <span className="font-mono font-semibold text-[#cc9166]">{doc.clauseLinked}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Last Verified Date:</span>
-                <span className="font-semibold text-slate-800">{doc.lastUpdated}</span>
+                <span className="text-[#777a88]">Last Verified Date:</span>
+                <span className="font-medium text-[#e2e3e9]">{doc.lastUpdated}</span>
               </div>
-              <div className="pt-2 border-t border-slate-200/60 text-slate-600">
-                <strong>Auditor Notes:</strong> {doc.notes}
+              <div className="pt-3 border-t border-[#1c1d22] text-[#9194a1] leading-relaxed">
+                <strong className="text-[#e2e3e9]">Auditor / Pre-Validation Notes:</strong> {doc.notes}
               </div>
             </div>
           </div>
 
-          {/* Document Preview Placeholder Area */}
-          <div className="rounded-2xl border-2 border-dashed border-slate-200 p-8 flex flex-col items-center justify-center text-center space-y-3 bg-slate-50/50">
-            <FileText className="h-12 w-12 text-slate-400" />
+          {/* Document Preview Area */}
+          <div className="rounded-[10px] border-2 border-dashed border-[#1c1d22] p-8 flex flex-col items-center justify-center text-center space-y-4 bg-[#121317]/40">
+            <div className="p-3 rounded-full bg-[#1c1d22] text-[#cc9166]">
+              <FileText className="h-8 w-8" />
+            </div>
             <div>
-              <div className="font-bold text-slate-800 text-sm">
+              <div className="font-serif text-base text-[#ffffff]">
                 {doc.name} ({doc.code})
               </div>
-              <div className="text-xs text-slate-500 mt-0.5">
-                Digitally signed statutory filing evidence ready for inspection.
+              <div className="text-xs text-[#777a88] mt-1 max-w-sm">
+                Digitally signed statutory filing evidence formatted for compliance review.
               </div>
             </div>
 
             <button
               type="button"
-              onClick={() => alert(`Downloading ${doc.name} verification file...`)}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#0f172a] text-white text-xs font-bold hover:bg-slate-800 transition-colors shadow-xs"
+              onClick={() => alert(`Downloading ${doc.name} evidence archive...`)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#ffffff] text-[#08080a] text-xs font-semibold hover:bg-[#e2e3e9] transition-all shadow-lg"
             >
               <Download className="h-3.5 w-3.5" />
               <span>Download Evidence PDF</span>
             </button>
+          </div>
+
+          {/* Regulatory Boundary Notice (Image B) */}
+          <div className="p-4 rounded-[10px] border border-[#1c1d22] bg-[#121317]/70 text-[11px] text-[#777a88] flex items-center justify-between">
+            <span>Official statutory verification is governed by the issuing authority. AI analysis assists in pre-filing validation.</span>
+            <span className="font-mono text-[#cc9166] shrink-0 ml-4">CONFIDENTIAL</span>
           </div>
         </div>
       </div>

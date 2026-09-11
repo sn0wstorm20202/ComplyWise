@@ -33,18 +33,18 @@ export default function RegulatoryUpdateDetailPage({ params }: PageProps) {
       <div className="space-y-6 pb-6 select-none max-w-4xl mx-auto">
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-            <Folder className="h-3.5 w-3.5 text-slate-400" />
-            <Link href="/regulatory-updates" className="hover:text-slate-600">
+          <div className="flex items-center gap-2 text-xs text-[#777a88]">
+            <Folder className="h-3.5 w-3.5 text-[#5e616e]" />
+            <Link href="/regulatory-updates" className="hover:text-[#ffffff] transition-colors">
               Regulatory Updates
             </Link>
-            <ChevronRight className="h-3 w-3 text-slate-300" />
-            <span className="text-slate-600 font-semibold">{item.gazetteNo}</span>
+            <ChevronRight className="h-3 w-3 text-[#5e616e]" />
+            <span className="text-[#e2e3e9] font-mono font-medium">{item.gazetteNo}</span>
           </div>
 
           <Link
             href="/regulatory-updates"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#9194a1] hover:text-[#ffffff] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Back to Updates</span>
@@ -52,84 +52,84 @@ export default function RegulatoryUpdateDetailPage({ params }: PageProps) {
         </div>
 
         {/* Gazette Main Card */}
-        <div className="bg-white rounded-[28px] border border-slate-200/70 p-8 shadow-xs space-y-6">
-          <div className="border-b border-slate-100 pb-6 space-y-3">
+        <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 sm:p-8 shadow-2xl space-y-6">
+          <div className="border-b border-[#1c1d22] pb-6 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full">
+              <span className="font-mono text-xs font-semibold text-[#e2e3e9] bg-[#121317] border border-[#2e3038] px-3 py-1 rounded-full">
                 {item.gazetteNo}
               </span>
               <span
-                className={`px-3 py-1 rounded-full font-bold text-xs ${
+                className={`px-3 py-1 rounded-full font-semibold text-xs border font-mono uppercase text-[10px] ${
                   item.impactLevel === "HIGH"
-                    ? "bg-rose-100 text-rose-800"
-                    : "bg-amber-100 text-amber-800"
+                    ? "bg-rose-950/40 text-rose-300 border-rose-800/60"
+                    : "bg-amber-950/40 text-amber-300 border-amber-800/60"
                 }`}
               >
                 {item.impactLevel} STATUTORY IMPACT
               </span>
-              <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full">
+              <span className="text-xs font-semibold text-[#cc9166] bg-[#cc9166]/10 border border-[#cc9166]/30 px-3 py-1 rounded-full">
                 {item.authority}
               </span>
             </div>
 
-            <h1 className="text-2xl font-bold text-slate-950 leading-snug">
+            <h1 className="font-serif text-2xl sm:text-3xl text-[#ffffff] leading-snug font-normal">
               {item.title}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-6 text-xs text-slate-500 pt-1">
+            <div className="flex flex-wrap items-center gap-6 text-xs text-[#9194a1] pt-2">
               <div>
-                Published: <strong className="text-slate-900">{item.publishDate}</strong>
+                Published: <strong className="text-[#ffffff] font-medium">{item.publishDate}</strong>
               </div>
               <div>
-                Effective Date: <strong className="text-emerald-700">{item.effectiveDate}</strong>
+                Effective Date: <strong className="text-emerald-400 font-medium">{item.effectiveDate}</strong>
               </div>
               <div>
-                Category: <strong className="text-slate-900">{item.category}</strong>
+                Category: <strong className="text-[#ffffff] font-medium">{item.category}</strong>
               </div>
             </div>
           </div>
 
           {/* Executive Summary */}
           <div className="space-y-2">
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+            <h2 className="text-xs font-semibold text-[#ffffff] uppercase tracking-wider">
               Regulatory Overview & Mandate
             </h2>
-            <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <p className="text-xs text-[#e2e3e9] leading-relaxed bg-[#121317] p-4 rounded-[10px] border border-[#1c1d22]">
               {item.summary}
             </p>
           </div>
 
           {/* Detailed Compliance Requirements */}
           <div className="space-y-3">
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+            <h2 className="text-xs font-semibold text-[#ffffff] uppercase tracking-wider">
               Enforcement Actions Required for Compliance
             </h2>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {item.keyRequirements.map((req, idx) => (
                 <div
                   key={idx}
-                  className="p-3.5 rounded-2xl bg-white border border-slate-200/80 flex items-start gap-3 shadow-2xs text-xs"
+                  className="p-3.5 rounded-[10px] bg-[#121317] border border-[#1c1d22] flex items-start gap-3 text-xs"
                 >
-                  <span className="h-5 w-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
+                  <span className="h-5 w-5 rounded-full bg-[#cc9166] text-black flex items-center justify-center font-bold font-mono text-[11px] shrink-0 mt-0.5">
                     {idx + 1}
                   </span>
-                  <span className="text-slate-800 font-medium leading-relaxed">{req}</span>
+                  <span className="text-[#e2e3e9] font-medium leading-relaxed">{req}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Affected Standards */}
-          <div className="space-y-2 pt-2 border-t border-slate-100">
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+          <div className="space-y-2 pt-3 border-t border-[#1c1d22]">
+            <h2 className="text-xs font-semibold text-[#ffffff] uppercase tracking-wider">
               Affected Indian Standards & Products
             </h2>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 pt-1">
               {item.affectedStandards.map((std, idx) => (
                 <Link
                   key={idx}
                   href={`/standards/${std.replace(/\s+/g, "-")}`}
-                  className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl hover:bg-indigo-100 transition-colors"
+                  className="font-mono text-xs font-semibold text-[#cc9166] bg-[#cc9166]/10 border border-[#cc9166]/30 px-3 py-1.5 rounded-full hover:bg-[#cc9166]/20 transition-colors"
                 >
                   {std} →
                 </Link>
@@ -138,20 +138,20 @@ export default function RegulatoryUpdateDetailPage({ params }: PageProps) {
           </div>
 
           {/* External Citation Link */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+          <div className="pt-4 border-t border-[#1c1d22] flex items-center justify-between">
             <a
               href={item.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-slate-950"
+              className="inline-flex items-center gap-2 text-xs font-medium text-[#9194a1] hover:text-[#ffffff] transition-colors"
             >
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="h-4 w-4 text-[#cc9166]" />
               <span>Download Official Gazette Notification (eGazette India)</span>
             </a>
 
             <Link
               href="/compliance"
-              className="px-5 py-2 rounded-full bg-[#0f172a] text-white text-xs font-bold hover:bg-slate-800 transition-colors"
+              className="px-5 py-2 rounded-full bg-[#ffffff] text-[#08080a] text-xs font-semibold hover:bg-[#e2e3e9] transition-all shadow-md"
             >
               Verify Enterprise Applicability
             </Link>

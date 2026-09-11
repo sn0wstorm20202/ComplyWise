@@ -76,19 +76,19 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-[#08080a] text-[#e2e3e9] flex flex-col">
       <Navbar />
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200/80 p-8 shadow-xs space-y-6">
+        <div className="w-full max-w-md bg-[#040406] rounded-2xl border border-[#1c1d22] p-8 shadow-2xl space-y-6">
           <div className="text-center space-y-2">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white font-bold text-xl shadow-xs">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#cc9166] text-[#08080a] font-bold text-xl shadow-xs">
               CW
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950">
+            <h1 className="text-2xl font-serif tracking-tight text-[#ffffff]">
               {mode === "signin" ? "Sign In to ComplyWise" : "Create ComplyWise Account"}
             </h1>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[#777a88]">
               {mode === "signin"
                 ? "Enter your credentials to access industrial compliance intelligence."
                 : "Register to manage multi-jurisdiction statutory requirements."}
@@ -96,17 +96,17 @@ export default function SignInPage() {
           </div>
 
           {/* Tab selector */}
-          <div className="flex rounded-lg bg-slate-100 p-1">
+          <div className="flex rounded-full bg-[#121317] p-1 border border-[#1c1d22]">
             <button
               type="button"
               onClick={() => {
                 setMode("signin");
                 setError(null);
               }}
-              className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-all ${
+              className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-all ${
                 mode === "signin"
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-500 hover:text-slate-900"
+                  ? "bg-[#ffffff] text-[#08080a] shadow-xs"
+                  : "text-[#777a88] hover:text-[#ffffff]"
               }`}
             >
               Sign In
@@ -117,10 +117,10 @@ export default function SignInPage() {
                 setMode("register");
                 setError(null);
               }}
-              className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-all ${
+              className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-all ${
                 mode === "register"
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-500 hover:text-slate-900"
+                  ? "bg-[#ffffff] text-[#08080a] shadow-xs"
+                  : "text-[#777a88] hover:text-[#ffffff]"
               }`}
             >
               Create Account
@@ -138,7 +138,7 @@ export default function SignInPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "register" && (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
                   Full Name
                 </label>
                 <input
@@ -147,13 +147,13 @@ export default function SignInPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="e.g. Ramesh Chandra"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
                 Work Email
               </label>
               <input
@@ -162,12 +162,12 @@ export default function SignInPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@enterprise.in"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
                 Password
               </label>
               <input
@@ -176,14 +176,14 @@ export default function SignInPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              className="w-full rounded-full bg-[#ffffff] px-4 py-2.5 text-sm font-semibold text-[#08080a] hover:bg-[#e2e3e9] disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
             >
               {loading
                 ? "Authenticating..."
@@ -194,19 +194,19 @@ export default function SignInPage() {
           </form>
 
           {/* Fast Demo Access Button */}
-          <div className="pt-4 border-t border-slate-100 space-y-2">
-            <div className="text-[11px] text-center text-slate-400 font-medium">
-              EVALUATION & HACKATHON JURY ACCESS
+          <div className="pt-4 border-t border-[#1c1d22] space-y-2">
+            <div className="text-[10px] uppercase tracking-wider text-center text-[#5e616e] font-semibold">
+              EVALUATION &amp; HACKATHON JURY ACCESS
             </div>
             <button
               type="button"
               onClick={handleDemoLogin}
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/70 px-4 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100/70 disabled:opacity-50 transition-colors"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-[#2e3038] bg-[#121317] px-4 py-2.5 text-xs font-semibold text-[#cc9166] hover:bg-[#1a1c22] hover:border-[#cc9166]/60 disabled:opacity-50 transition-colors cursor-pointer"
             >
               ⚡ Fast Demo Login (Lead Compliance Officer)
             </button>
-            <div className="text-[11px] text-center text-slate-400">
+            <div className="text-[11px] text-center text-[#777a88]">
               Pre-seeded test account with ready industrial parameters
             </div>
           </div>

@@ -11,7 +11,7 @@ export function LoadingSkeleton({ className = "h-6 w-full", count = 1 }: Loading
       {Array.from({ length: count }).map((_, idx) => (
         <div
           key={idx}
-          className={`animate-pulse rounded-md bg-slate-200/80 dark:bg-slate-800 ${className}`}
+          className={`animate-pulse rounded-md bg-[#121317] border border-[#1c1d22]/50 ${className}`}
         />
       ))}
     </div>

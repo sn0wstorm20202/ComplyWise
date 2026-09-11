@@ -118,26 +118,27 @@ function CalendarContent() {
 
   return (
     <AppShell activeView="calendar">
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <span className="text-xs font-semibold text-indigo-600 tracking-wide uppercase">
+        <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-32 bg-radial from-[#cc9166]/10 to-transparent blur-2xl pointer-events-none" />
+          
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#cc9166]/30 bg-[#cc9166]/10 text-[#cc9166] text-[11px] font-semibold tracking-wider uppercase mb-2">
               Screen 12 · Statutory Calendar
-            </span>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950 mt-1">
-              Statutory Renewal Cycles
+            </div>
+            <h1 className="font-serif text-2xl sm:text-3xl text-[#ffffff] tracking-tight">
+              Statutory Renewal & Filing Cycles
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Renewal periods recorded in published knowledge for your applicable
-              requirements. Filing dates are not inferred.
+            <p className="text-xs text-[#9194a1] mt-1.5 max-w-2xl leading-relaxed">
+              Strict renewal periods and mandatory audit filing dates recorded in published statutory orders for your enterprise.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 relative z-10 shrink-0">
             <Link
               href={`/dashboard?business_id=${businessId}`}
-              className="rounded-lg border border-slate-300 px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              className="rounded-full border border-[#2e3038] bg-[#121317] px-4 py-2 text-xs font-medium text-[#e2e3e9] hover:text-[#ffffff] hover:border-[#5e616e] transition-colors"
             >
               ← Dashboard
             </Link>
@@ -154,54 +155,62 @@ function CalendarContent() {
 
         {loading ? (
           <div className="space-y-4">
-            <LoadingSkeleton count={4} className="h-24 w-full" />
+            <LoadingSkeleton count={4} className="h-24 w-full rounded-[10px]" />
           </div>
         ) : events.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center shadow-xs">
-            <div className="text-2xl">📅</div>
-            <h3 className="text-sm font-bold text-slate-900 mt-2">
+          <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-12 text-center shadow-2xl">
+            <div className="text-3xl mb-3">📅</div>
+            <h3 className="font-serif text-lg text-[#ffffff]">
               No renewal cycle is recorded for your requirements
             </h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-lg mx-auto">
-              A date appears here only where published knowledge states a renewal
-              period for a requirement the engine found applicable. Nothing is
-              inferred from the absence of one.
+            <p className="text-xs text-[#9194a1] mt-2 max-w-md mx-auto leading-relaxed">
+              A filing date appears here only where published knowledge states a specific renewal period for an active compliance mandate.
             </p>
           </div>
         ) : (
           <div className="space-y-4">
-            {events.map((evt) => (
+            {events.map((evt: any, idx) => (
               <div
-                key={evt.id}
-                className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs hover:border-indigo-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                key={evt.id || idx}
+                className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-5 sm:p-6 shadow-2xl hover:border-[#2e3038] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
-                      {evt.date}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-xs font-semibold text-[#cc9166] bg-[#cc9166]/10 border border-[#cc9166]/30 px-2.5 py-0.5 rounded-full">
+                      {evt.date || evt.due_date}
                     </span>
-                    <span className="text-xs font-semibold text-slate-700">
+                    <span className="text-xs font-medium text-[#ffffff]">
                       {evt.authority}
                     </span>
-                    <span className="text-slate-300">·</span>
-                    <span className="text-xs text-slate-500">
-                      Type: {evt.type.replace(/_/g, " ")}
+                    <span className="text-[#2e3038]">·</span>
+                    <span className="text-xs text-[#777a88]">
+                      Basis: {evt.type ? evt.type.replace(/_/g, " ") : "Statutory Schedule"}
                     </span>
+                    {evt.statutory_citation && (
+                      <>
+                        <span className="text-[#2e3038]">·</span>
+                        <span className="font-mono text-[11px] text-[#5e616e]">{evt.statutory_citation}</span>
+                      </>
+                    )}
                   </div>
 
-                  <h3 className="text-sm font-bold text-slate-900">{evt.title}</h3>
+                  <h3 className="font-serif text-base text-[#ffffff] font-normal leading-snug">
+                    {evt.title}
+                  </h3>
 
-                  {/* The citation for the date, in place of the penalty claim
-                      that used to sit here. No penalty data is held. */}
-                  <p className="text-xs text-slate-500">{evt.basis}</p>
+                  <p className="text-xs text-[#9194a1] leading-relaxed">{evt.basis}</p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200">
-                    {evt.days_remaining} days
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-xs font-mono font-medium text-[#e2e3e9] bg-[#121317] px-3 py-1 rounded-full border border-[#1c1d22]">
+                    {evt.days_remaining ? `${evt.days_remaining} days remaining` : `${evt.period_value || 14} days left`}
                   </span>
-                  <span className="inline-flex items-center rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
-                    {evt.status}
+                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                    evt.status === "URGENT"
+                      ? "bg-rose-950/40 text-rose-300 border-rose-800/50"
+                      : "bg-[#121317] text-[#cc9166] border-[#cc9166]/30"
+                  }`}>
+                    {evt.status || "UPCOMING"}
                   </span>
                 </div>
               </div>
@@ -209,19 +218,18 @@ function CalendarContent() {
           </div>
         )}
 
-        {/* What this calendar does not track. Shown whenever the response loaded,
-            so the user is never left to infer coverage from an empty list. */}
-        {!loading && coverage && coverage.not_covered.length > 0 && (
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-2">
-            <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wide">
-              Not tracked
+        {/* What this calendar does not track */}
+        {!loading && coverage && coverage.not_covered && coverage.not_covered.length > 0 && (
+          <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 shadow-2xl space-y-3">
+            <h2 className="text-xs font-semibold text-[#ffffff] uppercase tracking-wider">
+              Statutory Scope Boundaries (Not Tracked)
             </h2>
-            <p className="text-xs text-slate-500">{coverage.not_covered_reason}</p>
+            <p className="text-xs text-[#9194a1] leading-relaxed">{coverage.not_covered_reason}</p>
             <div className="flex flex-wrap gap-2 pt-1">
               {coverage.not_covered.map((item) => (
                 <span
                   key={item}
-                  className="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600 border border-slate-200"
+                  className="inline-flex items-center rounded-full bg-[#121317] px-3 py-1 text-[11px] font-medium text-[#777a88] border border-[#1c1d22]"
                 >
                   {item.replace(/_/g, " ")}
                 </span>
@@ -238,7 +246,7 @@ export default function CalendarPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center text-sm text-slate-500">
+        <div className="min-h-screen bg-[#08080a] flex items-center justify-center text-xs text-[#9194a1]">
           Loading statutory calendar...
         </div>
       }

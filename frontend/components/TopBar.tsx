@@ -41,7 +41,7 @@ export function TopBar({
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   return (
-    <header className="h-16 px-6 lg:px-8 border-b border-white/[0.07] flex items-center justify-between bg-[#09090B]/80 backdrop-blur-md sticky top-0 z-30 select-none">
+    <header className="h-16 px-6 lg:px-8 border-b border-[#1c1d22] flex items-center justify-between bg-[#040406]/90 backdrop-blur-md sticky top-0 z-30 select-none">
       {/* Left: Brand Identity + Primary Nav Pills */}
       <div className="flex items-center gap-6 lg:gap-8">
         {/* Brand Logo & Name */}
@@ -49,24 +49,24 @@ export function TopBar({
           href="/dashboard"
           className="flex items-center group cursor-pointer"
         >
-          <ComplyWiseLogo className="h-7 w-7 text-[#F5F5F3] transition-transform group-hover:scale-105" showSubtitle={true} />
+          <ComplyWiseLogo className="h-7 w-7 text-[#ffffff] transition-transform group-hover:scale-105" showSubtitle={true} />
         </Link>
 
         {/* Primary Segmented Navigation Pills */}
         <nav
           aria-label="Primary Navigation"
-          className="hidden md:flex items-center p-1 rounded-full bg-white/[0.04] border border-white/[0.07] text-xs font-medium"
+          className="hidden md:flex items-center p-1 rounded-full bg-[#121317] border border-[#1c1d22] text-xs font-medium"
         >
           <button
             type="button"
             onClick={() => onSelectPill("dashboard")}
             className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
               activePill === "dashboard"
-                ? "bg-white/[0.10] border border-white/[0.08] text-[#F5F5F3] font-medium shadow-xs"
-                : "text-[#71717A] hover:text-[#A1A1AA] hover:bg-white/[0.03]"
+                ? "bg-[#1c1d22] border border-[#2e3038] text-[#ffffff] font-medium shadow-xs"
+                : "text-[#9194a1] hover:text-[#ffffff] hover:bg-white/[0.02]"
             }`}
           >
-            <LayoutDashboard className={`h-3.5 w-3.5 ${activePill === "dashboard" ? "text-[#F5F5F3]" : "text-[#71717A]"}`} />
+            <LayoutDashboard className={`h-3.5 w-3.5 ${activePill === "dashboard" ? "text-[#ffffff]" : "text-[#777a88]"}`} />
             <span>Dashboard</span>
           </button>
 
@@ -75,11 +75,11 @@ export function TopBar({
             onClick={() => onSelectPill("compliance")}
             className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
               activePill === "compliance"
-                ? "bg-white/[0.10] border border-white/[0.08] text-[#F5F5F3] font-medium shadow-xs"
-                : "text-[#71717A] hover:text-[#A1A1AA] hover:bg-white/[0.03]"
+                ? "bg-[#1c1d22] border border-[#2e3038] text-[#ffffff] font-medium shadow-xs"
+                : "text-[#9194a1] hover:text-[#ffffff] hover:bg-white/[0.02]"
             }`}
           >
-            <ShieldCheck className={`h-3.5 w-3.5 ${activePill === "compliance" ? "text-[#F5F5F3]" : "text-[#71717A]"}`} />
+            <ShieldCheck className={`h-3.5 w-3.5 ${activePill === "compliance" ? "text-[#ffffff]" : "text-[#777a88]"}`} />
             <span>Compliance</span>
           </button>
 
@@ -88,11 +88,11 @@ export function TopBar({
             onClick={() => onSelectPill("reports")}
             className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
               activePill === "reports"
-                ? "bg-white/[0.10] border border-white/[0.08] text-[#F5F5F3] font-medium shadow-xs"
-                : "text-[#71717A] hover:text-[#A1A1AA] hover:bg-white/[0.03]"
+                ? "bg-[#1c1d22] border border-[#2e3038] text-[#ffffff] font-medium shadow-xs"
+                : "text-[#9194a1] hover:text-[#ffffff] hover:bg-white/[0.02]"
             }`}
           >
-            <Flag className={`h-3.5 w-3.5 ${activePill === "reports" ? "text-[#F5F5F3]" : "text-[#71717A]"}`} />
+            <Flag className={`h-3.5 w-3.5 ${activePill === "reports" ? "text-[#ffffff]" : "text-[#777a88]"}`} />
             <span>Reports</span>
           </button>
         </nav>
@@ -105,25 +105,25 @@ export function TopBar({
           <div className="flex items-center -space-x-2 overflow-hidden">
             <div
               title="Dr. Vikramaditya Sharma (Head of QA)"
-              className="inline-block h-7 w-7 rounded-full ring-1 ring-[#09090B] bg-[#17191C] border border-white/[0.12] text-[#F5F5F3] text-[10px] font-medium flex items-center justify-center cursor-pointer"
+              className="inline-block h-7 w-7 rounded-full ring-1 ring-[#08080a] bg-[#121317] border border-[#2e3038] text-[#e2e3e9] text-[10px] font-medium flex items-center justify-center cursor-pointer"
             >
               VS
             </div>
             <div
               title="Priya Sundaram (Lab Test Engineer)"
-              className="inline-block h-7 w-7 rounded-full ring-1 ring-[#09090B] bg-[#1E2230] border border-accent/30 text-accent text-[10px] font-medium flex items-center justify-center cursor-pointer"
+              className="inline-block h-7 w-7 rounded-full ring-1 ring-[#08080a] bg-[#1c1d22] border border-[#cc9166]/30 text-[#cc9166] text-[10px] font-medium flex items-center justify-center cursor-pointer"
             >
               PS
             </div>
             <div
               title="Arun Mehra (Safety Officer)"
-              className="inline-block h-7 w-7 rounded-full ring-1 ring-[#09090B] bg-[#18261F] border border-emerald-500/30 text-emerald-400 text-[10px] font-medium flex items-center justify-center cursor-pointer"
+              className="inline-block h-7 w-7 rounded-full ring-1 ring-[#08080a] bg-[#121317] border border-emerald-500/30 text-emerald-400 text-[10px] font-medium flex items-center justify-center cursor-pointer"
             >
               AM
             </div>
             <div
               title="3 more members"
-              className="inline-block h-7 w-7 rounded-full ring-1 ring-[#09090B] bg-[#17191C] border border-white/[0.10] text-[#71717A] text-[9px] font-medium flex items-center justify-center cursor-pointer"
+              className="inline-block h-7 w-7 rounded-full ring-1 ring-[#08080a] bg-[#121317] border border-[#1c1d22] text-[#777a88] text-[9px] font-medium flex items-center justify-center cursor-pointer"
             >
               +3
             </div>
@@ -133,9 +133,9 @@ export function TopBar({
           <button
             type="button"
             onClick={() => setInviteModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#17191C] hover:bg-white/[0.06] border border-white/[0.08] text-[#A1A1AA] hover:text-[#F5F5F3] text-xs font-medium transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#121317] hover:bg-[#1c1d22] border border-[#1c1d22] text-[#9194a1] hover:text-[#ffffff] text-xs font-medium transition-colors cursor-pointer"
           >
-            <Plus className="h-3.5 w-3.5 text-[#71717A]" />
+            <Plus className="h-3.5 w-3.5 text-[#777a88]" />
             <span>Add Member</span>
           </button>
         </div>
@@ -150,11 +150,11 @@ export function TopBar({
               setNotificationsOpen((prev) => !prev);
               setUnreadNotifications(false);
             }}
-            className="relative h-8 w-8 rounded-[8px] bg-[#17191C] border border-white/[0.08] hover:bg-white/[0.06] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors cursor-pointer"
+            className="relative h-8 w-8 rounded-[10px] bg-[#121317] border border-[#1c1d22] hover:bg-[#1c1d22] flex items-center justify-center text-[#9194a1] hover:text-[#ffffff] transition-colors cursor-pointer"
           >
             <Bell className="h-4 w-4" />
             {unreadNotifications && (
-              <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-rose-500 ring-1 ring-[#09090B]" />
+              <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-[#cc9166] ring-1 ring-[#08080a]" />
             )}
           </button>
 
@@ -164,7 +164,7 @@ export function TopBar({
             aria-label="Messages"
             onClick={() => onNavigateToView("assistant")}
             title="BIS Copilot Assistant Messages"
-            className="h-8 w-8 rounded-[8px] bg-[#17191C] border border-white/[0.08] hover:bg-white/[0.06] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors cursor-pointer"
+            className="h-8 w-8 rounded-[10px] bg-[#121317] border border-[#1c1d22] hover:bg-[#1c1d22] flex items-center justify-center text-[#9194a1] hover:text-[#ffffff] transition-colors cursor-pointer"
           >
             <Mail className="h-4 w-4" />
           </button>
@@ -197,15 +197,15 @@ export function TopBar({
 
             {/* Profile Dropdown Menu */}
             {profileDropdownOpen && (
-              <div className="absolute right-0 top-10 z-40 w-64 bg-[#17191C] rounded-[12px] shadow-2xl border border-white/[0.10] p-2 space-y-1 text-xs animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="px-3 py-2 border-b border-white/[0.07]">
-                  <div className="font-semibold text-[#F5F5F3] truncate">{profile.businessName}</div>
-                  <div className="text-[11px] text-[#71717A] truncate">{profile.officer}</div>
-                  <div className="mt-1 font-mono text-[10px] text-accent font-medium">{profile.bisRegistration}</div>
+              <div className="absolute right-0 top-10 z-40 w-64 bg-[#121317] rounded-[10px] shadow-2xl border border-[#1c1d22] p-2 space-y-1 text-xs animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="px-3 py-2 border-b border-[#1c1d22]">
+                  <div className="font-semibold text-[#ffffff] truncate">{profile.businessName}</div>
+                  <div className="text-[11px] text-[#9194a1] truncate">{profile.officer}</div>
+                  <div className="mt-1 font-mono text-[10px] text-[#cc9166] font-medium">{profile.bisRegistration}</div>
                 </div>
 
                 <div className="py-1">
-                  <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#71717A]">
+                  <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#777a88]">
                     Switch Demo Profile
                   </div>
                   {availableProfiles.map((p) => (
@@ -215,27 +215,27 @@ export function TopBar({
                         switchProfile(p.id);
                         setProfileDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-1.5 rounded-[8px] text-xs flex items-center gap-2 transition-colors ${
+                      className={`w-full text-left px-3 py-1.5 rounded-[8px] text-xs flex items-center gap-2 transition-colors cursor-pointer ${
                         profile.id === p.id
-                          ? "bg-white/[0.08] text-[#F5F5F3] font-medium"
-                          : "hover:bg-white/[0.04] text-[#A1A1AA] hover:text-[#F5F5F3]"
+                          ? "bg-[#1c1d22] text-[#ffffff] font-medium"
+                          : "hover:bg-white/[0.04] text-[#9194a1] hover:text-[#ffffff]"
                       }`}
                     >
-                      <Building2 className="h-3.5 w-3.5 text-[#71717A] shrink-0" />
+                      <Building2 className="h-3.5 w-3.5 text-[#777a88] shrink-0" />
                       <span className="truncate">{p.businessName}</span>
                     </button>
                   ))}
                 </div>
 
-                <div className="pt-1 border-t border-white/[0.07] space-y-0.5">
+                <div className="pt-1 border-t border-[#1c1d22] space-y-0.5">
                   <button
                     onClick={() => {
                       onNavigateToView("profile");
                       setProfileDropdownOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 rounded-[8px] text-[#A1A1AA] hover:text-[#F5F5F3] hover:bg-white/[0.04] flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 rounded-[8px] text-[#9194a1] hover:text-[#ffffff] hover:bg-white/[0.04] flex items-center gap-2 cursor-pointer"
                   >
-                    <User className="h-3.5 w-3.5 text-[#71717A]" />
+                    <User className="h-3.5 w-3.5 text-[#777a88]" />
                     <span>Business Profile</span>
                   </button>
 
@@ -244,18 +244,18 @@ export function TopBar({
                       onNavigateToView("settings");
                       setProfileDropdownOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 rounded-[8px] text-[#A1A1AA] hover:text-[#F5F5F3] hover:bg-white/[0.04] flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 rounded-[8px] text-[#9194a1] hover:text-[#ffffff] hover:bg-white/[0.04] flex items-center gap-2 cursor-pointer"
                   >
-                    <Settings className="h-3.5 w-3.5 text-[#71717A]" />
+                    <Settings className="h-3.5 w-3.5 text-[#777a88]" />
                     <span>Settings</span>
                   </button>
 
                   <Link
                     href="/onboarding?new=true"
                     onClick={() => setProfileDropdownOpen(false)}
-                    className="w-full text-left px-3 py-2 rounded-[8px] text-accent hover:bg-accent/10 flex items-center gap-2 font-medium"
+                    className="w-full text-left px-3 py-2 rounded-[8px] text-[#cc9166] hover:bg-[#cc9166]/10 flex items-center gap-2 font-medium"
                   >
-                    <Sparkles className="h-3.5 w-3.5 text-accent" />
+                    <Sparkles className="h-3.5 w-3.5 text-[#cc9166]" />
                     <span>Run New Onboarding</span>
                   </Link>
                 </div>

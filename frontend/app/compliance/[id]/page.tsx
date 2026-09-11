@@ -14,6 +14,8 @@ import { DEMO_REQUIREMENTS } from "@/data/demo/compliance";
 interface PageProps {
   params: Promise<{ id: string }>;
 }
+import { normalizeRequirementDetail } from "@/lib/normalizeRequirementDetail";
+export { normalizeRequirementDetail };
 
 function RequirementDetailContent({ params }: PageProps) {
   const resolvedParams = use(params);
@@ -47,8 +49,6 @@ function RequirementDetailContent({ params }: PageProps) {
         } catch {
           // ignore
         }
-        setLoading(false);
-        return;
       }
 
       loadDetail(bizId);
@@ -58,37 +58,39 @@ function RequirementDetailContent({ params }: PageProps) {
       setLoading(true);
       setError(null);
       try {
-        const data = await api.compliance.getDetail(bizId, requirementId);
-        setDetail(data);
+        if (bizId) {
+          const data = await api.compliance.getDetail(bizId, requirementId);
+          setDetail(normalizeRequirementDetail(data, requirementId));
+          return;
+        }
+        throw new Error("No business ID provided");
       } catch {
-        // Backend offline fallback: retrieve matching requirement from DEMO_REQUIREMENTS
+        // Retrieve matching requirement from demo specifications and normalize strictly
         const demoReq =
           DEMO_REQUIREMENTS.find((r) => r.id === requirementId || r.code === requirementId) ||
           DEMO_REQUIREMENTS[0];
-        setDetail({
-          requirement_id: demoReq.id,
-          name: demoReq.title,
-          authority: demoReq.authority,
-          status: demoReq.status as any,
-          category: demoReq.category,
-          jurisdiction: "CENTRAL",
-          domain: "BIS Scheme-I",
-          penalty_notice: demoReq.penaltyNotice,
-          effective_date: demoReq.effectiveDate,
-          applicability_statement: demoReq.explanation,
-          explanation_trace: {
-            reason: demoReq.explanation,
-            rule_id: "RULE-BIS-DET-01",
-            ast_logic: "TRUE (Deterministic match on registered activity & sector)",
-          },
-          evidence_refs: demoReq.statutoryCitations.map((c) => ({
-            id: c,
-            locator: c,
+        if (demoReq) {
+          setDetail(normalizeRequirementDetail({
+            requirement_id: demoReq.id,
+            name: demoReq.title,
             authority: demoReq.authority,
-            excerpt: `Statutory mandate under ${c}`,
-            verification_status: "VERIFIED",
-          })),
-        } as any);
+            status: demoReq.status,
+            category: demoReq.category,
+            jurisdiction: "CENTRAL",
+            domain: "BIS Scheme-I",
+            penalty_notice: demoReq.penaltyNotice,
+            effective_date: demoReq.effectiveDate,
+            applicability_statement: demoReq.explanation,
+            explanation_trace: {
+              reason: demoReq.explanation,
+              rule_id: "RULE-BIS-DET-01",
+              ast_logic: "TRUE (Deterministic match on registered activity & sector)",
+            },
+            statutoryCitations: demoReq.statutoryCitations,
+          }, requirementId));
+        } else {
+          setDetail(null);
+        }
       } finally {
         setLoading(false);
       }

@@ -120,6 +120,297 @@ const FALLBACK_VAR_DEFS: ProfileVariableDefinition[] = [
   },
 ];
 
+export function generateAdaptiveFallbackQuestions(
+  answeredKeys: Set<string>,
+  businessName = "your enterprise",
+  productDesc = ""
+): SmartQuestion[] {
+  const desc = (productDesc || "").toLowerCase();
+  const isMedTech = /med|device|surgical|health|diagnostic|biomed|pharma/.test(desc);
+  const isFood = /food|fruit|beverage|snack|dairy|bakery|agro|grain|packaging/.test(desc);
+  const isAuto = /auto|machin|metal|cnc|precision|gear|component|tool|engine/.test(desc);
+  const isElectronics = /electron|pcb|semiconductor|sensor|iot|circuit|battery|hardware/.test(desc);
+
+  const sectorLabel = isMedTech
+    ? "medical device manufacturing"
+    : isFood
+    ? "food and agro processing"
+    : isAuto
+    ? "precision engineering and automotive"
+    : isElectronics
+    ? "electronics and hardware assembly"
+    : "commercial operations";
+
+  const allDefinitions: Array<{
+    code: string;
+    key: string;
+    label: string;
+    question: string;
+    data_type: string;
+    why_it_matters: string;
+    unit: string | null;
+    options: { value: string; label: string }[];
+    required: boolean;
+  }> = [
+    {
+      code: "V07",
+      key: "annual_turnover",
+      label: "Annual Turnover",
+      question: `What is your anticipated annual business turnover from ${sectorLabel} (in INR)?`,
+      data_type: "CURRENCY_INR",
+      why_it_matters: "Turnover determines MSME categorization, GST filing frequencies, and statutory audit mandates.",
+      unit: "INR",
+      options: [],
+      required: true,
+    },
+    {
+      code: "V08",
+      key: "plant_machinery_investment",
+      label: "Plant & Machinery Investment",
+      question: isMedTech
+        ? "What is your total capital investment in cleanroom infrastructure and diagnostic machinery (in INR)?"
+        : isFood
+        ? "What is your total capital investment in processing lines, commercial refrigeration, and packaging equipment (in INR)?"
+        : "What is your enterprise's total capital investment in plant, machinery, and equipment (in INR)?",
+      data_type: "CURRENCY_INR",
+      why_it_matters: "Investment thresholds define statutory enterprise tiering under the MSMED Act and unlock capital subsidies.",
+      unit: "INR",
+      options: [],
+      required: false,
+    },
+    {
+      code: "V13",
+      key: "total_worker_count",
+      label: "Total Workforce Count",
+      question: "What is your total planned workforce (including production staff, technical supervisors, and admin)?",
+      data_type: "INTEGER",
+      why_it_matters: "Workforce size dictates Factories Act coverage, mandatory EPF/ESI welfare registrations, and canteen/creche mandates.",
+      unit: "people",
+      options: [],
+      required: true,
+    },
+    {
+      code: "V14",
+      key: "contract_worker_count",
+      label: "Contract Labour Engagement",
+      question: "Do you plan to engage contract labour for packaging, warehousing, facility maintenance, or logistics?",
+      data_type: "INTEGER",
+      why_it_matters: "Engaging 20+ contract personnel mandates Principal Employer registration under the Contract Labour Act.",
+      unit: "people",
+      options: [],
+      required: false,
+    },
+    {
+      code: "V15",
+      key: "connected_power_load",
+      label: "Connected Electrical Power Load",
+      question: isMedTech
+        ? "What is the anticipated connected power load (in HP) for your cleanroom, production lines, and test labs?"
+        : isFood
+        ? "What is the anticipated connected electrical load (in HP) for processing machinery, refrigeration, and cold chain?"
+        : "What is the anticipated connected electrical power load (in HP) for your facility and equipment?",
+      data_type: "DECIMAL",
+      why_it_matters: "Power load determines factory registration thresholds under state Factory Acts and electricity board approvals.",
+      unit: "HP",
+      options: [],
+      required: false,
+    },
+    {
+      code: "V16",
+      key: "effluent_emission_generation",
+      label: "Effluent / Air Emissions Discharge",
+      question: isFood
+        ? "Will your food processing operations generate wash water, organic trade effluent, or boiler air emissions?"
+        : isMedTech
+        ? "Will component cleaning, sterilization, or manufacturing generate liquid trade effluent or air emissions?"
+        : "Will your industrial operations produce liquid trade effluent, chemical wash water, or chimney emissions?",
+      data_type: "BOOLEAN",
+      why_it_matters: "Discharges and emissions mandate Consent to Establish (CTE) and Consent to Operate (CTO) from the State Pollution Control Board.",
+      unit: null,
+      options: [
+        { value: "true", label: "Yes — Effluent or emissions generated" },
+        { value: "false", label: "No — Zero discharge / dry operations" },
+      ],
+      required: false,
+    },
+    {
+      code: "V17",
+      key: "hazardous_waste_generation",
+      label: "Hazardous / Bio-Medical Waste",
+      question: isMedTech
+        ? "Will your facility generate hazardous or bio-medical waste (such as chemical solvents, sterilization residues, or biological scraps)?"
+        : isElectronics
+        ? "Will your assembly produce hazardous waste (such as solder dross, spent chemical solvents, or electronic scrap)?"
+        : "Will your operations generate, handle, or store statutory hazardous waste materials?",
+      data_type: "BOOLEAN",
+      why_it_matters: "Hazardous waste handling requires dedicated statutory authorization under CPCB/SPCB Hazardous Waste Management Rules.",
+      unit: null,
+      options: [
+        { value: "true", label: "Yes — Generates hazardous waste" },
+        { value: "false", label: "No — Does not generate hazardous waste" },
+      ],
+      required: false,
+    },
+    {
+      code: "V11",
+      key: "import_export_intent",
+      label: "International Cross-Border Trade Intent",
+      question: "Do you plan to engage in cross-border trade (importing raw materials/machinery or exporting finished products)?",
+      data_type: "SINGLE_CHOICE",
+      why_it_matters: "Cross-border trade mandates an Importer-Exporter Code (IEC) from DGFT and unlocks export incentive schemes.",
+      unit: null,
+      options: [
+        { value: "DOMESTIC_ONLY", label: "Domestic Indian Market Only" },
+        { value: "IMPORT_AND_DOMESTIC", label: "Domestic Sales + Raw Material Imports" },
+        { value: "EXPORTER", label: "Domestic + Finished Goods Exporter" },
+      ],
+      required: false,
+    },
+    {
+      code: "V12",
+      key: "export_destination",
+      label: "Target Export Markets",
+      question: "Which international jurisdictions or regions do you target for export distribution?",
+      data_type: "MULTI_CHOICE",
+      why_it_matters: "Target markets introduce destination-specific regulatory dossiers (e.g. CE-IVD, FDA 510k, Codex Alimentarius).",
+      unit: null,
+      options: [
+        { value: "US", label: "United States (US FDA / OSHA)" },
+        { value: "EU", label: "European Union (CE / RoHS / REACH)" },
+        { value: "SE_ASIA", label: "Southeast Asia (ASEAN Harmonized)" },
+        { value: "MIDDLE_EAST", label: "Middle East (GCC Standardization)" },
+      ],
+      required: false,
+    },
+    {
+      code: "V05",
+      key: "industrial_zone_status",
+      label: "Industrial Zone Siting Status",
+      question: `Is your ${sectorLabel} facility located inside an approved notified industrial area/park or outside?`,
+      data_type: "SINGLE_CHOICE",
+      why_it_matters: "Zoning status determines pollution board siting clearance speed, municipal trade licenses, and state land subsidies.",
+      unit: null,
+      options: [
+        { value: "APPROVED_ESTATE", label: "Approved Industrial Estate (GIDC / MIDC / KIADB / HSIIDC / TSIIC)" },
+        { value: "NON_CONFORMING", label: "Outside Notified Industrial Estate" },
+        { value: "SPECIAL_ECONOMIC_ZONE", label: "Special Economic Zone (SEZ)" },
+      ],
+      required: false,
+    },
+    {
+      code: "V18",
+      key: "ecommerce_operations",
+      label: "Digital / E-Commerce Sales Channels",
+      question: "Will you sell products directly to consumers or B2B clients via online marketplaces or digital e-commerce channels?",
+      data_type: "BOOLEAN",
+      why_it_matters: "Online trade mandates Legal Metrology e-commerce digital declarations and multi-state marketplace tax filings.",
+      unit: null,
+      options: [
+        { value: "true", label: "Yes — Online / E-commerce sales active or planned" },
+        { value: "false", label: "No — Conventional offline / institutional sales only" },
+      ],
+      required: false,
+    },
+    {
+      code: "V19",
+      key: "multi_state_operations",
+      label: "Multi-State Operating Footprint",
+      question: "Do you plan to operate manufacturing, warehousing, or depot facilities in more than one Indian State?",
+      data_type: "BOOLEAN",
+      why_it_matters: "Inter-state footprints trigger Central regulatory jurisdiction and separate multi-state GST registrations.",
+      unit: null,
+      options: [
+        { value: "true", label: "Yes — Multi-state operational presence" },
+        { value: "false", label: "No — Single state operations" },
+      ],
+      required: false,
+    },
+    {
+      code: "V09",
+      key: "ownership_social_category",
+      label: "Ownership Social Category",
+      question: "What is the social category of the enterprise's primary promoter or majority shareholding group?",
+      data_type: "SINGLE_CHOICE",
+      why_it_matters: "Promoter category qualifies the entity for special public procurement quotas and interest subvention under MSME schemes.",
+      unit: null,
+      options: [
+        { value: "GENERAL", label: "General" },
+        { value: "SC", label: "Scheduled Caste (SC)" },
+        { value: "ST", label: "Scheduled Tribe (ST)" },
+        { value: "OBC", label: "Other Backward Class (OBC)" },
+        { value: "PREFER_NOT_TO_SAY", label: "Prefer not to say" },
+      ],
+      required: false,
+    },
+    {
+      code: "V10",
+      key: "ownership_gender",
+      label: "Women Entrepreneurship Profile",
+      question: "Is the enterprise woman-owned or co-founded by women (holding 51%+ proprietary equity)?",
+      data_type: "SINGLE_CHOICE",
+      why_it_matters: "Woman-owned status unlocks special collateral-free credit guarantees and direct subsidies under state MSME policies.",
+      unit: null,
+      options: [
+        { value: "WOMAN_OWNED", label: "Yes — 51%+ Woman Owned" },
+        { value: "MAN_OWNED", label: "Male Owned" },
+        { value: "MIXED", label: "Mixed / Corporate Ownership" },
+        { value: "PREFER_NOT_TO_SAY", label: "Prefer not to say" },
+      ],
+      required: false,
+    },
+    {
+      code: "V01",
+      key: "legal_constitution",
+      label: "Legal Constitution",
+      question: "What is the formal incorporated legal constitution of your enterprise?",
+      data_type: "SINGLE_CHOICE",
+      why_it_matters: "Legal form governs corporate secretarial filings, statutory audit obligations, and director disclosures.",
+      unit: null,
+      options: [
+        { value: "PVT_LTD", label: "Private Limited Company (Pvt Ltd)" },
+        { value: "PUBLIC_LTD", label: "Public Limited Company" },
+        { value: "LLP", label: "Limited Liability Partnership (LLP)" },
+        { value: "PARTNERSHIP", label: "Partnership Firm" },
+        { value: "PROPRIETORSHIP", label: "Sole Proprietorship" },
+      ],
+      required: true,
+    },
+    {
+      code: "V02",
+      key: "lifecycle_stage",
+      label: "Operating Lifecycle Stage",
+      question: `What is the current operating lifecycle stage of ${businessName}?`,
+      data_type: "SINGLE_CHOICE",
+      why_it_matters: "Stage determines whether pre-establishment (CTE) or operational permissions (CTO / licenses) apply.",
+      unit: null,
+      options: [
+        { value: "OPERATIONAL", label: "Operational Manufacturing" },
+        { value: "EXPANSION", label: "Operational & Under Expansion" },
+        { value: "PRE_COMMISSIONING", label: "Pre-commissioning / Setup" },
+      ],
+      required: true,
+    },
+  ];
+
+  return allDefinitions
+    .filter((def) => !answeredKeys.has(def.key))
+    .map((def, idx) => ({
+      id: `sq-${def.key}-${idx + 1}`,
+      code: def.code,
+      key: def.key,
+      variable_key: def.key,
+      label: def.label,
+      question: def.question,
+      data_type: def.data_type,
+      why_it_matters: def.why_it_matters,
+      unit: def.unit,
+      options: def.options,
+      required: def.required,
+      rule_dependency_count: 1,
+      candidate_rules_count: 1,
+    }));
+}
+
 function OnboardingContent() {
   const router = useRouter();
   const { updateProfile } = useBusinessContext();
@@ -531,10 +822,33 @@ function OnboardingContent() {
         : ["Electrical Switchgear Assembly", "Domestic & Industrial Plugs (IS 1293)"],
     });
 
+    const answeredKeys = new Set<string>();
+    if (legalConstitution) answeredKeys.add("legal_constitution");
+    if (registeredState) answeredKeys.add("state");
+    if (district) answeredKeys.add("district");
+    if (industrialZone) answeredKeys.add("industrial_zone_status");
+    if (lifecycleStage) answeredKeys.add("lifecycle_stage");
+    if (plantInvestmentLakhs) answeredKeys.add("plant_machinery_investment");
+    if (turnoverLakhs) answeredKeys.add("annual_turnover");
+    if (employeeCount) answeredKeys.add("total_worker_count");
+    if (productDescription) answeredKeys.add("product_description");
+    if (tradeIntent) answeredKeys.add("import_export_intent");
+
     try {
-      if (business) {
+      let activeBiz = business;
+      if (!activeBiz) {
+        const storedBizId = localStorage.getItem("complywise_active_business_id");
+        if (storedBizId) {
+          try {
+            activeBiz = await api.businesses.get(storedBizId);
+            setBusiness(activeBiz);
+          } catch {}
+        }
+      }
+
+      if (activeBiz) {
         const resp = await api.onboarding.saveProductsActivities(
-          business.id,
+          activeBiz.id,
           {
             product_description: productDescription,
             ...(tradeIntent ? { import_export_intent: tradeIntent } : {}),
@@ -544,21 +858,23 @@ function OnboardingContent() {
         setDetectedActivities(resp.detected_activities);
 
         // Load Smart Questions for Step 3 scoped to assessment
-        const questionsResp = await api.onboarding.getQuestions(business.id, assessment?.id);
-        setSmartQuestions(questionsResp.questions);
-        // Pre-fill only values the user has actually answered before
-        // (backend `current_value`). Never default a choice to the first option
-        // or a number to 0: an unobserved answer submitted as a value turns
-        // UNKNOWN into FALSE and can flip a requirement to NOT_APPLICABLE.
-        const initialAnswers: Record<string, string | number | boolean | string[]> = {};
-        for (const q of questionsResp.questions) {
-          const qKey = q.variable_key || q.key || "";
-          if (!qKey) continue;
-          if (q.current_value !== null && q.current_value !== undefined) {
-            initialAnswers[qKey] = q.current_value as string | number | boolean | string[];
+        const questionsResp = await api.onboarding.getQuestions(activeBiz.id, assessment?.id);
+        const serverQuestions = questionsResp.questions || [];
+        if (serverQuestions.length > 0) {
+          setSmartQuestions(serverQuestions);
+          const initialAnswers: Record<string, string | number | boolean | string[]> = {};
+          for (const q of serverQuestions) {
+            const qKey = q.variable_key || q.key || "";
+            if (!qKey) continue;
+            if (q.current_value !== null && q.current_value !== undefined) {
+              initialAnswers[qKey] = q.current_value as string | number | boolean | string[];
+            }
           }
+          setQuestionAnswers((prev) => ({ ...initialAnswers, ...prev }));
+        } else {
+          const fallbackQs = generateAdaptiveFallbackQuestions(answeredKeys, businessName, productDescription);
+          setSmartQuestions(fallbackQs);
         }
-        setQuestionAnswers((prev) => ({ ...initialAnswers, ...prev }));
 
         if (assessment) {
           const updatedStepState = {
@@ -569,52 +885,20 @@ function OnboardingContent() {
               detectedActivities: resp.detected_activities,
             },
           };
-          const updatedAss = await api.businesses.updateAssessment(business.id, assessment.id, {
+          const updatedAss = await api.businesses.updateAssessment(activeBiz.id, assessment.id, {
             current_step: 3,
             step_state: updatedStepState,
           });
           setAssessment(updatedAss);
         }
       } else {
-        setSmartQuestions([
-          {
-            id: "sq-1",
-            key: "has_nabl_reports",
-            variable_key: "has_nabl_reports",
-            text: "Do you possess NABL-accredited test reports for your active product lines?",
-            data_type: "BOOLEAN",
-            relevance: "CORE",
-          } as any,
-          {
-            id: "sq-2",
-            key: "exports_outside_india",
-            variable_key: "exports_outside_india",
-            text: "Do you export manufactured products outside India?",
-            data_type: "BOOLEAN",
-            relevance: "CORE",
-          } as any,
-        ]);
+        const fallbackQs = generateAdaptiveFallbackQuestions(answeredKeys, businessName, productDescription);
+        setSmartQuestions(fallbackQs);
       }
       setStep(3);
     } catch {
-      setSmartQuestions([
-        {
-          id: "sq-1",
-          key: "has_nabl_reports",
-          variable_key: "has_nabl_reports",
-          text: "Do you possess NABL-accredited test reports for your active product lines?",
-          data_type: "BOOLEAN",
-          relevance: "CORE",
-        } as any,
-        {
-          id: "sq-2",
-          key: "exports_outside_india",
-          variable_key: "exports_outside_india",
-          text: "Do you export manufactured products outside India?",
-          data_type: "BOOLEAN",
-          relevance: "CORE",
-        } as any,
-      ]);
+      const fallbackQs = generateAdaptiveFallbackQuestions(answeredKeys, businessName, productDescription);
+      setSmartQuestions(fallbackQs);
       setStep(3);
     } finally {
       setLoading(false);

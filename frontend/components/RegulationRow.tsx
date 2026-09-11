@@ -11,11 +11,11 @@ interface RegulationRowProps {
 export function RegulationRow({ change }: RegulationRowProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const impactStyles = {
+  const impactStyles = ({
     HIGH: "bg-rose-50 text-rose-700 border-rose-200",
     MEDIUM: "bg-amber-50 text-amber-700 border-amber-200",
     INFO: "bg-blue-50 text-blue-700 border-blue-200",
-  }[change.impact_level];
+  } as Record<string, string>)[change.impact_level || "INFO"] || "bg-blue-50 text-blue-700 border-blue-200";
 
   return (
     <div className="rounded-2xl border border-slate-200/70 bg-white hover:border-slate-300 hover:shadow-xs transition-all p-5 space-y-3">
@@ -71,7 +71,7 @@ export function RegulationRow({ change }: RegulationRowProps) {
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-semibold text-slate-500">Affected Standards:</span>
               <div className="flex flex-wrap gap-1.5">
-                {change.affected_standards.map((std, i) => (
+                {(change.affected_standards || []).map((std, i) => (
                   <span
                     key={i}
                     className="font-mono text-[11px] bg-slate-100 text-slate-800 px-2 py-0.5 rounded-full border border-slate-200/80 font-medium"

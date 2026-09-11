@@ -23,6 +23,27 @@ export default function RegulatoryUpdateDetailPage({ params }: PageProps) {
     DEMO_REGULATORY_UPDATES.find((u) => u.id === updateId) ||
     DEMO_REGULATORY_UPDATES[0];
 
+  if (!item) {
+    return (
+      <AppShell activeView="updates">
+        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs max-w-4xl mx-auto my-12">
+          <h3 className="text-sm font-semibold text-[#0F172A]">Regulatory Update Not Found</h3>
+          <p className="text-xs text-[#64748B] mt-1">
+            Could not locate gazette specification for ID: {updateId}.
+          </p>
+          <div className="mt-4">
+            <Link
+              href="/regulatory-updates"
+              className="rounded-full border border-[#E2E8F0] bg-white px-4 py-1.5 text-xs font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
+            >
+              ← Back to Updates
+            </Link>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell activeView="updates">
       <div className="space-y-6 pb-6 select-none max-w-4xl mx-auto">
@@ -100,7 +121,7 @@ export default function RegulatoryUpdateDetailPage({ params }: PageProps) {
               Enforcement Actions Required for Compliance
             </h2>
             <div className="space-y-2.5">
-              {item.keyRequirements.map((req, idx) => (
+              {(item.keyRequirements || []).map((req, idx) => (
                 <div
                   key={idx}
                   className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-start gap-3 text-xs"

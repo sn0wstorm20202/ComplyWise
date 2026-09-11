@@ -31,8 +31,9 @@ from apps.onboarding.models import SmartQuestionInstance, SmartQuestionPlan
 
 logger = logging.getLogger(__name__)
 
+MIN_REQUIRED_QUESTIONS = 6
 MIN_QUESTIONS_PER_ROUND = 6
-MAX_QUESTIONS_PER_ROUND = 10
+MAX_QUESTIONS_PER_ROUND = 20
 MAX_ROUNDS = 2
 
 QUESTION_PLANNER_SYSTEM_PROMPT = """You are an expert industrial compliance and regulatory intake planner for ComplyWise.
@@ -241,6 +242,61 @@ def _build_context_driven_fallback_questions(
             "priority": 4,
             "information_gain": 0.81,
         },
+        "plant_machinery_investment": {
+            "question_text": (
+                "What is your total capital investment in cleanroom infrastructure, plant, and diagnostic/testing machinery (in INR)?" if is_medtech else
+                "What is your total capital investment in processing lines, commercial refrigeration, and packaging machinery (in INR)?" if is_food else
+                "What is your total capital investment in CNC machines, foundry equipment, and plant tooling (in INR)?" if is_auto_machining else
+                "What is your total capital investment in SMT lines, assembly tools, and laboratory test gear (in INR)?" if is_electronics else
+                "What is your total investment in plant, machinery, and operational equipment (in INR)?"
+            ),
+            "reason": "Plant & machinery valuation determines MSME statutory tiering (Micro, Small, Medium) under the MSMED Act and qualifies capital subsidy schemes.",
+            "domains": ["COMPLIANCE", "SCHEMES"],
+            "priority": 1,
+            "information_gain": 0.94,
+        },
+        "ownership_social_category": {
+            "question_text": "What is the social category of the enterprise's primary promoter or majority shareholder?",
+            "reason": "Promoter social category qualifies the enterprise for preferential procurement quotas and enhanced subsidies under Central/State MSME schemes.",
+            "domains": ["SCHEMES"],
+            "priority": 4,
+            "information_gain": 0.78,
+        },
+        "ownership_gender": {
+            "question_text": "Is the enterprise woman-owned or co-founded by women (holding 51%+ equity)?",
+            "reason": "Woman-owned enterprises unlock dedicated credit guarantees, grant subsidies, and SIDBI priority financing windows.",
+            "domains": ["SCHEMES"],
+            "priority": 4,
+            "information_gain": 0.79,
+        },
+        "legal_constitution": {
+            "question_text": "What is the formal legal constitution of your enterprise (e.g. Pvt Ltd, LLP, Partnership, Sole Proprietorship)?",
+            "reason": "Constitution governs MCA corporate compliance, statutory audit rules, director KYC, and board reporting mandates.",
+            "domains": ["COMPLIANCE"],
+            "priority": 1,
+            "information_gain": 0.96,
+        },
+        "lifecycle_stage": {
+            "question_text": f"What is your current operational lifecycle stage for {sector_label} (e.g. Pre-commissioning Setup, Expanding, or Fully Operational)?",
+            "reason": "Operational stage separates pre-establishment statutory approvals (CTE, building plan) from operational licenses (CTO, factory license).",
+            "domains": ["COMPLIANCE"],
+            "priority": 1,
+            "information_gain": 0.95,
+        },
+        "district": {
+            "question_text": "In which municipal district is your primary factory or operating facility located?",
+            "reason": "District location dictates local municipal trade licenses, district industrial centre (DIC) registrations, and local zoning permissions.",
+            "domains": ["COMPLIANCE", "SCHEMES"],
+            "priority": 3,
+            "information_gain": 0.83,
+        },
+        "state": {
+            "question_text": "In which Indian State or Union Territory is your primary operating premises registered?",
+            "reason": "State jurisdiction governs State Pollution Control Board, state labour departments, and state industrial policy incentives.",
+            "domains": ["COMPLIANCE", "SCHEMES"],
+            "priority": 1,
+            "information_gain": 0.98,
+        },
     }
 
     fallback_items: list[dict[str, Any]] = []
@@ -337,18 +393,21 @@ def plan_adaptive_smart_questions(
         reverse=True,
     )
 
-    # 2. Key statutory threshold & branching variables
+    # 2. Key statutory threshold & branching variables across operations, scale, environment, and finance
     branching_priority = [
         "annual_turnover",
+        "plant_machinery_investment",
         "total_worker_count",
+        "contract_worker_count",
         "connected_power_load",
         "effluent_emission_generation",
         "import_export_intent",
+        "export_destination",
         "industrial_zone_status",
-        "contract_worker_count",
         "ecommerce_operations",
         "multi_state_operations",
-        "export_destination",
+        "ownership_social_category",
+        "ownership_gender",
     ]
     unanswered_branching = [
         k for k in branching_priority if k in context.missing_variable_keys
@@ -361,8 +420,17 @@ def plan_adaptive_smart_questions(
         if pv.default_relevance == Relevance.CORE and pv.key in context.missing_variable_keys
     ]
 
+    # 4. Any remaining unanswered canonical profile variables
+    unanswered_other_vars = [
+        pv.key
+        for pv in PROFILE_VARIABLES
+        if pv.key in context.missing_variable_keys and pv.key not in {"product_description", "hazardous_waste_generation"}
+    ]
+
     # Combine candidate variables in strict precedence order
-    candidate_keys = list(dict.fromkeys(missing_rule_vars + unanswered_branching + unanswered_core_vars))
+    candidate_keys = list(dict.fromkeys(
+        missing_rule_vars + unanswered_branching + unanswered_core_vars + unanswered_other_vars
+    ))
 
     # Stopping condition: No missing variables or max rounds exhausted
     if not candidate_keys or round_number > MAX_ROUNDS:
@@ -487,8 +555,9 @@ Formulate approximately 7 to 10 high-value questions (minimum 6, maximum {MAX_QU
             logger.warning("LLM question planning failed, using dynamic context fallback: %s", e)
 
     # Fallback to dynamic context-driven question generation if LLM was unavailable or returned insufficient items
-    if len(planned_items) < MIN_QUESTIONS_PER_ROUND:
-        logger.info("Using context-driven dynamic question fallback for %s", business.name)
+    required_count = min(len(candidate_keys), MAX_QUESTIONS_PER_ROUND)
+    if len(planned_items) < required_count:
+        logger.info("Using context-driven dynamic question fallback for %s (target: %d questions)", business.name, required_count)
         fallback_items = _build_context_driven_fallback_questions(context, candidate_keys, var_frequency)
 
         existing_keys = {item["variable_key"] for item in planned_items}
@@ -592,6 +661,7 @@ Formulate approximately 7 to 10 high-value questions (minimum 6, maximum {MAX_QU
             "information_gain": q_inst.information_gain,
             "required": var_def.default_relevance == Relevance.CORE,
             "rule_dependency_count": q_inst.rule_dependency_count,
+            "candidate_rules_count": q_inst.rule_dependency_count,
         })
 
     sector_name = context.industry_hint or "manufacturing and commercial"

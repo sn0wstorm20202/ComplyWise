@@ -19,12 +19,34 @@ function ComplianceContent() {
   const paramBusinessId = searchParams.get("business_id");
   const initialTab = (searchParams.get("tab") as ViewTab) || "action_required";
 
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [business, setBusiness] = useState<Business | null>(null);
-  const [requirements, setRequirements] = useState<ComplianceRequirementItem[]>([]);
+  const [requirements, setRequirements] = useState<ComplianceRequirementItem[]>(() =>
+    DEMO_REQUIREMENTS.map((req) => ({
+      requirement_id: req.id,
+      name: req.title,
+      status: req.status as any,
+      category: req.category,
+      authority: req.authority,
+      domain: "BIS Scheme-I",
+      jurisdiction: "CENTRAL",
+      citation_count: req.statutoryCitations.length,
+      evidence_count: req.statutoryCitations.length,
+      description: req.explanation,
+      citations: req.statutoryCitations.map((c) => ({
+        evidence_id: c,
+        locator: c,
+        authority: req.authority,
+        excerpt: `Statutory mandate under ${c}`,
+        verification_status: "VERIFIED" as const,
+        source_title: "Official Gazette / BIS Schedule",
+        canonical_url: "https://egazette.gov.in",
+      })),
+    }))
+  );
   const [candidates, setCandidates] = useState<CandidateRequirement[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(0);
+  const [totalCount, setTotalCount] = useState<number>(DEMO_REQUIREMENTS.length);
   const [businessId, setBusinessId] = useState<string | null>(null);
 
   // Active view tab (defaults to 'action_required' for clean founder UX)
@@ -37,87 +59,40 @@ function ComplianceContent() {
   const [selectedReqForModal, setSelectedReqForModal] = useState<ComplianceRequirementItem | null>(null);
 
   async function loadData(bizId: string) {
-    setLoading(true);
     setError(null);
+    setBusinessId(bizId);
+
     try {
-      // Load business details
-      try {
-        const biz = await api.businesses.get(bizId);
-        setBusiness(biz);
-      } catch {
-        // non-fatal
+      const [reqResp, candResp, bizResp] = await Promise.allSettled([
+        api.compliance.list(bizId, { category: categoryFilter || undefined }),
+        api.discovery.getCandidates(bizId),
+        api.businesses.get(bizId),
+      ]);
+
+      if (reqResp.status === "fulfilled" && reqResp.value?.requirements?.length > 0) {
+        setRequirements(reqResp.value.requirements);
+        setTotalCount(reqResp.value.count);
       }
 
-      // Load all deterministic requirements
-      const resp = await api.compliance.list(bizId, {
-        category: categoryFilter || undefined,
-      });
-      setRequirements(resp.requirements);
-      setTotalCount(resp.count);
-      setBusinessId(bizId);
+      if (candResp.status === "fulfilled") {
+        setCandidates(candResp.value || []);
+      }
 
-      // Load candidate requirements from live discovery
-      try {
-        const candList = await api.discovery.getCandidates(bizId);
-        setCandidates(candList);
-      } catch {
-        setCandidates([]);
+      if (bizResp.status === "fulfilled") {
+        setBusiness(bizResp.value);
       }
     } catch {
-      // Backend offline fallback: provide DEMO_REQUIREMENTS
-      setRequirements(
-        DEMO_REQUIREMENTS.map((req) => ({
-          requirement_id: req.id,
-          name: req.title,
-          status: req.status as any,
-          category: req.category,
-          authority: req.authority,
-          domain: "BIS Scheme-I",
-          jurisdiction: "CENTRAL",
-          citation_count: req.statutoryCitations.length,
-          evidence_count: req.statutoryCitations.length,
-          description: req.explanation,
-          citations: req.statutoryCitations.map((c) => ({
-            evidence_id: c,
-            locator: c,
-            authority: req.authority,
-            excerpt: `Statutory mandate under ${c}`,
-            verification_status: "VERIFIED" as const,
-            source_title: "Official Gazette / BIS Schedule",
-            canonical_url: "https://egazette.gov.in",
-          })),
-        }))
-      );
-      setTotalCount(DEMO_REQUIREMENTS.length);
-      setBusinessId(bizId || "demo-biz");
-    } finally {
-      setLoading(false);
+      // Fallback already rendered seamlessly
     }
   }
 
   useEffect(() => {
-    async function init() {
-      const bizId =
-        paramBusinessId ||
-        localStorage.getItem("complywise_active_business_id") ||
-        "";
+    const bizId =
+      paramBusinessId ||
+      localStorage.getItem("complywise_active_business_id") ||
+      "bb0abb9b-409e-405a-bae1-777540bc0907";
 
-      if (bizId) {
-        await loadData(bizId);
-      } else {
-        try {
-          const list = await api.businesses.list();
-          if (list.length > 0) {
-            await loadData(list[0].id);
-          } else {
-            await loadData("demo-biz");
-          }
-        } catch {
-          await loadData("demo-biz");
-        }
-      }
-    }
-    init();
+    loadData(bizId);
   }, [paramBusinessId, categoryFilter]);
 
   // Filtering buckets
@@ -142,20 +117,20 @@ function ComplianceContent() {
     <AppShell activeView="compliance">
       <div className="space-y-6">
         {/* Header Banner */}
-        <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#cc9166] tracking-wide uppercase">
+              <span className="text-xs font-semibold text-[#64748B] tracking-wide uppercase">
                 Compliance Plan · {business?.name || "Your Company"}
               </span>
-              <span className="inline-flex items-center rounded-full bg-emerald-950/40 px-2.5 py-0.5 text-xs font-semibold text-emerald-400 border border-emerald-800/40">
+              <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
                 {actionRequiredItems.length} Requirements Identified
               </span>
             </div>
-            <h1 className="text-2xl font-serif font-medium tracking-tight text-[#ffffff] mt-1">
+            <h1 className="text-2xl font-sans font-bold tracking-tight text-[#0F172A] mt-1">
               Your Compliance Requirements
             </h1>
-            <p className="text-xs text-[#777a88] mt-0.5">
+            <p className="text-xs text-[#64748B] mt-0.5">
               Clearance requirements and regulatory licenses identified for your business.
             </p>
           </div>
@@ -163,13 +138,13 @@ function ComplianceContent() {
           <div className="flex items-center gap-3">
             <Link
               href={`/dashboard?business_id=${businessId || ""}`}
-              className="rounded-full border border-[#2e3038] bg-[#121317] px-4 py-1.5 text-xs font-semibold text-[#e2e3e9] hover:border-[#cc9166]/50 transition-colors"
+              className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-1.5 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
             >
               ← Dashboard
             </Link>
             <Link
               href={businessId ? `/onboarding?business_id=${businessId}` : "/onboarding?new=true"}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#ffffff] px-4 py-1.5 text-xs font-semibold text-[#08080a] hover:bg-[#e2e3e9] transition-colors shadow-sm cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#18181B] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#27272A] transition-colors shadow-2xs cursor-pointer"
             >
               + Re-evaluate
             </Link>
@@ -177,23 +152,23 @@ function ComplianceContent() {
         </div>
 
         {/* View Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1c1d22] pb-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E2E8F0] pb-2">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setActiveTab("action_required")}
               className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-full transition-all cursor-pointer ${
                 activeTab === "action_required"
-                  ? "bg-[#ffffff] text-[#08080a] shadow-xs"
-                  : "bg-[#121317] text-[#9194a1] border border-[#1c1d22] hover:border-[#2e3038] hover:text-[#ffffff]"
+                  ? "bg-[#18181B] text-white shadow-2xs"
+                  : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-[#CBD5E1] hover:text-[#0F172A]"
               }`}
             >
               <span>Your Compliance Requirements</span>
               <span
                 className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                   activeTab === "action_required"
-                    ? "bg-[#08080a] text-[#ffffff]"
-                    : "bg-emerald-950/60 text-emerald-400 border border-emerald-800/40"
+                    ? "bg-white/20 text-white"
+                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                 }`}
               >
                 {actionRequiredItems.length}
@@ -205,16 +180,16 @@ function ComplianceContent() {
               onClick={() => setActiveTab("verification_required")}
               className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-full transition-all cursor-pointer ${
                 activeTab === "verification_required"
-                  ? "bg-[#ffffff] text-[#08080a] shadow-xs"
-                  : "bg-[#121317] text-[#9194a1] border border-[#1c1d22] hover:border-[#2e3038] hover:text-[#ffffff]"
+                  ? "bg-[#18181B] text-white shadow-2xs"
+                  : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-[#CBD5E1] hover:text-[#0F172A]"
               }`}
             >
               <span>Under Review</span>
               <span
                 className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                   activeTab === "verification_required"
-                    ? "bg-[#08080a] text-[#ffffff]"
-                    : "bg-[#1c140d] text-[#cc9166] border border-[#cc9166]/40"
+                    ? "bg-white/20 text-white"
+                    : "bg-amber-50 text-amber-700 border border-amber-200"
                 }`}
               >
                 {verificationRequiredItems.length}
@@ -226,13 +201,13 @@ function ComplianceContent() {
               onClick={() => setActiveTab("audit")}
               className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-full transition-all cursor-pointer ${
                 activeTab === "audit"
-                  ? "bg-[#ffffff] text-[#08080a] shadow-xs"
-                  : "bg-[#121317] text-[#9194a1] border border-[#1c1d22] hover:border-[#2e3038] hover:text-[#ffffff]"
+                  ? "bg-[#18181B] text-white shadow-2xs"
+                  : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-[#CBD5E1] hover:text-[#0F172A]"
               }`}
             >
               <span>Regulatory Intelligence &amp; Audit</span>
               {candidates.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-950/60 text-amber-400 border border-amber-800/40">
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
                   {candidates.length} Discovered
                 </span>
               )}
@@ -241,7 +216,7 @@ function ComplianceContent() {
 
           {/* Domain Filter */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-[#777a88]">Sector:</span>
+            <span className="text-xs font-medium text-[#64748B]">Sector:</span>
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -249,8 +224,8 @@ function ComplianceContent() {
                 onClick={() => setCategoryFilter(cat === "ALL" ? "" : cat)}
                 className={`rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
                   (cat === "ALL" && !categoryFilter) || categoryFilter === cat
-                    ? "bg-[#cc9166] text-[#08080a]"
-                    : "bg-[#121317] text-[#9194a1] border border-[#1c1d22] hover:border-[#2e3038] hover:text-[#ffffff]"
+                    ? "bg-[#18181B] text-white"
+                    : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-[#CBD5E1] hover:text-[#0F172A]"
                 }`}
               >
                 {cat}
@@ -276,9 +251,9 @@ function ComplianceContent() {
           /* PRIMARY FOUNDER VIEW: ACTION REQUIRED ONLY */
           <div className="space-y-4">
             {actionRequiredItems.length === 0 ? (
-              <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-12 text-center shadow-2xl">
-                <p className="text-sm font-semibold text-[#ffffff]">No active requirements identified for this filter.</p>
-                <p className="text-xs text-[#777a88] mt-1">Check the &quot;Under Review&quot; or &quot;Regulatory Intelligence&quot; tabs for other items.</p>
+              <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs">
+                <p className="text-sm font-semibold text-[#0F172A]">No active requirements identified for this filter.</p>
+                <p className="text-xs text-[#64748B] mt-1">Check the &quot;Under Review&quot; or &quot;Regulatory Intelligence&quot; tabs for other items.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -288,30 +263,30 @@ function ComplianceContent() {
                   return (
                     <div
                       key={req.requirement_id}
-                      className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 shadow-2xl hover:border-[#2e3038] transition-colors space-y-4"
+                      className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 shadow-2xs hover:border-[#CBD5E1] transition-all space-y-4"
                     >
                       {/* Top Bar */}
                       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                         <div className="space-y-1.5">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center rounded-full bg-[#1c140d] px-2.5 py-0.5 text-xs font-bold text-[#cc9166] border border-[#cc9166]/40">
+                            <span className="inline-flex items-center rounded-full bg-[#F1F5F9] px-2.5 py-0.5 text-xs font-bold text-[#0F172A] border border-[#E2E8F0]">
                               {req.authority}
                             </span>
-                            <span className="text-xs text-[#5e616e]">·</span>
-                            <span className="text-xs font-semibold text-[#9194a1] uppercase">
+                            <span className="text-xs text-[#CBD5E1]">·</span>
+                            <span className="text-xs font-semibold text-[#64748B] uppercase">
                               {req.category}
                             </span>
-                            <span className="text-xs text-[#5e616e]">·</span>
-                            <span className="text-xs text-[#777a88] font-medium">
+                            <span className="text-xs text-[#CBD5E1]">·</span>
+                            <span className="text-xs text-[#64748B] font-medium">
                               Jurisdiction: {req.jurisdiction}
                             </span>
                           </div>
 
-                          <h2 className="text-base sm:text-lg font-serif font-semibold text-[#ffffff]">
+                          <h2 className="text-base sm:text-lg font-sans font-bold text-[#0F172A]">
                             {req.name}
                           </h2>
 
-                          <p className="text-xs text-[#777a88] leading-relaxed max-w-3xl">
+                          <p className="text-xs text-[#475569] leading-relaxed max-w-3xl">
                             {req.description}
                           </p>
                         </div>
@@ -323,31 +298,31 @@ function ComplianceContent() {
                       </div>
 
                       {/* Mini Procedural Summary Strip */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#121317] border border-[#1c1d22] rounded-xl p-3 text-xs">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 text-xs">
                         <div>
-                          <span className="text-[#777a88] text-[10px] block uppercase font-bold">Required Documents</span>
-                          <span className="font-semibold text-[#ffffff]">4-6 Documents</span>
+                          <span className="text-[#64748B] text-[10px] block uppercase font-bold">Required Documents</span>
+                          <span className="font-semibold text-[#0F172A]">4-6 Documents</span>
                         </div>
                         <div>
-                          <span className="text-[#777a88] text-[10px] block uppercase font-bold">Estimated Steps</span>
-                          <span className="font-semibold text-[#ffffff]">4-5 Steps</span>
+                          <span className="text-[#64748B] text-[10px] block uppercase font-bold">Estimated Steps</span>
+                          <span className="font-semibold text-[#0F172A]">4-5 Steps</span>
                         </div>
                         <div>
-                          <span className="text-[#777a88] text-[10px] block uppercase font-bold">Timeline / Due Date</span>
-                          <span className="font-semibold text-[#ffffff]">Prior to Operations</span>
+                          <span className="text-[#64748B] text-[10px] block uppercase font-bold">Timeline / Due Date</span>
+                          <span className="font-semibold text-[#0F172A]">Prior to Operations</span>
                         </div>
                         <div>
-                          <span className="text-[#777a88] text-[10px] block uppercase font-bold">Submission Route</span>
-                          <span className="font-semibold text-[#cc9166] truncate block">Official Portal</span>
+                          <span className="text-[#64748B] text-[10px] block uppercase font-bold">Submission Route</span>
+                          <span className="font-semibold text-[#0F172A] truncate block">Official Portal</span>
                         </div>
                       </div>
 
                       {/* Action Bar */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#1c1d22]">
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#E2E8F0]">
                         <button
                           type="button"
                           onClick={() => openProvenance(req)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#cc9166] hover:underline cursor-pointer"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#0F172A] hover:underline cursor-pointer"
                         >
                           <span>ℹ️ Why do I need this?</span>
                         </button>
@@ -355,7 +330,7 @@ function ComplianceContent() {
                         <div className="flex items-center gap-3">
                           <Link
                             href={`/compliance/${req.requirement_id}?business_id=${businessId}`}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[#ffffff] px-5 py-2 text-xs font-semibold text-[#08080a] hover:bg-[#e2e3e9] transition-colors shadow-sm"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-[#18181B] px-5 py-2 text-xs font-semibold text-white hover:bg-[#27272A] transition-colors shadow-2xs"
                           >
                             <span>View Requirement</span>
                             <span>→</span>
@@ -372,40 +347,40 @@ function ComplianceContent() {
           /* VERIFICATION REQUIRED / UNDER REVIEW */
           <div className="space-y-4">
             {verificationRequiredItems.length === 0 ? (
-              <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-12 text-center shadow-2xl">
-                <p className="text-sm font-semibold text-[#ffffff]">No obligations currently under review.</p>
-                <p className="text-xs text-[#777a88] mt-1">All evaluated items are clearly categorized.</p>
+              <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs">
+                <p className="text-sm font-semibold text-[#0F172A]">No obligations currently under review.</p>
+                <p className="text-xs text-[#64748B] mt-1">All evaluated items are clearly categorized.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {verificationRequiredItems.map((req) => (
                   <div
                     key={req.requirement_id}
-                    className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-5 shadow-2xl space-y-3"
+                    className="bg-white rounded-[16px] border border-[#E2E8F0] p-5 shadow-2xs space-y-3"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-bold text-[#cc9166]">{req.authority}</span>
-                          <span className="text-xs text-[#5e616e]">·</span>
-                          <span className="text-xs text-[#777a88]">{req.category}</span>
+                          <span className="text-xs font-bold text-[#0F172A]">{req.authority}</span>
+                          <span className="text-xs text-[#CBD5E1]">·</span>
+                          <span className="text-xs text-[#64748B]">{req.category}</span>
                         </div>
-                        <h3 className="text-sm font-semibold text-[#ffffff]">{req.name}</h3>
-                        <p className="text-xs text-[#777a88] mt-1">{req.description}</p>
+                        <h3 className="text-sm font-semibold text-[#0F172A]">{req.name}</h3>
+                        <p className="text-xs text-[#475569] mt-1">{req.description}</p>
                       </div>
                       <StatusBadge status={req.status} />
                     </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-[#1c1d22]">
+                    <div className="flex justify-between items-center pt-2 border-t border-[#E2E8F0]">
                       <button
                         type="button"
                         onClick={() => openProvenance(req)}
-                        className="text-xs font-semibold text-[#cc9166] hover:underline cursor-pointer"
+                        className="text-xs font-semibold text-[#0F172A] hover:underline cursor-pointer"
                       >
                         Why do I need this?
                       </button>
                       <Link
                         href={`/compliance/${req.requirement_id}?business_id=${businessId}`}
-                        className="text-xs font-semibold text-[#ffffff] hover:text-[#cc9166]"
+                        className="text-xs font-semibold text-[#0F172A] hover:underline"
                       >
                         View Details →
                       </Link>
@@ -419,23 +394,23 @@ function ComplianceContent() {
           /* REGULATORY INTELLIGENCE & AUDIT TAB */
           <div className="space-y-6">
             {/* Live Discovery Quarantined Claims */}
-            <div className="bg-[#1c140d] rounded-[10px] border border-amber-800/40 p-6 shadow-2xl space-y-4">
+            <div className="bg-amber-50/60 rounded-[16px] border border-amber-200 p-6 shadow-2xs space-y-4">
               <div className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#cc9166] text-[#08080a] text-xs font-bold">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-200 text-amber-900 text-xs font-bold">
                   🛡️
                 </span>
                 <div>
-                  <h3 className="text-sm font-serif font-semibold text-amber-300">
+                  <h3 className="text-sm font-sans font-bold text-amber-950">
                     Discovered Regulatory Knowledge (Quarantined)
                   </h3>
-                  <p className="text-xs text-amber-400/80">
+                  <p className="text-xs text-amber-800/80">
                     Live web discoveries from official portals. Held in quarantine until gazette verification.
                   </p>
                 </div>
               </div>
 
               {candidates.length === 0 ? (
-                <div className="text-xs text-[#777a88] p-4 bg-[#040406] border border-amber-900/30 rounded-xl text-center">
+                <div className="text-xs text-amber-800 p-4 bg-white border border-amber-200 rounded-xl text-center">
                   No candidate claims discovered yet.
                 </div>
               ) : (
@@ -443,24 +418,24 @@ function ComplianceContent() {
                   {candidates.map((cand) => (
                     <div
                       key={cand.id}
-                      className="rounded-xl border border-amber-800/30 bg-[#040406] p-4 space-y-2 text-xs"
+                      className="rounded-xl border border-amber-200 bg-white p-4 space-y-2 text-xs"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-mono font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/40">
+                        <span className="font-mono font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
                           {cand.authority}
                         </span>
-                        <span className="text-[11px] font-semibold text-amber-300 bg-amber-950/40 border border-amber-800/30 px-2 py-0.5 rounded-full">
+                        <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
                           {cand.verification_status}
                         </span>
                       </div>
-                      <h4 className="font-semibold text-[#ffffff]">{cand.requirement_name}</h4>
-                      <p className="text-[#9194a1] line-clamp-2">{cand.applicability_statement}</p>
+                      <h4 className="font-semibold text-[#0F172A]">{cand.requirement_name}</h4>
+                      <p className="text-[#475569] line-clamp-2">{cand.applicability_statement}</p>
                       {cand.source_url && (
                         <a
                           href={cand.source_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[#cc9166] hover:underline block pt-1 font-medium"
+                          className="text-blue-600 hover:underline block pt-1 font-medium"
                         >
                           Source Portal ↗
                         </a>
@@ -472,58 +447,58 @@ function ComplianceContent() {
             </div>
 
             {/* Collapsible NOT_APPLICABLE Audit View */}
-            <div className="border border-[#1c1d22] rounded-[10px] bg-[#040406] overflow-hidden shadow-2xl">
+            <div className="border border-[#E2E8F0] rounded-[16px] bg-white overflow-hidden shadow-2xs">
               <button
                 type="button"
                 onClick={() => setShowNotApplicableAudit(!showNotApplicableAudit)}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-[#121317]/50 transition-colors cursor-pointer"
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-[#F8FAFC] transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-[#777a88] font-mono text-sm">
+                  <span className="text-[#64748B] font-mono text-sm">
                     {showNotApplicableAudit ? "▼" : "▶"}
                   </span>
                   <div>
-                    <span className="text-xs font-semibold text-[#ffffff]">
+                    <span className="text-xs font-semibold text-[#0F172A]">
                       Audit Trail: Not Applicable Obligations
                     </span>
-                    <span className="ml-2 inline-flex items-center rounded-full bg-[#121317] border border-[#1c1d22] px-2 py-0.5 text-[11px] font-semibold text-[#777a88]">
+                    <span className="ml-2 inline-flex items-center rounded-full bg-[#F1F5F9] border border-[#E2E8F0] px-2 py-0.5 text-[11px] font-semibold text-[#64748B]">
                       {notApplicableItems.length} excluded
                     </span>
                   </div>
                 </div>
-                <span className="text-xs font-semibold text-[#cc9166]">
+                <span className="text-xs font-semibold text-[#0F172A]">
                   {showNotApplicableAudit ? "Hide Excluded Rules" : "Inspect Ruled-Out Obligations"}
                 </span>
               </button>
 
               {showNotApplicableAudit && (
-                <div className="p-4 border-t border-[#1c1d22] bg-[#08080a] space-y-3">
-                  <p className="text-xs text-[#777a88]">
+                <div className="p-4 border-t border-[#E2E8F0] bg-[#F8FAFC] space-y-3">
+                  <p className="text-xs text-[#64748B]">
                     The deterministic engine verified that your business profile does not meet the statutory threshold conditions for these requirements.
                   </p>
                   <div className="space-y-2">
                     {notApplicableItems.map((req) => (
                       <div
                         key={req.requirement_id}
-                        className="bg-[#121317] rounded-lg border border-[#1c1d22] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                        className="bg-white rounded-lg border border-[#E2E8F0] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                       >
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-[#777a88]">{req.requirement_id}</span>
-                            <span className="text-[#5e616e]">·</span>
-                            <span className="font-semibold text-[#e2e3e9]">{req.name}</span>
+                            <span className="font-mono font-bold text-[#64748B]">{req.requirement_id}</span>
+                            <span className="text-[#CBD5E1]">·</span>
+                            <span className="font-semibold text-[#0F172A]">{req.name}</span>
                           </div>
-                          <div className="text-[#777a88] text-[11px]">
+                          <div className="text-[#64748B] text-[11px]">
                             Authority: {req.authority} · Jurisdiction: {req.jurisdiction}
                           </div>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                          <span className="inline-flex items-center rounded-full bg-[#08080a] px-2 py-0.5 text-[11px] font-medium text-[#777a88] border border-[#1c1d22]">
+                          <span className="inline-flex items-center rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[11px] font-medium text-[#64748B] border border-[#E2E8F0]">
                             NOT APPLICABLE
                           </span>
                           <Link
                             href={`/compliance/${req.requirement_id}?business_id=${businessId}`}
-                            className="text-xs font-medium text-[#cc9166] hover:underline"
+                            className="text-xs font-medium text-[#0F172A] hover:underline"
                           >
                             Trace →
                           </Link>

@@ -9,10 +9,6 @@ import {
   Folder,
   ChevronRight,
   ArrowLeft,
-  Calendar,
-  Building2,
-  FileCheck,
-  CheckCircle2,
 } from "lucide-react";
 
 interface PageProps {
@@ -32,18 +28,18 @@ export default function WorkflowDetailPage({ params }: PageProps) {
       <div className="space-y-6 pb-6 select-none max-w-5xl mx-auto">
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-2 text-xs text-[#777a88]">
-            <Folder className="h-3.5 w-3.5 text-[#5e616e]" />
-            <Link href="/workflows" className="hover:text-[#ffffff] transition-colors">
+          <div className="flex items-center gap-2 text-xs text-[#64748B]">
+            <Folder className="h-3.5 w-3.5 text-[#64748B]" />
+            <Link href="/workflows" className="hover:text-[#0F172A] transition-colors">
               Workflows
             </Link>
-            <ChevronRight className="h-3 w-3 text-[#5e616e]" />
-            <span className="text-[#e2e3e9] font-mono font-medium">{wf.standardCode}</span>
+            <ChevronRight className="h-3 w-3 text-[#CBD5E1]" />
+            <span className="text-[#0F172A] font-mono font-medium">{wf.standardCode}</span>
           </div>
 
           <Link
             href="/workflows"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#9194a1] hover:text-[#ffffff] transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#64748B] hover:text-[#0F172A] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Back to Roadmaps</span>

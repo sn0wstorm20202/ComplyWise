@@ -47,32 +47,32 @@ export function StandardsHierarchySection() {
   ];
 
   return (
-    <section id="standards" className="py-20 md:py-28 bg-white border-b border-stone-200/80">
+    <section id="standards" className="py-20 md:py-28 bg-white border-b border-[#E2E8F0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="max-w-2xl space-y-2">
-            <div className="text-[11px] font-bold text-stone-500 uppercase tracking-widest">
+            <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-widest font-mono">
               Regulatory Architecture
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-stone-950">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#0F172A] font-sans">
               How ComplyWise understands BIS standards.
             </h2>
-            <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed font-sans">
               Unlike conversational AI models that guess or hallucinate statutory obligations, ComplyWise resolves regulatory truth through a five-tier deterministic hierarchy.
             </p>
           </div>
 
           {/* Example Switcher */}
-          <div className="flex items-center gap-2 bg-stone-100 p-1 rounded-lg text-xs self-start shrink-0">
+          <div className="flex items-center gap-2 bg-[#F1F5F9] p-1 rounded-xl text-xs self-start shrink-0 border border-[#E2E8F0]">
             {examples.map((ex) => (
               <button
                 key={ex.id}
                 onClick={() => setActiveId(ex.id)}
-                className={`px-3 py-1.5 rounded-md font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
                   activeId === ex.id
-                    ? "bg-white text-stone-950 font-semibold shadow-2xs"
-                    : "text-stone-600 hover:text-stone-900"
+                    ? "bg-white text-[#0F172A] font-semibold shadow-2xs"
+                    : "text-[#64748B] hover:text-[#0F172A]"
                 }`}
               >
                 {ex.standard}
@@ -82,27 +82,27 @@ export function StandardsHierarchySection() {
         </div>
 
         {/* Technical Flow Schematic */}
-        <div className="bg-stone-50/60 rounded-2xl border border-stone-200 p-6 sm:p-10 shadow-2xs">
+        <div className="bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] p-6 sm:p-10 shadow-2xs">
           <div className="max-w-3xl mx-auto space-y-3">
             {levels.map((lvl, index) => (
               <React.Fragment key={lvl.label}>
-                <div className="bg-white rounded-xl border border-stone-200/80 p-4 sm:p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-stone-300 transition-colors">
+                <div className="bg-white rounded-xl border border-[#E2E8F0] p-4 sm:p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 transition-colors">
                   <div className="space-y-0.5">
                     <span className="font-mono text-[10px] font-bold tracking-wider text-blue-900 uppercase">
                       {lvl.label}
                     </span>
-                    <div className="text-xs sm:text-sm font-bold text-stone-950">
+                    <div className="text-xs sm:text-sm font-bold text-[#0F172A] font-sans">
                       {lvl.value}
                     </div>
                   </div>
-                  <div className="text-[11px] text-stone-500 max-w-xs sm:text-right font-normal">
+                  <div className="text-[11px] text-[#64748B] max-w-xs sm:text-right font-normal font-sans">
                     {lvl.desc}
                   </div>
                 </div>
 
                 {index < levels.length - 1 && (
                   <div className="flex justify-center py-0.5">
-                    <ArrowDown className="h-4 w-4 text-stone-400" />
+                    <ArrowDown className="h-4 w-4 text-[#94A3B8]" />
                   </div>
                 )}
               </React.Fragment>

@@ -19,12 +19,12 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-[10px] border border-dashed border-[#2e3038] p-10 text-center bg-[#040406]/50 ${className}`}
+      className={`flex flex-col items-center justify-center rounded-xl border border-dashed border-[#CBD5E1] p-10 text-center bg-white shadow-2xs ${className}`}
     >
       {icon ? (
-        <div className="mb-3 text-[#777a88]">{icon}</div>
+        <div className="mb-3 text-[#64748B]">{icon}</div>
       ) : (
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#121317] border border-[#1c1d22] text-[#9194a1]">
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#F8FAFC] border border-[#E2E8F0] text-[#64748B]">
           <svg
             className="h-6 w-6"
             fill="none"
@@ -40,13 +40,13 @@ export function EmptyState({
           </svg>
         </div>
       )}
-      <h3 className="text-sm font-semibold text-[#ffffff]">{title}</h3>
-      <p className="mt-1 max-w-sm text-xs text-[#777a88]">{description}</p>
+      <h3 className="text-sm font-semibold text-[#0F172A]">{title}</h3>
+      <p className="mt-1 max-w-sm text-xs text-[#64748B]">{description}</p>
       {actionText && onAction && (
         <button
           type="button"
           onClick={onAction}
-          className="mt-4 inline-flex items-center rounded-full bg-[#ffffff] px-4 py-2 text-xs font-semibold text-[#08080a] hover:bg-[#e2e3e9] transition-colors shadow-xs cursor-pointer"
+          className="mt-4 inline-flex items-center rounded-full bg-[#0F172A] px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors shadow-xs cursor-pointer"
         >
           {actionText}
         </button>

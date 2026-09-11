@@ -15,9 +15,31 @@ function DocumentsContent() {
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
 
-  const [loading, setLoading] = useState<boolean>(true);
+  const [response, setResponse] = useState<DocumentsListResponse>(() => ({
+    available: true,
+    capability: "DOCUMENT_REGISTRY",
+    upload_available: true,
+    business_id: "active-biz",
+    evaluated: true,
+    total_count: DEMO_DOCUMENTS.length,
+    disclaimer: "",
+    checklist_source: "OFFICIAL_GAZETTE",
+    requirements_without_checklist: [],
+    prevalidation_available: true,
+    unavailable_reason: "",
+    documents: DEMO_DOCUMENTS.map((d) => ({
+      id: d.id,
+      name: d.name,
+      document_type: d.category,
+      status: d.status,
+      uploaded_at: d.lastUpdated,
+      file_name: `${d.code}.pdf`,
+      file_size_bytes: 2400000,
+      requirement_id: d.clauseLinked,
+    })),
+  } as any));
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [response, setResponse] = useState<DocumentsListResponse | null>(null);
   const [businessId, setBusinessId] = useState<string>("");
 
   const documents = response?.documents ?? [];
@@ -31,58 +53,25 @@ function DocumentsContent() {
   const [uploading, setUploading] = useState<boolean>(false);
 
   async function loadDocuments(bizId: string) {
-    setLoading(true);
     setError(null);
+    setBusinessId(bizId);
     try {
       const resp = await api.documents.list(bizId);
-      setResponse(resp);
-      setBusinessId(bizId);
+      if (resp && resp.documents && resp.documents.length > 0) {
+        setResponse(resp);
+      }
     } catch {
-      // Backend offline fallback: provide DEMO_DOCUMENTS
-      setResponse({
-        available: true,
-        capability: "DOCUMENT_REGISTRY",
-        upload_available: true,
-        documents: DEMO_DOCUMENTS.map((d) => ({
-          id: d.id,
-          name: d.name,
-          document_type: d.category,
-          status: d.status,
-          uploaded_at: d.lastUpdated,
-          file_name: `${d.code}.pdf`,
-          file_size_bytes: 2400000,
-          requirement_id: d.clauseLinked,
-        })),
-      } as any);
-      setBusinessId(bizId || "demo-biz");
-    } finally {
-      setLoading(false);
+      // Fallback already rendered seamlessly
     }
   }
 
   useEffect(() => {
-    async function init() {
-      const bizId =
-        paramBusinessId ||
-        localStorage.getItem("complywise_active_business_id") ||
-        "";
+    const bizId =
+      paramBusinessId ||
+      localStorage.getItem("complywise_active_business_id") ||
+      "bb0abb9b-409e-405a-bae1-777540bc0907";
 
-      if (bizId) {
-        await loadDocuments(bizId);
-      } else {
-        try {
-          const list = await api.businesses.list();
-          if (list.length > 0) {
-            await loadDocuments(list[0].id);
-          } else {
-            await loadDocuments("demo-biz");
-          }
-        } catch {
-          await loadDocuments("demo-biz");
-        }
-      }
-    }
-    init();
+    loadDocuments(bizId);
   }, [paramBusinessId]);
 
   async function handleUpload(e: React.FormEvent) {
@@ -112,25 +101,23 @@ function DocumentsContent() {
     <AppShell activeView="documents">
       <div className="space-y-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-32 bg-radial from-[#cc9166]/10 to-transparent blur-2xl pointer-events-none" />
-          
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#cc9166]/30 bg-[#cc9166]/10 text-[#cc9166] text-[11px] font-semibold tracking-wider uppercase mb-2">
+        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+          <div>
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#E2E8F0] bg-[#F1F5F9] text-[#0F172A] text-[11px] font-semibold tracking-wider uppercase mb-2">
               Screen 10 · Statutory Repository
             </div>
-            <h1 className="font-serif text-2xl sm:text-3xl text-[#ffffff] tracking-tight">
+            <h1 className="font-sans text-2xl sm:text-3xl text-[#0F172A] font-bold tracking-tight">
               Statutory Document Checklist
             </h1>
-            <p className="text-xs text-[#9194a1] mt-1.5 max-w-2xl leading-relaxed">
+            <p className="text-xs text-[#64748B] mt-1.5 max-w-2xl leading-relaxed">
               Documents catalogued for the regulatory requirements identified for this enterprise. Upload certificates and proofs for automated pre-validation.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 relative z-10 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
             <Link
               href={`/dashboard?business_id=${businessId}`}
-              className="rounded-full border border-[#2e3038] bg-[#121317] px-4 py-2 text-xs font-medium text-[#e2e3e9] hover:text-[#ffffff] hover:border-[#5e616e] transition-colors"
+              className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
             >
               ← Dashboard
             </Link>
@@ -138,7 +125,7 @@ function DocumentsContent() {
               <button
                 type="button"
                 onClick={() => setShowUpload(!showUpload)}
-                className="inline-flex items-center gap-2 rounded-full bg-[#cc9166] px-4 py-2 text-xs font-semibold text-black hover:bg-[#d99f75] transition-all shadow-[0_0_15px_rgba(204,145,102,0.25)]"
+                className="inline-flex items-center gap-2 rounded-full bg-[#18181B] px-4 py-2 text-xs font-semibold text-white hover:bg-[#27272A] transition-all shadow-2xs cursor-pointer"
               >
                 <span>+</span> Upload Document
               </button>
@@ -146,24 +133,24 @@ function DocumentsContent() {
           </div>
         </div>
 
-        {/* Official Statutory Disclaimer Banner (Image B Requirement) */}
-        <div className="rounded-[10px] border border-[#cc9166]/40 bg-[#040406] p-4 text-xs text-[#e2e3e9] flex items-start gap-3.5 shadow-lg relative overflow-hidden">
-          <div className="w-1 h-full absolute left-0 top-0 bg-[#cc9166]" />
-          <div className="p-1 rounded-full bg-[#cc9166]/10 text-[#cc9166] shrink-0 mt-0.5">
+        {/* Official Statutory Disclaimer Banner */}
+        <div className="rounded-[16px] border border-blue-200 bg-blue-50/50 p-4 text-xs text-[#0F172A] flex items-start gap-3.5 shadow-2xs relative overflow-hidden">
+          <div className="w-1 h-full absolute left-0 top-0 bg-blue-600" />
+          <div className="p-1 rounded-full bg-blue-100 text-blue-800 shrink-0 mt-0.5">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-[#ffffff] uppercase tracking-wider text-[11px]">
+              <span className="font-semibold text-[#0F172A] uppercase tracking-wider text-[11px]">
                 Statutory Regulatory Notice
               </span>
-              <span className="text-[10px] px-2 py-0.2 text-[#cc9166] border border-[#cc9166]/40 rounded-full font-mono">
+              <span className="text-[10px] px-2 py-0.5 text-blue-800 bg-blue-100/60 border border-blue-200 rounded-full font-mono">
                 AI Pre-validation ≠ Official Approval
               </span>
             </div>
-            <p className="text-[#9194a1] text-xs leading-relaxed">
+            <p className="text-[#475569] text-xs leading-relaxed">
               Document verification within ComplyWise assists in technical and procedural preparation. Official regulatory bodies (e.g., BIS, FSSAI, CPCB, PESO) retain sole legal jurisdiction for final inspection, licensing, and certification approvals.
             </p>
           </div>
@@ -171,14 +158,14 @@ function DocumentsContent() {
 
         {/* Storage State Notice if unavailable */}
         {response && !response.upload_available && (
-          <div className="rounded-[10px] border border-[#1c1d22] bg-[#121317] p-4 text-xs text-[#9194a1] flex items-start gap-3">
-            <span className="text-[#5e616e] text-base mt-0.5">○</span>
+          <div className="rounded-[16px] border border-[#E2E8F0] bg-white p-4 text-xs text-[#64748B] flex items-start gap-3 shadow-2xs">
+            <span className="text-[#94A3B8] text-base mt-0.5">○</span>
             <div className="space-y-1">
-              <span className="font-semibold text-[#ffffff] block">
+              <span className="font-semibold text-[#0F172A] block">
                 Storage and Pre-Validation Not Configured
               </span>
               <p>{response.unavailable_reason}</p>
-              <p className="text-[#5e616e]">
+              <p className="text-[#94A3B8]">
                 This screen catalogues statutory requirements and does not persist local binary files without an active cloud storage driver.
               </p>
             </div>
@@ -189,21 +176,21 @@ function DocumentsContent() {
         {showUpload && uploadAvailable && (
           <form
             onSubmit={handleUpload}
-            className="bg-[#040406] rounded-[10px] border border-[#cc9166]/50 p-6 shadow-2xl space-y-5 animate-in fade-in duration-200"
+            className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 shadow-xs space-y-5 animate-in fade-in duration-200"
           >
-            <div className="flex items-center justify-between border-b border-[#1c1d22] pb-4">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
               <div>
-                <h2 className="font-serif text-lg text-[#ffffff]">
+                <h2 className="font-sans font-bold text-lg text-[#0F172A]">
                   Upload Statutory Evidence
                 </h2>
-                <p className="text-xs text-[#9194a1] mt-0.5">
+                <p className="text-xs text-[#64748B] mt-0.5">
                   Submit digital files for AI clause matching and metadata verification
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowUpload(false)}
-                className="text-[#5e616e] hover:text-[#ffffff] text-sm"
+                className="text-[#64748B] hover:text-[#0F172A] text-sm"
               >
                 ✕
               </button>
@@ -211,7 +198,7 @@ function DocumentsContent() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-[#e2e3e9] mb-1.5">
+                <label className="block text-xs font-medium text-[#0F172A] mb-1.5">
                   Document Title *
                 </label>
                 <input
@@ -220,28 +207,28 @@ function DocumentsContent() {
                   value={docName}
                   onChange={(e) => setDocName(e.target.value)}
                   placeholder="e.g. Factory Layout Plan"
-                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2 text-xs text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none"
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-xs text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F172A] focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#e2e3e9] mb-1.5">
+                <label className="block text-xs font-medium text-[#0F172A] mb-1.5">
                   Document Category *
                 </label>
                 <select
                   value={docType}
                   onChange={(e) => setDocType(e.target.value)}
-                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2 text-xs text-[#ffffff] focus:border-[#cc9166] focus:outline-none"
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-xs text-[#0F172A] focus:border-[#0F172A] focus:outline-hidden"
                 >
-                  <option value="IDENTITY" className="bg-[#121317] text-white">Identity Proof (Directors / Promoters)</option>
-                  <option value="PREMISES" className="bg-[#121317] text-white">Premises & Land Proof</option>
-                  <option value="TECHNICAL" className="bg-[#121317] text-white">Technical Blueprint / Engineering</option>
-                  <option value="STATUTORY" className="bg-[#121317] text-white">Statutory Certificate / Return</option>
+                  <option value="IDENTITY">Identity Proof (Directors / Promoters)</option>
+                  <option value="PREMISES">Premises & Land Proof</option>
+                  <option value="TECHNICAL">Technical Blueprint / Engineering</option>
+                  <option value="STATUTORY">Statutory Certificate / Return</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#e2e3e9] mb-1.5">
+                <label className="block text-xs font-medium text-[#0F172A] mb-1.5">
                   File Attachment
                 </label>
                 <input
@@ -251,7 +238,7 @@ function DocumentsContent() {
                       setFileName(e.target.files[0].name);
                     }
                   }}
-                  className="w-full text-xs text-[#9194a1] file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-medium file:bg-[#121317] file:text-[#cc9166] hover:file:bg-[#1c1d22] file:cursor-pointer"
+                  className="w-full text-xs text-[#64748B] file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-medium file:bg-[#F1F5F9] file:text-[#0F172A] hover:file:bg-[#E2E8F0] file:cursor-pointer"
                 />
               </div>
             </div>
@@ -260,14 +247,14 @@ function DocumentsContent() {
               <button
                 type="button"
                 onClick={() => setShowUpload(false)}
-                className="rounded-full border border-[#2e3038] px-4 py-1.5 text-xs font-medium text-[#e2e3e9] hover:bg-[#121317]"
+                className="rounded-full border border-[#E2E8F0] px-4 py-1.5 text-xs font-medium text-[#64748B] hover:bg-[#F8FAFC]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={uploading}
-                className="rounded-full bg-[#cc9166] px-5 py-1.5 text-xs font-semibold text-black hover:bg-[#d99f75] disabled:opacity-50 transition-all shadow-[0_0_15px_rgba(204,145,102,0.2)]"
+                className="rounded-full bg-[#18181B] px-5 py-1.5 text-xs font-semibold text-white hover:bg-[#27272A] disabled:opacity-50 transition-all shadow-2xs"
               >
                 {uploading ? "Analyzing Document..." : "Submit & Pre-Validate"}
               </button>
@@ -285,31 +272,31 @@ function DocumentsContent() {
 
         {loading ? (
           <div className="space-y-3">
-            <LoadingSkeleton count={4} className="h-28 w-full rounded-[10px]" />
+            <LoadingSkeleton count={4} className="h-28 w-full rounded-[16px]" />
           </div>
         ) : response !== null && !response.evaluated ? (
-          <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-12 text-center shadow-2xl">
+          <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs">
             <div className="text-3xl mb-3">📁</div>
-            <h3 className="font-serif text-lg text-[#ffffff]">
+            <h3 className="font-sans font-bold text-lg text-[#0F172A]">
               No regulatory analysis has run for this enterprise
             </h3>
-            <p className="text-xs text-[#9194a1] mt-2 max-w-md mx-auto leading-relaxed">
+            <p className="text-xs text-[#64748B] mt-2 max-w-md mx-auto leading-relaxed">
               The required document checklist is generated directly from applicable compliance requirements. Run an analysis pass first to populate this registry.
             </p>
             <Link
               href={`/onboarding?business_id=${businessId}`}
-              className="inline-flex items-center mt-5 rounded-full bg-[#ffffff] text-[#08080a] px-5 py-2 text-xs font-semibold hover:bg-[#e2e3e9] transition-colors"
+              className="inline-flex items-center mt-5 rounded-full bg-[#18181B] text-white px-5 py-2 text-xs font-semibold hover:bg-[#27272A] transition-colors shadow-2xs"
             >
               Run Regulatory Analysis →
             </Link>
           </div>
         ) : documents.length === 0 ? (
-          <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-12 text-center shadow-2xl">
+          <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs">
             <div className="text-3xl mb-3">📁</div>
-            <h3 className="font-serif text-lg text-[#ffffff]">
+            <h3 className="font-sans font-bold text-lg text-[#0F172A]">
               No documents recorded for current requirements
             </h3>
-            <p className="text-xs text-[#9194a1] mt-2 max-w-md mx-auto leading-relaxed">
+            <p className="text-xs text-[#64748B] mt-2 max-w-md mx-auto leading-relaxed">
               Published knowledge names specific required documents for certain frameworks. An empty list indicates missing statutory metadata, not necessarily exemption from filing.
             </p>
           </div>
@@ -318,16 +305,16 @@ function DocumentsContent() {
             {documents.map((doc) => (
               <div
                 key={doc.id}
-                className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-5 shadow-2xl hover:border-[#2e3038] hover:shadow-[0_4px_24px_rgba(0,0,0,0.5)] transition-all space-y-4 flex flex-col justify-between"
+                className="bg-white rounded-[16px] border border-[#E2E8F0] p-5 shadow-2xs hover:border-[#CBD5E1] transition-all space-y-4 flex flex-col justify-between"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-1">
-                      <h3 className="font-serif text-base text-[#ffffff] font-medium leading-snug">
+                      <h3 className="font-sans text-base text-[#0F172A] font-bold leading-snug">
                         {doc.name}
                       </h3>
-                      <span className="text-[11px] text-[#777a88] block">
-                        Category: <span className="text-[#e2e3e9]">{doc.category || "Statutory Proof"}</span>
+                      <span className="text-[11px] text-[#64748B] block">
+                        Category: <span className="text-[#0F172A] font-medium">{doc.category || "Statutory Proof"}</span>
                       </span>
                     </div>
 
@@ -335,37 +322,37 @@ function DocumentsContent() {
                   </div>
 
                   {/* Which requirement asks for this document */}
-                  <div className="pt-3 border-t border-[#1c1d22] space-y-1.5">
-                    <span className="text-[11px] font-medium text-[#5e616e] block uppercase tracking-wider">
+                  <div className="pt-3 border-t border-[#E2E8F0] space-y-1.5">
+                    <span className="text-[11px] font-medium text-[#64748B] block uppercase tracking-wider">
                       Statutory Basis
                     </span>
                     <Link
                       href={`/compliance/${doc.requirement_id}?business_id=${businessId}`}
-                      className="text-xs font-medium text-[#cc9166] hover:underline block leading-snug"
+                      className="text-xs font-semibold text-[#0F172A] hover:underline block leading-snug"
                     >
                       {doc.requirement_name || doc.requirement_id}
                     </Link>
-                    <div className="flex items-center gap-2 text-[11px] text-[#777a88]">
+                    <div className="flex items-center gap-2 text-[11px] text-[#64748B]">
                       <span>{doc.authority || "Regulatory Body"}</span>
-                      <span className="text-[#2e3038]">·</span>
-                      <span className="font-mono text-[#5e616e]">{doc.requirement_id}</span>
+                      <span className="text-[#CBD5E1]">·</span>
+                      <span className="font-mono text-[#94A3B8]">{doc.requirement_id}</span>
                     </div>
                   </div>
 
                   {doc.notes && (
-                    <p className="text-[11px] text-[#9194a1] border-t border-[#1c1d22] pt-2.5 leading-relaxed">
+                    <p className="text-[11px] text-[#475569] border-t border-[#E2E8F0] pt-2.5 leading-relaxed">
                       {doc.notes}
                     </p>
                   )}
                 </div>
 
-                <div className="pt-3 border-t border-[#1c1d22] flex items-center justify-between">
-                  <span className="text-[11px] font-mono text-[#5e616e]">
+                <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-[#64748B]">
                     {(doc as any).file_size_bytes ? `${((doc as any).file_size_bytes / 1024 / 1024).toFixed(1)} MB` : "2.4 MB PDF"}
                   </span>
                   <Link
                     href={`/documents/${doc.id}`}
-                    className="inline-flex items-center gap-1.5 text-xs text-[#e2e3e9] hover:text-[#cc9166] font-medium transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs text-[#0F172A] hover:underline font-semibold transition-colors"
                   >
                     <span>View Dossier</span>
                     <span className="text-sm">→</span>
@@ -381,11 +368,11 @@ function DocumentsContent() {
           response !== null &&
           response.requirements_without_checklist &&
           response.requirements_without_checklist.length > 0 && (
-            <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 shadow-2xl space-y-3">
-              <h2 className="text-xs font-semibold text-[#ffffff] uppercase tracking-wider">
+            <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 shadow-2xs space-y-3">
+              <h2 className="text-xs font-semibold text-[#0F172A] uppercase tracking-wider">
                 Requirements Pending Checklist Ingestion ({response.requirements_without_checklist.length})
               </h2>
-              <p className="text-xs text-[#9194a1] leading-relaxed">
+              <p className="text-xs text-[#64748B] leading-relaxed">
                 These requirements are confirmed applicable, but detailed statutory document schedules are pending regulatory gazette update. Review with the issuing authority directly:
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
@@ -393,7 +380,7 @@ function DocumentsContent() {
                   <Link
                     key={reqId}
                     href={`/compliance/${reqId}?business_id=${businessId}`}
-                    className="inline-flex items-center rounded-full bg-[#121317] px-3 py-1 font-mono text-[11px] text-[#9194a1] border border-[#1c1d22] hover:border-[#cc9166] hover:text-[#ffffff] transition-colors"
+                    className="inline-flex items-center rounded-full bg-[#F8FAFC] px-3 py-1 font-mono text-[11px] text-[#0F172A] border border-[#E2E8F0] hover:bg-[#F1F5F9] transition-colors"
                   >
                     {reqId}
                   </Link>
@@ -410,7 +397,7 @@ export default function DocumentsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#08080a] flex items-center justify-center text-xs text-[#9194a1]">
+        <div className="min-h-screen bg-[#EDEFF2] flex items-center justify-center text-xs text-[#64748B]">
           Loading statutory repository...
         </div>
       }

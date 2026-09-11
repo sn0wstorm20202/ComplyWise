@@ -62,19 +62,19 @@ function SignInContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#08080a] text-[#e2e3e9] flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col">
       <Navbar />
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-md bg-[#040406] rounded-2xl border border-[#1c1d22] p-8 shadow-2xl space-y-6">
+        <div className="w-full max-w-md bg-white rounded-2xl border border-[#E2E8F0] p-8 shadow-xs space-y-6">
           <div className="text-center space-y-2">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#cc9166] text-[#08080a] font-bold text-xl shadow-xs">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#0F172A] text-white font-bold text-xl shadow-2xs">
               CW
             </div>
-            <h1 className="text-2xl font-serif tracking-tight text-[#ffffff]">
+            <h1 className="text-2xl font-sans font-bold tracking-tight text-[#0F172A]">
               {mode === "signin" ? "Sign In to ComplyWise" : "Create ComplyWise Account"}
             </h1>
-            <p className="text-xs text-[#777a88]">
+            <p className="text-xs text-[#64748B]">
               {mode === "signin"
                 ? "Enter your credentials to access industrial compliance intelligence."
                 : "Register to manage multi-jurisdiction statutory requirements."}
@@ -82,7 +82,7 @@ function SignInContent() {
           </div>
 
           {/* Tab selector */}
-          <div className="flex rounded-full bg-[#121317] p-1 border border-[#1c1d22]">
+          <div className="flex rounded-full bg-[#F1F5F9] p-1 border border-[#E2E8F0]">
             <button
               type="button"
               onClick={() => {
@@ -91,8 +91,8 @@ function SignInContent() {
               }}
               className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 mode === "signin"
-                  ? "bg-[#ffffff] text-[#08080a] shadow-xs"
-                  : "text-[#777a88] hover:text-[#ffffff]"
+                  ? "bg-white text-[#0F172A] shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A]"
               }`}
             >
               Sign In
@@ -105,8 +105,8 @@ function SignInContent() {
               }}
               className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 mode === "register"
-                  ? "bg-[#ffffff] text-[#08080a] shadow-xs"
-                  : "text-[#777a88] hover:text-[#ffffff]"
+                  ? "bg-white text-[#0F172A] shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A]"
               }`}
             >
               Create Account
@@ -124,7 +124,7 @@ function SignInContent() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "register" && (
               <div>
-                <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
+                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
                   Full Name
                 </label>
                 <input
@@ -133,13 +133,13 @@ function SignInContent() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="e.g. Ramesh Chandra"
-                  className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
+              <label className="block text-xs font-semibold text-[#475569] mb-1.5">
                 Work Email
               </label>
               <input
@@ -148,12 +148,12 @@ function SignInContent() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@enterprise.in"
-                className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
+                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#9194a1] mb-1.5">
+              <label className="block text-xs font-semibold text-[#475569] mb-1.5">
                 Password
               </label>
               <input
@@ -162,14 +162,14 @@ function SignInContent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full rounded-lg border border-[#1c1d22] bg-[#121317] px-3.5 py-2.5 text-sm text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none focus:ring-1 focus:ring-[#cc9166] transition-colors"
+                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-full bg-[#ffffff] px-4 py-2.5 text-sm font-semibold text-[#08080a] hover:bg-[#e2e3e9] disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
+              className="w-full rounded-full bg-[#0F172A] px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
             >
               {loading
                 ? "Authenticating..."
@@ -180,19 +180,19 @@ function SignInContent() {
           </form>
 
           {/* Fast Demo Access Button */}
-          <div className="pt-4 border-t border-[#1c1d22] space-y-2">
-            <div className="text-[10px] uppercase tracking-wider text-center text-[#5e616e] font-semibold">
+          <div className="pt-4 border-t border-[#E2E8F0] space-y-2">
+            <div className="text-[10px] uppercase tracking-wider text-center text-[#94A3B8] font-bold">
               EVALUATION &amp; HACKATHON JURY ACCESS
             </div>
             <button
               type="button"
               onClick={handleDemoLogin}
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-[#2e3038] bg-[#121317] px-4 py-2.5 text-xs font-semibold text-[#cc9166] hover:bg-[#1a1c22] hover:border-[#cc9166]/60 disabled:opacity-50 transition-colors cursor-pointer"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-900 hover:bg-amber-100/80 disabled:opacity-50 transition-colors cursor-pointer shadow-2xs"
             >
               Fast Demo Login (Lead Compliance Officer)
             </button>
-            <div className="text-[11px] text-center text-[#777a88]">
+            <div className="text-[11px] text-center text-[#64748B]">
               Pre-seeded test account with ready industrial parameters
             </div>
           </div>
@@ -204,7 +204,7 @@ function SignInContent() {
 
 export default function SignInPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#08080a]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#F8FAFC]" />}>
       <SignInContent />
     </Suspense>
   );

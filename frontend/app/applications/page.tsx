@@ -94,37 +94,37 @@ function ApplicationsContent() {
     <AppShell activeView="workflows">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-white rounded-[10px] border border-[#E2E8F0] p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#cc9166] tracking-wide uppercase">
+              <span className="text-xs font-semibold text-amber-800 tracking-wide uppercase">
                 Statutory Filings · {profile.businessName}
               </span>
-              <span className="inline-flex items-center rounded-full bg-[#1c140d] px-2.5 py-0.5 text-xs font-semibold text-[#cc9166] border border-[#cc9166]/30">
+              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
                 Official Portal Handoff Tracking
               </span>
             </div>
-            <h1 className="text-2xl font-serif font-medium tracking-tight text-[#ffffff] mt-1">
+            <h1 className="text-2xl font-sans font-bold tracking-tight text-[#0F172A] mt-1">
               Applications &amp; Portal Filings
             </h1>
-            <p className="text-xs text-[#777a88] mt-0.5">
+            <p className="text-xs text-[#64748B] mt-0.5">
               Live status tracking for applications submitted to official government single-window portals.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#121317] border border-[#2e3038] text-[11px] text-[#9194a1]">
-              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E2E8F0] text-[11px] text-[#475569] shadow-2xs font-medium">
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
               Demo Portal Sync Active
             </span>
           </div>
         </div>
 
         {/* Regulatory Boundary Notice (Image B Contract) */}
-        <div className="bg-[#121317] border border-[#2e3038] rounded-[10px] p-4 flex items-start gap-3">
-          <AlertCircle className="h-4 w-4 text-[#cc9166] shrink-0 mt-0.5" />
-          <div className="text-xs text-[#9194a1] leading-relaxed">
-            <strong className="text-[#ffffff]">Statutory Jurisdiction Boundary: </strong>
+        <div className="bg-amber-50/50 border border-amber-200/80 rounded-[10px] p-4 flex items-start gap-3 text-xs">
+          <AlertCircle className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
+          <div className="text-[#334155] leading-relaxed">
+            <strong className="text-[#0F172A] font-semibold">Statutory Jurisdiction Boundary: </strong>
             ComplyWise pre-validates application dossiers and tracks submission milestones.
             Official license grants, query notices, and statutory approvals are issued solely by
             respective government departments (BIS, WPC, DGFT, State PCB).
@@ -133,15 +133,15 @@ function ApplicationsContent() {
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 bg-[#040406] p-1 rounded-full border border-[#1c1d22] text-xs">
+          <div className="flex items-center gap-1 bg-white p-1 rounded-full border border-[#E2E8F0] text-xs shadow-2xs">
             {["ALL", "SUBMITTED", "UNDER_SCRUTINY", "DOCUMENTS_REQUESTED", "APPROVED"].map((st) => (
               <button
                 key={st}
                 onClick={() => setFilter(st)}
-                className={`px-3 py-1 rounded-full font-medium transition-colors cursor-pointer ${
+                className={`px-3 py-1 rounded-full font-semibold transition-colors cursor-pointer ${
                   filter === st
-                    ? "bg-[#1c1d22] text-[#ffffff] shadow-xs"
-                    : "text-[#777a88] hover:text-[#ffffff]"
+                    ? "bg-[#0F172A] text-white shadow-2xs"
+                    : "text-[#64748B] hover:text-[#0F172A]"
                 }`}
               >
                 {st.replace(/_/g, " ")}
@@ -150,13 +150,13 @@ function ApplicationsContent() {
           </div>
 
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#5e616e]" />
+            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#94A3B8]" />
             <input
               type="text"
               placeholder="Search reference # or authority..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="rounded-full bg-[#121317] border border-[#1c1d22] pl-8 pr-4 py-1.5 text-xs text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none"
+              className="rounded-full bg-white border border-[#E2E8F0] pl-8 pr-4 py-1.5 text-xs text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none shadow-2xs"
             />
           </div>
         </div>
@@ -166,24 +166,24 @@ function ApplicationsContent() {
           {filtered.map((app) => (
             <div
               key={app.id}
-              className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-5 shadow-2xl hover:border-[#2e3038] transition-colors space-y-4"
+              className="bg-white rounded-[10px] border border-[#E2E8F0] p-5 shadow-2xs hover:border-slate-300 transition-colors space-y-4"
             >
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-[#cc9166] bg-[#1c140d] px-2 py-0.5 rounded border border-[#cc9166]/30">
+                    <span className="font-mono text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
                       {app.referenceNumber}
                     </span>
-                    <span className="text-xs text-[#777a88] flex items-center gap-1">
+                    <span className="text-xs text-[#64748B] flex items-center gap-1 font-medium">
                       <Building className="h-3 w-3" />
                       {app.authority}
                     </span>
                   </div>
-                  <h3 className="text-base font-serif font-semibold text-[#ffffff]">
+                  <h3 className="text-base font-sans font-bold text-[#0F172A]">
                     {app.requirementName}
                   </h3>
-                  <div className="flex items-center gap-2 text-xs text-[#9194a1]">
-                    <span>Portal: <strong className="text-[#e2e3e9]">{app.portalName}</strong></span>
+                  <div className="flex items-center gap-2 text-xs text-[#64748B]">
+                    <span>Portal: <strong className="text-[#0F172A] font-semibold">{app.portalName}</strong></span>
                     <span>·</span>
                     <span>Submitted: {app.submittedDate}</span>
                     <span>·</span>
@@ -195,10 +195,10 @@ function ApplicationsContent() {
                   <span
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
                       app.status === "APPROVED"
-                        ? "bg-emerald-950/50 text-emerald-400 border-emerald-800/40"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                         : app.status === "DOCUMENTS_REQUESTED"
-                        ? "bg-rose-950/50 text-rose-400 border-rose-800/40"
-                        : "bg-amber-950/50 text-amber-400 border-amber-800/40"
+                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                        : "bg-amber-50 text-amber-800 border-amber-200"
                     }`}
                   >
                     {app.status.replace(/_/g, " ")}
@@ -207,22 +207,22 @@ function ApplicationsContent() {
               </div>
 
               {/* Officer Remark & Pre-validation strip */}
-              <div className="bg-[#121317] rounded-lg border border-[#1c1d22] p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="bg-[#F8FAFC] rounded-lg border border-[#E2E8F0] p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-[#777a88] block">
+                  <span className="text-[10px] uppercase font-bold text-[#64748B] block">
                     Official Scrutiny Note
                   </span>
-                  <p className="text-[#e2e3e9] mt-0.5">{app.officerRemark}</p>
+                  <p className="text-[#1E293B] mt-0.5 leading-relaxed">{app.officerRemark}</p>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-[11px] text-[#777a88]">
+                  <span className="text-[11px] text-[#64748B]">
                     Pre-validation:{" "}
                     <strong
                       className={
                         app.prevalidationStatus === "PASS"
-                          ? "text-emerald-400"
-                          : "text-amber-400"
+                          ? "text-emerald-700 font-semibold"
+                          : "text-amber-700 font-semibold"
                       }
                     >
                       {app.prevalidationStatus}
@@ -232,7 +232,7 @@ function ApplicationsContent() {
                     href={app.portalUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-medium text-[#cc9166] hover:underline"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 hover:underline"
                   >
                     <span>Open Govt Portal</span>
                     <ExternalLink className="h-3 w-3" />
@@ -249,7 +249,7 @@ function ApplicationsContent() {
 
 export default function ApplicationsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#08080a]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#F8FAFC]" />}>
       <ApplicationsContent />
     </Suspense>
   );

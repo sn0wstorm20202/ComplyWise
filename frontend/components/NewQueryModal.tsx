@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, ShieldCheck, CheckCircle2, AlertTriangle, ArrowRight, CornerDownLeft, Sparkles, Layers } from "lucide-react";
+import { X, CheckCircle2 } from "lucide-react";
 
 interface NewQueryModalProps {
   isOpen: boolean;
@@ -71,35 +71,30 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
     }, 400);
   }
 
-  function handleReset() {
-    setResult(null);
-    setProductText("");
-  }
-
   return (
-    <div className="fixed inset-0 z-50 bg-[#08080a]/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
       <div
-        className="w-full max-w-xl bg-[#121317] rounded-[10px] shadow-2xl border border-[#1c1d22] overflow-hidden animate-in zoom-in-95 duration-150 text-xs text-[#e2e3e9]"
+        className="w-full max-w-xl bg-white rounded-[16px] shadow-2xl border border-[#E2E8F0] overflow-hidden animate-in zoom-in-95 duration-150 text-xs text-[#0F172A]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1c1d22]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-[#ffffff] text-sm">
+              <span className="font-bold text-[#0F172A] text-sm">
                 New BIS Compliance Query
               </span>
-              <span className="bg-[#1c1d22] text-[#cc9166] font-semibold px-2 py-0.5 rounded-full text-[10px] border border-[#cc9166]/30">
+              <span className="bg-[#F1F5F9] text-[#0F172A] font-semibold px-2 py-0.5 rounded-full text-[10px] border border-[#E2E8F0]">
                 Deterministic Evaluator
               </span>
             </div>
-            <p className="text-[#9194a1] text-[11px] mt-0.5">
+            <p className="text-[#64748B] text-[11px] mt-0.5">
               Evaluate product specifications or components against published Quality Control Orders.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-[#777a88] hover:text-[#ffffff] rounded-[4px] transition-colors cursor-pointer"
+            className="p-1 text-[#64748B] hover:text-[#0F172A] rounded-[6px] transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -110,7 +105,7 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
           {!result ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="font-medium text-[#e2e3e9] text-xs">
+                <label className="font-medium text-[#0F172A] text-xs">
                   Product Description or Component Name
                 </label>
                 <input
@@ -118,49 +113,49 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
                   value={productText}
                   onChange={(e) => setProductText(e.target.value)}
                   placeholder="e.g., 16A 3-Pin Molded Plug with Earth Pin, or AC/DC LED Driver"
-                  className="w-full rounded-[10px] border border-[#1c1d22] bg-[#040406] px-3.5 py-2.5 text-xs text-[#ffffff] placeholder:text-[#5e616e] focus:border-[#cc9166] focus:outline-none"
+                  className="w-full rounded-[10px] border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-xs text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#0F172A] focus:outline-hidden"
                   autoFocus
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="font-medium text-[#e2e3e9] text-xs">
+                  <label className="font-medium text-[#0F172A] text-xs">
                     Regulatory Category
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full rounded-[10px] border border-[#1c1d22] bg-[#040406] px-3 py-2 text-xs text-[#ffffff] focus:border-[#cc9166] focus:outline-none cursor-pointer"
+                    className="w-full rounded-[10px] border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs text-[#0F172A] focus:border-[#0F172A] focus:outline-hidden cursor-pointer"
                   >
-                    <option className="bg-[#121317]">Electrical Accessories</option>
-                    <option className="bg-[#121317]">Household Appliances</option>
-                    <option className="bg-[#121317]">IT & Electronics (CRS)</option>
-                    <option className="bg-[#121317]">Industrial Equipment</option>
+                    <option>Electrical Accessories</option>
+                    <option>Household Appliances</option>
+                    <option>IT & Electronics (CRS)</option>
+                    <option>Industrial Equipment</option>
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-medium text-[#e2e3e9] text-xs">
+                  <label className="font-medium text-[#0F172A] text-xs">
                     Manufacturing Origin
                   </label>
-                  <select className="w-full rounded-[10px] border border-[#1c1d22] bg-[#040406] px-3 py-2 text-xs text-[#ffffff] focus:border-[#cc9166] focus:outline-none cursor-pointer">
-                    <option className="bg-[#121317]">Domestic Production (India)</option>
-                    <option className="bg-[#121317]">Imported Finished Product</option>
-                    <option className="bg-[#121317]">Component for Assembly</option>
+                  <select className="w-full rounded-[10px] border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs text-[#0F172A] focus:border-[#0F172A] focus:outline-hidden cursor-pointer">
+                    <option>Domestic Production (India)</option>
+                    <option>Imported Finished Product</option>
+                    <option>Component for Assembly</option>
                   </select>
                 </div>
               </div>
 
-              <div className="p-3 rounded-[10px] bg-[#040406] border border-[#1c1d22] text-[11px] text-[#9194a1] space-y-1.5">
-                <div className="font-semibold text-[#e2e3e9]">Quick Test Suggestions:</div>
+              <div className="p-3 rounded-[10px] bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] text-[#64748B] space-y-1.5">
+                <div className="font-semibold text-[#0F172A]">Quick Test Suggestions:</div>
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {["16A Re-wireable Plug", "LED Controlgear 45W", "Electric Immersion Heater"].map((s) => (
                     <button
                       key={s}
                       type="button"
                       onClick={() => setProductText(s)}
-                      className="bg-[#121317] hover:bg-[#1c1d22] border border-[#2e3038] px-2.5 py-1 rounded-full text-[11px] text-[#e2e3e9] transition-colors cursor-pointer"
+                      className="bg-white hover:bg-[#F1F5F9] border border-[#E2E8F0] px-2.5 py-1 rounded-full text-[11px] text-[#0F172A] transition-colors cursor-pointer"
                     >
                       {s}
                     </button>
@@ -168,18 +163,18 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1c1d22]">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E2E8F0]">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 rounded-full border border-[#2e3038] text-[#9194a1] hover:text-[#ffffff] hover:bg-white/[0.03] font-medium cursor-pointer transition-colors"
+                  className="px-4 py-2 rounded-full border border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] font-medium cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isEvaluating || !productText.trim()}
-                  className="px-5 py-2 rounded-full bg-[#ffffff] hover:bg-white/90 text-[#000000] font-medium disabled:opacity-40 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white font-medium disabled:opacity-40 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   {isEvaluating ? "Evaluating Mandates..." : "Run Compliance Check"}
                 </button>
@@ -187,58 +182,58 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
             </form>
           ) : (
             <div className="space-y-4 animate-in fade-in">
-              <div className="p-4 rounded-[10px] border border-[#1c1d22] bg-[#040406] space-y-2">
+              <div className="p-4 rounded-[10px] border border-[#E2E8F0] bg-[#F8FAFC] space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-[#75d69c]" />
-                    <span className="font-bold text-[#ffffff] text-xs">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <span className="font-bold text-[#0F172A] text-xs">
                       Evaluation Result: Mandatory Compliance Identified
                     </span>
                   </div>
-                  <span className="font-mono text-[10px] bg-[#75d69c]/10 text-[#75d69c] border border-[#75d69c]/20 font-bold px-2 py-0.5 rounded-full">
+                  <span className="font-mono text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2 py-0.5 rounded-full">
                     MATCH CONFIRMED
                   </span>
                 </div>
 
                 <div className="pt-1">
-                  <div className="font-mono text-sm font-bold text-[#cc9166]">
+                  <div className="font-mono text-sm font-bold text-[#0F172A]">
                     {result.standardCode}
                   </div>
-                  <div className="text-[#ffffff] text-xs font-medium mt-0.5">
+                  <div className="text-[#0F172A] text-xs font-medium mt-0.5">
                     {result.standardTitle}
                   </div>
                 </div>
 
-                <div className="text-[11px] text-[#9194a1] leading-relaxed pt-1">
+                <div className="text-[11px] text-[#475569] leading-relaxed pt-1">
                   {result.reason}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-[11px]">
-                <div className="p-3 rounded-[10px] bg-[#040406] border border-[#1c1d22]">
-                  <div className="text-[#777a88] font-semibold uppercase text-[10px]">
+                <div className="p-3 rounded-[10px] bg-[#F8FAFC] border border-[#E2E8F0]">
+                  <div className="text-[#64748B] font-semibold uppercase text-[10px]">
                     Enforcing QCO Order
                   </div>
-                  <div className="font-medium text-[#e2e3e9] mt-0.5">
+                  <div className="font-medium text-[#0F172A] mt-0.5">
                     {result.qcoNotice}
                   </div>
                 </div>
 
-                <div className="p-3 rounded-[10px] bg-[#040406] border border-[#1c1d22]">
-                  <div className="text-[#777a88] font-semibold uppercase text-[10px]">
+                <div className="p-3 rounded-[10px] bg-[#F8FAFC] border border-[#E2E8F0]">
+                  <div className="text-[#64748B] font-semibold uppercase text-[10px]">
                     Applicable Scope
                   </div>
-                  <div className="font-medium text-[#e2e3e9] mt-0.5">
+                  <div className="font-medium text-[#0F172A] mt-0.5">
                     {result.applicableClauses} Mandatory Testing Clauses
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-[#1c1d22]">
+              <div className="flex items-center justify-between pt-2 border-t border-[#E2E8F0]">
                 <button
                   type="button"
                   onClick={() => setResult(null)}
-                  className="text-[#9194a1] hover:text-[#ffffff] font-medium cursor-pointer transition-colors"
+                  className="text-[#64748B] hover:text-[#0F172A] font-medium cursor-pointer transition-colors"
                 >
                   ← Test Another Product
                 </button>
@@ -247,7 +242,7 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-4 py-2 rounded-full border border-[#2e3038] text-[#9194a1] hover:text-[#ffffff] hover:bg-white/[0.03] font-medium cursor-pointer transition-colors"
+                    className="px-4 py-2 rounded-full border border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] font-medium cursor-pointer transition-colors"
                   >
                     Done
                   </button>
@@ -258,7 +253,7 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
                         onClose();
                         onViewStandard(result.standardCode);
                       }}
-                      className="px-5 py-2 rounded-full bg-[#ffffff] hover:bg-white/90 text-[#000000] font-medium transition-colors cursor-pointer"
+                      className="px-5 py-2 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white font-medium transition-colors cursor-pointer"
                     >
                       Inspect Standard Details
                     </button>

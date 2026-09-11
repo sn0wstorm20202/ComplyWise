@@ -43,7 +43,7 @@ export default function BISLogo({
     <div className="flex items-center gap-1.5 select-none">
       <BISLogoMark className={className} />
       {showText && (
-        <span className="font-bold text-lg tracking-tight text-[#F2F2F0] leading-none">
+        <span className="font-bold text-lg tracking-tight text-[#0F172A] leading-none">
           BIS
         </span>
       )}

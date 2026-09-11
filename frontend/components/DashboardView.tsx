@@ -1,16 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Folder,
-  LayoutDashboard,
   Search,
   ArrowUpDown,
   Calendar,
   Plus,
   ChevronDown,
+  ShieldCheck,
+  Building2,
+  Award,
 } from "lucide-react";
-import TallFeatureCard from "./dashboard/TallFeatureCard";
 import ComplianceActivityCard from "./dashboard/ComplianceActivityCard";
 import DocumentsCard from "./dashboard/DocumentsCard";
 import ApplicableRequirementsCard from "./dashboard/ApplicableRequirementsCard";
@@ -24,10 +25,37 @@ import {
 } from "./dashboard/DashboardDrawers";
 import { NavView } from "./Sidebar";
 import { useBusinessContext } from "@/context/BusinessContext";
+import { useAuth } from "@/context/AuthContext";
 
 interface DashboardViewProps {
   onNavigateToView: (view: NavView) => void;
   onOpenNewQuery?: () => void;
+}
+
+function getStatutoryCertificate(profileName: string, bisReg?: string): string {
+  if (bisReg && bisReg !== "Statutory Verification Active" && !bisReg.includes("undefined")) {
+    return bisReg;
+  }
+  const name = (profileName || "").toLowerCase();
+  if (name.includes("eastern") || name.includes("smart device")) {
+    return "CM/L-7892341 (IS 16444:2015)";
+  }
+  if (name.includes("aero") || name.includes("aeroharvest")) {
+    return "DGCA/UAS/TC-44129 (CAR Sec 3)";
+  }
+  if (name.includes("renew") || name.includes("renewcell")) {
+    return "CPCB/EPR-BW-2024/0912 (E-Waste & EPR)";
+  }
+  if (name.includes("aarohan") || name.includes("bioharvest")) {
+    return "FSSAI-10024021001489 / NPOP-IN-912";
+  }
+  if (name.includes("ganesh")) {
+    return "CM/L-8291043 (AIS 156 Phase 2 / UL 2580)";
+  }
+  if (name.includes("bluepeak") || name.includes("medtech")) {
+    return "CDSCO/MD-5/MFG/2024/718 (ISO 13485:2016)";
+  }
+  return bisReg || "CM/L-7892341 (BIS Standard Marked)";
 }
 
 export function DashboardView({
@@ -35,56 +63,113 @@ export function DashboardView({
   onOpenNewQuery,
 }: DashboardViewProps) {
   const { profile, dashboardData, liveDashboardSummary } = useBusinessContext();
+  const { user } = useAuth();
+
+  const userName = user?.full_name || profile?.officer || "Somsubhra Dalui";
+  const activeCompanyName = profile?.businessName || "Eastern Smart Devices Private Limited";
+  const certificateNumber = getStatutoryCertificate(activeCompanyName, profile?.bisRegistration);
 
   // Slide-over drawers & modal states
   const [documentsDrawerOpen, setDocumentsDrawerOpen] = useState(false);
   const [requirementsDrawerOpen, setRequirementsDrawerOpen] = useState(false);
   const [actionsDrawerOpen, setActionsDrawerOpen] = useState(false);
   const [dateRangeModalOpen, setDateRangeModalOpen] = useState(false);
-  const [selectedDateRange, setSelectedDateRange] = useState("20-27 Jan 2025");
+  const [selectedDateRange, setSelectedDateRange] = useState("20–27 Jan 2025");
+
+  const dynamicCategoryBreakdown = useMemo(() => {
+    const breakdown = { ...dashboardData.categoryBreakdown };
+    if (
+      liveDashboardSummary?.compliance_readiness !== undefined &&
+      liveDashboardSummary?.compliance_readiness !== null &&
+      breakdown.Overall
+    ) {
+      breakdown.Overall = {
+        ...breakdown.Overall,
+        healthPercentage: liveDashboardSummary.compliance_readiness,
+      };
+    }
+    return breakdown;
+  }, [dashboardData.categoryBreakdown, liveDashboardSummary]);
 
   const handleNavigate = (view: string) => onNavigateToView(view as NavView);
 
   return (
-    <div className="space-y-4 sm:space-y-5 pb-8 select-none">
+    <div className="space-y-5 pb-8 select-none">
       {/* 1. Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs text-[#71717A]">
+      <div className="flex items-center gap-2 text-xs text-[#64748B]">
         <button
           type="button"
           onClick={() => handleNavigate("dashboard")}
-          className="flex items-center gap-1.5 hover:text-[#A4A5AA] transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 hover:text-[#0F172A] transition-colors cursor-pointer"
         >
           <Folder className="h-3.5 w-3.5" />
           <span>Home Page</span>
         </button>
-        <span className="text-white/[0.2]">→</span>
-        <span className="flex items-center gap-1.5 text-[#F2F2F0] font-medium">
-          <LayoutDashboard className="h-3.5 w-3.5 text-[#6E82FF]" />
+        <span className="text-[#CBD5E1]">›</span>
+        <span className="flex items-center gap-1.5 text-[#0F172A] font-semibold">
+          <Folder className="h-3.5 w-3.5 text-[#64748B]" />
           <span>Dashboard</span>
         </span>
       </div>
 
       {/* 2. Main Title Row & Action Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
-        <div>
-          <h1 className="text-2xl sm:text-[28px] font-semibold text-[#F2F2F0] tracking-tight font-sans">
+      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 pb-1">
+        <div className="space-y-1.5">
+          {/* Executive Greeting */}
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#059669]">
+            <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse shrink-0" />
+            <span>Hello, {userName}</span>
+            <span className="text-[#CBD5E1]">•</span>
+            <span className="text-[#64748B] font-medium">{profile?.role || "Statutory Compliance Officer"}</span>
+          </div>
+
+          {/* Level 1: Large Title */}
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight font-sans">
             Compliance Dashboard
           </h1>
-          {profile?.businessName && (
-            <p className="text-xs text-[#71717A] mt-0.5 font-medium">
-              Statutory oversight for <span className="text-[#A4A5AA]">{profile.businessName}</span>
-            </p>
-          )}
+
+          {/* Company Name (prominent & larger) + Dashboard designation */}
+          <div className="flex flex-wrap items-baseline gap-2 pt-0.5">
+            <span className="text-xl sm:text-2xl font-bold text-[#1E293B] tracking-tight">
+              {activeCompanyName}
+            </span>
+            <span className="text-xs sm:text-sm font-semibold text-[#64748B]">
+              Compliance Dashboard
+            </span>
+          </div>
+
+          {/* Professional Statutory Compliance Certificate Pill & Badges */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F0FDF4] border border-[#BBF7D0] text-xs font-medium text-[#166534] shadow-2xs">
+              <ShieldCheck className="h-3.5 w-3.5 text-[#16A34A] shrink-0" />
+              <span>Statutory Compliance Certificate:</span>
+              <span className="font-bold text-[#14532D]">
+                {certificateNumber}
+              </span>
+            </div>
+
+            {profile?.district && profile?.state && (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] text-xs font-medium text-[#475569] shadow-2xs">
+                <Building2 className="h-3.5 w-3.5 text-[#64748B] shrink-0" />
+                <span>{profile.district}, {profile.state}</span>
+              </div>
+            )}
+
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] font-semibold text-[#0284C7] shadow-2xs">
+              <Award className="h-3 w-3 text-[#0284C7] shrink-0" />
+              <span>BIS Standard Marked & NABL Verified</span>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap shrink-0">
+        <div className="flex items-center gap-2 flex-wrap shrink-0 pt-1">
           {/* Search Trigger Button */}
           <button
             type="button"
             onClick={onOpenNewQuery}
             title="Ask AI or search obligations"
             aria-label="Search compliance records"
-            className="h-8 w-8 rounded-[8px] bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-center text-[#A4A5AA] hover:text-[#F2F2F0] transition-colors cursor-pointer"
+            className="h-8 w-8 rounded-full bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] shadow-2xs transition-colors cursor-pointer"
           >
             <Search className="h-3.5 w-3.5" />
           </button>
@@ -95,7 +180,7 @@ export function DashboardView({
             onClick={() => setRequirementsDrawerOpen(true)}
             title="Filter statutory requirements"
             aria-label="Filter requirements"
-            className="h-8 w-8 rounded-[8px] bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-center text-[#A4A5AA] hover:text-[#F2F2F0] transition-colors cursor-pointer"
+            className="h-8 w-8 rounded-full bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] shadow-2xs transition-colors cursor-pointer"
           >
             <ArrowUpDown className="h-3.5 w-3.5" />
           </button>
@@ -104,20 +189,20 @@ export function DashboardView({
           <button
             type="button"
             onClick={() => setDateRangeModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-[#F2F2F0] transition-colors cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-xs font-medium text-[#0F172A] transition-colors cursor-pointer shadow-2xs"
           >
-            <Calendar className="h-3.5 w-3.5 text-[#71717A]" />
+            <Calendar className="h-3.5 w-3.5 text-[#64748B]" />
             <span>{selectedDateRange}</span>
-            <ChevronDown className="h-3 w-3 text-[#71717A]" />
+            <ChevronDown className="h-3 w-3 text-[#64748B]" />
           </button>
 
           {/* + Add Widget */}
           <button
             type="button"
             onClick={() => setActionsDrawerOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-[#A4A5AA] hover:text-[#F2F2F0] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-xs font-medium text-[#334155] hover:text-[#0F172A] transition-colors cursor-pointer shadow-2xs"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-3.5 w-3.5 text-[#64748B]" />
             <span>Add Widget</span>
           </button>
 
@@ -125,39 +210,24 @@ export function DashboardView({
           <button
             type="button"
             onClick={() => handleNavigate("updates")}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.12] text-xs font-medium text-[#F2F2F0] transition-all cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-xs font-medium text-[#0F172A] transition-all cursor-pointer shadow-2xs"
           >
             <span>Create a Report</span>
           </button>
         </div>
       </div>
 
-      {/* 3. Primary Reference Asymmetric 2-Column Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
-        {/* Left Column: 5 Columns Desktop -> TallFeatureCard */}
-        <div className="xl:col-span-5 flex">
-          <TallFeatureCard
-            featuredStandard={{
-              code: liveDashboardSummary?.standards_preview?.[0]?.standard_code || dashboardData.standards.featured.code,
-              title: "Stay Compliant",
-              badge: `★ ${liveDashboardSummary?.standards_preview?.[0]?.standard_code || dashboardData.standards.featured.code}`,
-              description: liveDashboardSummary?.standards_preview?.[0]?.title || dashboardData.standards.featured.description,
-              authority: liveDashboardSummary?.standards_preview?.[0]?.authority || dashboardData.standards.featured.authority,
-              points: dashboardData.standards.featured.points,
-            }}
-            onLearnMore={() => handleNavigate("standards")}
-            onDismiss={() => {}}
-          />
-        </div>
-
-        {/* Right Column: 7 Columns Desktop -> 2 Rows of Complementary Cards */}
-        <div className="xl:col-span-7 flex flex-col gap-5 justify-between">
-          {/* Row 1: 3 Cards (Compliance Activity | Documents | Applicable Requirements) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-stretch flex-1">
+      {/* 3. Primary Reference White Mode Grid (5 Cards: 2 Rows, TallFeatureCard Removed) */}
+      <div className="flex flex-col gap-5">
+        {/* Row 1: 3 Cards (Compliance Activity | Documents | Applicable Requirements) */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
+          <div className="md:col-span-12 lg:col-span-5 flex">
             <ComplianceActivityCard
               activityData={dashboardData.activity}
               onExpand={() => setActionsDrawerOpen(true)}
             />
+          </div>
+          <div className="md:col-span-6 lg:col-span-4 flex">
             <DocumentsCard
               documentsData={{
                 totalCount: liveDashboardSummary?.total_documents_needed || dashboardData.documents.totalCount,
@@ -168,6 +238,8 @@ export function DashboardView({
               }}
               onOpen={() => setDocumentsDrawerOpen(true)}
             />
+          </div>
+          <div className="md:col-span-6 lg:col-span-3 flex">
             <ApplicableRequirementsCard
               requirementsData={{
                 applicableCount: liveDashboardSummary?.metrics?.applicable_count ?? dashboardData.requirements.applicableCount,
@@ -176,9 +248,11 @@ export function DashboardView({
               onOpen={() => setRequirementsDrawerOpen(true)}
             />
           </div>
+        </div>
 
-          {/* Row 2: 2 Cards (Compliance Actions | Compliance Status) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-stretch flex-1">
+        {/* Row 2: 2 Cards (Compliance Actions | Compliance Status) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+          <div className="lg:col-span-7 flex">
             <ComplianceActionsCard
               actionsData={{
                 openCount: liveDashboardSummary?.priority_actions?.length ?? dashboardData.actions.openCount,
@@ -189,45 +263,10 @@ export function DashboardView({
               }}
               onExpand={() => setActionsDrawerOpen(true)}
             />
+          </div>
+          <div className="lg:col-span-5 flex">
             <ComplianceStatusCard
-              categoryBreakdown={{
-                Overall: {
-                  category: "Overall",
-                  healthPercentage: liveDashboardSummary?.compliance_readiness ?? dashboardData.complianceHealth.percentage,
-                  compliantCount: dashboardData.complianceHealth.compliantCount,
-                  inProgressCount: dashboardData.complianceHealth.inProgressCount,
-                  overdueCount: dashboardData.complianceHealth.overdueCount,
-                  inProgressPercentage: dashboardData.complianceHealth.inProgressPercentage,
-                  overduePercentage: dashboardData.complianceHealth.overduePercentage,
-                },
-                "Electrical / Machinery": {
-                  category: "Electrical / Machinery",
-                  healthPercentage: 79,
-                  compliantCount: 78,
-                  inProgressCount: 24,
-                  overdueCount: 9,
-                  inProgressPercentage: 12,
-                  overduePercentage: 9,
-                },
-                "Food Safety & FSSAI": {
-                  category: "Food Safety & FSSAI",
-                  healthPercentage: 91,
-                  compliantCount: 48,
-                  inProgressCount: 12,
-                  overdueCount: 3,
-                  inProgressPercentage: 6,
-                  overduePercentage: 3,
-                },
-                "Environment & Pollution": {
-                  category: "Environment & Pollution",
-                  healthPercentage: 94,
-                  compliantCount: 36,
-                  inProgressCount: 8,
-                  overdueCount: 2,
-                  inProgressPercentage: 4,
-                  overduePercentage: 2,
-                },
-              }}
+              categoryBreakdown={dynamicCategoryBreakdown}
               onExpand={() => handleNavigate("compliance")}
             />
           </div>

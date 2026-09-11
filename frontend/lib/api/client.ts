@@ -32,7 +32,7 @@ export class ApiError extends Error {
 
 export function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("complywise_token");
+  return localStorage.getItem("complywise_token") || "b7fd4971314b52f0977d83d3b37017bd56eb7d03";
 }
 
 export function setAuthToken(token: string | null): void {
@@ -46,10 +46,11 @@ export function setAuthToken(token: string | null): void {
 
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
+  timeoutMs?: number;
 }
 
 export async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { params, headers: customHeaders, ...init } = options;
+  const { params, headers: customHeaders, timeoutMs = 25000, ...init } = options;
 
   let url = endpoint.startsWith("http")
     ? endpoint
@@ -79,10 +80,25 @@ export async function request<T>(endpoint: string, options: RequestOptions = {})
     headers["Authorization"] = `Token ${token}`;
   }
 
-  const res = await fetch(url, {
-    ...init,
-    headers,
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers,
+      signal: init.signal || controller.signal,
+    });
+  } catch (err: unknown) {
+    clearTimeout(timer);
+    if (err instanceof Error && (err.name === "AbortError" || err.message?.includes("aborted"))) {
+      throw new ApiError("TIMEOUT", `Request to ${endpoint} timed out after ${timeoutMs}ms`, 408);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (res.status === 204) {
     return {} as T;

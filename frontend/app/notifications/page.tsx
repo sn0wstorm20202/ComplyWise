@@ -119,20 +119,20 @@ function NotificationsContent() {
     <AppShell activeView="updates">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-white rounded-[10px] border border-[#E2E8F0] p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#cc9166] tracking-wide uppercase">
+              <span className="text-xs font-semibold text-amber-800 tracking-wide uppercase">
                 Activity Center · {profile.businessName}
               </span>
-              <span className="inline-flex items-center rounded-full bg-[#121317] px-2.5 py-0.5 text-xs text-[#9194a1] border border-[#2e3038]">
+              <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700 border border-slate-200 font-medium">
                 {notifications.filter((n) => !n.isRead).length} Unread Alerts
               </span>
             </div>
-            <h1 className="text-2xl font-serif font-medium tracking-tight text-[#ffffff] mt-1">
+            <h1 className="text-2xl font-sans font-bold tracking-tight text-[#0F172A] mt-1">
               Compliance Notifications &amp; Alerts
             </h1>
-            <p className="text-xs text-[#777a88] mt-0.5">
+            <p className="text-xs text-[#64748B] mt-0.5">
               Statutory renewal reminders, document expiry notices, and regulatory updates.
             </p>
           </div>
@@ -141,7 +141,7 @@ function NotificationsContent() {
             <button
               type="button"
               onClick={markAllRead}
-              className="px-3.5 py-1.5 rounded-full bg-[#121317] border border-[#2e3038] hover:border-[#cc9166] text-xs font-medium text-[#e2e3e9] hover:text-[#ffffff] transition-colors cursor-pointer"
+              className="px-4 py-1.5 rounded-full bg-white border border-[#E2E8F0] hover:bg-slate-50 text-xs font-semibold text-[#0F172A] transition-colors cursor-pointer shadow-2xs"
             >
               Mark All as Read
             </button>
@@ -161,10 +161,10 @@ function NotificationsContent() {
             <button
               key={item.key}
               onClick={() => setFilter(item.key)}
-              className={`px-3 py-1.5 rounded-full font-medium transition-colors shrink-0 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-full font-semibold transition-colors shrink-0 cursor-pointer ${
                 filter === item.key
-                  ? "bg-[#ffffff] text-[#08080a] shadow-xs"
-                  : "bg-[#121317] text-[#9194a1] border border-[#1c1d22] hover:border-[#2e3038] hover:text-[#ffffff]"
+                  ? "bg-[#0F172A] text-white shadow-2xs"
+                  : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-slate-300 hover:text-[#0F172A]"
               }`}
             >
               {item.label}
@@ -177,37 +177,37 @@ function NotificationsContent() {
           {filtered.map((item) => (
             <div
               key={item.id}
-              className={`bg-[#040406] rounded-[10px] border p-4.5 shadow-2xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+              className={`rounded-[10px] border p-4.5 shadow-2xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                 !item.isRead
-                  ? "border-[#cc9166]/40 bg-gradient-to-r from-[#1c140d]/30 to-[#040406]"
-                  : "border-[#1c1d22] hover:border-[#2e3038]"
+                  ? "border-amber-300 bg-amber-50/30"
+                  : "border-[#E2E8F0] bg-white hover:border-slate-300"
               }`}
             >
               <div className="flex items-start gap-3.5">
-                <div className="p-2 rounded-lg bg-[#121317] border border-[#1c1d22] shrink-0 mt-0.5">
+                <div className="p-2 rounded-lg bg-slate-100 border border-slate-200 shrink-0 mt-0.5">
                   {getIcon(item.type)}
                 </div>
 
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[#ffffff]">{item.title}</h3>
+                    <h3 className="text-sm font-sans font-bold text-[#0F172A]">{item.title}</h3>
                     {!item.isRead && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#cc9166]" />
+                      <span className="h-2 w-2 rounded-full bg-amber-600" />
                     )}
                   </div>
-                  <p className="text-xs text-[#9194a1] leading-relaxed max-w-2xl">
+                  <p className="text-xs text-[#64748B] leading-relaxed max-w-2xl">
                     {item.message}
                   </p>
-                  <span className="text-[11px] text-[#5e616e] block">{item.timestamp}</span>
+                  <span className="text-[11px] text-[#94A3B8] block">{item.timestamp}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
                 <Link
                   href={item.actionUrl}
-                  className="px-4 py-1.5 rounded-full bg-[#121317] hover:bg-[#1c1d22] border border-[#2e3038] text-xs font-semibold text-[#cc9166] hover:text-[#ffffff] transition-colors"
+                  className="px-4 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-[#E2E8F0] text-xs font-semibold text-amber-800 hover:text-amber-900 transition-colors shadow-2xs"
                 >
-                  {item.actionLabel} ?
+                  {item.actionLabel} →
                 </Link>
               </div>
             </div>
@@ -220,7 +220,7 @@ function NotificationsContent() {
 
 export default function NotificationsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#08080a]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#F8FAFC]" />}>
       <NotificationsContent />
     </Suspense>
   );

@@ -73,10 +73,10 @@ export function AppShell({
 
   if (requireAuth && loading) {
     return (
-      <div className="min-h-screen bg-[#08080a] flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-[#EDEFF2] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 rounded-full border-2 border-[#cc9166] border-t-transparent animate-spin" />
-          <p className="text-xs font-medium text-[#777a88] tracking-wide">
+          <div className="h-8 w-8 rounded-full border-2 border-[#18181B] border-t-transparent animate-spin" />
+          <p className="text-xs font-medium text-[#64748B] tracking-wide">
             Verifying statutory security credentials...
           </p>
         </div>
@@ -86,19 +86,19 @@ export function AppShell({
 
   if (requireAuth && !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#08080a] flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-[#EDEFF2] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center gap-2">
-          <div className="h-6 w-6 rounded-full border-2 border-[#cc9166] border-t-transparent animate-spin" />
-          <p className="text-xs text-[#777a88]">Redirecting to authentication portal...</p>
+          <div className="h-6 w-6 rounded-full border-2 border-[#18181B] border-t-transparent animate-spin" />
+          <p className="text-xs text-[#64748B]">Redirecting to authentication portal...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#08080a] p-2 sm:p-4 lg:p-6 flex flex-col justify-center relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#EDEFF2] p-2 sm:p-4 lg:p-6 flex flex-col justify-center relative overflow-x-hidden">
       {/* Floating Application Window Container */}
-      <div className="w-full max-w-[1440px] mx-auto bg-[#070709] rounded-[14px] border border-white/[0.08] overflow-hidden flex flex-col min-h-[900px] shadow-2xl relative z-10">
+      <div className="w-full max-w-[1440px] mx-auto bg-white rounded-[24px] border border-[#E2E8F0] overflow-hidden flex flex-col min-h-[900px] shadow-xl relative z-10">
         {/* Top Header Navigation */}
         <TopBar
           activePill={activePill}
@@ -121,7 +121,7 @@ export function AppShell({
           />
 
           {/* Right Scrollable Content Canvas */}
-          <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 overflow-y-auto min-w-0 bg-[#08080A]">
+          <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 overflow-y-auto min-w-0 bg-[#F4F6F8]">
             {renderViewContent ? renderViewContent(activeView) : children}
           </main>
         </div>
@@ -132,18 +132,18 @@ export function AppShell({
         <div className="fixed inset-0 z-50 lg:hidden">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* Drawer panel */}
-          <div className="fixed inset-y-0 left-0 max-w-[280px] w-full bg-[#070709] border-r border-white/[0.08] p-4 flex flex-col justify-between shadow-2xl z-10 animate-in slide-in-from-left duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-              <div className="text-sm font-semibold text-[#F2F2F0]">Navigation</div>
+          <div className="fixed inset-y-0 left-0 max-w-[280px] w-full bg-white border-r border-[#E2E8F0] p-4 flex flex-col justify-between shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-[#F1F5F9]">
+              <div className="text-sm font-semibold text-[#111827]">Navigation</div>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="Close navigation"
-                className="h-7 w-7 rounded-[8px] bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] flex items-center justify-center text-[#A4A5AA] hover:text-[#F2F2F0] transition-colors cursor-pointer"
+                className="h-7 w-7 rounded-[8px] bg-[#F1F5F9] hover:bg-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#111827] transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>

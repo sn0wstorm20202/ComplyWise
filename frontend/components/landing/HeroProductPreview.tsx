@@ -17,9 +17,9 @@ import {
 
 export function HeroProductPreview() {
   return (
-    <div className="relative mx-auto max-w-5xl rounded-2xl border border-slate-200/90 bg-white shadow-xl overflow-hidden transition-all group">
+    <div className="relative mx-auto max-w-5xl rounded-2xl border border-[#E2E8F0] bg-white shadow-xl overflow-hidden transition-all group">
       {/* Browser Window Chrome */}
-      <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50/90 px-4 py-2.5">
+      <div className="flex items-center justify-between border-b border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2.5">
         <div className="flex items-center gap-2">
           <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
           <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
@@ -27,20 +27,20 @@ export function HeroProductPreview() {
         </div>
 
         {/* Browser URL Bar */}
-        <div className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1 text-[11px] font-mono text-slate-500 max-w-md w-full mx-4 shadow-2xs">
-          <Lock className="h-3 w-3 text-slate-400 shrink-0" />
-          <span className="text-slate-400">https://</span>
-          <span className="text-slate-900 font-medium">app.complywise.in</span>
-          <span className="text-slate-400">/dashboard</span>
+        <div className="flex items-center gap-1.5 rounded-md border border-[#E2E8F0] bg-white px-3 py-1 text-[11px] font-mono text-[#64748B] max-w-md w-full mx-4 shadow-2xs">
+          <Lock className="h-3 w-3 text-[#94A3B8] shrink-0" />
+          <span className="text-[#94A3B8]">https://</span>
+          <span className="text-[#0F172A] font-medium">app.complywise.in</span>
+          <span className="text-[#94A3B8]">/dashboard</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="hidden sm:inline-flex items-center gap-1 rounded bg-stone-100 px-2 py-0.5 text-[10px] font-medium text-stone-600 border border-stone-200">
+          <span className="hidden sm:inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-[#64748B] border border-[#E2E8F0]">
             Platform Artifact · Active Build
           </span>
           <Link
             href="/dashboard"
-            className="text-[11px] font-semibold text-blue-900 hover:text-blue-950 inline-flex items-center gap-1"
+            className="text-[11px] font-semibold text-[#0F172A] hover:underline inline-flex items-center gap-1"
           >
             <span>Open Workspace</span>
             <ExternalLink className="h-3 w-3" />
@@ -49,11 +49,11 @@ export function HeroProductPreview() {
       </div>
 
       {/* Simulated Application Surface */}
-      <div className="p-4 sm:p-6 bg-slate-50/50 space-y-4 text-xs select-none">
+      <div className="p-4 sm:p-6 bg-[#F8FAFC]/70 space-y-4 text-xs select-none">
         {/* Workspace Mini-Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-[#E2E8F0] shadow-2xs">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center">
+            <div className="h-8 w-8 rounded-lg bg-[#0F172A] text-white font-bold text-xs flex items-center justify-center">
               CW
             </div>
             <div>
@@ -166,7 +166,7 @@ export function HeroProductPreview() {
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/80 to-transparent py-4 text-center pointer-events-none">
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 text-white px-4 py-1.5 text-xs font-semibold shadow-md pointer-events-auto hover:bg-blue-900 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-full bg-[#0F172A] text-white px-4 py-1.5 text-xs font-semibold shadow-md pointer-events-auto hover:bg-slate-800 transition-colors"
         >
           <span>Launch Interactive Platform Demo</span>
           <ChevronRight className="h-3.5 w-3.5" />

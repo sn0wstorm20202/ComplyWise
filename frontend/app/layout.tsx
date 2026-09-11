@@ -31,8 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} h-full antialiased dark`}>
-      <body className="min-h-full flex flex-col font-sans bg-[#08080a] text-[#e2e3e9] selection:bg-white/15 selection:text-[#ffffff]">
+    <html lang="en" className={`${inter.variable} ${playfair.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col font-sans bg-[#EDEFF2] text-[#111827] selection:bg-black/10 selection:text-[#111827]">
         <AuthProvider>
           <BusinessProvider>{children}</BusinessProvider>
         </AuthProvider>

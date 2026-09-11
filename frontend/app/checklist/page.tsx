@@ -7,5 +7,5 @@ export default function ChecklistPage() {
   useEffect(() => {
     router.replace("/documents");
   }, [router]);
-  return <div className="min-h-screen bg-[#08080a]" />;
+  return <div className="min-h-screen bg-[#F8FAFC]" />;
 }

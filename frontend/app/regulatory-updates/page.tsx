@@ -3,18 +3,11 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
-import { DEMO_REGULATORY_UPDATES, RegulatoryUpdate } from "@/data/demo/regulatory-updates";
+import { DEMO_REGULATORY_UPDATES } from "@/data/demo/regulatory-updates";
 import {
-  Folder,
-  ChevronRight,
   Search,
   ExternalLink,
-  ShieldAlert,
-  Calendar,
-  Building2,
-  FileCheck,
   ArrowRight,
-  Filter,
 } from "lucide-react";
 
 export default function RegulatoryUpdatesPage() {
@@ -35,35 +28,33 @@ export default function RegulatoryUpdatesPage() {
     <AppShell activeView="updates">
       <div className="space-y-6 pb-6 select-none max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-32 bg-radial from-[#cc9166]/10 to-transparent blur-2xl pointer-events-none" />
-          
-          <div className="relative z-10 space-y-1">
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#cc9166]/30 bg-[#cc9166]/10 text-[#cc9166] text-[11px] font-semibold tracking-wider uppercase mb-1">
+        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#E2E8F0] bg-[#F1F5F9] text-[#0F172A] text-[11px] font-semibold tracking-wider uppercase mb-1">
               Gazette Monitor · Regulatory Intelligence
             </div>
-            <h1 className="font-serif text-2xl sm:text-3xl text-[#ffffff] tracking-tight">
+            <h1 className="font-sans text-2xl sm:text-3xl text-[#0F172A] font-bold tracking-tight">
               Official Gazette & QCO Intelligence
             </h1>
-            <p className="text-xs text-[#9194a1] max-w-2xl leading-relaxed">
+            <p className="text-xs text-[#64748B] max-w-2xl leading-relaxed">
               Continuous tracking of DPIIT Quality Control Orders, BIS Technical Circulars, and CPCB mandates.
             </p>
           </div>
 
           {/* Search & Filter */}
-          <div className="flex flex-wrap items-center gap-3 relative z-10 shrink-0">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             <div className="relative w-56">
-              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#5e616e]" />
+              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#64748B]" />
               <input
                 type="text"
                 placeholder="Search gazette or standard..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 rounded-full border border-[#1c1d22] bg-[#121317] text-xs text-[#ffffff] placeholder-[#5e616e] focus:border-[#cc9166] focus:outline-none"
+                className="w-full pl-9 pr-3 py-1.5 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] text-xs text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F172A] focus:outline-hidden"
               />
             </div>
 
-            <div className="flex items-center p-1 rounded-full bg-[#121317] border border-[#1c1d22] text-xs">
+            <div className="flex items-center p-1 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] text-xs">
               {["ALL", "HIGH", "MEDIUM"].map((lvl) => (
                 <button
                   key={lvl}
@@ -71,8 +62,8 @@ export default function RegulatoryUpdatesPage() {
                   onClick={() => setFilterLevel(lvl)}
                   className={`px-3 py-1 rounded-full transition-all cursor-pointer text-xs ${
                     filterLevel === lvl
-                      ? "bg-[#cc9166] text-black font-semibold shadow-xs"
-                      : "text-[#9194a1] hover:text-[#ffffff]"
+                      ? "bg-[#18181B] text-white font-semibold shadow-2xs"
+                      : "text-[#64748B] hover:text-[#0F172A]"
                   }`}
                 >
                   {lvl}
@@ -87,51 +78,51 @@ export default function RegulatoryUpdatesPage() {
           {filteredUpdates.map((item) => (
             <div
               key={item.id}
-              className="bg-[#040406] rounded-[10px] border border-[#1c1d22] p-6 shadow-2xl hover:border-[#2e3038] hover:shadow-[0_4px_24px_rgba(0,0,0,0.5)] transition-all space-y-4"
+              className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 shadow-2xs hover:border-[#CBD5E1] transition-all space-y-4"
             >
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                 <div className="space-y-1.5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs font-semibold text-[#e2e3e9] bg-[#121317] border border-[#2e3038] px-2.5 py-0.5 rounded-full">
+                    <span className="font-mono text-xs font-semibold text-[#0F172A] bg-[#F1F5F9] border border-[#E2E8F0] px-2.5 py-0.5 rounded-full">
                       {item.gazetteNo}
                     </span>
                     <span
                       className={`px-2.5 py-0.5 rounded-full font-semibold text-[10px] uppercase font-mono tracking-wider border ${
                         item.impactLevel === "HIGH"
-                          ? "bg-rose-950/40 text-rose-300 border-rose-800/60"
+                          ? "bg-rose-50 text-rose-700 border-rose-200"
                           : item.impactLevel === "MEDIUM"
-                          ? "bg-amber-950/40 text-amber-300 border-amber-800/60"
-                          : "bg-[#121317] text-[#9194a1] border-[#1c1d22]"
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : "bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0]"
                       }`}
                     >
                       {item.impactLevel} IMPACT
                     </span>
-                    <span className="text-xs text-[#cc9166] font-medium">
+                    <span className="text-xs text-blue-700 font-semibold">
                       {item.category}
                     </span>
                   </div>
 
-                  <h2 className="font-serif text-lg text-[#ffffff] font-normal leading-snug mt-1">
+                  <h2 className="font-sans text-lg text-[#0F172A] font-bold leading-snug mt-1">
                     {item.title}
                   </h2>
                 </div>
 
-                <div className="text-right shrink-0 text-xs text-[#9194a1] space-y-0.5">
-                  <div>Published: <strong className="text-[#ffffff] font-medium">{item.publishDate}</strong></div>
-                  <div>Effective: <strong className="text-emerald-400 font-medium">{item.effectiveDate}</strong></div>
+                <div className="text-right shrink-0 text-xs text-[#64748B] space-y-0.5">
+                  <div>Published: <strong className="text-[#0F172A] font-semibold">{item.publishDate}</strong></div>
+                  <div>Effective: <strong className="text-emerald-700 font-semibold">{item.effectiveDate}</strong></div>
                 </div>
               </div>
 
-              <p className="text-xs text-[#9194a1] leading-relaxed">
+              <p className="text-xs text-[#475569] leading-relaxed">
                 {item.summary}
               </p>
 
               {/* Key Requirements Bulletins */}
-              <div className="p-4 rounded-[10px] bg-[#121317] border border-[#1c1d22] space-y-2">
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-[#777a88]">
+              <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2">
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
                   Enforcement Highlights & Obligations
                 </div>
-                <ul className="list-disc pl-4 text-xs text-[#e2e3e9] space-y-1.5 leading-relaxed">
+                <ul className="list-disc pl-4 text-xs text-[#334155] space-y-1.5 leading-relaxed">
                   {item.keyRequirements.map((req, idx) => (
                     <li key={idx}>{req}</li>
                   ))}
@@ -139,13 +130,13 @@ export default function RegulatoryUpdatesPage() {
               </div>
 
               {/* Footer */}
-              <div className="pt-3 border-t border-[#1c1d22] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="pt-3 border-t border-[#E2E8F0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[#777a88]">Affected Standards:</span>
+                  <span className="text-[#64748B]">Affected Standards:</span>
                   {item.affectedStandards.map((std, idx) => (
                     <span
                       key={idx}
-                      className="font-mono text-[11px] font-semibold text-[#cc9166] bg-[#cc9166]/10 border border-[#cc9166]/30 px-2.5 py-0.5 rounded-full"
+                      className="font-mono text-[11px] font-semibold text-[#0F172A] bg-[#F1F5F9] border border-[#E2E8F0] px-2.5 py-0.5 rounded-full"
                     >
                       {std}
                     </span>
@@ -157,7 +148,7 @@ export default function RegulatoryUpdatesPage() {
                     href={item.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs text-[#9194a1] hover:text-[#ffffff] transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs text-[#64748B] hover:text-[#0F172A] transition-colors font-medium"
                   >
                     <span>View Gazette PDF</span>
                     <ExternalLink className="h-3.5 w-3.5" />
@@ -165,7 +156,7 @@ export default function RegulatoryUpdatesPage() {
 
                   <Link
                     href={`/regulatory-updates/${item.id}`}
-                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#ffffff] text-[#08080a] font-semibold text-xs hover:bg-[#e2e3e9] transition-all shadow-md"
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#18181B] text-white font-semibold text-xs hover:bg-[#27272A] transition-all shadow-2xs"
                   >
                     <span>Analyze Impact</span>
                     <ArrowRight className="h-3 w-3" />

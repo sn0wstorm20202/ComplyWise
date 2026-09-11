@@ -28,6 +28,8 @@ export interface BusinessProfile {
   plantInvestmentLakhs: number;
   industrialZoneStatus: string;
   lifecycleStage: string;
+  connectedPowerLoad?: string;
+  productDescription?: string;
 }
 
 export const DEMO_PROFILES: BusinessProfile[] = [

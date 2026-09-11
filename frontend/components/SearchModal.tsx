@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Search, X, BookOpen, FileText, Scale, ArrowRight, ShieldCheck } from "lucide-react";
+import { Search, X, BookOpen, FileText, Scale, ArrowRight } from "lucide-react";
 import { standards, documents, regulatoryChanges } from "@/lib/mockData";
 
 interface SearchModalProps {
@@ -54,33 +54,33 @@ export function SearchModal({ isOpen, onClose, onNavigateTo }: SearchModalProps)
     filteredStandards.length > 0 || filteredDocs.length > 0 || filteredRegs.length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#08080a]/80 backdrop-blur-sm flex items-start justify-center pt-20 px-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-start justify-center pt-20 px-4 animate-in fade-in duration-150">
       <div
-        className="w-full max-w-2xl bg-[#121317] rounded-[10px] shadow-2xl border border-[#1c1d22] overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-150"
+        className="w-full max-w-2xl bg-white rounded-[16px] shadow-2xl border border-[#E2E8F0] overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Header Bar */}
-        <div className="flex items-center px-4 py-3 border-b border-[#1c1d22] gap-3">
-          <Search className="h-4 w-4 text-[#777a88] shrink-0" />
+        <div className="flex items-center px-4 py-3.5 border-b border-[#E2E8F0] gap-3">
+          <Search className="h-4 w-4 text-[#64748B] shrink-0" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search standards, clauses, documents..."
             autoFocus
-            className="w-full text-xs text-[#ffffff] placeholder:text-[#5e616e] focus:outline-none bg-transparent"
+            className="w-full text-xs text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-hidden bg-transparent"
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm("")}
-              className="text-[#777a88] hover:text-[#ffffff] p-1 cursor-pointer"
+              className="text-[#64748B] hover:text-[#0F172A] p-1 cursor-pointer"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           )}
           <button
             onClick={onClose}
-            className="text-[11px] font-mono text-[#777a88] hover:text-[#ffffff] bg-[#1c1d22] border border-[#2e3038] px-2 py-0.5 rounded-[4px] cursor-pointer"
+            className="text-[11px] font-mono text-[#64748B] hover:text-[#0F172A] bg-[#F1F5F9] border border-[#E2E8F0] px-2 py-0.5 rounded-[6px] cursor-pointer"
           >
             ESC
           </button>
@@ -89,7 +89,7 @@ export function SearchModal({ isOpen, onClose, onNavigateTo }: SearchModalProps)
         {/* Results List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
           {!hasResults ? (
-            <div className="py-12 text-center text-[#777a88]">
+            <div className="py-12 text-center text-[#64748B]">
               No matching standards, clauses, or documents found for &quot;{searchTerm}&quot;.
             </div>
           ) : (
@@ -97,8 +97,8 @@ export function SearchModal({ isOpen, onClose, onNavigateTo }: SearchModalProps)
               {/* Standards Category */}
               {filteredStandards.length > 0 && (
                 <div className="space-y-1.5">
-                  <div className="text-[10px] font-semibold text-[#cc9166] uppercase tracking-wider flex items-center gap-1.5">
-                    <BookOpen className="h-3 w-3 text-[#cc9166]" />
+                  <div className="text-[10px] font-semibold text-[#64748B] uppercase tracking-wider flex items-center gap-1.5">
+                    <BookOpen className="h-3 w-3 text-[#0F172A]" />
                     <span>Standards & Quality Control Orders</span>
                   </div>
                   <div className="space-y-1">
@@ -109,22 +109,22 @@ export function SearchModal({ isOpen, onClose, onNavigateTo }: SearchModalProps)
                           onClose();
                           if (onNavigateTo) onNavigateTo("standards");
                         }}
-                        className="flex items-center justify-between p-2.5 rounded-[8px] hover:bg-[#1c1d22] cursor-pointer border border-transparent hover:border-[#2e3038] transition-colors"
+                        className="flex items-center justify-between p-2.5 rounded-[10px] hover:bg-[#F8FAFC] cursor-pointer border border-transparent hover:border-[#E2E8F0] transition-colors"
                       >
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-[#cc9166]">
+                            <span className="font-mono font-bold text-[#0F172A] bg-[#F1F5F9] px-1.5 py-0.5 rounded-[6px] border border-[#E2E8F0]">
                               {std.code}
                             </span>
-                            <span className="text-[#ffffff] font-medium truncate">
+                            <span className="text-[#0F172A] font-medium truncate">
                               {std.title}
                             </span>
                           </div>
-                          <div className="text-[10px] text-[#9194a1]">
+                          <div className="text-[10px] text-[#64748B] mt-1">
                             {std.authority} · {std.scheme}
                           </div>
                         </div>
-                        <ArrowRight className="h-3.5 w-3.5 text-[#777a88] shrink-0 ml-2" />
+                        <ArrowRight className="h-3.5 w-3.5 text-[#64748B] shrink-0 ml-2" />
                       </div>
                     ))}
                   </div>
@@ -134,8 +134,8 @@ export function SearchModal({ isOpen, onClose, onNavigateTo }: SearchModalProps)
               {/* Documents Category */}
               {filteredDocs.length > 0 && (
                 <div className="space-y-1.5">
-                  <div className="text-[10px] font-semibold text-[#cc9166] uppercase tracking-wider flex items-center gap-1.5">
-                    <FileText className="h-3 w-3 text-[#cc9166]" />
+                  <div className="text-[10px] font-semibold text-[#64748B] uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="h-3 w-3 text-[#0F172A]" />
                     <span>Statutory Documents</span>
                   </div>
                   <div className="space-y-1">
@@ -146,17 +146,17 @@ export function SearchModal({ isOpen, onClose, onNavigateTo }: SearchModalProps)
                           onClose();
                           if (onNavigateTo) onNavigateTo("documents");
                         }}
-                        className="flex items-center justify-between p-2.5 rounded-[8px] hover:bg-[#1c1d22] cursor-pointer border border-transparent hover:border-[#2e3038] transition-colors"
+                        className="flex items-center justify-between p-2.5 rounded-[10px] hover:bg-[#F8FAFC] cursor-pointer border border-transparent hover:border-[#E2E8F0] transition-colors"
                       >
                         <div className="min-w-0">
-                          <div className="font-medium text-[#ffffff] truncate">
+                          <div className="font-medium text-[#0F172A] truncate">
                             {doc.name}
                           </div>
-                          <div className="text-[10px] text-[#9194a1]">
+                          <div className="text-[10px] text-[#64748B]">
                             {doc.code} · {doc.authority} · {doc.status}
                           </div>
                         </div>
-                        <ArrowRight className="h-3.5 w-3.5 text-[#777a88] shrink-0 ml-2" />
+                        <ArrowRight className="h-3.5 w-3.5 text-[#64748B] shrink-0 ml-2" />
                       </div>
                     ))}
                   </div>
@@ -166,8 +166,8 @@ export function SearchModal({ isOpen, onClose, onNavigateTo }: SearchModalProps)
               {/* Regulatory Updates Category */}
               {filteredRegs.length > 0 && (
                 <div className="space-y-1.5">
-                  <div className="text-[10px] font-semibold text-[#cc9166] uppercase tracking-wider flex items-center gap-1.5">
-                    <Scale className="h-3 w-3 text-[#cc9166]" />
+                  <div className="text-[10px] font-semibold text-[#64748B] uppercase tracking-wider flex items-center gap-1.5">
+                    <Scale className="h-3 w-3 text-[#0F172A]" />
                     <span>Gazette Orders & Circulars</span>
                   </div>
                   <div className="space-y-1">
@@ -178,22 +178,22 @@ export function SearchModal({ isOpen, onClose, onNavigateTo }: SearchModalProps)
                           onClose();
                           if (onNavigateTo) onNavigateTo("updates");
                         }}
-                        className="flex items-center justify-between p-2.5 rounded-[8px] hover:bg-[#1c1d22] cursor-pointer border border-transparent hover:border-[#2e3038] transition-colors"
+                        className="flex items-center justify-between p-2.5 rounded-[10px] hover:bg-[#F8FAFC] cursor-pointer border border-transparent hover:border-[#E2E8F0] transition-colors"
                       >
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-[10px] font-bold text-[#cc9166] bg-[#1c1d22] px-1.5 py-0.5 rounded">
+                            <span className="font-mono text-[10px] font-bold text-[#0F172A] bg-[#F1F5F9] px-1.5 py-0.5 rounded-[6px] border border-[#E2E8F0]">
                               {reg.gazette_no}
                             </span>
-                            <span className="font-medium text-[#ffffff] truncate">
+                            <span className="font-medium text-[#0F172A] truncate">
                               {reg.title}
                             </span>
                           </div>
-                          <div className="text-[10px] text-[#9194a1]">
+                          <div className="text-[10px] text-[#64748B] mt-1">
                             {reg.authority} · Effective: {reg.effective_date}
                           </div>
                         </div>
-                        <ArrowRight className="h-3.5 w-3.5 text-[#777a88] shrink-0 ml-2" />
+                        <ArrowRight className="h-3.5 w-3.5 text-[#64748B] shrink-0 ml-2" />
                       </div>
                     ))}
                   </div>
@@ -204,7 +204,7 @@ export function SearchModal({ isOpen, onClose, onNavigateTo }: SearchModalProps)
         </div>
 
         {/* Footer info */}
-        <div className="px-4 py-2 bg-[#040406] border-t border-[#1c1d22] flex items-center justify-between text-[11px] text-[#777a88]">
+        <div className="px-4 py-2.5 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-between text-[11px] text-[#64748B]">
           <span>Search spans 18 standards, 11 documents & 3 gazette orders</span>
           <span>Press ESC to exit</span>
         </div>

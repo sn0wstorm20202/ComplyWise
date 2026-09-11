@@ -60,7 +60,7 @@ export function Sidebar({ activeView, onSelectView, isMobile = false }: SidebarP
   ];
 
   return (
-    <aside className={`w-[240px] shrink-0 px-3.5 py-4 flex flex-col justify-between select-none bg-[#070709] ${isMobile ? "flex w-full" : "hidden lg:flex border-r border-white/[0.06]"}`}>
+    <aside className={`w-[240px] shrink-0 px-3.5 py-4 flex flex-col justify-between select-none bg-white ${isMobile ? "flex w-full" : "hidden lg:flex border-r border-[#F0F2F5]"}`}>
       {/* Primary Navigation List */}
       <nav aria-label="Main Navigation" className="space-y-1">
         {primaryItems.map((item) => {
@@ -72,13 +72,17 @@ export function Sidebar({ activeView, onSelectView, isMobile = false }: SidebarP
               key={item.id}
               onClick={() => onSelectView(item.id)}
               type="button"
-              className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[8px] text-[13px] font-medium transition-all text-left cursor-pointer ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-[13px] font-medium transition-all text-left cursor-pointer ${
                 isActive
-                  ? "bg-white/[0.055] border border-white/[0.06] text-[#ECECE9]"
-                  : "text-[#777982] hover:text-[#ECECE9] hover:bg-white/[0.025] border border-transparent"
+                  ? "bg-[#EAECEF] text-[#0F172A] font-semibold shadow-2xs"
+                  : "text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC]"
               }`}
             >
-              <Icon className={`h-4 w-4 shrink-0 transition-colors ${isActive ? "text-[#ECECE9]" : "text-[#777982]"}`} />
+              <div className={`h-6 w-6 rounded-[6px] flex items-center justify-center shrink-0 transition-colors ${
+                isActive ? "bg-[#18181B] text-white" : "text-[#64748B]"
+              }`}>
+                <Icon className="h-3.5 w-3.5" />
+              </div>
               <span className="truncate">{item.label}</span>
             </button>
           );
@@ -86,7 +90,7 @@ export function Sidebar({ activeView, onSelectView, isMobile = false }: SidebarP
       </nav>
 
       {/* Secondary & Support Section */}
-      <div className="pt-4 border-t border-white/[0.06] space-y-1">
+      <div className="pt-4 border-t border-[#F0F2F5] space-y-1">
         {secondaryItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeView === item.id;
@@ -96,13 +100,17 @@ export function Sidebar({ activeView, onSelectView, isMobile = false }: SidebarP
               key={item.id}
               onClick={() => onSelectView(item.id)}
               type="button"
-              className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-[8px] text-[13px] font-medium transition-all text-left cursor-pointer ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-[13px] font-medium transition-all text-left cursor-pointer ${
                 isActive
-                  ? "bg-white/[0.055] border border-white/[0.06] text-[#ECECE9]"
-                  : "text-[#777982] hover:text-[#ECECE9] hover:bg-white/[0.025] border border-transparent"
+                  ? "bg-[#EAECEF] text-[#0F172A] font-semibold shadow-2xs"
+                  : "text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC]"
               }`}
             >
-              <Icon className={`h-4 w-4 shrink-0 transition-colors ${isActive ? "text-[#ECECE9]" : "text-[#777982]"}`} />
+              <div className={`h-6 w-6 rounded-[6px] flex items-center justify-center shrink-0 transition-colors ${
+                isActive ? "bg-[#18181B] text-white" : "text-[#64748B]"
+              }`}>
+                <Icon className="h-3.5 w-3.5" />
+              </div>
               <span className="truncate">{item.label}</span>
             </button>
           );
@@ -113,9 +121,9 @@ export function Sidebar({ activeView, onSelectView, isMobile = false }: SidebarP
           <button
             type="button"
             aria-label="Help & Support"
-            className="h-7 w-7 rounded-[8px] bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] flex items-center justify-center text-[#777982] hover:text-[#ECECE9] transition-colors cursor-pointer"
+            className="h-8 w-8 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] hover:bg-[#F1F5F9] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] shadow-2xs transition-colors cursor-pointer"
           >
-            <Headphones className="h-3.5 w-3.5" />
+            <Headphones className="h-4 w-4" />
           </button>
         </div>
       </div>

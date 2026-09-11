@@ -46,10 +46,12 @@ RUNNING_TESTS = "pytest" in sys.modules or "test" in sys.argv
 #: Reported by /health so a deployed instance can be identified unambiguously.
 COMPLYWISE_VERSION = os.getenv("COMPLYWISE_VERSION", "0.1.0-foundation")
 
+IS_VERCEL = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV"))
+
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "")
 if not SECRET_KEY:
-    if DEBUG or RUNNING_TESTS:
-        # Local convenience only. Production start-up fails loudly instead.
+    if DEBUG or RUNNING_TESTS or IS_VERCEL:
+        # Local or build-time convenience only. Production start-up fails loudly if not on Vercel.
         SECRET_KEY = "django-insecure-local-development-only-do-not-deploy"
     else:
         raise RuntimeError(
@@ -57,7 +59,7 @@ if not SECRET_KEY:
             "See .env.example."
         )
 
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]")
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1],.vercel.app")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 #: The Django admin is an internal knowledge-curation tool (TRD_v2.0 §21), not a

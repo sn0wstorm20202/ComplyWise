@@ -14,7 +14,6 @@ import {
   User,
   Settings,
   Building2,
-  LogOut,
   Sparkles,
 } from "lucide-react";
 import ComplyWiseLogo from "./icons/ComplyWiseLogo";
@@ -42,7 +41,7 @@ export function TopBar({
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   return (
-    <header className="h-16 px-6 lg:px-8 border-b border-black/[0.04] flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-30 select-none">
+    <header className="h-16 px-6 lg:px-8 border-b border-white/[0.07] flex items-center justify-between bg-[#09090B]/80 backdrop-blur-md sticky top-0 z-30 select-none">
       {/* Left: Brand Identity + Primary Nav Pills */}
       <div className="flex items-center gap-6 lg:gap-8">
         {/* Brand Logo & Name */}
@@ -50,81 +49,81 @@ export function TopBar({
           href="/dashboard"
           className="flex items-center group cursor-pointer"
         >
-          <ComplyWiseLogo className="h-7 w-7 text-slate-900 transition-transform group-hover:scale-105" showSubtitle={true} />
+          <ComplyWiseLogo className="h-7 w-7 text-[#F5F5F3] transition-transform group-hover:scale-105" showSubtitle={true} />
         </Link>
 
         {/* Primary Segmented Navigation Pills */}
         <nav
           aria-label="Primary Navigation"
-          className="hidden md:flex items-center p-1 rounded-full bg-[#edf0f5]/80 text-xs font-semibold"
+          className="hidden md:flex items-center p-1 rounded-full bg-white/[0.04] border border-white/[0.07] text-xs font-medium"
         >
           <button
             type="button"
             onClick={() => onSelectPill("dashboard")}
-            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
               activePill === "dashboard"
-                ? "bg-[#0f172a] text-white shadow-xs font-bold"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                ? "bg-white/[0.10] border border-white/[0.08] text-[#F5F5F3] font-medium shadow-xs"
+                : "text-[#71717A] hover:text-[#A1A1AA] hover:bg-white/[0.03]"
             }`}
           >
-            <LayoutDashboard className={`h-3.5 w-3.5 ${activePill === "dashboard" ? "text-white" : "text-slate-500"}`} />
+            <LayoutDashboard className={`h-3.5 w-3.5 ${activePill === "dashboard" ? "text-[#F5F5F3]" : "text-[#71717A]"}`} />
             <span>Dashboard</span>
           </button>
 
           <button
             type="button"
             onClick={() => onSelectPill("compliance")}
-            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
               activePill === "compliance"
-                ? "bg-[#0f172a] text-white shadow-xs font-bold"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                ? "bg-white/[0.10] border border-white/[0.08] text-[#F5F5F3] font-medium shadow-xs"
+                : "text-[#71717A] hover:text-[#A1A1AA] hover:bg-white/[0.03]"
             }`}
           >
-            <ShieldCheck className={`h-3.5 w-3.5 ${activePill === "compliance" ? "text-white" : "text-slate-500"}`} />
+            <ShieldCheck className={`h-3.5 w-3.5 ${activePill === "compliance" ? "text-[#F5F5F3]" : "text-[#71717A]"}`} />
             <span>Compliance</span>
           </button>
 
           <button
             type="button"
             onClick={() => onSelectPill("reports")}
-            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
               activePill === "reports"
-                ? "bg-[#0f172a] text-white shadow-xs font-bold"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                ? "bg-white/[0.10] border border-white/[0.08] text-[#F5F5F3] font-medium shadow-xs"
+                : "text-[#71717A] hover:text-[#A1A1AA] hover:bg-white/[0.03]"
             }`}
           >
-            <Flag className={`h-3.5 w-3.5 ${activePill === "reports" ? "text-white" : "text-slate-500"}`} />
+            <Flag className={`h-3.5 w-3.5 ${activePill === "reports" ? "text-[#F5F5F3]" : "text-[#71717A]"}`} />
             <span>Reports</span>
           </button>
         </nav>
       </div>
 
       {/* Right: Team Stack + Utility Actions + Profile */}
-      <div className="flex items-center gap-3 lg:gap-5">
+      <div className="flex items-center gap-3 lg:gap-4">
         {/* Team Members Avatar Stack */}
         <div className="hidden sm:flex items-center gap-2.5">
           <div className="flex items-center -space-x-2 overflow-hidden">
             <div
               title="Dr. Vikramaditya Sharma (Head of QA)"
-              className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-slate-900 text-white text-[11px] font-bold flex items-center justify-center cursor-pointer shadow-2xs"
+              className="inline-block h-7 w-7 rounded-full ring-1 ring-[#09090B] bg-[#17191C] border border-white/[0.12] text-[#F5F5F3] text-[10px] font-medium flex items-center justify-center cursor-pointer"
             >
               VS
             </div>
             <div
               title="Priya Sundaram (Lab Test Engineer)"
-              className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-indigo-600 text-white text-[11px] font-bold flex items-center justify-center cursor-pointer shadow-2xs"
+              className="inline-block h-7 w-7 rounded-full ring-1 ring-[#09090B] bg-[#1E2230] border border-accent/30 text-accent text-[10px] font-medium flex items-center justify-center cursor-pointer"
             >
               PS
             </div>
             <div
               title="Arun Mehra (Safety Officer)"
-              className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-emerald-600 text-white text-[11px] font-bold flex items-center justify-center cursor-pointer shadow-2xs"
+              className="inline-block h-7 w-7 rounded-full ring-1 ring-[#09090B] bg-[#18261F] border border-emerald-500/30 text-emerald-400 text-[10px] font-medium flex items-center justify-center cursor-pointer"
             >
               AM
             </div>
             <div
               title="3 more members"
-              className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-[#0f172a] text-white text-[10px] font-bold flex items-center justify-center cursor-pointer shadow-2xs"
+              className="inline-block h-7 w-7 rounded-full ring-1 ring-[#09090B] bg-[#17191C] border border-white/[0.10] text-[#71717A] text-[9px] font-medium flex items-center justify-center cursor-pointer"
             >
               +3
             </div>
@@ -134,9 +133,9 @@ export function TopBar({
           <button
             type="button"
             onClick={() => setInviteModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200/80 border border-slate-200/70 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#17191C] hover:bg-white/[0.06] border border-white/[0.08] text-[#A1A1AA] hover:text-[#F5F5F3] text-xs font-medium transition-colors cursor-pointer"
           >
-            <Plus className="h-3.5 w-3.5 text-slate-500" />
+            <Plus className="h-3.5 w-3.5 text-[#71717A]" />
             <span>Add Member</span>
           </button>
         </div>
@@ -151,11 +150,11 @@ export function TopBar({
               setNotificationsOpen((prev) => !prev);
               setUnreadNotifications(false);
             }}
-            className="relative h-9 w-9 rounded-full bg-white border border-slate-200/70 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors shadow-2xs cursor-pointer"
+            className="relative h-8 w-8 rounded-[8px] bg-[#17191C] border border-white/[0.08] hover:bg-white/[0.06] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors cursor-pointer"
           >
             <Bell className="h-4 w-4" />
             {unreadNotifications && (
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white animate-pulse" />
+              <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-rose-500 ring-1 ring-[#09090B]" />
             )}
           </button>
 
@@ -165,7 +164,7 @@ export function TopBar({
             aria-label="Messages"
             onClick={() => onNavigateToView("assistant")}
             title="BIS Copilot Assistant Messages"
-            className="h-9 w-9 rounded-full bg-white border border-slate-200/70 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors shadow-2xs cursor-pointer"
+            className="h-8 w-8 rounded-[8px] bg-[#17191C] border border-white/[0.08] hover:bg-white/[0.06] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors cursor-pointer"
           >
             <Mail className="h-4 w-4" />
           </button>
@@ -182,9 +181,9 @@ export function TopBar({
               type="button"
               onClick={() => setProfileDropdownOpen((prev) => !prev)}
               aria-label="User profile menu"
-              className="flex items-center gap-1.5 p-0.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer focus:outline-hidden"
+              className="flex items-center gap-1.5 p-0.5 rounded-full hover:bg-white/[0.06] transition-colors cursor-pointer focus:outline-hidden"
             >
-              <div className="relative h-8 w-8 rounded-full ring-2 ring-slate-200 overflow-hidden shadow-xs shrink-0">
+              <div className="relative h-7 w-7 rounded-full ring-1 ring-white/[0.12] overflow-hidden shrink-0">
                 <Image
                   src="/assets/avatars/user.png"
                   alt={profile.officer || "User"}
@@ -193,20 +192,20 @@ export function TopBar({
                   unoptimized
                 />
               </div>
-              <ChevronDown className="h-3 w-3 text-slate-400 hidden sm:block" />
+              <ChevronDown className="h-3 w-3 text-[#71717A] hidden sm:block" />
             </button>
 
             {/* Profile Dropdown Menu */}
             {profileDropdownOpen && (
-              <div className="absolute right-0 top-11 z-40 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 space-y-1 text-xs animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="px-3 py-2 border-b border-slate-100">
-                  <div className="font-bold text-slate-900 truncate">{profile.businessName}</div>
-                  <div className="text-[11px] text-slate-400 truncate">{profile.officer}</div>
-                  <div className="mt-1 font-mono text-[10px] text-indigo-600 font-semibold">{profile.bisRegistration}</div>
+              <div className="absolute right-0 top-10 z-40 w-64 bg-[#17191C] rounded-[12px] shadow-2xl border border-white/[0.10] p-2 space-y-1 text-xs animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="px-3 py-2 border-b border-white/[0.07]">
+                  <div className="font-semibold text-[#F5F5F3] truncate">{profile.businessName}</div>
+                  <div className="text-[11px] text-[#71717A] truncate">{profile.officer}</div>
+                  <div className="mt-1 font-mono text-[10px] text-accent font-medium">{profile.bisRegistration}</div>
                 </div>
 
                 <div className="py-1">
-                  <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#71717A]">
                     Switch Demo Profile
                   </div>
                   {availableProfiles.map((p) => (
@@ -216,27 +215,27 @@ export function TopBar({
                         switchProfile(p.id);
                         setProfileDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 transition-colors ${
+                      className={`w-full text-left px-3 py-1.5 rounded-[8px] text-xs flex items-center gap-2 transition-colors ${
                         profile.id === p.id
-                          ? "bg-indigo-50 text-indigo-700 font-bold"
-                          : "hover:bg-slate-50 text-slate-700"
+                          ? "bg-white/[0.08] text-[#F5F5F3] font-medium"
+                          : "hover:bg-white/[0.04] text-[#A1A1AA] hover:text-[#F5F5F3]"
                       }`}
                     >
-                      <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <Building2 className="h-3.5 w-3.5 text-[#71717A] shrink-0" />
                       <span className="truncate">{p.businessName}</span>
                     </button>
                   ))}
                 </div>
 
-                <div className="pt-1 border-t border-slate-100 space-y-0.5">
+                <div className="pt-1 border-t border-white/[0.07] space-y-0.5">
                   <button
                     onClick={() => {
                       onNavigateToView("profile");
                       setProfileDropdownOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 rounded-[8px] text-[#A1A1AA] hover:text-[#F5F5F3] hover:bg-white/[0.04] flex items-center gap-2"
                   >
-                    <User className="h-3.5 w-3.5 text-slate-400" />
+                    <User className="h-3.5 w-3.5 text-[#71717A]" />
                     <span>Business Profile</span>
                   </button>
 
@@ -245,18 +244,18 @@ export function TopBar({
                       onNavigateToView("settings");
                       setProfileDropdownOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 rounded-[8px] text-[#A1A1AA] hover:text-[#F5F5F3] hover:bg-white/[0.04] flex items-center gap-2"
                   >
-                    <Settings className="h-3.5 w-3.5 text-slate-400" />
+                    <Settings className="h-3.5 w-3.5 text-[#71717A]" />
                     <span>Settings</span>
                   </button>
 
                   <Link
                     href="/onboarding?new=true"
                     onClick={() => setProfileDropdownOpen(false)}
-                    className="w-full text-left px-3 py-2 rounded-xl text-indigo-600 hover:bg-indigo-50 flex items-center gap-2 font-semibold"
+                    className="w-full text-left px-3 py-2 rounded-[8px] text-accent hover:bg-accent/10 flex items-center gap-2 font-medium"
                   >
-                    <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                    <Sparkles className="h-3.5 w-3.5 text-accent" />
                     <span>Run New Onboarding</span>
                   </Link>
                 </div>

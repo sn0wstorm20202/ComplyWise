@@ -57,9 +57,9 @@ export function DashboardView({
       />
 
       {/* Main 3-Column Card Layout Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-        {/* Column 1: Tall Feature Card (approx 28% width) */}
-        <div className="lg:col-span-3 xl:col-span-3">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
+        {/* Column 1: Feature Card (4 cols, approx 33% width for generous breathing room) */}
+        <div className="lg:col-span-4">
           <TallFeatureCard
             featuredStandard={dashboardData.standards.featured}
             onLearnMore={() => onNavigateToView("standards")}
@@ -67,8 +67,8 @@ export function DashboardView({
           />
         </div>
 
-        {/* Column 2: Center Column (approx 42% width) */}
-        <div className="lg:col-span-5 xl:col-span-5 space-y-5 flex flex-col justify-between">
+        {/* Column 2: Center Column (4 cols) */}
+        <div className="lg:col-span-4 space-y-4 sm:space-y-5 flex flex-col justify-between">
           <ComplianceActivityCard
             activityData={dashboardData.activity}
             onExpand={() => setActivityDrawerOpen(true)}
@@ -79,10 +79,10 @@ export function DashboardView({
           />
         </div>
 
-        {/* Column 3: Right Column (approx 30% width) */}
-        <div className="lg:col-span-4 xl:col-span-4 space-y-5 flex flex-col justify-between">
+        {/* Column 3: Right Column (4 cols) */}
+        <div className="lg:col-span-4 space-y-4 sm:space-y-5 flex flex-col justify-between">
           {/* Top Split Row: Documents (Left) and Applicable Requirements (Right) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <DocumentsCard
               documentsData={dashboardData.documents}
               onOpen={() => setDocumentsDrawerOpen(true)}

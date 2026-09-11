@@ -27,12 +27,12 @@ export function DocumentsCard({
   return (
     <div
       onClick={onOpen}
-      className="bg-white rounded-[28px] p-6 border border-slate-200/60 shadow-xs flex flex-col justify-between h-[280px] cursor-pointer group hover:border-slate-300 transition-colors"
+      className="bg-[#111214] rounded-[12px] p-5 border border-white/[0.08] shadow-sm flex flex-col justify-between h-[280px] cursor-pointer group hover:border-white/[0.14] transition-colors select-none"
     >
       {/* Header */}
       <div>
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+          <h3 className="text-[15px] font-semibold text-[#F5F5F3] group-hover:text-accent transition-colors">
             Documents
           </h3>
           <button
@@ -42,7 +42,7 @@ export function DocumentsCard({
               if (onOpen) onOpen();
             }}
             aria-label="View documents"
-            className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200/70 flex items-center justify-center text-slate-600 transition-colors group-hover:bg-indigo-50 group-hover:text-indigo-600"
+            className="h-7 w-7 rounded-[8px] bg-[#17191C] hover:bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors"
           >
             <FileText className="h-3.5 w-3.5" />
           </button>
@@ -50,14 +50,14 @@ export function DocumentsCard({
 
         {/* Metric Summary */}
         <div className="mt-2.5">
-          <div className="text-xs font-medium text-slate-400">Total Documents</div>
+          <div className="text-xs font-normal text-[#71717A]">Total Documents</div>
           <div className="flex items-baseline gap-2 mt-0.5">
-            <span className="text-3xl font-bold text-slate-900 tracking-tight leading-none">
+            <span className="text-3xl font-bold text-[#F5F5F3] tracking-tight leading-none">
               {documentsData.totalCount}
             </span>
-            <span className="text-xs font-medium text-slate-500">on track</span>
+            <span className="text-xs text-[#71717A]">on track</span>
           </div>
-          <div className="flex items-center gap-1 mt-1 text-xs font-medium text-emerald-600">
+          <div className="flex items-center gap-1 mt-1 text-xs font-medium text-[#75D69C]">
             <ArrowUpRight className="h-3.5 w-3.5" />
             <span>{documentsData.changeThisWeek}</span>
           </div>
@@ -65,31 +65,31 @@ export function DocumentsCard({
       </div>
 
       {/* Progress Bars Section */}
-      <div className="space-y-3.5 pt-2">
+      <div className="space-y-3 pt-2">
         {/* Verified Row */}
-        <div className="flex items-center justify-between gap-3 text-xs font-medium">
-          <span className="text-slate-600 text-[11px] w-20 shrink-0">Verified</span>
-          <div className="flex-1 h-4 rounded-full bg-[#edf0f4] p-0.5 overflow-hidden">
+        <div className="flex items-center justify-between gap-2.5 text-xs">
+          <span className="text-[#A1A1AA] text-[11px] w-20 shrink-0">Verified</span>
+          <div className="flex-1 h-3 rounded-full bg-white/[0.06] p-0.5 overflow-hidden">
             <div
-              className="h-full rounded-full bg-[#cce3d8] transition-all duration-500"
+              className="h-full rounded-full bg-[#75D69C] transition-all duration-500"
               style={{ width: `${documentsData.verifiedPercentage}%` }}
             />
           </div>
-          <span className="text-slate-900 font-bold text-[11px] w-7 text-right">
+          <span className="text-[#F5F5F3] font-medium text-[11px] w-7 text-right">
             {documentsData.verifiedPercentage}%
           </span>
         </div>
 
         {/* Under Review Row */}
-        <div className="flex items-center justify-between gap-3 text-xs font-medium">
-          <span className="text-slate-600 text-[11px] w-20 shrink-0">Under Review</span>
-          <div className="flex-1 h-4 rounded-full bg-[#edf0f4] p-0.5 overflow-hidden">
+        <div className="flex items-center justify-between gap-2.5 text-xs">
+          <span className="text-[#A1A1AA] text-[11px] w-20 shrink-0">Under Review</span>
+          <div className="flex-1 h-3 rounded-full bg-white/[0.06] p-0.5 overflow-hidden">
             <div
-              className="h-full rounded-full bg-[#e2e8f0] transition-all duration-500"
+              className="h-full rounded-full bg-white/[0.22] transition-all duration-500"
               style={{ width: `${documentsData.underReviewPercentage}%` }}
             />
           </div>
-          <span className="text-slate-900 font-bold text-[11px] w-7 text-right">
+          <span className="text-[#F5F5F3] font-medium text-[11px] w-7 text-right">
             {documentsData.underReviewPercentage}%
           </span>
         </div>

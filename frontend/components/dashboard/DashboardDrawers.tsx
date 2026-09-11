@@ -3,20 +3,12 @@
 import React, { useState } from "react";
 import {
   X,
-  Clock,
-  AlertTriangle,
   FileText,
   CheckCircle2,
   Calendar,
   Download,
-  Share2,
-  Plus,
-  Send,
   UserPlus,
-  ShieldCheck,
-  ExternalLink,
   ArrowRight,
-  Filter,
 } from "lucide-react";
 import Link from "next/link";
 import { DashboardData } from "@/data/demo";
@@ -39,48 +31,48 @@ export function ActivityTimelineDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-white h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
+      <div className="w-full max-w-md bg-[#111214] border-l border-white/[0.08] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center justify-between border-b border-white/[0.07] pb-4">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Compliance Activity</h2>
-              <p className="text-xs text-slate-500">
+              <h2 className="text-base font-semibold text-[#F5F5F3]">Compliance Activity</h2>
+              <p className="text-xs text-[#71717A]">
                 Weekly audit log: {data.activity.weeklyTasks} tasks tracked ({data.activity.growthPercentage} vs prev week)
               </p>
             </div>
             <button
               onClick={onClose}
-              className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
+              className="h-7 w-7 rounded-[8px] bg-white/[0.04] hover:bg-white/[0.08] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
           {/* Daily Breakdown */}
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {data.activity.daily.map((d) => (
               <div
                 key={d.day}
-                className={`p-3.5 rounded-2xl border transition-all ${
+                className={`p-3.5 rounded-[12px] border transition-all ${
                   d.isHighlight
-                    ? "bg-[#fbfde8] border-[#ecfa98]"
-                    : "bg-slate-50 border-slate-200/70"
+                    ? "bg-[#75D69C]/10 border-[#75D69C]/30"
+                    : "bg-[#17191C] border-white/[0.06]"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs text-slate-800">{d.day}</span>
-                    <span className="text-[11px] text-slate-400">({d.dateStr})</span>
+                    <span className="font-semibold text-xs text-[#F5F5F3]">{d.day}</span>
+                    <span className="text-[11px] text-[#71717A]">({d.dateStr})</span>
                     {d.isHighlight && (
-                      <span className="px-2 py-0.5 rounded-full bg-[#ecfa98] text-[#1c2e0b] font-bold text-[10px]">
+                      <span className="px-2 py-0.5 rounded-full bg-[#75D69C]/20 text-[#75D69C] font-semibold text-[10px]">
                         Peak Day
                       </span>
                     )}
                   </div>
-                  <span className="font-bold text-slate-900 text-sm">{d.tasks} tasks</span>
+                  <span className="font-semibold text-[#F5F5F3] text-xs">{d.tasks} tasks</span>
                 </div>
-                <div className="mt-2 text-xs text-slate-600">
+                <div className="mt-2 text-xs text-[#A1A1AA] leading-relaxed">
                   {d.day === "Fri"
                     ? "Batch testing certificates validated & laboratory calibration logs uploaded."
                     : d.day === "Thu"
@@ -92,11 +84,11 @@ export function ActivityTimelineDrawer({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-100">
+        <div className="pt-4 border-t border-white/[0.07]">
           <Link
             href="/compliance"
             onClick={onClose}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-[#0f172a] text-white text-xs font-bold hover:bg-slate-800 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-white/[0.10] hover:bg-white/[0.15] border border-white/[0.10] text-[#F5F5F3] text-xs font-medium transition-colors"
           >
             <span>Open Full Compliance Register</span>
             <ArrowRight className="h-3.5 w-3.5" />
@@ -122,61 +114,61 @@ export function ActionsListDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-white h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
+      <div className="w-full max-w-lg bg-[#111214] border-l border-white/[0.08] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center justify-between border-b border-white/[0.07] pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-900">Open Compliance Actions</h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-xs">
+                <h2 className="text-base font-semibold text-[#F5F5F3]">Open Compliance Actions</h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-[#ED7C7C]/15 border border-[#ED7C7C]/30 text-[#ED7C7C] font-semibold text-xs">
                   {data.actions.openCount} Active
                 </span>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[#71717A]">
                 {data.actions.changeFromLastWeek} · {data.actions.highPriorityCount} High Priority items
               </p>
             </div>
             <button
               onClick={onClose}
-              className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
+              className="h-7 w-7 rounded-[8px] bg-white/[0.04] hover:bg-white/[0.08] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="space-y-3.5">
+          <div className="space-y-3">
             {data.actions.items.map((act) => (
               <div
                 key={act.id}
-                className="p-4 rounded-2xl border border-slate-200/80 bg-white hover:border-slate-300 transition-all shadow-2xs space-y-2.5"
+                className="p-4 rounded-[12px] border border-white/[0.08] bg-[#17191C] hover:border-white/[0.14] transition-all space-y-2.5"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="font-mono text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
+                    <span className="font-mono text-[11px] font-medium text-accent bg-accent/10 px-2 py-0.5 rounded-[6px]">
                       {act.standardCode}
                     </span>
-                    <h3 className="font-bold text-slate-900 text-sm mt-1">{act.title}</h3>
+                    <h3 className="font-semibold text-[#F5F5F3] text-sm mt-1">{act.title}</h3>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 font-bold text-[11px] shrink-0">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#ED7C7C]/15 text-[#ED7C7C] font-medium text-[11px] shrink-0">
                     {act.daysRemaining}d remaining
                   </span>
                 </div>
 
-                <p className="text-xs text-slate-600 leading-relaxed">{act.summary}</p>
+                <p className="text-xs text-[#A1A1AA] leading-relaxed">{act.summary}</p>
 
-                <div className="text-[11px] text-slate-400 font-mono">
+                <div className="text-[11px] text-[#71717A] font-mono">
                   Citation: {act.clauseRef}
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-500">
-                    Deadline: <strong>{act.deadline}</strong>
+                <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between">
+                  <span className="text-[11px] text-[#71717A]">
+                    Deadline: <strong className="text-[#A1A1AA]">{act.deadline}</strong>
                   </span>
                   <Link
                     href={`/${act.targetView}`}
                     onClick={onClose}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-white/[0.10] hover:bg-white/[0.16] text-[#F5F5F3] text-xs font-medium transition-colors"
                   >
                     <span>{act.actionCta}</span>
                     <ArrowRight className="h-3 w-3" />
@@ -187,10 +179,10 @@ export function ActionsListDrawer({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-100">
+        <div className="pt-4 border-t border-white/[0.07]">
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-full border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            className="w-full py-2.5 rounded-[10px] border border-white/[0.10] text-xs font-medium text-[#A1A1AA] hover:text-[#F5F5F3] hover:bg-white/[0.04] transition-colors"
           >
             Close Actions Panel
           </button>
@@ -215,24 +207,24 @@ export function RequirementsListDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-white h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
+      <div className="w-full max-w-lg bg-[#111214] border-l border-white/[0.08] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center justify-between border-b border-white/[0.07] pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-900">Applicable Requirements</h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs">
+                <h2 className="text-base font-semibold text-[#F5F5F3]">Applicable Requirements</h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-[#75D69C]/15 border border-[#75D69C]/30 text-[#75D69C] font-semibold text-xs">
                   {data.requirements.applicableCount} Total
                 </span>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[#71717A]">
                 Bureau of Indian Standards · {data.requirements.isStandardsRatio} active IS standards
               </p>
             </div>
             <button
               onClick={onClose}
-              className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
+              className="h-7 w-7 rounded-[8px] bg-white/[0.04] hover:bg-white/[0.08] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -242,26 +234,26 @@ export function RequirementsListDrawer({
             {DEMO_REQUIREMENTS.map((req) => (
               <div
                 key={req.id}
-                className="p-4 rounded-2xl border border-slate-200/80 bg-white hover:border-slate-300 transition-all shadow-2xs space-y-2"
+                className="p-4 rounded-[12px] border border-white/[0.08] bg-[#17191C] hover:border-white/[0.14] transition-all space-y-2"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="font-mono text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
+                    <span className="font-mono text-[11px] font-medium text-accent bg-accent/10 px-2 py-0.5 rounded-[6px]">
                       {req.code}
                     </span>
-                    <h3 className="font-bold text-slate-900 text-xs mt-1">{req.title}</h3>
+                    <h3 className="font-semibold text-[#F5F5F3] text-xs mt-1">{req.title}</h3>
                   </div>
                   <StatusBadge status={req.status} size="sm" />
                 </div>
-                <p className="text-[11px] text-slate-500 line-clamp-2">{req.explanation}</p>
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-[11px] text-slate-500">
-                    Clauses: <strong>{req.compliantClauses}/{req.totalClauses}</strong>
+                <p className="text-[11px] text-[#A1A1AA] line-clamp-2 leading-relaxed">{req.explanation}</p>
+                <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-xs">
+                  <span className="text-[11px] text-[#71717A]">
+                    Clauses: <strong className="text-[#A1A1AA]">{req.compliantClauses}/{req.totalClauses}</strong>
                   </span>
                   <Link
                     href={`/compliance/${req.id}`}
                     onClick={onClose}
-                    className="font-bold text-indigo-600 hover:text-indigo-800 text-xs"
+                    className="font-medium text-accent hover:underline text-xs"
                   >
                     View Statutory Proof →
                   </Link>
@@ -271,11 +263,11 @@ export function RequirementsListDrawer({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-100">
+        <div className="pt-4 border-t border-white/[0.07]">
           <Link
             href="/compliance"
             onClick={onClose}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-[#0f172a] text-white text-xs font-bold hover:bg-slate-800"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-white/[0.10] hover:bg-white/[0.15] border border-white/[0.10] text-[#F5F5F3] text-xs font-medium transition-colors"
           >
             <span>Open Statutory Compliance Matrix</span>
             <ArrowRight className="h-3.5 w-3.5" />
@@ -301,24 +293,24 @@ export function DocumentsPreviewDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-white h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
+      <div className="w-full max-w-lg bg-[#111214] border-l border-white/[0.08] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center justify-between border-b border-white/[0.07] pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-900">Statutory Documents</h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-xs">
+                <h2 className="text-base font-semibold text-[#F5F5F3]">Statutory Documents</h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-accent/15 border border-accent/30 text-accent font-semibold text-xs">
                   {data.documents.totalCount} Total
                 </span>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[#71717A]">
                 {data.documents.verifiedPercentage}% Verified · {data.documents.underReviewPercentage}% Under Review
               </p>
             </div>
             <button
               onClick={onClose}
-              className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
+              className="h-7 w-7 rounded-[8px] bg-white/[0.04] hover:bg-white/[0.08] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -328,32 +320,32 @@ export function DocumentsPreviewDrawer({
             {DEMO_DOCUMENTS.map((doc) => (
               <div
                 key={doc.id}
-                className="p-3.5 rounded-2xl border border-slate-200/80 bg-white hover:border-slate-300 transition-all shadow-2xs space-y-1.5"
+                className="p-3.5 rounded-[12px] border border-white/[0.08] bg-[#17191C] hover:border-white/[0.14] transition-all space-y-1.5"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-slate-400" />
+                    <FileText className="h-4 w-4 text-[#71717A]" />
                     <div>
-                      <h4 className="font-bold text-slate-900 text-xs">{doc.name}</h4>
-                      <span className="text-[10px] text-slate-400 font-mono">{doc.code}</span>
+                      <h4 className="font-semibold text-[#F5F5F3] text-xs">{doc.name}</h4>
+                      <span className="text-[10px] text-[#71717A] font-mono">{doc.code}</span>
                     </div>
                   </div>
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                       doc.status === "VERIFIED"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-amber-50 text-amber-700"
+                        ? "bg-[#75D69C]/15 text-[#75D69C]"
+                        : "bg-[#F2C96D]/15 text-[#F2C96D]"
                     }`}
                   >
                     {doc.status}
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1">
-                  <span>Format: <strong>{doc.fileFormat} ({doc.fileSize})</strong></span>
+                <div className="text-[11px] text-[#71717A] flex items-center justify-between pt-1">
+                  <span>Format: <strong className="text-[#A1A1AA]">{doc.fileFormat} ({doc.fileSize})</strong></span>
                   <Link
                     href={`/documents/${doc.id}`}
                     onClick={onClose}
-                    className="text-xs font-semibold text-indigo-600 hover:underline"
+                    className="text-xs font-medium text-accent hover:underline"
                   >
                     Inspect Document →
                   </Link>
@@ -363,11 +355,11 @@ export function DocumentsPreviewDrawer({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
+        <div className="pt-4 border-t border-white/[0.07] flex items-center gap-3">
           <Link
             href="/documents"
             onClick={onClose}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-[#0f172a] text-white text-xs font-bold hover:bg-slate-800"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-white/[0.10] hover:bg-white/[0.15] border border-white/[0.10] text-[#F5F5F3] text-xs font-medium transition-colors"
           >
             <span>View All Documents</span>
             <ArrowRight className="h-3.5 w-3.5" />
@@ -402,14 +394,14 @@ export function DateRangeModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-            <Calendar className="h-4 w-4 text-indigo-600" />
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-[#17191C] rounded-[16px] p-6 max-w-sm w-full shadow-2xl border border-white/[0.10] space-y-4">
+        <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
+          <div className="flex items-center gap-2 text-[#F5F5F3] font-semibold text-sm">
+            <Calendar className="h-4 w-4 text-accent" />
             <span>Select Audit Period</span>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} className="text-[#71717A] hover:text-[#F5F5F3]">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -422,14 +414,14 @@ export function DateRangeModal({
                 onSelectRange(r.value);
                 onClose();
               }}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold transition-colors flex items-center justify-between ${
+              className={`w-full text-left px-4 py-2.5 rounded-[10px] text-xs font-medium transition-colors flex items-center justify-between ${
                 selectedRange === r.value
-                  ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
-                  : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                  ? "bg-white/[0.10] text-[#F5F5F3] border border-white/[0.12]"
+                  : "bg-[#111214] hover:bg-white/[0.04] text-[#A1A1AA] border border-transparent"
               }`}
             >
               <span>{r.label}</span>
-              {selectedRange === r.value && <CheckCircle2 className="h-4 w-4 text-indigo-600" />}
+              {selectedRange === r.value && <CheckCircle2 className="h-4 w-4 text-accent" />}
             </button>
           ))}
         </div>
@@ -462,14 +454,14 @@ export function AddWidgetModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-[#17191C] rounded-[16px] p-6 max-w-md w-full shadow-2xl border border-white/[0.10] space-y-4">
+        <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
           <div>
-            <h3 className="text-base font-bold text-slate-900">Customize Dashboard Widgets</h3>
-            <p className="text-xs text-slate-500">Toggle or rearrange visible intelligence cards</p>
+            <h3 className="text-base font-semibold text-[#F5F5F3]">Customize Dashboard Widgets</h3>
+            <p className="text-xs text-[#71717A]">Toggle or rearrange visible intelligence cards</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} className="text-[#71717A] hover:text-[#F5F5F3]">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -478,9 +470,9 @@ export function AddWidgetModal({
           {widgets.map((w) => (
             <div
               key={w.id}
-              className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 bg-slate-50/50 text-xs"
+              className="flex items-center justify-between p-3 rounded-[10px] border border-white/[0.08] bg-[#111214] text-xs"
             >
-              <span className="font-semibold text-slate-800">{w.name}</span>
+              <span className="font-medium text-[#F5F5F3]">{w.name}</span>
               <button
                 type="button"
                 onClick={() =>
@@ -490,10 +482,10 @@ export function AddWidgetModal({
                     )
                   )
                 }
-                className={`px-3 py-1 rounded-full font-bold text-[11px] transition-colors ${
+                className={`px-3 py-1 rounded-full font-medium text-[11px] transition-colors ${
                   w.enabled
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-slate-200 text-slate-600"
+                    ? "bg-[#75D69C]/15 border border-[#75D69C]/30 text-[#75D69C]"
+                    : "bg-white/[0.06] border border-white/[0.08] text-[#71717A]"
                 }`}
               >
                 {w.enabled ? "Active" : "Hidden"}
@@ -502,10 +494,10 @@ export function AddWidgetModal({
           ))}
         </div>
 
-        <div className="pt-2 border-t border-slate-100 flex justify-end">
+        <div className="pt-2 border-t border-white/[0.07] flex justify-end">
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-full bg-[#0f172a] text-white text-xs font-bold hover:bg-slate-800"
+            className="px-4 py-2 rounded-[10px] bg-white/[0.10] hover:bg-white/[0.16] border border-white/[0.10] text-[#F5F5F3] text-xs font-medium"
           >
             Save Dashboard Layout
           </button>
@@ -545,21 +537,21 @@ export function CreateReportModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-[#17191C] rounded-[16px] p-6 max-w-md w-full shadow-2xl border border-white/[0.10] space-y-4">
+        <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
           <div>
-            <h3 className="text-base font-bold text-slate-900">Generate Statutory Report</h3>
-            <p className="text-xs text-slate-500">Export compliance dossier for auditors & directors</p>
+            <h3 className="text-base font-semibold text-[#F5F5F3]">Generate Statutory Report</h3>
+            <p className="text-xs text-[#71717A]">Export compliance dossier for auditors & directors</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} className="text-[#71717A] hover:text-[#F5F5F3]">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 text-xs space-y-2">
-          <div className="font-bold text-indigo-950">Report Contents:</div>
-          <ul className="list-disc pl-4 text-indigo-900/80 space-y-1">
+        <div className="p-4 rounded-[12px] bg-accent/10 border border-accent/20 text-xs space-y-2">
+          <div className="font-semibold text-accent">Report Contents:</div>
+          <ul className="list-disc pl-4 text-[#A1A1AA] space-y-1">
             <li>Compliance Health Score: {data.complianceHealth.percentage}%</li>
             <li>Mandatory QCO Applicability Schedule ({data.requirements.applicableCount} Requirements)</li>
             <li>NABL Laboratory Testing & Calibration Status</li>
@@ -570,14 +562,14 @@ export function CreateReportModal({
         <div className="flex items-center justify-between pt-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-full border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            className="px-4 py-2 rounded-[10px] border border-white/[0.10] text-xs font-medium text-[#A1A1AA] hover:text-[#F5F5F3] hover:bg-white/[0.04]"
           >
             Cancel
           </button>
           <button
             onClick={handleDownload}
             disabled={downloading || downloaded}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#0f172a] text-white text-xs font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-white/[0.10] hover:bg-white/[0.16] border border-white/[0.10] text-[#F5F5F3] text-xs font-medium transition-all disabled:opacity-50"
           >
             <Download className="h-3.5 w-3.5" />
             <span>
@@ -621,34 +613,34 @@ export function TeamInviteModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-[#17191C] rounded-[16px] p-6 max-w-md w-full shadow-2xl border border-white/[0.10] space-y-4">
+        <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
           <div>
-            <h3 className="text-base font-bold text-slate-900">Compliance Team Members</h3>
-            <p className="text-xs text-slate-500">Collaborate on filings, audits, and test reports</p>
+            <h3 className="text-base font-semibold text-[#F5F5F3]">Compliance Team Members</h3>
+            <p className="text-xs text-[#71717A]">Collaborate on filings, audits, and test reports</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} className="text-[#71717A] hover:text-[#F5F5F3]">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Existing team */}
         <div className="space-y-2">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-[#71717A]">
             Active Members ({members.length})
           </div>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {members.map((m, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200/70 bg-slate-50/50 text-xs"
+                className="flex items-center justify-between p-2.5 rounded-[10px] border border-white/[0.08] bg-[#111214] text-xs"
               >
                 <div>
-                  <div className="font-bold text-slate-900">{m.name}</div>
-                  <div className="text-[10px] text-slate-400">{m.email}</div>
+                  <div className="font-medium text-[#F5F5F3]">{m.name}</div>
+                  <div className="text-[10px] text-[#71717A]">{m.email}</div>
                 </div>
-                <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded-full border border-slate-200">
+                <span className="text-[11px] text-[#A1A1AA] bg-white/[0.06] px-2 py-0.5 rounded-[6px] border border-white/[0.08]">
                   {m.role}
                 </span>
               </div>
@@ -657,8 +649,8 @@ export function TeamInviteModal({
         </div>
 
         {/* Invite new */}
-        <form onSubmit={handleInvite} className="pt-3 border-t border-slate-100 space-y-3">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+        <form onSubmit={handleInvite} className="pt-3 border-t border-white/[0.07] space-y-3">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-[#71717A]">
             Invite New Member
           </div>
           <div className="flex gap-2">
@@ -667,12 +659,12 @@ export function TeamInviteModal({
               placeholder="name@company.in"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-hidden focus:ring-2 focus:ring-slate-900"
+              className="flex-1 px-3 py-2 rounded-[10px] bg-[#111214] border border-white/[0.10] text-xs text-[#F5F5F3] placeholder:text-[#71717A] focus:outline-hidden focus:border-accent"
             />
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="px-2.5 py-2 rounded-xl border border-slate-200 text-xs bg-white text-slate-700"
+              className="px-2.5 py-2 rounded-[10px] bg-[#111214] border border-white/[0.10] text-xs text-[#F5F5F3]"
             >
               <option>Quality Officer</option>
               <option>Laboratory Analyst</option>
@@ -683,11 +675,11 @@ export function TeamInviteModal({
 
           <div className="flex items-center justify-between">
             {invited ? (
-              <span className="text-xs text-emerald-600 font-bold">Invitation sent!</span>
+              <span className="text-xs text-[#75D69C] font-medium">Invitation sent!</span>
             ) : <span />}
             <button
               type="submit"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0f172a] text-white text-xs font-bold hover:bg-slate-800"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[10px] bg-white/[0.10] hover:bg-white/[0.16] border border-white/[0.10] text-[#F5F5F3] text-xs font-medium"
             >
               <UserPlus className="h-3.5 w-3.5" />
               <span>Send Invite</span>
@@ -736,15 +728,15 @@ export function NotificationsPopover({
   ];
 
   return (
-    <div className="absolute right-0 top-12 z-50 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-slate-200/80 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+    <div className="absolute right-0 top-10 z-50 w-80 sm:w-96 bg-[#17191C] rounded-[14px] shadow-2xl border border-white/[0.10] p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150 select-none">
+      <div className="flex items-center justify-between border-b border-white/[0.07] pb-2.5">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-slate-900 text-sm">Regulatory Notifications</span>
-          <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">
+          <span className="font-semibold text-[#F5F5F3] text-sm">Regulatory Notifications</span>
+          <span className="px-2 py-0.5 rounded-full bg-[#ED7C7C]/15 border border-[#ED7C7C]/30 text-[#ED7C7C] font-semibold text-[10px]">
             3 New
           </span>
         </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+        <button onClick={onClose} className="text-[#71717A] hover:text-[#F5F5F3]">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -753,32 +745,32 @@ export function NotificationsPopover({
         {alerts.map((a) => (
           <div
             key={a.id}
-            className={`p-3 rounded-2xl border text-xs transition-colors ${
+            className={`p-3 rounded-[10px] border text-xs transition-colors ${
               a.urgent
-                ? "bg-rose-50/50 border-rose-200/80"
-                : "bg-slate-50/60 border-slate-200/70"
+                ? "bg-[#ED7C7C]/10 border-[#ED7C7C]/30"
+                : "bg-[#111214] border-white/[0.08]"
             }`}
           >
             <div className="flex items-start justify-between gap-1.5">
-              <span className="font-bold text-slate-900">{a.title}</span>
-              <span className="text-[10px] text-slate-400 shrink-0">{a.time}</span>
+              <span className="font-medium text-[#F5F5F3]">{a.title}</span>
+              <span className="text-[10px] text-[#71717A] shrink-0">{a.time}</span>
             </div>
-            <p className="text-slate-600 mt-1 leading-relaxed">{a.desc}</p>
+            <p className="text-[#A1A1AA] mt-1 leading-relaxed">{a.desc}</p>
           </div>
         ))}
       </div>
 
-      <div className="pt-2 border-t border-slate-100 flex justify-between text-xs">
+      <div className="pt-2 border-t border-white/[0.07] flex justify-between text-xs">
         <Link
           href="/calendar"
           onClick={onClose}
-          className="font-bold text-indigo-600 hover:text-indigo-800"
+          className="font-medium text-accent hover:underline"
         >
           View Statutory Calendar →
         </Link>
         <button
           onClick={onClose}
-          className="text-slate-400 hover:text-slate-600 text-xs"
+          className="text-[#71717A] hover:text-[#A1A1AA] text-xs"
         >
           Mark all read
         </button>

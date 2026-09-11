@@ -1,86 +1,92 @@
-# ComplyWise Dashboard Design Tokens
+# ComplyWise Dashboard Design Tokens — V2 Modern Dark Interface
 
-Forensic design token documentation derived directly from `design-reference/dashboard-reference.png`.
-
----
-
-## 1. Color Palette
-
-| Token | Name | HEX | RGB | Usage |
-|---|---|---|---|---|
-| `BACKGROUND` | Canvas Slate Background | `#edf0f6` | `rgb(237, 240, 246)` | Outer desktop canvas backdrop |
-| `BACKGROUND_CARD` | Floating Application Surface | `#f6f7fb` | `rgb(246, 247, 251)` | Main floating application window background |
-| `SURFACE` | Pure White Card Surface | `#ffffff` | `rgb(255, 255, 255)` | Activity, Actions, Documents, and Status card surfaces |
-| `SURFACE_ACCENT` | Sage Mint Surface | `#d5e2d8` | `rgb(213, 226, 216)` | Applicable Requirements card background |
-| `SURFACE_GRADIENT_START` | Ice Blue Surface Start | `#e7edf6` | `rgb(231, 237, 246)` | Tall Feature card gradient start (top) |
-| `SURFACE_GRADIENT_END` | Ice Blue Surface End | `#edf1f8` | `rgb(237, 241, 248)` | Tall Feature card gradient end (bottom) |
-| `SURFACE_MUTED` | Light Slate Pill Fill | `#f1f5f9` | `rgb(241, 245, 249)` | Inactive pills, date picker, dropdowns, unselected bars |
-| `SURFACE_ACTIVE_NAV` | Active Nav Item Background | `#eceff3` | `rgb(236, 239, 243)` | Sidebar active nav pill container |
-| `BORDER` | Ultra-Subtle Border | `#0000000a` | `rgba(0, 0, 0, 0.04)` | Card borders and divider lines |
-| `BORDER_MUTED` | Neutral Slate Border | `#e2e8f0` | `rgb(226, 232, 240)` | Button borders, modal dividers, progress bar track |
-| `TEXT_PRIMARY` | Slate 950 High Contrast | `#020617` | `rgb(2, 6, 23)` | Dashboard title, card titles, main KPI numerals |
-| `TEXT_SECONDARY` | Slate 700 Dark Text | `#334155` | `rgb(51, 65, 85)` | Navigation labels, filter text, table headers |
-| `TEXT_MUTED` | Slate 400 Muted Label | `#94a3b8` | `rgb(148, 163, 184)` | Subtitles ("This week", "Open Actions"), inactive days |
-| `ACCENT_PRIMARY` | Dark Slate / Charcoal | `#0f172a` | `rgb(15, 23, 42)` | Active tab pill, active icon container, spline chart stroke |
-| `ACCENT_SECONDARY` | Bright Lime Yellow | `#ecfa98` | `rgb(236, 250, 152)` | Friday peak activity bar, "+32%" pill, "3 actions" floating pill |
-| `ACCENT_BADGE` | Soft Gold / Yellow | `#fef08a` | `rgb(254, 240, 138)` | "★ IS 3055" feature badge |
-| `SUCCESS` | Turquoise Health Bubble | `#82ded8` | `rgb(130, 222, 216)` | Central 82% compliance health bubble |
-| `SUCCESS_MINT` | Mint Document Bar | `#cce3d8` | `rgb(204, 227, 216)` | Verified documents progress bar fill |
-| `SUCCESS_EMERALD` | Emerald Indicator | `#10b981` | `rgb(16, 185, 129)` | "+3 this week" positive delta indicator |
-| `WARNING` | Amber Alert | `#f59e0b` | `rgb(245, 158, 11)` | Medium priority actions and pending audit flags |
-| `DANGER` | Rose / Red Alert | `#ef4444` | `rgb(239, 68, 68)` | "↑ 2 from last week" delta pill and overdue counts |
-| `INFO` | Statutory Blue | `#3b82f6` | `rgb(59, 130, 246)` | Official gazette references and info markers |
+Forensic design token documentation for the high-end modern dark dashboard, synthesized from Linear's 2026 design refresh, Apple's Liquid Glass materials and layout guidelines, and Vercel's precision dark interfaces.
 
 ---
 
-## 2. Typography
+## 1. Exact Color System
 
-- **Font Family**: Plus Jakarta Sans (`var(--font-plus-jakarta-sans)`, sans-serif)
+| Token | CSS Variable | Hex / Value | Semantic Usage |
+|---|---|---|---|
+| `BACKGROUND` | `--background` | `#09090B` | Deepest canvas backdrop |
+| `BACKGROUND_SECONDARY` | `--background-secondary` | `#0D0E10` | App container & sidebar background |
+| `SURFACE` | `--surface` | `#111214` | Primary card surfaces (Activity, Actions, Documents, Status) |
+| `SURFACE_ELEVATED` | `--surface-elevated` | `#17191C` | Elevated surfaces (Feature Card, Applicable Requirements, Menus) |
+| `SURFACE_HOVER` | `--surface-hover` | `#1B1D21` | Interactive control hover state |
+| `BORDER_SUBTLE` | `--border-subtle` | `rgba(255, 255, 255, 0.07)` | Standard structural dividers & subtle card borders |
+| `BORDER_DEFAULT` | `--border-default` | `rgba(255, 255, 255, 0.10)` | Interactive borders, card strokes, inputs |
+| `BORDER_STRONG` | `--border-strong` | `rgba(255, 255, 255, 0.14)` | Focused controls, active tabs, modal borders |
+| `TEXT_PRIMARY` | `--text-primary` | `#F5F5F3` | Display titles, section headings, KPI numbers |
+| `TEXT_SECONDARY` | `--text-secondary` | `#A1A1AA` | Body copy, secondary labels, active navigation |
+| `TEXT_TERTIARY` | `--text-tertiary` | `#71717A` | Inactive navigation, metadata, breadcrumbs, guide lines |
+| `ACCENT` | `--accent` | `#6D8CFF` | Technical blue accent (applied sparingly for key highlights) |
+| `ACCENT_SOFT` | `--accent-soft` | `rgba(109, 140, 255, 0.14)` | Soft accent container fill |
+| `SUCCESS` | `--success` | `#75D69C` | On-track status, positive trends, verified documents |
+| `WARNING` | `--warning` | `#F2C96D` | Review required, pending audits, standard badges |
+| `DANGER` | `--danger` | `#ED7C7C` | Overdue actions, regulatory flags |
+
+---
+
+## 2. Concentric Radii System
+
+| Element Level | Token | Value | Applied Elements |
+|---|---|---|---|
+| Small Controls | `rounded-[8px]` | `8px` | Icon buttons, checkboxes, tooltips, tags |
+| Buttons & Inputs | `rounded-[10px]` | `10px` | Standard CTA buttons, search inputs, dropdown triggers |
+| Small Cards | `rounded-[12px]` | `12px` | Documents card, Requirements card, popover menus |
+| Main Surfaces | `rounded-[14px]` | `14px` | Activity card, Actions card, Status card |
+| Large Feature Surfaces | `rounded-[16px]` | `16px` | Main Feature card, App shell container |
+| Pills (Restricted) | `rounded-full` | `9999px` | Compact status badges, filters, tiny metadata, selected nav |
+
+> [!NOTE]
+> Inflated 24px–32px radii are eliminated to align with modern editorial precision. Pills are strictly reserved for compact metadata indicators.
+
+---
+
+## 3. Typography Hierarchy
+
+- **Font Family**: Inter (`var(--font-sans)`, system-ui, -apple-system, sans-serif)
 - **Hierarchy**:
-  - `Display / Dashboard Title`: `32px` (2rem), font-weight `700` (bold), line-height `1.15`, letter-spacing `-0.03em`
-  - `Card Header Title`: `16px` (1rem), font-weight `700` (bold), line-height `1.3`, letter-spacing `-0.015em`
-  - `Hero KPI Numeral (Large)`: `48px` (3rem) to `56px` (3.5rem), font-weight `800` (extrabold), tracking `-0.04em`
-  - `Standard KPI Numeral`: `30px` (1.875rem), font-weight `700` (bold), tracking `-0.025em`
-  - `Metric Subtitle`: `12px` (0.75rem), font-weight `500` (medium), color `#94a3b8`
-  - `Pill / Badge Label`: `11px` (0.6875rem) to `12px` (0.75rem), font-weight `700` (bold)
-  - `Body / Explanatory Text`: `12px` (0.75rem) to `13px` (0.8125rem), font-weight `400` / `500`, line-height `1.5`
+  - `Page Title`: `26px–28px` (1.625rem–1.75rem), weight `600` (semibold), line-height `1.2`, letter-spacing `-0.02em`, color `#F5F5F3`
+  - `Section Heading`: `18px` (1.125rem), weight `600` (semibold), line-height `1.3`, color `#F5F5F3`
+  - `Card Title`: `15px–16px` (0.9375rem–1rem), weight `600` (semibold), line-height `1.35`, color `#F5F5F3`
+  - `Body Copy`: `14px` (0.875rem), weight `400` (regular), line-height `1.5`, color `#A1A1AA`
+  - `Metadata / Subtitle`: `12px` (0.75rem), weight `400` / `500`, line-height `1.4`, color `#71717A`
+  - `Button Label`: `13px` (0.8125rem), weight `500` (medium), color `#F5F5F3`
+  - `KPI Numbers`: `32px–40px` (2rem–2.5rem), weight `700` (bold), tracking `-0.03em`, color `#F5F5F3`
 
 ---
 
-## 3. Geometry & Radii
+## 4. Spacing & Layout Structure
 
-| Element | Radius Token | Value | Visual Intent |
-|---|---|---|---|
-| Floating App Window | `rounded-[32px]` | `32px` | Soft exterior framing floating on canvas |
-| Dashboard Cards | `rounded-[28px]` | `28px` | Modern pill-inspired card geometry |
-| Active Nav Pill Box | `rounded-2xl` | `16px` | Nested sidebar active container |
-| Active Icon Container | `rounded-xl` | `12px` | Sharp, balanced dark icon badge |
-| Action Buttons & Pills | `rounded-full` | `9999px` | Circular pill buttons (`Date`, `Widget`, `Pill Nav`) |
-| Icon Buttons | `rounded-full` | `9999px` | `40px` and `32px` circular controls |
-| Activity Chart Bars | `rounded-full` | `9999px` | Cylindrical pill bars with full top & bottom radius |
-| Document Progress Bars| `rounded-full` | `9999px` | Smooth capsule progress meters |
+- **Desktop Content Max-Width**: `1440px` (centered or expansive layout)
+- **Padding**:
+  - Desktop: `32px` (`p-8`)
+  - Laptop: `24px` (`p-6`)
+  - Mobile: `16px` (`p-4`)
+- **Sidebar Width**: `240px–248px` fixed desktop rail (subordinate, quiet, dark `#0D0E10`)
+- **Top Header Height**: `64px` compact quiet bar with translucent glass (`backdrop-blur-md bg-[#09090B]/80`)
+- **Grid Gap**: `16px–20px` (`gap-4` to `gap-5`)
 
 ---
 
-## 4. Spacing & Structural Dimensions
+## 5. Glass & Material Treatment (Apple Liquid Glass)
 
-| Structural Dimension | Value | Tailwind Class | Notes |
-|---|---|---|---|
-| Desktop Canvas Padding | `24px` | `p-6` | Gap between screen edge and floating window |
-| Floating Window Max Width | `1600px` | `max-w-[1600px]` | Centered desktop bounds |
-| Sidebar Width (Desktop) | `240px` | `w-60` | Fixed width navigation rail |
-| Top Header Height | `64px` | `h-16` | Fixed height sticky top bar |
-| Main Card Padding | `24px` | `p-6` | Uniform inner card padding |
-| Grid Gap | `20px` | `gap-5` | Gap between the 3 asymmetric columns |
-| Card Row Height (Middle/Right) | `280px` | `h-[280px]` | Equal height horizontal alignment |
-| Tall Feature Card Height | `580px` | `min-h-[580px]` | Double height span matching right columns |
-| Circular Control Size | `40px` / `32px`| `h-10 w-10` / `h-8 w-8` | Action bar vs card header icon buttons |
+- **Application**: Used sparingly on navigation/control surfaces (sidebar, floating controls, popovers, segmented nav).
+- **Material Specification**:
+  - `background`: `rgba(255, 255, 255, 0.04–0.06)`
+  - `border`: `1px solid rgba(255, 255, 255, 0.08)`
+  - `backdrop-filter`: `blur(16px) saturate(120%)`
+  - `box-shadow`: layered multi-stop subtle shadow: `0 4px 20px -2px rgba(0, 0, 0, 0.5)`
+- Content cards remain mostly solid dark surfaces (`#111214` / `#17191C`) with crisp subtle borders (`rgba(255, 255, 255, 0.07)`).
 
 ---
 
-## 5. Shadows & Elevation
+## 6. Real Technical Chart Specifications
 
-- `APP_SHELL_SHADOW`: `0 20px 50px -15px rgba(15, 23, 42, 0.07)` — ambient float off desktop canvas
-- `CARD_SHADOW`: `0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 1px 2px -1px rgba(0, 0, 0, 0.02)` (`shadow-xs`)
-- `PILL_SHADOW`: `0 1px 2px 0 rgba(0, 0, 0, 0.04)` (`shadow-2xs`)
-- `DROPDOWN_SHADOW`: `0 10px 25px -5px rgba(0, 0, 0, 0.08)`
+- **Stroke Width**: `2px–2.5px` smooth SVG spline
+- **Endpoints**: `4.5px–5.5px` radius with subtle outer ring
+- **Guide Lines**: `1px` stroke, `rgba(255, 255, 255, 0.05)` opacity
+- **Peak / Highlight Indicators**: Subtle accent or lime pill anchored to data vertices
+- **ViewBox**: Responsive `viewBox="0 0 300 100"` / `viewBox="0 0 200 80"` with auto-scaling
+

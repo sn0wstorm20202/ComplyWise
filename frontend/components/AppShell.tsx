@@ -59,9 +59,12 @@ export function AppShell({
       : "dashboard";
 
   return (
-    <div className="min-h-screen bg-[#edf0f6] p-2 sm:p-4 lg:p-6 flex flex-col justify-center">
+    <div className="min-h-screen bg-[#09090B] p-2 sm:p-4 lg:p-6 flex flex-col justify-center relative overflow-x-hidden">
+      {/* Subtle Environmental Radial Light */}
+      <div className="absolute top-0 right-1/4 w-[700px] h-[700px] bg-[radial-gradient(circle,rgba(109,140,255,0.04)_0%,transparent_65%)] pointer-events-none blur-3xl -z-0" />
+
       {/* Floating Application Window Container */}
-      <div className="w-full max-w-[1536px] mx-auto bg-[#f6f7fb] rounded-[32px] border border-black/[0.04] shadow-[0_20px_50px_-15px_rgba(15,23,42,0.07)] overflow-hidden flex flex-col min-h-[900px]">
+      <div className="w-full max-w-[1440px] mx-auto bg-[#0D0E10] rounded-[16px] border border-white/[0.08] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col min-h-[900px] relative z-10">
         {/* Top Header Navigation */}
         <TopBar
           activePill={activePill}
@@ -83,7 +86,7 @@ export function AppShell({
           />
 
           {/* Right Scrollable Content Canvas */}
-          <main className="flex-1 px-6 lg:px-8 py-5 overflow-y-auto min-w-0">
+          <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 overflow-y-auto min-w-0 bg-[#09090B]/30">
             {renderViewContent ? renderViewContent(activeView) : children}
           </main>
         </div>

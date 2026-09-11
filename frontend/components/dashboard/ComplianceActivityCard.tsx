@@ -52,11 +52,11 @@ export function ComplianceActivityCard({
   }
 
   return (
-    <div className="bg-white rounded-[28px] p-6 border border-slate-200/60 shadow-xs flex flex-col justify-between h-[280px] relative">
+    <div className="bg-[#111214] rounded-[14px] p-5 sm:p-6 border border-white/[0.08] shadow-sm flex flex-col justify-between h-[280px] relative select-none">
       {/* Header */}
       <div>
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-900">
+          <h3 className="text-[15px] font-semibold text-[#F5F5F3]">
             Compliance Activity
           </h3>
           <div className="flex items-center gap-1.5">
@@ -65,10 +65,10 @@ export function ComplianceActivityCard({
               onClick={handleSortClick}
               title={`Sort: currently ${sortOrder === "standard" ? "Chronological" : "By Volume"}`}
               aria-label="Sort activity"
-              className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+              className={`h-7 w-7 rounded-[8px] flex items-center justify-center transition-colors cursor-pointer border ${
                 sortOrder === "volume"
-                  ? "bg-slate-900 text-white"
-                  : "bg-[#f1f5f9] hover:bg-slate-200/80 text-slate-600"
+                  ? "bg-white/[0.12] border-white/[0.16] text-[#F5F5F3]"
+                  : "bg-[#17191C] hover:bg-white/[0.06] border-white/[0.08] text-[#A1A1AA] hover:text-[#F5F5F3]"
               }`}
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
@@ -77,7 +77,7 @@ export function ComplianceActivityCard({
               type="button"
               onClick={onExpand}
               aria-label="Expand activity details"
-              className="h-8 w-8 rounded-full bg-[#f1f5f9] hover:bg-slate-200/80 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+              className="h-7 w-7 rounded-[8px] bg-[#17191C] hover:bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors cursor-pointer"
             >
               <ArrowUpRight className="h-3.5 w-3.5" />
             </button>
@@ -87,27 +87,27 @@ export function ComplianceActivityCard({
         {/* Metric Summary */}
         <div className="mt-2.5 flex items-baseline justify-between">
           <div>
-            <div className="text-xs font-medium text-slate-400">This week</div>
+            <div className="text-xs font-normal text-[#71717A]">This week</div>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-3xl font-bold text-slate-900 tracking-tight leading-none">
+              <span className="text-3xl font-bold text-[#F5F5F3] tracking-tight leading-none">
                 {activityData.weeklyTasks}
               </span>
-              <span className="text-xs font-medium text-slate-500">tasks</span>
+              <span className="text-xs text-[#71717A]">tasks</span>
             </div>
           </div>
 
           {/* Growth Highlight Pill */}
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#ecfa98] text-[#1c2e0b] font-bold text-xs shadow-2xs">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#75D69C]/15 border border-[#75D69C]/30 text-[#75D69C] font-medium text-xs">
             {activityData.growthPercentage}
           </span>
         </div>
       </div>
 
       {/* Interactive 7-Day Bar Chart */}
-      <div className="mt-3 relative">
+      <div className="mt-2 relative">
         {/* Floating Tooltip */}
         {hoveredDay && (
-          <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 bg-slate-900 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-lg pointer-events-none whitespace-nowrap">
+          <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 bg-[#17191C] border border-white/[0.12] text-[#F5F5F3] text-[10px] font-medium px-2.5 py-1 rounded-full shadow-lg pointer-events-none whitespace-nowrap">
             {hoveredDay.day} ({hoveredDay.dateStr}): {hoveredDay.tasks} tasks verified
           </div>
         )}
@@ -123,16 +123,16 @@ export function ComplianceActivityCard({
                 className="flex-1 flex flex-col items-center gap-2 h-full justify-end group cursor-pointer"
               >
                 <div
-                  className={`w-full max-w-[26px] rounded-full transition-all duration-300 group-hover:scale-y-105 origin-bottom ${
+                  className={`w-full max-w-[24px] rounded-full transition-all duration-300 group-hover:scale-y-105 origin-bottom ${
                     d.isHighlight
-                      ? "bg-[#ecfa98] group-hover:bg-[#e4f67c] shadow-xs"
-                      : "bg-[#f1f5f9] group-hover:bg-slate-300/80"
+                      ? "bg-[#75D69C] group-hover:bg-[#8ce6b0] shadow-sm"
+                      : "bg-white/[0.08] group-hover:bg-white/[0.15]"
                   }`}
                   style={{ height: `${heightPercent}%` }}
                 />
                 <span
-                  className={`text-[11px] font-semibold transition-colors ${
-                    d.isHighlight ? "text-slate-900 font-bold" : "text-slate-400 group-hover:text-slate-700"
+                  className={`text-[11px] transition-colors ${
+                    d.isHighlight ? "text-[#F5F5F3] font-semibold" : "text-[#71717A] group-hover:text-[#A1A1AA]"
                   }`}
                 >
                   {d.day}

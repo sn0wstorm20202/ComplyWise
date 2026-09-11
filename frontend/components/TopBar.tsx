@@ -15,24 +15,32 @@ import {
   Settings,
   Building2,
   Sparkles,
+  LogOut,
+  Menu,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import ComplyWiseLogo from "./icons/ComplyWiseLogo";
 import { NavView } from "./Sidebar";
 import { NotificationsPopover, TeamInviteModal } from "./dashboard/DashboardDrawers";
 import { useBusinessContext } from "@/context/BusinessContext";
+import { useAuth } from "@/context/AuthContext";
 
 interface TopBarProps {
   activePill: "dashboard" | "compliance" | "reports";
   onSelectPill: (pill: "dashboard" | "compliance" | "reports") => void;
   onNavigateToView: (view: NavView) => void;
   onAddMember?: () => void;
+  onToggleMobileMenu?: () => void;
 }
 
 export function TopBar({
   activePill,
   onSelectPill,
   onNavigateToView,
+  onToggleMobileMenu,
 }: TopBarProps) {
+  const router = useRouter();
+  const { user, logout } = useAuth();
   const { profile, availableProfiles, switchProfile } = useBusinessContext();
 
   const [unreadNotifications, setUnreadNotifications] = useState(true);
@@ -40,10 +48,28 @@ export function TopBar({
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
+  async function handleLogout() {
+    setProfileDropdownOpen(false);
+    await logout();
+    router.push("/auth/signin");
+  }
+
   return (
-    <header className="h-16 px-6 lg:px-8 border-b border-[#1c1d22] flex items-center justify-between bg-[#040406]/90 backdrop-blur-md sticky top-0 z-30 select-none">
+    <header className="h-16 px-4 sm:px-6 lg:px-8 border-b border-[#1c1d22] flex items-center justify-between bg-[#040406]/90 backdrop-blur-md sticky top-0 z-30 select-none">
       {/* Left: Brand Identity + Primary Nav Pills */}
-      <div className="flex items-center gap-6 lg:gap-8">
+      <div className="flex items-center gap-3 sm:gap-6 lg:gap-8">
+        {/* Mobile Menu Hamburger Button */}
+        {onToggleMobileMenu && (
+          <button
+            type="button"
+            onClick={onToggleMobileMenu}
+            aria-label="Open mobile navigation"
+            className="lg:hidden h-8 w-8 rounded-[8px] bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-center text-[#A4A5AA] hover:text-[#F2F2F0] transition-colors cursor-pointer"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+        )}
+
         {/* Brand Logo & Name */}
         <Link
           href="/dashboard"
@@ -199,9 +225,16 @@ export function TopBar({
             {profileDropdownOpen && (
               <div className="absolute right-0 top-10 z-40 w-64 bg-[#121317] rounded-[10px] shadow-2xl border border-[#1c1d22] p-2 space-y-1 text-xs animate-in fade-in slide-in-from-top-2 duration-150">
                 <div className="px-3 py-2 border-b border-[#1c1d22]">
-                  <div className="font-semibold text-[#ffffff] truncate">{profile.businessName}</div>
-                  <div className="text-[11px] text-[#9194a1] truncate">{profile.officer}</div>
-                  <div className="mt-1 font-mono text-[10px] text-[#cc9166] font-medium">{profile.bisRegistration}</div>
+                  <div className="font-semibold text-[#ffffff] truncate">
+                    {user?.full_name || profile.businessName}
+                  </div>
+                  <div className="text-[11px] text-[#cc9166] truncate">
+                    {user?.email || profile.officer}
+                  </div>
+                  <div className="mt-1 font-mono text-[10px] text-[#777a88] flex items-center justify-between">
+                    <span>{profile.businessName}</span>
+                    <span className="text-emerald-400 font-bold">● Active</span>
+                  </div>
                 </div>
 
                 <div className="py-1">
@@ -258,6 +291,14 @@ export function TopBar({
                     <Sparkles className="h-3.5 w-3.5 text-[#cc9166]" />
                     <span>Run New Onboarding</span>
                   </Link>
+
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-3 py-2 rounded-[8px] text-rose-400 hover:bg-rose-950/30 hover:text-rose-300 flex items-center gap-2 font-medium transition-colors cursor-pointer border-t border-[#1c1d22]/50 mt-1"
+                  >
+                    <LogOut className="h-3.5 w-3.5 text-rose-400" />
+                    <span>Sign Out</span>
+                  </button>
                 </div>
               </div>
             )}

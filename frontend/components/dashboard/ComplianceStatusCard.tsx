@@ -57,20 +57,20 @@ export function ComplianceStatusCard({
   const stats = categoryBreakdown[selectedCategory] || categoryBreakdown["Overall"];
 
   return (
-    <div className="bg-[#111214] rounded-[14px] p-5 sm:p-6 border border-white/[0.08] shadow-sm flex flex-col justify-between h-[280px] relative select-none">
+    <div className="bg-[#101114] rounded-[14px] p-5 sm:p-6 border border-white/[0.08] shadow-lg flex flex-col justify-between h-full min-h-[270px] relative select-none">
       {/* Header */}
       <div>
-        <div className="flex items-center justify-between">
-          <h3 className="text-[15px] font-semibold text-[#F5F5F3]">
+        <div className="flex items-center justify-between gap-1">
+          <h3 className="text-sm font-semibold text-[#F2F2F0] whitespace-nowrap">
             Compliance Status
           </h3>
           <button
             type="button"
             onClick={onExpand}
             aria-label="Expand compliance status"
-            className="h-7 w-7 rounded-[8px] bg-[#17191C] hover:bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors cursor-pointer"
+            className="h-6 w-6 rounded-[6px] bg-[#141519] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-center text-[#A4A5AA] hover:text-[#F2F2F0] transition-colors cursor-pointer"
           >
-            <ArrowUpRight className="h-3.5 w-3.5" />
+            <ArrowUpRight className="h-3 w-3" />
           </button>
         </div>
 
@@ -79,7 +79,7 @@ export function ComplianceStatusCard({
           <button
             type="button"
             onClick={() => setIsDropdownOpen((prev) => !prev)}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#17191C] hover:bg-white/[0.06] border border-white/[0.08] text-[#F5F5F3] text-xs font-medium transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#141519] hover:bg-white/[0.08] border border-white/[0.08] text-[#F5F5F3] text-xs font-medium transition-colors cursor-pointer"
           >
             <span>{selectedCategory}</span>
             <ChevronDown className="h-3 w-3 text-[#71717A]" />
@@ -87,7 +87,7 @@ export function ComplianceStatusCard({
 
           {/* Interactive Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute left-0 top-8 z-30 w-52 bg-[#17191C] rounded-[10px] shadow-2xl border border-white/[0.12] p-1.5 space-y-0.5 animate-in fade-in duration-100">
+            <div className="absolute left-0 top-8 z-30 w-52 bg-[#141519] rounded-[10px] shadow-2xl border border-white/[0.12] p-1.5 space-y-0.5 animate-in fade-in duration-100">
               {categories.map((cat) => (
                 <button
                   key={cat}
@@ -99,11 +99,11 @@ export function ComplianceStatusCard({
                   className={`w-full text-left px-3 py-1.5 rounded-[8px] text-xs font-medium flex items-center justify-between transition-colors ${
                     selectedCategory === cat
                       ? "bg-white/[0.10] text-[#F5F5F3]"
-                      : "hover:bg-white/[0.04] text-[#A1A1AA] hover:text-[#F5F5F3]"
+                      : "hover:bg-white/[0.04] text-[#A4A5AA] hover:text-[#F5F5F3]"
                   }`}
                 >
                   <span>{cat}</span>
-                  {selectedCategory === cat && <Check className="h-3.5 w-3.5 text-accent" />}
+                  {selectedCategory === cat && <Check className="h-3.5 w-3.5 text-[#6E82FF]" />}
                 </button>
               ))}
             </div>
@@ -115,7 +115,7 @@ export function ComplianceStatusCard({
       <div className="relative h-24 flex items-center justify-center my-auto">
         <div className="relative w-48 h-24 flex items-center justify-center">
           {/* Main Central Turquoise/Mint Bubble */}
-          <div className="relative z-10 h-[88px] w-[88px] rounded-full bg-[#75D69C] flex flex-col items-center justify-center shadow-[0_0_24px_rgba(117,214,156,0.2)] transition-all duration-500">
+          <div className="relative z-10 h-[88px] w-[88px] rounded-full bg-[#75D69C] flex flex-col items-center justify-center shadow-[0_0_24px_rgba(117,214,156,0.25)] transition-all duration-500">
             <div className="flex items-baseline">
               <span className="text-2xl font-bold text-[#09090B] tracking-tight">
                 {stats.healthPercentage}
@@ -125,14 +125,14 @@ export function ComplianceStatusCard({
           </div>
 
           {/* Top-Right Overlapping Bubble */}
-          <div className="absolute top-0 right-6 z-20 h-12 w-12 rounded-full bg-[#17191C] border border-white/[0.14] flex items-center justify-center shadow-md transition-all duration-500">
-            <span className="text-[11px] font-medium text-[#A1A1AA]">
+          <div className="absolute top-0 right-6 z-20 h-12 w-12 rounded-full bg-[#141519] border border-white/[0.14] flex items-center justify-center shadow-md transition-all duration-500">
+            <span className="text-[11px] font-medium text-[#A4A5AA]">
               {stats.inProgressPercentage}%
             </span>
           </div>
 
           {/* Bottom-Left Overlapping Bubble */}
-          <div className="absolute bottom-0 left-6 z-20 h-10 w-10 rounded-full bg-[#17191C] border border-white/[0.14] flex items-center justify-center shadow-md transition-all duration-500">
+          <div className="absolute bottom-0 left-6 z-20 h-10 w-10 rounded-full bg-[#141519] border border-white/[0.14] flex items-center justify-center shadow-md transition-all duration-500">
             <span className="text-[10px] font-medium text-[#71717A]">
               {stats.overduePercentage}%
             </span>

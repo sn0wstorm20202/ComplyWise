@@ -19,6 +19,15 @@ const CATEGORIES: CategorySlice[] = [
   { name: "Certificates", count: 6, pct: 10, color: "#cc9166" }, // Copper
 ];
 
+const SLICES_WITH_OFFSET = (() => {
+  let acc = 0;
+  return CATEGORIES.map((slice) => {
+    const offset = acc;
+    acc += slice.pct;
+    return { ...slice, offset };
+  });
+})();
+
 interface RequirementCategoriesDonutProps {
   onNavigateToView: (view: string) => void;
 }
@@ -31,7 +40,6 @@ export function RequirementCategoriesDonut({
   // Calculate SVG donut segments
   const radius = 38;
   const circumference = 2 * Math.PI * radius;
-  let accumulatedPercent = 0;
 
   return (
     <div className="slash-card p-5 flex flex-col justify-between select-none">
@@ -55,10 +63,9 @@ export function RequirementCategoriesDonut({
               />
 
               {/* Slices */}
-              {CATEGORIES.map((slice) => {
+              {SLICES_WITH_OFFSET.map((slice) => {
                 const strokeLength = (slice.pct / 100) * circumference;
-                const strokeOffset = circumference - (accumulatedPercent / 100) * circumference;
-                accumulatedPercent += slice.pct;
+                const strokeOffset = circumference - (slice.offset / 100) * circumference;
 
                 return (
                   <circle

@@ -86,27 +86,69 @@ const DEFAULT_ITEMS: ComplianceItem[] = [
 interface ComplianceOverviewTableProps {
   onNavigateToView: (view: string) => void;
   onSelectRequirement?: (req: ComplianceItem) => void;
+  liveSummary?: any;
+  items?: ComplianceItem[];
 }
 
 export function ComplianceOverviewTable({
   onNavigateToView,
   onSelectRequirement,
+  liveSummary,
+  items: customItems,
 }: ComplianceOverviewTableProps) {
   const [activeTab, setActiveTab] = useState<string>("All");
 
-  const tabs = [
-    { key: "All", label: "All (60)" },
-    { key: "BIS", label: "BIS (12)" },
-    { key: "Approvals", label: "Approvals (18)" },
-    { key: "NOCs", label: "NOCs (10)" },
-    { key: "Registrations", label: "Registrations (8)" },
-    { key: "Licences", label: "Licences (6)" },
-    { key: "Certificates", label: "Certificates (6)" },
-  ];
+  const items = React.useMemo<ComplianceItem[]>(() => {
+    if (customItems && customItems.length > 0) return customItems;
+    if (liveSummary?.priority_actions && Array.isArray(liveSummary.priority_actions) && liveSummary.priority_actions.length > 0) {
+      return liveSummary.priority_actions.map((act: any, idx: number) => {
+        const cat = act.statutory_authority === "BIS"
+          ? "BIS"
+          : act.statutory_authority === "WPC" || act.statutory_authority === "DGFT"
+          ? "Licences"
+          : "Approvals";
+        return {
+          id: act.requirement_id || `req-live-${idx}`,
+          code: act.requirement_id || `REQ-00${idx + 1}`,
+          name: act.title || "Statutory Requirement",
+          subtext: `${act.statutory_authority || "Statutory"} · ${act.act_or_regulation || "Compliance Mandate"}`,
+          authority: act.statutory_authority || "Authority",
+          category: cat as ComplianceItem["category"],
+          status: act.severity === "CRITICAL" ? "Pending" : "In Progress",
+          progress: act.due_in_days <= 15 ? 30 : 60,
+          dueDate: act.due_in_days ? `In ${act.due_in_days} days` : "30 days",
+          daysLeft: act.due_in_days || 15,
+          actionLabel: act.severity === "CRITICAL" ? ("Start" as const) : ("Continue" as const),
+        };
+      });
+    }
+    return DEFAULT_ITEMS;
+  }, [customItems, liveSummary]);
+
+  const tabs = React.useMemo(() => {
+    const counts = {
+      All: items.length,
+      BIS: items.filter((i) => i.category === "BIS").length,
+      Approvals: items.filter((i) => i.category === "Approvals").length,
+      NOCs: items.filter((i) => i.category === "NOCs").length,
+      Registrations: items.filter((i) => i.category === "Registrations").length,
+      Licences: items.filter((i) => i.category === "Licences").length,
+      Certificates: items.filter((i) => i.category === "Certificates").length,
+    };
+    return [
+      { key: "All", label: `All (${counts.All})` },
+      { key: "BIS", label: `BIS (${counts.BIS})` },
+      { key: "Approvals", label: `Approvals (${counts.Approvals})` },
+      { key: "NOCs", label: `NOCs (${counts.NOCs})` },
+      { key: "Registrations", label: `Registrations (${counts.Registrations})` },
+      { key: "Licences", label: `Licences (${counts.Licences})` },
+      { key: "Certificates", label: `Certificates (${counts.Certificates})` },
+    ];
+  }, [items]);
 
   const filteredItems = activeTab === "All"
-    ? DEFAULT_ITEMS
-    : DEFAULT_ITEMS.filter((item) => item.category === activeTab);
+    ? items
+    : items.filter((item) => item.category === activeTab);
 
   return (
     <div className="slash-card p-5 flex flex-col justify-between select-none">

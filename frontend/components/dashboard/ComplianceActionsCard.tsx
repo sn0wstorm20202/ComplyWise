@@ -65,34 +65,34 @@ export function ComplianceActionsCard({
   const peakPoint = points.find((p) => p.isPeak) || points[2];
 
   return (
-    <div className="bg-[#111214] rounded-[14px] p-5 sm:p-6 border border-white/[0.08] shadow-sm flex flex-col justify-between h-[280px] relative select-none">
+    <div className="bg-[#101114] rounded-[14px] p-5 sm:p-6 border border-white/[0.08] shadow-lg flex flex-col justify-between h-full min-h-[270px] relative select-none">
       {/* Header */}
       <div>
-        <div className="flex items-center justify-between">
-          <h3 className="text-[15px] font-semibold text-[#F5F5F3]">
+        <div className="flex items-center justify-between gap-1">
+          <h3 className="text-sm font-semibold text-[#F2F2F0] whitespace-nowrap">
             Compliance Actions
           </h3>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={handleSortClick}
               aria-label="Sort actions"
               title={`Filter: currently ${activeFilter === "all" ? "All Actions" : "High Priority Only"}`}
-              className={`h-7 w-7 rounded-[8px] flex items-center justify-center transition-colors cursor-pointer border ${
+              className={`h-6 w-6 rounded-[6px] flex items-center justify-center transition-colors cursor-pointer border ${
                 activeFilter === "high"
-                  ? "bg-white/[0.12] border-white/[0.16] text-[#F5F5F3]"
-                  : "bg-[#17191C] hover:bg-white/[0.06] border-white/[0.08] text-[#A1A1AA] hover:text-[#F5F5F3]"
+                  ? "bg-white/[0.12] border-white/[0.16] text-[#F2F2F0]"
+                  : "bg-[#141519] hover:bg-white/[0.08] border-white/[0.08] text-[#A4A5AA] hover:text-[#F2F2F0]"
               }`}
             >
-              <ArrowUpDown className="h-3.5 w-3.5" />
+              <ArrowUpDown className="h-3 w-3" />
             </button>
             <button
               type="button"
               onClick={onExpand}
               aria-label="Expand actions details"
-              className="h-7 w-7 rounded-[8px] bg-[#17191C] hover:bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors cursor-pointer"
+              className="h-6 w-6 rounded-[6px] bg-[#141519] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-center text-[#A4A5AA] hover:text-[#F2F2F0] transition-colors cursor-pointer"
             >
-              <ArrowUpRight className="h-3.5 w-3.5" />
+              <ArrowUpRight className="h-3 w-3" />
             </button>
           </div>
         </div>
@@ -122,8 +122,8 @@ export function ComplianceActionsCard({
             onClick={() => setActiveFilter("high")}
             className={`px-2.5 py-1.5 rounded-[8px] border flex items-center justify-between text-xs transition-all cursor-pointer ${
               activeFilter === "high"
-                ? "bg-[#ED7C7C]/15 border-[#ED7C7C]/40 text-[#ED7C7C] font-medium"
-                : "bg-[#17191C] border-white/[0.08] hover:bg-white/[0.04] text-[#A1A1AA]"
+                ? "bg-[#ED7C7C]/15 border-[#ED7C7C]/40 text-[#ED7C7C] font-semibold"
+                : "bg-[#141519] border-white/[0.08] hover:bg-white/[0.04] text-[#A4A5AA]"
             }`}
           >
             <span className="font-semibold">{actionsData.highPriorityCount}</span>
@@ -134,8 +134,8 @@ export function ComplianceActionsCard({
             onClick={() => setActiveFilter("all")}
             className={`px-2.5 py-1.5 rounded-[8px] border flex items-center justify-between text-xs transition-all cursor-pointer ${
               activeFilter === "all"
-                ? "bg-white/[0.12] border-white/[0.16] text-[#F5F5F3] font-medium"
-                : "bg-[#17191C] border-white/[0.08] hover:bg-white/[0.04] text-[#A1A1AA]"
+                ? "bg-white/[0.12] border-white/[0.16] text-[#F5F5F3] font-semibold"
+                : "bg-[#141519] border-white/[0.08] hover:bg-white/[0.04] text-[#A4A5AA]"
             }`}
           >
             <span className="font-semibold">{actionsData.totalCount}</span>

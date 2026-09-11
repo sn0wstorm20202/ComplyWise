@@ -1,16 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ErrorState from "@/components/ErrorState";
-import { authApi } from "@/lib/api/auth";
-import { setAuthToken } from "@/lib/api/client";
+import { useAuth } from "@/context/AuthContext";
 
-export default function SignInPage() {
+function SignInContent() {
   const router = useRouter();
-  const [mode, setMode] = useState<"signin" | "register">("signin");
+  const searchParams = useSearchParams();
+  const redirectTarget = searchParams.get("redirect") || "/dashboard";
+
+  const { login, register, fastDemoLogin } = useAuth();
+  const initialMode = searchParams.get("mode") === "register" ? "register" : "signin";
+
+  const [mode, setMode] = useState<"signin" | "register">(initialMode);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
@@ -24,18 +29,17 @@ export default function SignInPage() {
 
     try {
       if (mode === "signin") {
-        const session = await authApi.login(email, password);
-        setAuthToken(session.token);
-        // Check if there is an active business or redirect to onboarding
-        router.push("/onboarding");
+        await login(email, password);
+        router.push(redirectTarget);
       } else {
-        const session = await authApi.register(email, password, fullName);
-        setAuthToken(session.token);
+        await register(email, password, fullName);
         router.push("/onboarding");
       }
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Authentication failed. Please verify credentials.";
+        err instanceof Error
+          ? err.message
+          : "Authentication failed. Please verify credentials.";
       setError(message);
     } finally {
       setLoading(false);
@@ -45,27 +49,9 @@ export default function SignInPage() {
   async function handleDemoLogin() {
     setLoading(true);
     setError(null);
-    const demoEmail = "compliance.officer@example.com";
-    const demoPassword = "CompliancePass123!";
-    const demoName = "Lead Compliance Officer";
-
     try {
-      // Try login first
-      try {
-        const session = await authApi.login(demoEmail, demoPassword);
-        setAuthToken(session.token);
-        router.push("/onboarding");
-        return;
-      } catch {
-        // If login failed, register demo account
-        const session = await authApi.register(
-          demoEmail,
-          demoPassword,
-          demoName
-        );
-        setAuthToken(session.token);
-        router.push("/onboarding");
-      }
+      await fastDemoLogin();
+      router.push(redirectTarget);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to authenticate demo user.";
@@ -103,7 +89,7 @@ export default function SignInPage() {
                 setMode("signin");
                 setError(null);
               }}
-              className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-all ${
+              className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 mode === "signin"
                   ? "bg-[#ffffff] text-[#08080a] shadow-xs"
                   : "text-[#777a88] hover:text-[#ffffff]"
@@ -117,7 +103,7 @@ export default function SignInPage() {
                 setMode("register");
                 setError(null);
               }}
-              className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-all ${
+              className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 mode === "register"
                   ? "bg-[#ffffff] text-[#08080a] shadow-xs"
                   : "text-[#777a88] hover:text-[#ffffff]"
@@ -188,8 +174,8 @@ export default function SignInPage() {
               {loading
                 ? "Authenticating..."
                 : mode === "signin"
-                ? "Sign In →"
-                : "Create Account →"}
+                ? "Sign In"
+                : "Create Account"}
             </button>
           </form>
 
@@ -204,7 +190,7 @@ export default function SignInPage() {
               disabled={loading}
               className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-[#2e3038] bg-[#121317] px-4 py-2.5 text-xs font-semibold text-[#cc9166] hover:bg-[#1a1c22] hover:border-[#cc9166]/60 disabled:opacity-50 transition-colors cursor-pointer"
             >
-              ⚡ Fast Demo Login (Lead Compliance Officer)
+              Fast Demo Login (Lead Compliance Officer)
             </button>
             <div className="text-[11px] text-center text-[#777a88]">
               Pre-seeded test account with ready industrial parameters
@@ -215,3 +201,11 @@ export default function SignInPage() {
     </div>
   );
 }
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#08080a]" />}>
+      <SignInContent />
+    </Suspense>
+  );
+}

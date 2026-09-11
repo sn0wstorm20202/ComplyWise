@@ -27,12 +27,12 @@ export function DocumentsCard({
   return (
     <div
       onClick={onOpen}
-      className="bg-[#111214] rounded-[12px] p-5 border border-white/[0.08] shadow-sm flex flex-col justify-between h-[280px] cursor-pointer group hover:border-white/[0.14] transition-colors select-none"
+      className="bg-[#101114] rounded-[14px] p-5 sm:p-6 border border-white/[0.08] shadow-lg flex flex-col justify-between h-full min-h-[270px] cursor-pointer group hover:border-white/[0.14] transition-all select-none"
     >
       {/* Header */}
       <div>
         <div className="flex items-center justify-between">
-          <h3 className="text-[15px] font-semibold text-[#F5F5F3] group-hover:text-accent transition-colors">
+          <h3 className="text-sm font-semibold text-[#F2F2F0] group-hover:text-[#6E82FF] transition-colors">
             Documents
           </h3>
           <button
@@ -42,9 +42,9 @@ export function DocumentsCard({
               if (onOpen) onOpen();
             }}
             aria-label="View documents"
-            className="h-7 w-7 rounded-[8px] bg-[#17191C] hover:bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors"
+            className="h-6 w-6 rounded-[6px] bg-[#141519] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-center text-[#A4A5AA] hover:text-[#F2F2F0] transition-colors"
           >
-            <FileText className="h-3.5 w-3.5" />
+            <FileText className="h-3 w-3" />
           </button>
         </div>
 

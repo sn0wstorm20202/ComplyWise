@@ -54,11 +54,38 @@ const DEFAULT_DEADLINES: DeadlineEvent[] = [
 
 interface DashboardDeadlinesWidgetProps {
   onNavigateToView: (view: string) => void;
+  liveSummary?: any;
+  deadlines?: DeadlineEvent[];
 }
 
 export function DashboardDeadlinesWidget({
   onNavigateToView,
+  liveSummary,
+  deadlines: customDeadlines,
 }: DashboardDeadlinesWidgetProps) {
+  const events = React.useMemo<DeadlineEvent[]>(() => {
+    if (customDeadlines && customDeadlines.length > 0) return customDeadlines;
+    if (liveSummary?.upcoming_deadlines && Array.isArray(liveSummary.upcoming_deadlines) && liveSummary.upcoming_deadlines.length > 0) {
+      return liveSummary.upcoming_deadlines.map((d: any, idx: number) => {
+        const dateObj = new Date(d.due_date);
+        const day = isNaN(dateObj.getDate()) ? "15" : String(dateObj.getDate()).padStart(2, "0");
+        const month = isNaN(dateObj.getMonth())
+          ? "SEP"
+          : dateObj.toLocaleString("en-US", { month: "short" }).toUpperCase();
+        return {
+          id: d.requirement_id || `deadline-${idx}`,
+          day,
+          month,
+          title: d.title || d.requirement_id || "Statutory Deadline",
+          subtitle: `${d.authority || "Statutory"} · ${d.category || "Mandate"}`,
+          daysLeft: d.days_left ?? 15,
+          urgency: (d.severity === "CRITICAL" ? "HIGH" : "MEDIUM") as DeadlineEvent["urgency"],
+        };
+      });
+    }
+    return DEFAULT_DEADLINES;
+  }, [customDeadlines, liveSummary]);
+
   return (
     <div className="slash-card p-5 flex flex-col justify-between select-none">
       <div>
@@ -85,7 +112,7 @@ export function DashboardDeadlinesWidget({
 
         {/* Deadline Items List */}
         <div className="divide-y divide-[#1c1d22] mt-1">
-          {DEFAULT_DEADLINES.map((item) => (
+          {events.map((item) => (
             <div
               key={item.id}
               onClick={() => onNavigateToView("calendar")}

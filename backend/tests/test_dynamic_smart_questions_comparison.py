@@ -146,7 +146,7 @@ def test_multi_round_adaptive_stopping_condition(auth_client, user, make_busines
         var = get_variable(k)
         if var.data_type == VariableDataType.BOOLEAN:
             answers[k] = False
-        elif var.data_type in {VariableDataType.INTEGER, VariableDataType.DECIMAL}:
+        elif var.data_type in {VariableDataType.INTEGER, VariableDataType.DECIMAL, VariableDataType.CURRENCY_INR}:
             answers[k] = "100"
         elif var.data_type == VariableDataType.SINGLE_CHOICE:
             answers[k] = var.options[0].value if var.options else "OPERATIONAL"

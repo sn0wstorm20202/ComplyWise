@@ -10,10 +10,14 @@ import {
   ArrowRight,
   Edit3,
 } from "lucide-react";
-import { BusinessProfile } from "@/data/demo";
+import { BusinessProfile, DashboardData } from "@/data/demo";
+import { DashboardSummary } from "@/types";
 
 interface DashboardMetricsRowProps {
   profile: BusinessProfile;
+  dashboardData?: DashboardData;
+  liveSummary?: DashboardSummary | null;
+  isDemoMode?: boolean;
   onNavigateToView: (view: string) => void;
   onOpenCalendar?: () => void;
   onOpenDocuments?: () => void;
@@ -22,23 +26,55 @@ interface DashboardMetricsRowProps {
 
 export function DashboardMetricsRow({
   profile,
+  dashboardData,
+  liveSummary,
+  isDemoMode = true,
   onNavigateToView,
   onOpenCalendar,
   onOpenDocuments,
   onOpenTasks,
 }: DashboardMetricsRowProps) {
-  // Metric numbers derived from context or calibrated defaults
-  const percentage = 62;
-  const completedCount = 26;
-  const inProgressCount = 18;
-  const pendingCount = 11;
-  const notApplicableCount = 5;
-  const totalReqs = 60;
+  // Derive metrics: prioritize live backend summary, fallback to reactive demo data
+  const percentage = liveSummary
+    ? (liveSummary.compliance_readiness ?? 0)
+    : (dashboardData?.complianceHealth?.percentage ?? 62);
+
+  const completedCount = liveSummary
+    ? (liveSummary.metrics?.applicable_count ?? 0)
+    : (dashboardData?.complianceHealth?.compliantCount ?? 26);
+
+  const inProgressCount = liveSummary
+    ? (liveSummary.metrics?.action_required_count ?? 0)
+    : (dashboardData?.complianceHealth?.inProgressCount ?? 18);
+
+  const pendingCount = liveSummary
+    ? (liveSummary.metrics?.needs_information_count ?? 0)
+    : (dashboardData?.complianceHealth?.overdueCount ?? 11);
+
+  const notApplicableCount = liveSummary
+    ? (liveSummary.metrics?.not_applicable_count ?? 0)
+    : 5;
+
+  const totalReqs = liveSummary
+    ? (liveSummary.metrics?.total_evaluated || (completedCount + inProgressCount + pendingCount + notApplicableCount))
+    : (dashboardData?.requirements?.applicableCount ? dashboardData.requirements.applicableCount + 5 : 60);
+
+  const upcomingDeadlinesCount = liveSummary
+    ? (liveSummary.upcoming_deadlines?.length ?? 0)
+    : 5;
+
+  const tasksCount = liveSummary
+    ? liveSummary.priority_actions.length
+    : (dashboardData?.actions.openCount ?? 7);
+
+  const documentsCount = liveSummary
+    ? liveSummary.total_documents_needed
+    : (dashboardData?.documents.totalCount ?? 36);
 
   // SVG Gauge parameters (circumference: 2 * PI * r = 2 * PI * 42 ≈ 263.89)
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (circumference * percentage) / 100;
+  const strokeDashoffset = circumference - (circumference * Math.min(100, Math.max(0, percentage))) / 100;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3.5 sm:gap-4 items-stretch select-none">
@@ -132,17 +168,17 @@ export function DashboardMetricsRow({
 
           <div className="mt-4 flex items-baseline gap-2">
             <span className="font-serif text-3xl sm:text-4xl font-bold text-[#ffffff] tracking-tight">
-              5
+              {upcomingDeadlinesCount}
             </span>
             <span className="text-xs text-[#9194a1]">in next 30 days</span>
           </div>
 
           <div className="flex items-center gap-2 mt-3">
             <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#ed7c7c]/10 border border-[#ed7c7c]/25 text-[#ed7c7c] text-[10px] font-semibold">
-              2 Overdue
+              {liveSummary ? `${liveSummary.upcoming_deadlines.filter((d: any) => d.days_remaining < 0).length} Overdue` : "2 Overdue"}
             </span>
             <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#cc9166]/10 border border-[#cc9166]/25 text-[#cc9166] text-[10px] font-semibold">
-              3 Due Soon
+              {liveSummary ? `${upcomingDeadlinesCount} Due Soon` : "3 Due Soon"}
             </span>
           </div>
         </div>
@@ -174,20 +210,20 @@ export function DashboardMetricsRow({
 
           <div className="mt-4 flex items-baseline gap-2">
             <span className="font-serif text-3xl sm:text-4xl font-bold text-[#ffffff] tracking-tight">
-              7
+              {tasksCount}
             </span>
             <span className="text-xs text-[#9194a1]">need your attention</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 mt-3 text-[10px]">
             <span className="px-2 py-0.5 rounded-full bg-[#ed7c7c]/10 text-[#ed7c7c] font-semibold border border-[#ed7c7c]/20">
-              3 High
+              {liveSummary ? `${inProgressCount} Action Required` : "3 High"}
             </span>
             <span className="px-2 py-0.5 rounded-full bg-[#f2c96d]/10 text-[#f2c96d] font-semibold border border-[#f2c96d]/20">
-              2 Medium
+              {liveSummary ? `${pendingCount} Under Review` : "2 Medium"}
             </span>
             <span className="px-2 py-0.5 rounded-full bg-[#75d69c]/10 text-[#75d69c] font-semibold border border-[#75d69c]/20">
-              2 Low
+              {liveSummary ? `${completedCount} Ready` : "2 Low"}
             </span>
           </div>
         </div>
@@ -219,9 +255,9 @@ export function DashboardMetricsRow({
 
           <div className="mt-4 flex items-baseline gap-2">
             <span className="font-serif text-3xl sm:text-4xl font-bold text-[#ffffff] tracking-tight">
-              36
+              {documentsCount}
             </span>
-            <span className="text-xs text-[#9194a1]">total documents</span>
+            <span className="text-xs text-[#9194a1]">statutory documents</span>
           </div>
 
           <div className="grid grid-cols-2 gap-1.5 mt-3 text-[10px] text-[#9194a1]">

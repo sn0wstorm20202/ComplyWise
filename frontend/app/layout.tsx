@@ -22,6 +22,7 @@ export const metadata: Metadata = {
     "Enterprise-grade statutory compliance intelligence, Bureau of Indian Standards (BIS) mandates, Quality Control Orders (QCOs), and automated workflows.",
 };
 
+import { AuthProvider } from "@/context/AuthContext";
 import { BusinessProvider } from "@/context/BusinessContext";
 
 export default function RootLayout({
@@ -32,7 +33,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} h-full antialiased dark`}>
       <body className="min-h-full flex flex-col font-sans bg-[#08080a] text-[#e2e3e9] selection:bg-white/15 selection:text-[#ffffff]">
-        <BusinessProvider>{children}</BusinessProvider>
+        <AuthProvider>
+          <BusinessProvider>{children}</BusinessProvider>
+        </AuthProvider>
       </body>
     </html>
   );

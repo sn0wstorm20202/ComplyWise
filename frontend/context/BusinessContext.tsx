@@ -185,13 +185,20 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         homeBusinesses = userBusinesses.length > 0 ? userBusinesses : INITIAL_DATABASE_BUSINESSES;
       }
 
+      const isValidUuid = (id: string | null | undefined): boolean =>
+        Boolean(id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+
       let bizId = preferredBizId || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
+      if (!isValidUuid(bizId)) {
+        bizId = null;
+      }
       if (!bizId && homeBusinesses.length > 0) {
-        bizId = homeBusinesses[0].id;
+        const found = homeBusinesses.find((b) => isValidUuid(b.id));
+        if (found) bizId = found.id;
       }
       if (!bizId) {
         const list = await api.businesses.list().catch(() => []);
-        if (list.length > 0) {
+        if (list.length > 0 && isValidUuid(list[0].id)) {
           bizId = list[0].id;
         }
       }

@@ -14,7 +14,9 @@ import { ApiEnvelope, ApiErrorEnvelope, ApiErrorDetail } from "@/types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-  "http://127.0.0.1:8000/api/v1";
+  (typeof window !== "undefined" && window.location.hostname.includes("vercel.app")
+    ? "https://backend-delta-inky-91.vercel.app/api/v1"
+    : "http://127.0.0.1:8000/api/v1");
 
 export class ApiError extends Error {
   readonly code: string;
@@ -32,7 +34,7 @@ export class ApiError extends Error {
 
 export function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("complywise_token") || "b7fd4971314b52f0977d83d3b37017bd56eb7d03";
+  return localStorage.getItem("complywise_token");
 }
 
 export function setAuthToken(token: string | null): void {

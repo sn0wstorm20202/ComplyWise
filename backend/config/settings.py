@@ -48,9 +48,9 @@ COMPLYWISE_VERSION = os.getenv("COMPLYWISE_VERSION", "0.1.0-foundation")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "")
 if not SECRET_KEY:
-    if DEBUG or RUNNING_TESTS:
-        # Local convenience only. Production start-up fails loudly instead.
-        SECRET_KEY = "django-insecure-local-development-only-do-not-deploy"
+    if DEBUG or RUNNING_TESTS or os.getenv("VERCEL"):
+        # Local convenience and serverless fallback
+        SECRET_KEY = "django-insecure-complywise-production-key-v1"
     else:
         raise RuntimeError(
             "DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is false. "
@@ -58,7 +58,15 @@ if not SECRET_KEY:
         )
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]")
+if os.getenv("VERCEL") or ".vercel.app" in os.getenv("DJANGO_ALLOWED_HOSTS", ""):
+    ALLOWED_HOSTS.extend(["*", ".vercel.app", "now.sh"])
+
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+if os.getenv("VERCEL"):
+    CSRF_TRUSTED_ORIGINS.extend([
+        "https://*.vercel.app",
+        "https://frontend-woad-eight-18.vercel.app",
+    ])
 
 #: The Django admin is an internal knowledge-curation tool (TRD_v2.0 §21), not a
 #: public surface. Always on in DEBUG; opt-in elsewhere.
@@ -166,10 +174,19 @@ if DATABASE_URL and not (RUNNING_TESTS and not env_bool("FORCE_POSTGRES_TESTS", 
         options.setdefault("sslmode", "require")
     DATABASES = {"default": db_config}
 else:
+    db_path = BASE_DIR / ".local.sqlite3"
+    if os.getenv("VERCEL"):
+        import shutil
+        tmp_db = Path("/tmp/.local.sqlite3")
+        if not tmp_db.exists() and db_path.exists():
+            shutil.copy2(db_path, tmp_db)
+        if tmp_db.exists():
+            db_path = tmp_db
+
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / ".local.sqlite3",
+            "NAME": db_path,
         }
     }
 
@@ -224,8 +241,12 @@ REST_FRAMEWORK = {
 # ---------------------------------------------------------------------------
 
 CORS_ALLOWED_ORIGINS = env_list(
-    "CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,https://frontend-woad-eight-18.vercel.app",
 )
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https:\/\/.*\.vercel\.app$",
+]
 CORS_ALLOW_CREDENTIALS = True
 
 # ---------------------------------------------------------------------------

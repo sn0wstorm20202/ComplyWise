@@ -14,6 +14,7 @@ Two invariants are enforced here:
 
 from __future__ import annotations
 
+import uuid
 from typing import Any, Iterable
 
 from django.conf import settings
@@ -386,3 +387,108 @@ def known_variable(key: str) -> ProfileVariable:
     if variable is None:
         raise ValidationError(f"{key!r} is not a canonical business profile variable.")
     return variable
+
+
+class UserWorkspaceState(models.Model):
+    """Tracks the authoritative active workspace (business & assessment) for a user across sessions.
+
+    Authority: Bug 2 Fix — Single Active-Workspace Policy (Parts 12-17).
+    Survives refresh, browser restart, logout/login, and switching.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="workspace_state",
+    )
+    active_business = models.ForeignKey(
+        Business,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    active_assessment = models.ForeignKey(
+        Assessment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "businesses_user_workspace_state"
+        ordering = ["-updated_at"]
+
+    def __str__(self) -> str:
+        biz_name = self.active_business.name if self.active_business else "None"
+        ass_num = f"#{self.active_assessment.assessment_number}" if self.active_assessment else "None"
+        return f"UserWorkspaceState({self.user.email} -> {biz_name}, Assessment {ass_num})"
+
+    @classmethod
+    def resolve_for_user(cls, user) -> tuple[UserWorkspaceState, str]:  # noqa: ANN001
+        """Deterministically resolve and restore user's workspace state according to the product policy.
+
+        Returns (workspace_state, redirect_target) where redirect_target is 'DASHBOARD' or 'ONBOARDING'.
+        """
+        if not user or not user.is_authenticated:
+            raise PermissionError("User is not authenticated.")
+
+        ws, _ = cls.objects.get_or_create(user=user)
+
+        # 1. Validate currently stored active_assessment
+        if ws.active_assessment:
+            ass = ws.active_assessment
+            if not ass.is_accessible_by(user) or ass.status == "ARCHIVED":
+                ws.active_assessment = None
+            else:
+                # Ensure active_business matches assessment's business
+                if ws.active_business_id != ass.business_id:
+                    ws.active_business = ass.business
+                    ws.save(update_fields=["active_business", "updated_at"])
+
+        # 2. If no valid active_assessment, but active_business is valid
+        if not ws.active_assessment and ws.active_business:
+            biz = ws.active_business
+            if not biz.is_accessible_by(user) or not biz.is_active:
+                ws.active_business = None
+            else:
+                latest_ass = biz.assessments.filter(
+                    models.Q(created_by=user) | models.Q(business__owner=user)
+                ).exclude(status="ARCHIVED").order_by("-updated_at").first()
+                if latest_ass:
+                    ws.active_assessment = latest_ass
+                    ws.save(update_fields=["active_assessment", "updated_at"])
+
+        # 3. If neither active_assessment nor active_business is valid, find most recent accessible workspace
+        if not ws.active_assessment or not ws.active_business:
+            latest_ass = Assessment.accessible_to(user).exclude(status="ARCHIVED").order_by("-updated_at").first()
+            if latest_ass:
+                ws.active_business = latest_ass.business
+                ws.active_assessment = latest_ass
+                ws.save(update_fields=["active_business", "active_assessment", "updated_at"])
+            else:
+                latest_biz = Business.accessible_to(user).filter(is_active=True).order_by("-created_at").first()
+                if latest_biz:
+                    ws.active_business = latest_biz
+                    ws.active_assessment = latest_biz.latest_assessment
+                    ws.save(update_fields=["active_business", "active_assessment", "updated_at"])
+
+        # 4. Determine redirect target
+        if not ws.active_business:
+            # Completely new user: no businesses yet -> onboard
+            redirect_target = "ONBOARDING"
+        elif ws.active_assessment and ws.active_assessment.status == "COMPLETED":
+            # Returning user with completed assessment -> Dashboard
+            redirect_target = "DASHBOARD"
+        elif ws.active_assessment and ws.active_assessment.status in ("IN_PROGRESS", "DRAFT"):
+            # Returning user with incomplete assessment -> Resume onboarding
+            redirect_target = "ONBOARDING"
+        else:
+            # Business exists but no assessment -> onboard
+            redirect_target = "ONBOARDING"
+
+        return ws, redirect_target
+

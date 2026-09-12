@@ -37,6 +37,10 @@ class SmartQuestionPlan(models.Model):
         db_index=True,
     )
     stopping_reason = models.CharField(max_length=100, blank=True, default="")
+    business_summary = models.TextField(blank=True, default="")
+    regulatory_search_intent = models.JSONField(default=dict, blank=True)
+    information_gaps = models.JSONField(default=list, blank=True)
+    reasoning_summary = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -64,11 +68,13 @@ class SmartQuestionInstance(models.Model):
     variable_key = models.CharField(
         max_length=100,
         db_index=True,
-        help_text="Canonical variable key (V01-V19) in the profile registry.",
+        help_text="Canonical variable key in the profile registry.",
     )
+    target_variable_id = models.CharField(max_length=100, blank=True, default="")
     question_text = models.TextField()
     why_it_matters = models.TextField(blank=True, default="")
     reason = models.TextField(blank=True, default="")
+    expected_discovery_impact = models.TextField(blank=True, default="")
     domains = models.JSONField(default=list, blank=True)
     data_type = models.CharField(max_length=30, default="TEXT")
     options = models.JSONField(default=list, blank=True)
@@ -76,6 +82,7 @@ class SmartQuestionInstance(models.Model):
     priority = models.CharField(max_length=20, default="HIGH")
     information_gain = models.FloatField(default=1.0)
     rule_dependency_count = models.IntegerField(default=0)
+    status = models.CharField(max_length=30, default="UNANSWERED", blank=True)
     is_answered = models.BooleanField(default=False)
     answer_value = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -551,12 +551,18 @@ function OnboardingContent() {
       let targetAss: Assessment | null = null;
 
       // 1. Explicit assessment resumption
-      if (paramAssessmentId) {
+      const effectiveAssId =
+        paramAssessmentId ||
+        (!isExplicitNew && !isNewAssessment && typeof window !== "undefined"
+          ? localStorage.getItem("complywise_active_assessment_id")
+          : null);
+
+      if (effectiveAssId) {
         try {
           if (paramBusinessId) {
-            targetAss = await api.businesses.getAssessment(paramBusinessId, paramAssessmentId);
+            targetAss = await api.businesses.getAssessment(paramBusinessId, effectiveAssId);
           } else {
-            targetAss = await api.businesses.getAssessmentDirect(paramAssessmentId);
+            targetAss = await api.businesses.getAssessmentDirect(effectiveAssId);
           }
         } catch (e) {
           console.error("Could not fetch assessment directly:", e);
@@ -1568,6 +1574,7 @@ function OnboardingContent() {
                   const ruleCount = q.candidate_rules_count ?? q.rule_dependency_count ?? 0;
                   const questionText = q.question || q.question_text || q.label || `Question regarding ${qKey}`;
                   const questionReason = q.reason || q.why_it_matters;
+                  const discoveryImpact = q.expected_discovery_impact;
                   const domains: string[] = Array.isArray(q.domains) ? q.domains : [];
 
                   return (
@@ -1608,9 +1615,18 @@ function OnboardingContent() {
                           </h3>
                         </div>
 
-                        {questionReason && (
-                          <div className="sm:max-w-xs text-[11px] text-[#64748B] bg-white border border-[#E2E8F0] rounded-lg p-2.5 leading-relaxed shrink-0 shadow-2xs">
-                            <span className="font-bold text-[#0F172A] block mb-0.5">Statutory Rationale:</span> {questionReason}
+                        {(questionReason || discoveryImpact) && (
+                          <div className="sm:max-w-xs text-[11px] text-[#64748B] bg-white border border-[#E2E8F0] rounded-lg p-2.5 leading-relaxed shrink-0 shadow-2xs space-y-1">
+                            {questionReason && (
+                              <p>
+                                <span className="font-bold text-[#0F172A] block mb-0.5">Statutory Rationale:</span> {questionReason}
+                              </p>
+                            )}
+                            {discoveryImpact && discoveryImpact !== questionReason && (
+                              <p className="pt-1 border-t border-[#F1F5F9] text-indigo-700">
+                                <span className="font-bold block mb-0.5">Search Impact:</span> {discoveryImpact}
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>

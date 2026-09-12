@@ -42,13 +42,15 @@ def env_list(name: str, default: str = "") -> list[str]:
 
 DEBUG = env_bool("DJANGO_DEBUG", default=False)
 RUNNING_TESTS = "pytest" in sys.modules or "test" in sys.argv
+IS_PRODUCTION = not DEBUG and not RUNNING_TESTS
+IS_VERCEL = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV"))
 
 #: Reported by /health so a deployed instance can be identified unambiguously.
 COMPLYWISE_VERSION = os.getenv("COMPLYWISE_VERSION", "0.1.0-foundation")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "")
 if not SECRET_KEY:
-    if DEBUG or RUNNING_TESTS or os.getenv("VERCEL"):
+    if DEBUG or RUNNING_TESTS or IS_VERCEL:
         # Local convenience and serverless fallback
         SECRET_KEY = "django-insecure-complywise-production-key-v1"
     else:
@@ -57,16 +59,9 @@ if not SECRET_KEY:
             "See .env.example."
         )
 
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]")
-if os.getenv("VERCEL") or ".vercel.app" in os.getenv("DJANGO_ALLOWED_HOSTS", ""):
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1],.vercel.app")
+if IS_VERCEL or ".vercel.app" in os.getenv("DJANGO_ALLOWED_HOSTS", ""):
     ALLOWED_HOSTS.extend(["*", ".vercel.app", "now.sh"])
-
-CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
-if os.getenv("VERCEL"):
-    CSRF_TRUSTED_ORIGINS.extend([
-        "https://*.vercel.app",
-        "https://frontend-woad-eight-18.vercel.app",
-    ])
 
 #: The Django admin is an internal knowledge-curation tool (TRD_v2.0 §21), not a
 #: public surface. Always on in DEBUG; opt-in elsewhere.
@@ -77,6 +72,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
+SILENCED_SYSTEM_CHECKS = ["urls.W005"]
 
 # ---------------------------------------------------------------------------
 # Applications — one Django app per TRD_v2.0 §6 domain boundary
@@ -237,17 +233,47 @@ REST_FRAMEWORK = {
 }
 
 # ---------------------------------------------------------------------------
-# CORS — the frontend is the only browser client. Credentials stay server-side.
+# CORS & CSRF — environment-driven frontend allowlist (Authority: Milestone CORS Task)
 # ---------------------------------------------------------------------------
-
-CORS_ALLOWED_ORIGINS = env_list(
-    "CORS_ALLOWED_ORIGINS",
-    "http://localhost:3000,http://127.0.0.1:3000,https://frontend-woad-eight-18.vercel.app",
+from config.cors import (
+    CORS_ALLOW_HEADERS,
+    CORS_ALLOW_METHODS,
+    CORS_EXPOSE_HEADERS,
+    get_cors_allowed_origins,
+    get_csrf_trusted_origins,
 )
+
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = get_cors_allowed_origins(
+    is_production=IS_PRODUCTION,
+    allow_localhost_in_prod=env_bool("CORS_ALLOW_LOCALHOST_IN_PRODUCTION", default=False),
+)
+# Ensure extra Vercel domains and staging domains are preserved
+for extra_origin in env_list("CORS_ALLOWED_ORIGINS", ""):
+    if extra_origin and extra_origin not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(extra_origin)
+
+if "https://frontend-woad-eight-18.vercel.app" not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append("https://frontend-woad-eight-18.vercel.app")
+
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https:\/\/.*\.vercel\.app$",
 ]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = CORS_ALLOW_METHODS
+CORS_ALLOW_HEADERS = CORS_ALLOW_HEADERS
+CORS_EXPOSE_HEADERS = CORS_EXPOSE_HEADERS
+CORS_PREFLIGHT_MAX_AGE = 86400
+
+CSRF_TRUSTED_ORIGINS = get_csrf_trusted_origins(
+    cors_origins=CORS_ALLOWED_ORIGINS,
+    is_production=IS_PRODUCTION,
+    allow_localhost_in_prod=env_bool("CORS_ALLOW_LOCALHOST_IN_PRODUCTION", default=False),
+)
+if IS_VERCEL:
+    for vercel_csrf in ["https://*.vercel.app", "https://frontend-woad-eight-18.vercel.app"]:
+        if vercel_csrf not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(vercel_csrf)
 
 # ---------------------------------------------------------------------------
 # i18n / static

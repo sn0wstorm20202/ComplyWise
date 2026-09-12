@@ -1,0 +1,55 @@
+[
+  {
+    "evidence_id": "EVD-FSSAI-CENTRAL-TURNOVER",
+    "source_id": "SRC-FSSAI-LICENSING-REG-2011",
+    "locator": "Schedule 1, Clause 2",
+    "excerpt": "Food business operators with annual turnover exceeding 20 Crore INR or manufacturing proprietary foods must obtain a Central License from the Central Licensing Authority.",
+    "structured_fact": {
+      "threshold_field": "annual_turnover",
+      "threshold_value": 200000000,
+      "operator": "GT"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "2011-08-05",
+    "effective_until": null
+  },
+  {
+    "evidence_id": "EVD-LEGAL-METROLOGY-RULE-27",
+    "source_id": "SRC-LEGAL-METROLOGY-ACT-2009",
+    "locator": "Rule 27(1)",
+    "excerpt": "Every individual, firm, Hindu undivided family, society, company or corporation who pre-packs or manufactures any commodity for sale shall make an application with prescribed fee to the Director or the Controller for registration of his or its name and complete address.",
+    "structured_fact": {
+      "mandatory_registration": true,
+      "scope": "Pre-packaged commodities"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "2011-04-01",
+    "effective_until": null
+  },
+  {
+    "evidence_id": "EVD-CPCB-EPR-PLASTIC-2022",
+    "source_id": "SRC-PLASTIC-WASTE-RULES-2016",
+    "locator": "Schedule II, Clause 4.1",
+    "excerpt": "Brand owners and producers using plastic packaging for packaging commodities must register on the Centralised Portal developed by Central Pollution Control Board.",
+    "structured_fact": {
+      "portal": "CPCB Centralized Portal",
+      "scope": "Brand Owners using plastic packaging"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "2022-07-01",
+    "effective_until": null
+  },
+  {
+    "evidence_id": "EVD-FSSAI-ORGANIC-2017",
+    "source_id": "SRC-FSSAI-ORGANIC-REG-2017",
+    "locator": "Regulation 3 & 4",
+    "excerpt": "No person shall manufacture, pack, sell, offer for sale, market or otherwise distribute any organic food unless it is certified under the National Programme for Organic Production (NPOP) or Participatory Guarantee System for India (PGS-India) and complies with the labelling requirements.",
+    "structured_fact": {
+      "mandatory_certification": true,
+      "logo": "Jaivik Bharat"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "2018-07-01",
+    "effective_until": null
+  }
+]

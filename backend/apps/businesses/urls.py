@@ -9,6 +9,7 @@ from . import views
 app_name = "businesses"
 
 urlpatterns = [
+    path("user/workspace", views.UserWorkspaceView.as_view(), name="user-workspace"),
     path("user/profile", views.UserProfileHomeView.as_view(), name="user-profile"),
     path("user/home", views.UserProfileHomeView.as_view(), name="user-home"),
     path("businesses", views.BusinessListCreateView.as_view(), name="list-create"),

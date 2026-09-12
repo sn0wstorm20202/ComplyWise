@@ -22,7 +22,7 @@ from common.enums import AssessmentStatus
 from common.permissions import IsBusinessMember
 from domain.profile.variables import CORE_VARIABLE_KEYS
 
-from .models import Assessment, Business, BusinessMembership, BusinessProfileVersion
+from .models import Assessment, Business, BusinessMembership, BusinessProfileVersion, UserWorkspaceState
 from .serializers import (
     AssessmentSerializer,
     AssessmentSummarySerializer,
@@ -157,16 +157,126 @@ class UserProfileHomeView(APIView):
         businesses = Business.accessible_to(user).order_by("-created_at")
         assessments = Assessment.accessible_to(user).order_by("-updated_at")
 
+        ws, redirect_target = UserWorkspaceState.resolve_for_user(user)
+
+        if not ws.active_business:
+            redirect_url = "/onboarding?new=true"
+        elif redirect_target == "DASHBOARD":
+            redirect_url = f"/dashboard?business_id={ws.active_business_id}&assessment_id={ws.active_assessment_id}"
+        elif ws.active_assessment_id:
+            redirect_url = f"/onboarding?business_id={ws.active_business_id}&assessment_id={ws.active_assessment_id}"
+        else:
+            redirect_url = f"/onboarding?business_id={ws.active_business_id}&new_assessment=true"
+
         data = {
             "user": {
                 "id": str(user.id),
                 "email": user.email,
                 "full_name": getattr(user, "full_name", "") or user.email,
             },
+            "workspace": {
+                "active_business_id": str(ws.active_business_id) if ws.active_business_id else None,
+                "active_assessment_id": str(ws.active_assessment_id) if ws.active_assessment_id else None,
+                "redirect_target": redirect_target,
+                "redirect_url": redirect_url,
+            },
             "businesses": BusinessSummarySerializer(businesses, many=True).data,
             "recent_assessments": AssessmentSummarySerializer(assessments[:10], many=True).data,
             "total_businesses": businesses.count(),
             "total_assessments": assessments.count(),
+        }
+        return Response(envelope(data), status=status.HTTP_200_OK)
+
+
+class UserWorkspaceView(APIView):
+    """Authoritative workspace state management for the authenticated user.
+
+    Enforces Bug 2 Single Active-Workspace Policy (Parts 12-20).
+    Survives refresh, route changes, logout/login, and switching.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        user = request.user
+        ws, redirect_target = UserWorkspaceState.resolve_for_user(user)
+
+        if not ws.active_business:
+            redirect_url = "/onboarding?new=true"
+        elif redirect_target == "DASHBOARD":
+            redirect_url = f"/dashboard?business_id={ws.active_business_id}&assessment_id={ws.active_assessment_id}"
+        elif ws.active_assessment_id:
+            redirect_url = f"/onboarding?business_id={ws.active_business_id}&assessment_id={ws.active_assessment_id}"
+        else:
+            redirect_url = f"/onboarding?business_id={ws.active_business_id}&new_assessment=true"
+
+        data = {
+            "user_id": str(user.id),
+            "email": user.email,
+            "has_workspace": ws.active_business is not None,
+            "active_business_id": str(ws.active_business_id) if ws.active_business_id else None,
+            "active_business_name": ws.active_business.name if ws.active_business else None,
+            "active_assessment_id": str(ws.active_assessment_id) if ws.active_assessment_id else None,
+            "active_assessment_number": ws.active_assessment.assessment_number if ws.active_assessment else None,
+            "active_assessment_title": ws.active_assessment.title if ws.active_assessment else None,
+            "active_assessment_status": ws.active_assessment.status if ws.active_assessment else None,
+            "current_step": ws.active_assessment.current_step if ws.active_assessment else 1,
+            "redirect_target": redirect_target,
+            "redirect_url": redirect_url,
+            "updated_at": ws.updated_at.isoformat() if ws.updated_at else None,
+        }
+        return Response(envelope(data), status=status.HTTP_200_OK)
+
+    def post(self, request: Request) -> Response:
+        user = request.user
+        biz_id = request.data.get("business_id")
+        ass_id = request.data.get("assessment_id")
+
+        ws, _ = UserWorkspaceState.objects.get_or_create(user=user)
+
+        if biz_id:
+            biz = Business.accessible_to(user).filter(pk=biz_id).first()
+            if not biz:
+                return error_response("FORBIDDEN", "Business not found or not accessible.", http_status=status.HTTP_403_FORBIDDEN)
+            ws.active_business = biz
+
+        if ass_id:
+            ass = Assessment.accessible_to(user).filter(pk=ass_id).first()
+            if not ass:
+                return error_response("FORBIDDEN", "Assessment not found or not accessible.", http_status=status.HTTP_403_FORBIDDEN)
+            if ws.active_business and ass.business_id != ws.active_business.id:
+                return error_response("INVALID_REQUEST", "Assessment does not belong to active business.", http_status=status.HTTP_400_BAD_REQUEST)
+            ws.active_assessment = ass
+            if not ws.active_business:
+                ws.active_business = ass.business
+
+        ws.save()
+
+        _, redirect_target = UserWorkspaceState.resolve_for_user(user)
+
+        if not ws.active_business:
+            redirect_url = "/onboarding?new=true"
+        elif redirect_target == "DASHBOARD":
+            redirect_url = f"/dashboard?business_id={ws.active_business_id}&assessment_id={ws.active_assessment_id}"
+        elif ws.active_assessment_id:
+            redirect_url = f"/onboarding?business_id={ws.active_business_id}&assessment_id={ws.active_assessment_id}"
+        else:
+            redirect_url = f"/onboarding?business_id={ws.active_business_id}&new_assessment=true"
+
+        data = {
+            "user_id": str(user.id),
+            "email": user.email,
+            "has_workspace": ws.active_business is not None,
+            "active_business_id": str(ws.active_business_id) if ws.active_business_id else None,
+            "active_business_name": ws.active_business.name if ws.active_business else None,
+            "active_assessment_id": str(ws.active_assessment_id) if ws.active_assessment_id else None,
+            "active_assessment_number": ws.active_assessment.assessment_number if ws.active_assessment else None,
+            "active_assessment_title": ws.active_assessment.title if ws.active_assessment else None,
+            "active_assessment_status": ws.active_assessment.status if ws.active_assessment else None,
+            "current_step": ws.active_assessment.current_step if ws.active_assessment else 1,
+            "redirect_target": redirect_target,
+            "redirect_url": redirect_url,
+            "updated_at": ws.updated_at.isoformat() if ws.updated_at else None,
         }
         return Response(envelope(data), status=status.HTTP_200_OK)
 
@@ -303,6 +413,15 @@ class AssessmentCompleteView(_BusinessScopedView):
         assessment.current_step = 5
         assessment.completed_at = timezone.now()
         assessment.save()
+
+        if request.user.is_authenticated:
+            try:
+                ws, _ = UserWorkspaceState.objects.get_or_create(user=request.user)
+                ws.active_business = business
+                ws.active_assessment = assessment
+                ws.save()
+            except Exception:
+                pass
 
         return Response(envelope(AssessmentSerializer(assessment).data))
 

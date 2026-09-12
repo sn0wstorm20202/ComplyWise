@@ -25,6 +25,7 @@ interface BusinessContextValue {
   dashboardData: DashboardData;
   liveDashboardSummary: DashboardSummary | null;
   activeBusinessId: string | null;
+  activeAssessmentId: string | null;
   isDemoMode: boolean;
   dataSource: "LIVE_BACKEND" | "DEMO_ADAPTER";
   availableProfiles: BusinessProfile[];
@@ -33,6 +34,7 @@ interface BusinessContextValue {
   setProfile: (profile: BusinessProfile) => void;
   updateProfile: (partial: Partial<BusinessProfile>) => void;
   switchProfile: (profileId: string) => Promise<void>;
+  setActiveAssessmentId: (assessmentId: string | null) => void;
   resetToDefault: () => void;
   refreshDashboardData: () => Promise<void>;
 }
@@ -125,6 +127,12 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [liveDashboardSummary, setLiveDashboardSummary] = useState<DashboardSummary | null>(null);
   const [activeBusinessId, setActiveBusinessId] = useState<string | null>(null);
+  const [activeAssessmentId, setActiveAssessmentIdState] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("complywise_active_assessment_id");
+    }
+    return null;
+  });
   const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
   const [userBusinesses, setUserBusinesses] = useState<BusinessSummary[]>(() => {
     if (typeof window !== "undefined") {
@@ -151,6 +159,20 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     }
     return INITIAL_DATABASE_ASSESSMENTS;
   });
+
+  const setActiveAssessmentId = useCallback((id: string | null) => {
+    setActiveAssessmentIdState(id);
+    if (typeof window !== "undefined") {
+      if (id) {
+        localStorage.setItem("complywise_active_assessment_id", id);
+      } else {
+        localStorage.removeItem("complywise_active_assessment_id");
+      }
+    }
+    if (activeBusinessId) {
+      api.businesses.setWorkspace({ business_id: activeBusinessId, assessment_id: id }).catch(() => {});
+    }
+  }, [activeBusinessId]);
 
   // Fetch live data from backend if authenticated
   const fetchBackendData = useCallback(async (preferredBizId?: string | null) => {
@@ -188,7 +210,18 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
       const isValidUuid = (id: string | null | undefined): boolean =>
         Boolean(id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
 
-      let bizId = preferredBizId || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
+      // Consult authoritative server workspace state
+      let serverWs: any = null;
+      try {
+        serverWs = await api.businesses.getWorkspace();
+      } catch {
+        serverWs = null;
+      }
+
+      let bizId =
+        preferredBizId ||
+        (serverWs?.active_business_id && isValidUuid(serverWs.active_business_id) ? serverWs.active_business_id : null) ||
+        (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
       if (!isValidUuid(bizId)) {
         bizId = null;
       }
@@ -212,6 +245,27 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== "undefined") {
         localStorage.setItem("complywise_active_business_id", bizId);
       }
+
+      // Sync active assessment id
+      const serverAssId = serverWs?.active_business_id === bizId ? serverWs.active_assessment_id : null;
+      const effectiveAssId =
+        serverAssId && isValidUuid(serverAssId)
+          ? serverAssId
+          : typeof window !== "undefined"
+          ? localStorage.getItem("complywise_active_assessment_id")
+          : null;
+      if (effectiveAssId && isValidUuid(effectiveAssId)) {
+        setActiveAssessmentIdState(effectiveAssId);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("complywise_active_assessment_id", effectiveAssId);
+        }
+      }
+
+      // Persist workspace state authoritatively to backend
+      api.businesses.setWorkspace({
+        business_id: bizId,
+        assessment_id: effectiveAssId && isValidUuid(effectiveAssId) ? effectiveAssId : undefined,
+      }).catch(() => {});
 
       const matchedSummary = homeBusinesses.find((b) => b.id === bizId);
 
@@ -357,6 +411,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     // It's a real database business ID!
     localStorage.setItem("complywise_active_business_id", profileId);
     setActiveBusinessId(profileId);
+    api.businesses.setWorkspace({ business_id: profileId }).catch(() => {});
     await fetchBackendData(profileId);
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("complywise_business_switched", { detail: { businessId: profileId } }));
@@ -379,6 +434,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     dashboardData,
     liveDashboardSummary,
     activeBusinessId,
+    activeAssessmentId,
     isDemoMode,
     dataSource: isDemoMode ? "DEMO_ADAPTER" : "LIVE_BACKEND",
     availableProfiles: DEMO_PROFILES,
@@ -387,6 +443,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     setProfile,
     updateProfile,
     switchProfile,
+    setActiveAssessmentId,
     resetToDefault,
     refreshDashboardData: () => fetchBackendData(activeBusinessId),
   };

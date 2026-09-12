@@ -1,0 +1,255 @@
+[
+  {
+    "rule_id": "RULE-FSSAI-CENTRAL-01",
+    "version": 1,
+    "domain": "FOOD",
+    "jurisdiction": "CENTRAL",
+    "requirement_id": "REQ-FSSAI-CENTRAL-LICENCE",
+    "status": "PUBLISHED",
+    "effective_from": "2011-08-05",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {
+          "op": "OR",
+          "args": [
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "FOOD"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "MILLET"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "SNACK"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "AGRO"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "GRAIN"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "FLOUR"
+            }
+          ]
+        },
+        {
+          "op": "GT",
+          "left": {
+            "var": "annual_turnover"
+          },
+          "right": 200000000
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": [
+      "EVD-FSSAI-CENTRAL-TURNOVER"
+    ]
+  },
+  {
+    "rule_id": "RULE-LEGAL-METROLOGY-01",
+    "version": 1,
+    "domain": "STANDARDS",
+    "jurisdiction": "CENTRAL",
+    "requirement_id": "REQ-LEGAL-METROLOGY-PACKER",
+    "status": "PUBLISHED",
+    "effective_from": "2011-04-01",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {
+          "op": "EQ",
+          "left": {
+            "var": "food_contact_packaging"
+          },
+          "right": true
+        },
+        {
+          "op": "OR",
+          "args": [
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "FOOD"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "PACKAG"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "MILLET"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "SNACK"
+            }
+          ]
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": [
+      "EVD-LEGAL-METROLOGY-RULE-27"
+    ]
+  },
+  {
+    "rule_id": "RULE-CPCB-EPR-PLASTIC-01",
+    "version": 1,
+    "domain": "ENVIRONMENT",
+    "jurisdiction": "CENTRAL",
+    "requirement_id": "REQ-CPCB-EPR-PLASTIC",
+    "status": "PUBLISHED",
+    "effective_from": "2022-07-01",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {
+          "op": "EQ",
+          "left": {
+            "var": "food_contact_packaging"
+          },
+          "right": true
+        },
+        {
+          "op": "OR",
+          "args": [
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "FOOD"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "PACKAG"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "SNACK"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "MILLET"
+            }
+          ]
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": [
+      "EVD-CPCB-EPR-PLASTIC-2022"
+    ]
+  },
+  {
+    "rule_id": "RULE-ORGANIC-FOOD-01",
+    "version": 1,
+    "domain": "FOOD",
+    "jurisdiction": "CENTRAL",
+    "requirement_id": "REQ-APEDA-NPOP-ORGANIC",
+    "status": "PUBLISHED",
+    "effective_from": "2018-07-01",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {
+          "op": "EQ",
+          "left": {
+            "var": "organic_claim"
+          },
+          "right": true
+        },
+        {
+          "op": "OR",
+          "args": [
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "FOOD"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "ORGANIC"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "MILLET"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "AGRO"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "SNACK"
+            }
+          ]
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": [
+      "EVD-FSSAI-ORGANIC-2017"
+    ]
+  }
+]

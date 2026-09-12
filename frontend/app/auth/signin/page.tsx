@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ErrorState from "@/components/ErrorState";
 import { useAuth } from "@/context/AuthContext";
+import { businessesApi } from "@/lib/api/businesses";
 
 function SignInContent() {
   const router = useRouter();
@@ -22,6 +23,25 @@ function SignInContent() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  async function resolveWorkspaceAndRedirect(fallbackUrl: string) {
+    try {
+      const ws = await businessesApi.getWorkspace();
+      if (ws?.active_business_id) {
+        localStorage.setItem("complywise_active_business_id", ws.active_business_id);
+      }
+      if (ws?.active_assessment_id) {
+        localStorage.setItem("complywise_active_assessment_id", ws.active_assessment_id);
+      }
+      if (ws?.redirect_url && fallbackUrl === "/dashboard") {
+        router.push(ws.redirect_url);
+        return;
+      }
+    } catch {
+      // Non-blocking workspace restoration fallback
+    }
+    router.push(fallbackUrl);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -30,10 +50,10 @@ function SignInContent() {
     try {
       if (mode === "signin") {
         await login(email, password);
-        router.push(redirectTarget);
+        await resolveWorkspaceAndRedirect(redirectTarget);
       } else {
         await register(email, password, fullName);
-        router.push("/onboarding");
+        await resolveWorkspaceAndRedirect("/onboarding");
       }
     } catch (err: unknown) {
       const message =
@@ -51,7 +71,7 @@ function SignInContent() {
     setError(null);
     try {
       await fastDemoLogin();
-      router.push(redirectTarget);
+      await resolveWorkspaceAndRedirect(redirectTarget);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to authenticate demo user.";

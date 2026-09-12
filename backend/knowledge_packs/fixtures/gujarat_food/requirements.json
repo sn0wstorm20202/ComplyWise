@@ -8,8 +8,14 @@
     "domain": "FOOD",
     "description": "Statutory food license for food business operators with turnover above 12 Lakh and up to 20 Crore INR.",
     "status": "PUBLISHED",
-    "evidence_refs": ["EVD-FSSAI-STATE-TURNOVER"],
-    "metadata": {"renewal_period_years": 5}
+    "evidence_refs": [
+      "EVD-FSSAI-STATE-TURNOVER"
+    ],
+    "metadata": {
+      "renewal_period_years": 5,
+      "portal": "https://foscos.fssai.gov.in/",
+      "portal_name": "FoSCoS Food Safety Compliance System"
+    }
   },
   {
     "requirement_id": "REQ-GPCB-CTE",
@@ -20,8 +26,13 @@
     "domain": "ENVIRONMENT",
     "description": "Pollution control clearance required prior to setting up industrial machinery in Gujarat.",
     "status": "PUBLISHED",
-    "evidence_refs": ["EVD-GPCB-CTE-FOOD"],
-    "metadata": {"portal": "XGN Gujarat"}
+    "evidence_refs": [
+      "EVD-GPCB-CTE-FOOD"
+    ],
+    "metadata": {
+      "portal": "https://xgn.gpcb.gov.in/",
+      "portal_name": "GPCB XGN Gujarat e-Governance Consent Portal"
+    }
   },
   {
     "requirement_id": "REQ-GUJ-FACTORY-LICENSE",
@@ -32,7 +43,12 @@
     "domain": "LABOR",
     "description": "Occupational health and safety factory license under the Factories Act for 10+ workers using power.",
     "status": "PUBLISHED",
-    "evidence_refs": ["EVD-FACTORIES-ACT-10-POWER"],
-    "metadata": {"portal": "DISH Portal"}
+    "evidence_refs": [
+      "EVD-FACTORIES-ACT-10-POWER"
+    ],
+    "metadata": {
+      "portal": "https://dish.gujarat.gov.in/",
+      "portal_name": "DISH Gujarat Online Factory Licensing Portal"
+    }
   }
 ]

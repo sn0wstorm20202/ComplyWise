@@ -8,6 +8,7 @@ they never reach domain code: Gemini takes the system prompt in a separate
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from django.conf import settings
@@ -22,6 +23,8 @@ from .base import (
     ProviderNotConfigured,
 )
 from .http import post_json
+
+logger = logging.getLogger(__name__)
 
 API_ROOT = "https://generativelanguage.googleapis.com/v1beta/models"
 
@@ -84,12 +87,30 @@ class GeminiProvider(LLMProvider):
 
         # The key travels as a header rather than a query parameter so it cannot
         # be captured in a proxy access log (TRD_v2.0 §62).
-        data = post_json(
-            f"{API_ROOT}/{self.model}:generateContent",
-            payload,
-            headers={"x-goog-api-key": key},
-            provider=self.name,
-        )
+        try:
+            data = post_json(
+                f"{API_ROOT}/{self.model}:generateContent",
+                payload,
+                headers={"x-goog-api-key": key},
+                provider=self.name,
+            )
+        except ProviderError as exc:
+            openai_key = getattr(settings, "OPENAI_API_KEY", "") or ""
+            if openai_key and not getattr(self, "_is_fallback", False):
+                try:
+                    from .openai_provider import OpenAIProvider
+                    fallback = OpenAIProvider()
+                    if fallback.is_configured:
+                        fallback._is_fallback = True
+                        logger.warning("Gemini failed (%s), failing over to OpenAI (%s)", exc, fallback.model)
+                        return fallback.complete(
+                            messages,
+                            temperature=temperature,
+                            max_output_tokens=max_output_tokens,
+                        )
+                except Exception as fallback_exc:
+                    logger.warning("OpenAI fallback also failed: %s", fallback_exc)
+            raise
 
         candidates = data.get("candidates") or []
         if not candidates:

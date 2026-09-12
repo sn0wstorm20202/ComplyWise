@@ -71,9 +71,14 @@ def test_question_contract_and_canonical_mapping(auth_client, user, make_busines
         assert "information_gain" in q
         assert 0.0 <= float(q["information_gain"]) <= 1.0
 
-        # Canonical variable mapping (V01 - V19)
+        # Canonical variable mapping (V01 - V43) or dynamic pre-discovery variable
         var_key = q.get("variable_key") or q.get("key")
-        assert var_key in VARIABLES_BY_KEY, f"Question mapped to unknown variable: {var_key}"
+        assert (
+            var_key in VARIABLES_BY_KEY
+            or q.get("is_canonical") is False
+            or var_key.startswith("dynamic_")
+            or var_key.startswith("scope_")
+        ), f"Question mapped to unknown variable: {var_key}"
         assert var_key not in seen_keys, f"Duplicate question for variable {var_key}"
         seen_keys.add(var_key)
 
@@ -144,10 +149,12 @@ def test_multi_round_adaptive_stopping_condition(auth_client, user, make_busines
     answers = {}
     for k in q_keys:
         var = get_variable(k)
-        if var.data_type == VariableDataType.BOOLEAN:
+        if var is None:
+            answers[k] = "Standard Value"
+        elif var.data_type == VariableDataType.BOOLEAN:
             answers[k] = False
         elif var.data_type in {VariableDataType.INTEGER, VariableDataType.DECIMAL, VariableDataType.CURRENCY_INR}:
-            answers[k] = "100"
+            answers[k] = "1000000"
         elif var.data_type == VariableDataType.SINGLE_CHOICE:
             answers[k] = var.options[0].value if var.options else "OPERATIONAL"
         elif var.data_type == VariableDataType.MULTI_CHOICE:

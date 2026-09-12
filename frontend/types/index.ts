@@ -445,6 +445,9 @@ export interface PriorityAction {
   /** Derived from `status`, not a separate severity judgement. */
   action_type: string;
   evidence_count: number;
+  source_url?: string;
+  portal_url?: string;
+  portal_name?: string;
 }
 
 /**
@@ -535,6 +538,11 @@ export interface ComplianceRequirementItem {
   domain?: string;
   description?: string;
   reason_summary?: string;
+  portal?: string;
+  portal_url?: string;
+  portal_name?: string;
+  source_url?: string;
+  statutory_act?: string;
   citations?: StatutoryEvidenceItem[];
   citation_count?: number;
 }
@@ -598,11 +606,15 @@ export interface RequirementDetail {
     renewal_period_years: number | null;
     not_recorded_note: string | null;
   };
-  /** Filing steps are served only where knowledge records them; never inferred. */
+  source_url?: string;
+  portal_url?: string;
+  portal_name?: string;
   what_to_do_next: {
     steps: string[];
     steps_available: boolean;
     official_portal: string;
+    portal_url?: string;
+    portal_name?: string;
     not_recorded_note: string | null;
   };
   statutory_evidence: StatutoryEvidenceItem[];

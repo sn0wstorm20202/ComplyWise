@@ -12,7 +12,7 @@
       "EVD-DGFT-IEC-MANDATE"
     ],
     "metadata": {
-      "portal": "https://www.dgft.gov.in",
+      "portal": "https://www.dgft.gov.in/CP/?opt=iec-service",
       "required_documents": [
         "PAN of the entity",
         "Cancelled cheque or bank certificate of the current account",
@@ -26,7 +26,8 @@
         "Attach PAN, bank proof and address proof",
         "e-Sign and pay the application fee",
         "Download the IEC certificate once issued"
-      ]
+      ],
+      "portal_name": "DGFT Online Services (IEC Application)"
     }
   }
 ]

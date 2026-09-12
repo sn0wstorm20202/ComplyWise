@@ -14,7 +14,7 @@ from django.core.exceptions import ValidationError
 
 from apps.businesses.models import BusinessProfileVersion, merge_variables
 from common.enums import VariableOrigin
-from domain.profile.variables import CORE_VARIABLE_KEYS
+from domain.profile.variables import CORE_VARIABLE_KEYS, PROFILE_VARIABLES
 
 pytestmark = pytest.mark.django_db
 
@@ -257,7 +257,7 @@ def test_explicit_null_is_recorded_as_unknown_not_as_false(auth_client, business
 def test_variable_definitions_endpoint_lists_the_canonical_registry(auth_client):
     body = auth_client.get("/api/v1/profile/variables").json()
     keys = [item["key"] for item in body["data"]]
-    assert len(keys) == len(set(keys)) == 19
+    assert len(keys) == len(set(keys)) == len(PROFILE_VARIABLES)
     assert body["meta"]["core_variables"] == list(CORE_VARIABLE_KEYS)
     # The registry is schema only — it must not ship thresholds or conditions.
     assert all("threshold" not in item for item in body["data"])

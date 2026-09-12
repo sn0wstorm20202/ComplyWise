@@ -22,8 +22,10 @@ from .serializers import (
 )
 from .services import (
     get_dynamic_smart_questions,
+    get_next_smart_question,
     save_products_and_activities,
     save_smart_question_answers,
+    submit_sequential_smart_question_answer,
 )
 
 
@@ -54,10 +56,18 @@ class OnboardingQuestionsView(_OnboardingScopedView):
             round_num = 1
 
         assessment_id = request.query_params.get("assessment_id")
+        is_sequential = (
+            request.query_params.get("mode") == "sequential"
+            or request.query_params.get("sequential") in {"true", "1"}
+        )
+        batch_param = request.query_params.get("batch_size")
+        batch_size = 1 if is_sequential else (int(batch_param) if batch_param and batch_param.isdigit() else None)
+
         questions_data = get_dynamic_smart_questions(
             business,
             round_number=round_num,
             assessment_id=assessment_id,
+            batch_size=batch_size,
         )
         return Response(envelope(questions_data), status=status.HTTP_200_OK)
 
@@ -105,6 +115,7 @@ class OnboardingAnswersView(_OnboardingScopedView):
             assessment_id=assessment_id,
         )
         has_more = next_plan.get("status") == "ACTIVE" and len(next_plan.get("questions", [])) > 0
+        next_q = get_next_smart_question(business, assessment_id=assessment_id)
 
         return Response(
             envelope(
@@ -113,10 +124,56 @@ class OnboardingAnswersView(_OnboardingScopedView):
                     "profile_version": BusinessProfileVersionSerializer(new_profile).data,
                     "has_more_questions": has_more,
                     "next_round": next_plan if has_more else None,
+                    "next_question": next_q,
                 }
             ),
             status=status.HTTP_200_OK,
         )
+
+
+class OnboardingSequentialQuestionView(_OnboardingScopedView):
+    """Retrieve or submit single-question sequential adaptive steps."""
+
+    def get(self, request: Request, business_id) -> Response:  # noqa: ANN001
+        business = self.get_business(request, business_id)
+        if business is None:
+            return error_response(
+                "NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND
+            )
+        assessment_id = request.query_params.get("assessment_id")
+        next_q = get_next_smart_question(business, assessment_id=assessment_id)
+        return Response(
+            envelope({
+                "question": next_q,
+                "next_question": next_q,
+                "is_complete": (next_q is None),
+            }),
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request: Request, business_id) -> Response:  # noqa: ANN001
+        business = self.get_business(request, business_id)
+        if business is None:
+            return error_response(
+                "NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND
+            )
+        variable_key = request.data.get("variable_key") or request.data.get("key")
+        answer_value = request.data.get("answer_value") if "answer_value" in request.data else request.data.get("value")
+        if not variable_key:
+            return error_response(
+                "VALIDATION_ERROR",
+                "variable_key is required for sequential answering.",
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+        assessment_id = request.data.get("assessment_id") or request.query_params.get("assessment_id")
+        result = submit_sequential_smart_question_answer(
+            business=business,
+            variable_key=variable_key,
+            answer_value=answer_value,
+            user=request.user,
+            assessment_id=assessment_id,
+        )
+        return Response(envelope(result), status=status.HTTP_200_OK)
 
 
 class OnboardingProductsActivitiesView(_OnboardingScopedView):

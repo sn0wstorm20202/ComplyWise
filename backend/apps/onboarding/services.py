@@ -40,13 +40,56 @@ def get_dynamic_smart_questions(
     business: Business,
     round_number: int = 1,
     assessment_id: str | None = None,
+    batch_size: int | None = None,
 ) -> dict[str, Any]:
     """Generate dynamic smart questions for decision-critical missing variables.
 
     Uses SmartQuestionPlanner to assess candidate published rules and formulate
     adaptive questions tailored to the business and assessment.
     """
-    return plan_adaptive_smart_questions(business, round_number=round_number, assessment_id=assessment_id)
+    return plan_adaptive_smart_questions(
+        business,
+        round_number=round_number,
+        assessment_id=assessment_id,
+        batch_size=batch_size,
+    )
+
+
+def get_next_smart_question(
+    business: Business,
+    assessment_id: str | None = None,
+) -> dict[str, Any] | None:
+    """Retrieve the single highest-value decision-relevant question needed next."""
+    from apps.onboarding.planner import get_next_adaptive_question
+    return get_next_adaptive_question(business, assessment_id=assessment_id)
+
+
+def submit_sequential_smart_question_answer(
+    *,
+    business: Business,
+    variable_key: str,
+    answer_value: Any,
+    user: User | None = None,
+    assessment_id: str | None = None,
+) -> dict[str, Any]:
+    """Execute true sequential adaptive loop:
+    Answer -> Save immutable BusinessProfileVersion -> Re-evaluate AST rules -> Next question.
+    """
+    new_profile = save_smart_question_answers(
+        business=business,
+        answers={variable_key: answer_value},
+        user=user,
+        assessment_id=assessment_id,
+        change_note=f"Sequential adaptive answer for '{variable_key}'",
+    )
+    next_q = get_next_smart_question(business, assessment_id=assessment_id)
+    return {
+        "profile_version": new_profile.version,
+        "answered_variable": variable_key,
+        "next_question": next_q,
+        "question": next_q,
+        "is_complete": (next_q is None),
+    }
 
 
 def save_smart_question_answers(

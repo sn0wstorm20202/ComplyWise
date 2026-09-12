@@ -279,6 +279,7 @@ def derive_business_documents(
                     "category": d["category"],
                     "why_it_matters": d["why_it_matters"],
                     "status": "NOT_UPLOADED",
+                    "portal_uploaded": False,
                     "prevalidation_status": "NEEDS_REVIEW",
                     "accepted_formats": "PDF, JPG, PNG (Max 10 MB)",
                     "mandatory": True,

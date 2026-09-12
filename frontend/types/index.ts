@@ -643,6 +643,12 @@ export interface DocumentItem {
   prevalidation_status: PrevalidationOutcome;
   expiry_date: string | null;
   notes: string;
+  portal_uploaded?: boolean;
+  code?: string;
+  valid_until?: string;
+  file_format?: string;
+  file_size_bytes?: number;
+  verification?: any;
 }
 
 // ---------------------------------------------------------------------------

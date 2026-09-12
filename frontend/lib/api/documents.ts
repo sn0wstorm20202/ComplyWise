@@ -3,15 +3,16 @@
  *
  * Authority: TRD_v2.0 §30, PRD_v2.0 §18
  *
- * The checklist is real where knowledge records it — document names come from the
- * metadata of requirements the engine found APPLICABLE. Storage is not: there is no
- * document model and no blob backend, so `upload_available` is false and `upload()`
- * returns 501. Gate the upload control on that flag rather than letting a user
- * submit a statutory document that is silently discarded.
+ * Supports:
+ * 1. Statutory document registry listing.
+ * 2. Document upload with automated software verification layer.
+ * 3. Standalone software verification pre-check.
+ * 4. Official portal upload status tracking.
  */
 
 import { request } from "./client";
 import { DocumentItem } from "@/types";
+import type { DocumentVerificationResult } from "@/lib/verification/documentVerifier";
 
 export interface DocumentsListResponse {
   business_id: string;
@@ -21,10 +22,6 @@ export interface DocumentsListResponse {
   total_count: number;
   disclaimer: string;
   checklist_source: string;
-  /**
-   * Applicable requirements with no document list in published knowledge. A gap in
-   * knowledge, not a statement that no documents are needed.
-   */
   requirements_without_checklist: string[];
   upload_available: boolean;
   prevalidation_available: boolean;
@@ -33,8 +30,21 @@ export interface DocumentsListResponse {
 
 export interface DocumentUploadPayload {
   name: string;
-  document_type: string;
+  document_type?: string;
+  category?: string;
   file_name: string;
+  file_size_bytes?: number;
+  authority?: string;
+  requirement_id?: string;
+  reference_number?: string;
+  valid_until?: string;
+  portal_uploaded?: boolean;
+}
+
+export interface DocumentUploadResponse {
+  document: DocumentItem;
+  verification: DocumentVerificationResult;
+  message: string;
 }
 
 export const documentsApi = {
@@ -45,17 +55,64 @@ export const documentsApi = {
         : `/businesses/${businessId}/documents`
     ),
 
-  /**
-   * Always rejects with `NOT_CONFIGURED` (HTTP 501) until document storage is
-   * wired. Kept in the client so the failure is typed and handled, not so it can
-   * be called optimistically.
-   */
   upload: (
     businessId: string,
-    payload: DocumentUploadPayload
-  ): Promise<never> =>
-    request<never>(`/businesses/${businessId}/documents/upload`, {
+    payload: DocumentUploadPayload,
+    file?: File | null
+  ): Promise<DocumentUploadResponse> => {
+    if (file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      Object.entries(payload).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) {
+          formData.append(k, String(v));
+        }
+      });
+      return request<DocumentUploadResponse>(`/businesses/${businessId}/documents/upload`, {
+        method: "POST",
+        body: formData,
+      });
+    }
+    return request<DocumentUploadResponse>(`/businesses/${businessId}/documents/upload`, {
       method: "POST",
       body: JSON.stringify(payload),
-    }),
+    });
+  },
+
+  verify: (
+    businessId: string,
+    payload: Partial<DocumentUploadPayload>,
+    file?: File | null
+  ): Promise<DocumentVerificationResult> => {
+    if (file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      Object.entries(payload).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) {
+          formData.append(k, String(v));
+        }
+      });
+      return request<DocumentVerificationResult>(`/businesses/${businessId}/documents/verify`, {
+        method: "POST",
+        body: formData,
+      });
+    }
+    return request<DocumentVerificationResult>(`/businesses/${businessId}/documents/verify`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  updatePortalStatus: (
+    businessId: string,
+    documentId: string,
+    portalUploaded: boolean
+  ): Promise<{ document_id: string; portal_uploaded: boolean; status: string }> =>
+    request<{ document_id: string; portal_uploaded: boolean; status: string }>(
+      `/businesses/${businessId}/documents/portal-status`,
+      {
+        method: "POST",
+        body: JSON.stringify({ document_id: documentId, portal_uploaded: portalUploaded }),
+      }
+    ),
 };

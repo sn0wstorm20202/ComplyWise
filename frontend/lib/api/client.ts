@@ -90,9 +90,10 @@ export async function request<T>(endpoint: string, options: RequestOptions = {})
     }
   }
 
+  const isFormData = typeof FormData !== "undefined" && init.body instanceof FormData;
   const headers: Record<string, string> = {
     "Accept": "application/json",
-    ...(init.body ? { "Content-Type": "application/json" } : {}),
+    ...(init.body && !isFormData ? { "Content-Type": "application/json" } : {}),
     ...(customHeaders as Record<string, string>),
   };
 

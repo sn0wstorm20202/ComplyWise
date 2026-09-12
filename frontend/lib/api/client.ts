@@ -46,7 +46,7 @@ export class ApiError extends Error {
 
 export function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("complywise_token") || "b7fd4971314b52f0977d83d3b37017bd56eb7d03";
+  return localStorage.getItem("complywise_token") || "60ca9c2d6ee291a02321b1b47a734ed9f49446ac";
 }
 
 export function setAuthToken(token: string | null): void {

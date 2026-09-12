@@ -128,12 +128,12 @@ function AssistantContent() {
   useEffect(() => {
     async function loadBiz() {
       const bid = paramBusinessId || localStorage.getItem("complywise_active_business_id") || "";
-      if (bid) {
-        setBusinessId(bid);
-        try {
+      try {
+        if (bid) {
           const b = await api.businesses.get(bid);
           setBusiness(b);
-          setMessages((prev) => [
+          setBusinessId(b.id);
+          setMessages([
             {
               id: "m-welcome",
               sender: "copilot",
@@ -141,9 +141,30 @@ function AssistantContent() {
               timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             },
           ]);
-        } catch {
-          // ignore
+          return;
         }
+      } catch {
+        // bid was invalid or not found, fall back to list
+      }
+
+      try {
+        const list = await api.businesses.list();
+        if (list && list.length > 0) {
+          const b = list[0];
+          setBusiness(b);
+          setBusinessId(b.id);
+          localStorage.setItem("complywise_active_business_id", b.id);
+          setMessages([
+            {
+              id: "m-welcome",
+              sender: "copilot",
+              content: `Hello! I have loaded the full compliance context for ${b.name}. I am ready to advise you on your applicable permits, mandatory documents, clearance workflows, and matched schemes.`,
+              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            },
+          ]);
+        }
+      } catch {
+        // ignore
       }
     }
     loadBiz();

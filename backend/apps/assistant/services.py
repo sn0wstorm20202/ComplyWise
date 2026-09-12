@@ -357,11 +357,14 @@ def answer_question(
         ctx = build_business_context(business)
         dec_run = None
         if assessment_id:
-            assessment = business.assessments.filter(pk=assessment_id).first()
-            if assessment and assessment.decision_run:
-                dec_run = assessment.decision_run
-            elif assessment:
-                dec_run = DecisionRun.objects.filter(assessment=assessment).first()
+            try:
+                assessment = business.assessments.filter(pk=assessment_id).first()
+                if assessment and assessment.decision_run:
+                    dec_run = assessment.decision_run
+                elif assessment:
+                    dec_run = DecisionRun.objects.filter(assessment=assessment).first()
+            except Exception:
+                assessment = None
         if dec_run is None:
             dec_run = DecisionRun.objects.filter(business=business).order_by("-created_at").first()
 

@@ -16,19 +16,6 @@ dependencies = [
     "gunicorn>=23.0",
 ]
 
-dependencies = [
-    "Django>=5.2,<6.1",
-    "djangorestframework>=3.16",
-    "django-cors-headers>=4.7",
-    "dj-database-url>=3.0",
-    "psycopg[binary]>=3.2",
-    "pgvector>=0.4",
-    "pydantic>=2.11",
-    "jsonschema>=4.20",
-    "python-dotenv>=1.1",
-    "gunicorn>=23.0",
-]
-
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py", "*_test.py"]

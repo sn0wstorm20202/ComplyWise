@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import AppShell from "@/components/AppShell";
 import { useBusinessContext } from "@/context/BusinessContext";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   Folder,
   ChevronRight,
@@ -17,6 +18,7 @@ import {
 
 export default function SettingsPage() {
   const { resetToDefault } = useBusinessContext();
+  const { t } = useLanguage();
   const [engineMode, setEngineMode] = useState("deterministic");
   const [evaluationFrequency, setEvaluationFrequency] = useState("weekly");
   const [alertThreshold, setAlertThreshold] = useState("30");
@@ -34,13 +36,13 @@ export default function SettingsPage() {
         <div className="bg-white rounded-[10px] border border-[#E2E8F0] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs relative overflow-hidden">
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-amber-200 bg-amber-50 text-amber-800 text-[11px] font-semibold tracking-wider uppercase mb-2">
-              System Configuration
+              {t("settings.badge")}
             </div>
             <h1 className="font-sans font-bold text-2xl sm:text-3xl text-[#0F172A] tracking-tight">
-              Compliance &amp; Engine Settings
+              {t("settings.pageTitle")}
             </h1>
             <p className="text-xs text-[#64748B] mt-1.5 max-w-2xl leading-relaxed">
-              Configure statutory rule evaluation engine parameters, audit cadence, and advance warning thresholds.
+              {t("settings.subtitle")}
             </p>
           </div>
         </div>
@@ -48,7 +50,7 @@ export default function SettingsPage() {
         {savedNotice && (
           <div className="p-4 rounded-[10px] bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 font-semibold flex items-center gap-2 shadow-2xs">
             <Check className="h-4 w-4 text-emerald-600" />
-            <span>Configuration parameters synchronized and active!</span>
+            <span>{t("settings.savedNotice")}</span>
           </div>
         )}
 
@@ -57,15 +59,15 @@ export default function SettingsPage() {
           <div className="flex items-center gap-2 border-b border-[#E2E8F0] pb-4">
             <Cpu className="h-4 w-4 text-amber-600" />
             <h2 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
-              Statutory Decision Engine Logic
+              {t("settings.engineSection")}
             </h2>
           </div>
 
           <div className="space-y-5 text-xs">
             <div>
-              <div className="font-sans font-bold text-base text-[#0F172A]">Evaluation Logic Model</div>
+              <div className="font-sans font-bold text-base text-[#0F172A]">{t("settings.engineLabel")}</div>
               <p className="text-[#64748B] mt-1">
-                ComplyWise operates strictly under deterministic 3-valued AST logic (TRUE · FALSE · UNKNOWN).
+                {t("settings.engineDesc")}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                 <button
@@ -78,11 +80,11 @@ export default function SettingsPage() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-[#0F172A]">Deterministic AST (Statutory Strict)</span>
+                    <span className="font-bold text-sm text-[#0F172A]">{t("settings.deterministicTitle")}</span>
                     {engineMode === "deterministic" && <Check className="h-4 w-4 text-amber-600" />}
                   </div>
                   <p className="font-normal text-[11px] text-[#64748B] mt-1.5 leading-relaxed">
-                    Guaranteed verifiable citations; zero hallucination. Rules compile directly to statutory clause trees.
+                    {t("settings.deterministicDesc")}
                   </p>
                 </button>
 
@@ -96,24 +98,24 @@ export default function SettingsPage() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-[#0F172A]">Hybrid AST + Copilot Advisory</span>
+                    <span className="font-bold text-sm text-[#0F172A]">{t("settings.hybridTitle")}</span>
                     {engineMode === "hybrid" && <Check className="h-4 w-4 text-amber-600" />}
                   </div>
                   <p className="font-normal text-[11px] text-[#64748B] mt-1.5 leading-relaxed">
-                    Deterministic statutory verification paired with contextual natural language advisory notes.
+                    {t("settings.hybridDesc")}
                   </p>
                 </button>
               </div>
             </div>
 
             <div className="pt-4 border-t border-[#E2E8F0]">
-              <div className="font-sans font-bold text-base text-[#0F172A]">Automated Audit Cadence</div>
-              <p className="text-[#64748B] mt-1">Frequency of background reconciliation against national gazette feeds.</p>
+              <div className="font-sans font-bold text-base text-[#0F172A]">{t("settings.cadenceLabel")}</div>
+              <p className="text-[#64748B] mt-1">{t("settings.cadenceDesc")}</p>
               <div className="flex flex-wrap gap-2 mt-3">
                 {[
-                  { label: "Daily Sync", val: "daily" },
-                  { label: "Weekly Audit (Standard)", val: "weekly" },
-                  { label: "On Gazette Publication Only", val: "gazette" },
+                  { label: t("settings.cadenceDaily"), val: "daily" },
+                  { label: t("settings.cadenceWeekly"), val: "weekly" },
+                  { label: t("settings.cadenceGazette"), val: "gazette" },
                 ].map((cad) => (
                   <button
                     key={cad.val}
@@ -132,9 +134,9 @@ export default function SettingsPage() {
             </div>
 
             <div className="pt-4 border-t border-[#E2E8F0]">
-              <div className="font-sans font-bold text-base text-[#0F172A]">Renewal Warning Threshold</div>
+              <div className="font-sans font-bold text-base text-[#0F172A]">{t("settings.thresholdLabel")}</div>
               <p className="text-[#64748B] mt-1">
-                Advance alert window before laboratory re-test certificates or industrial licenses expire.
+                {t("settings.thresholdDesc")}
               </p>
               <div className="flex flex-wrap gap-2 mt-3">
                 {["14", "30", "60", "90"].map((days) => (
@@ -148,7 +150,7 @@ export default function SettingsPage() {
                         : "bg-white border border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] hover:bg-slate-50"
                     }`}
                   >
-                    {days} Days Advance
+                    {t("settings.thresholdDays", { days })}
                   </button>
                 ))}
               </div>
@@ -160,12 +162,12 @@ export default function SettingsPage() {
               type="button"
               onClick={() => {
                 resetToDefault();
-                alert("Reset demo business profile to baseline!");
+                alert(t("settings.resetConfirm"));
               }}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#E2E8F0] text-xs font-semibold text-[#64748B] hover:text-[#0F172A] hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
             >
               <RefreshCw className="h-3.5 w-3.5" />
-              <span>Reset Demo Data</span>
+              <span>{t("settings.resetDemo")}</span>
             </button>
 
             <button
@@ -173,7 +175,7 @@ export default function SettingsPage() {
               onClick={handleSave}
               className="px-6 py-2 rounded-full bg-[#0F172A] text-white text-xs font-semibold hover:bg-slate-800 transition-all cursor-pointer shadow-2xs"
             >
-              Save Configuration
+              {t("settings.saveConfig")}
             </button>
           </div>
         </div>

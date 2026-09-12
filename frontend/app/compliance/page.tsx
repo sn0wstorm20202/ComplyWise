@@ -11,10 +11,12 @@ import WhyThisAppliesModal from "@/components/WhyThisAppliesModal";
 import { api } from "@/lib/api";
 import { ComplianceRequirementItem, CandidateRequirement, Business } from "@/types";
 import { DEMO_REQUIREMENTS } from "@/data/demo/compliance";
+import { useLanguage } from "@/context/LanguageContext";
 
 type ViewTab = "action_required" | "verification_required" | "audit";
 
 function ComplianceContent() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
   const initialTab = (searchParams.get("tab") as ViewTab) || "action_required";
@@ -121,17 +123,17 @@ function ComplianceContent() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-[#64748B] tracking-wide uppercase">
-                Compliance Plan · {business?.name || "Your Company"}
+                {t("common.appName")} · {business?.name || t("common.appName")}
               </span>
               <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                {actionRequiredItems.length} Requirements Identified
+                {actionRequiredItems.length} {t("compliance.actionRequired")}
               </span>
             </div>
             <h1 className="text-2xl font-sans font-bold tracking-tight text-[#0F172A] mt-1">
-              Your Compliance Requirements
+              {t("compliance.title")}
             </h1>
             <p className="text-xs text-[#64748B] mt-0.5">
-              Clearance requirements and regulatory licenses identified for your business.
+              {t("compliance.subtitle")}
             </p>
           </div>
 
@@ -140,7 +142,7 @@ function ComplianceContent() {
               href={`/dashboard?business_id=${businessId || ""}`}
               className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-1.5 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
             >
-              ← Dashboard
+              ← {t("navigation.dashboard")}
             </Link>
             <Link
               href={businessId ? `/onboarding?business_id=${businessId}` : "/onboarding?new=true"}
@@ -163,7 +165,7 @@ function ComplianceContent() {
                   : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-[#CBD5E1] hover:text-[#0F172A]"
               }`}
             >
-              <span>Your Compliance Requirements</span>
+              <span>{t("compliance.actionRequired")}</span>
               <span
                 className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                   activeTab === "action_required"
@@ -184,7 +186,7 @@ function ComplianceContent() {
                   : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-[#CBD5E1] hover:text-[#0F172A]"
               }`}
             >
-              <span>Under Review</span>
+              <span>{t("compliance.underReview")}</span>
               <span
                 className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                   activeTab === "verification_required"
@@ -205,10 +207,10 @@ function ComplianceContent() {
                   : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-[#CBD5E1] hover:text-[#0F172A]"
               }`}
             >
-              <span>Regulatory Intelligence &amp; Audit</span>
+              <span>{t("compliance.allRequirements")}</span>
               {candidates.length > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                  {candidates.length} Discovered
+                  {candidates.length} {t("common.verified")}
                 </span>
               )}
             </button>
@@ -216,7 +218,7 @@ function ComplianceContent() {
 
           {/* Domain Filter */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-[#64748B]">Sector:</span>
+            <span className="text-xs font-medium text-[#64748B]">{t("common.filter")}:</span>
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -228,7 +230,7 @@ function ComplianceContent() {
                     : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-[#CBD5E1] hover:text-[#0F172A]"
                 }`}
               >
-                {cat}
+                {cat === "ALL" ? t("common.all") : cat}
               </button>
             ))}
           </div>
@@ -252,8 +254,8 @@ function ComplianceContent() {
           <div className="space-y-4">
             {actionRequiredItems.length === 0 ? (
               <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs">
-                <p className="text-sm font-semibold text-[#0F172A]">No active requirements identified for this filter.</p>
-                <p className="text-xs text-[#64748B] mt-1">Check the &quot;Under Review&quot; or &quot;Regulatory Intelligence&quot; tabs for other items.</p>
+                <p className="text-sm font-semibold text-[#0F172A]">{t("common.noData")}</p>
+                <p className="text-xs text-[#64748B] mt-1">{t("compliance.filterByStatus")}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -324,7 +326,7 @@ function ComplianceContent() {
                           onClick={() => openProvenance(req)}
                           className="inline-flex items-center gap-1 text-xs font-semibold text-[#0F172A] hover:underline cursor-pointer"
                         >
-                          <span>ℹ️ Why do I need this?</span>
+                          <span>ℹ️ {t("compliance.whyApplies")}</span>
                         </button>
 
                         <div className="flex items-center gap-3">
@@ -332,7 +334,7 @@ function ComplianceContent() {
                             href={`/compliance/${req.requirement_id}?business_id=${businessId}`}
                             className="inline-flex items-center gap-1.5 rounded-full bg-[#18181B] px-5 py-2 text-xs font-semibold text-white hover:bg-[#27272A] transition-colors shadow-2xs"
                           >
-                            <span>View Requirement</span>
+                            <span>{t("common.viewDetails")}</span>
                             <span>→</span>
                           </Link>
                         </div>
@@ -376,13 +378,13 @@ function ComplianceContent() {
                         onClick={() => openProvenance(req)}
                         className="text-xs font-semibold text-[#0F172A] hover:underline cursor-pointer"
                       >
-                        Why do I need this?
+                        {t("compliance.whyApplies")}
                       </button>
                       <Link
                         href={`/compliance/${req.requirement_id}?business_id=${businessId}`}
                         className="text-xs font-semibold text-[#0F172A] hover:underline"
                       >
-                        View Details →
+                        {t("common.viewDetails")} →
                       </Link>
                     </div>
                   </div>

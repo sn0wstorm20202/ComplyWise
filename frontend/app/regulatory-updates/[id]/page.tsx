@@ -10,12 +10,14 @@ import {
   ArrowLeft,
   ExternalLink,
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default function RegulatoryUpdateDetailPage({ params }: PageProps) {
+  const { t } = useLanguage();
   const resolvedParams = use(params);
   const updateId = resolvedParams.id;
 
@@ -27,7 +29,7 @@ export default function RegulatoryUpdateDetailPage({ params }: PageProps) {
     return (
       <AppShell activeView="updates">
         <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs max-w-4xl mx-auto my-12">
-          <h3 className="text-sm font-semibold text-[#0F172A]">Regulatory Update Not Found</h3>
+          <h3 className="text-sm font-semibold text-[#0F172A]">{t("common.notFound")}</h3>
           <p className="text-xs text-[#64748B] mt-1">
             Could not locate gazette specification for ID: {updateId}.
           </p>
@@ -36,7 +38,7 @@ export default function RegulatoryUpdateDetailPage({ params }: PageProps) {
               href="/regulatory-updates"
               className="rounded-full border border-[#E2E8F0] bg-white px-4 py-1.5 text-xs font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
             >
-              ← Back to Updates
+              ← {t("common.back")}
             </Link>
           </div>
         </div>
@@ -52,7 +54,7 @@ export default function RegulatoryUpdateDetailPage({ params }: PageProps) {
           <div className="flex items-center gap-2 text-xs text-[#64748B]">
             <Folder className="h-3.5 w-3.5 text-[#64748B]" />
             <Link href="/regulatory-updates" className="hover:text-[#0F172A] transition-colors">
-              Regulatory Updates
+              {t("navigation.updates")}
             </Link>
             <ChevronRight className="h-3 w-3 text-[#CBD5E1]" />
             <span className="text-[#0F172A] font-mono font-medium">{item.gazetteNo}</span>
@@ -63,7 +65,7 @@ export default function RegulatoryUpdateDetailPage({ params }: PageProps) {
             className="inline-flex items-center gap-1.5 text-xs font-medium text-[#64748B] hover:text-[#0F172A] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Updates</span>
+            <span>{t("common.back")}</span>
           </Link>
         </div>
 

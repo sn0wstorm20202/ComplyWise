@@ -71,9 +71,14 @@ def test_question_contract_and_canonical_mapping(auth_client, user, make_busines
         assert "information_gain" in q
         assert 0.0 <= float(q["information_gain"]) <= 1.0
 
-        # Canonical variable mapping (V01 - V19)
+        # Canonical variable mapping (V01 - V43) or dynamic pre-discovery variable
         var_key = q.get("variable_key") or q.get("key")
-        assert var_key in VARIABLES_BY_KEY, f"Question mapped to unknown variable: {var_key}"
+        assert (
+            var_key in VARIABLES_BY_KEY
+            or q.get("is_canonical") is False
+            or var_key.startswith("dynamic_")
+            or var_key.startswith("scope_")
+        ), f"Question mapped to unknown variable: {var_key}"
         assert var_key not in seen_keys, f"Duplicate question for variable {var_key}"
         seen_keys.add(var_key)
 

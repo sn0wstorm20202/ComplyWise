@@ -1,26 +1,143 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* White Mode Color Palette matching reference DEmo.png */
+  --color-obsidian: #0f172a;
+  --color-onyx: #1e293b;
+  --color-carbon: #334155;
+  --color-graphite: #475569;
+  --color-slate: #64748b;
+  --color-smoke: #94a3b8;
+  --color-ash: #cbd5e1;
+  --color-steel: #e2e8f0;
+  --color-fog: #f1f5f9;
+  --color-mist: #f8fafc;
+  --color-silver: #f4f6f8;
+  --color-bone: #ffffff;
+  --color-paper-white: #ffffff;
+  --color-copper: #2563eb;
+  --color-copper-soft: rgba(37, 99, 235, 0.1);
+
+  /* Gilded Gold Gradient for Charts and Visual Data Accents */
+  --color-gilded-gradient: linear-gradient(103deg, rgb(174, 147, 87), rgb(255, 240, 204) 40%, rgb(174, 147, 87) 70%, rgba(189, 157, 79, 0));
+
+  /* Status Colors */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+
+  /* Surfaces */
+  --surface-void: #edeff2;
+  --surface-card: #ffffff;
+  --surface-panel: #ffffff;
+  --surface-floating: #ffffff;
+
+  /* Semantic mappings */
+  --background: #edeff2;
+  --background-secondary: #f4f6f8;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-hover: #f8fafc;
+
+  --border-subtle: #f1f5f9;
+  --border-default: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  --text-primary: #0f172a;
+  --text-body: #334155;
+  --text-secondary: #64748b;
+  --text-tertiary: #94a3b8;
+
+  --accent: #18181b;
+  --accent-soft: rgba(24, 24, 27, 0.06);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-obsidian: #0f172a;
+  --color-onyx: #1e293b;
+  --color-carbon: #334155;
+  --color-graphite: #475569;
+  --color-slate: #64748b;
+  --color-smoke: #94a3b8;
+  --color-ash: #cbd5e1;
+  --color-steel: #e2e8f0;
+  --color-fog: #f1f5f9;
+  --color-mist: #f8fafc;
+  --color-silver: #f4f6f8;
+  --color-bone: #ffffff;
+  --color-paper-white: #ffffff;
+  --color-copper: #2563eb;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-hover: var(--surface-hover);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-body: var(--text-body);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --font-sans: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-display), "Ivy Presto", "Playfair Display", "DM Serif Display", serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--background);
+  color: var(--text-body);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Hairline borders & quiet cards */
+.slash-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.slash-panel {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.slash-pill {
+  border-radius: 9999px;
+}
+
+/* Gilded chart accent gradient */
+.bg-gilded-gradient {
+  background: linear-gradient(103deg, rgb(174, 147, 87), rgb(255, 240, 204) 40%, rgb(174, 147, 87) 70%, rgba(189, 157, 79, 0));
+}
+
+/* Restrained subtle scrollbars for light mode */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
 }

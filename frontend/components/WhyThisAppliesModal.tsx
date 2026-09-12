@@ -93,7 +93,7 @@ export default function WhyThisAppliesModal({
             const directPortalName =
               requirement.portal_name ||
               primaryCitation?.source_title ||
-              `${requirement.authority} Portal`;
+              `${requirement.authority || "Official"} Portal`;
 
             return (primaryCitation || directPortalUrl) ? (
               <div className="space-y-2">
@@ -110,28 +110,28 @@ export default function WhyThisAppliesModal({
                     </a>
                   )}
                 </h4>
-              <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl p-4 space-y-2">
-                <div className="flex items-center justify-between font-semibold text-amber-950 text-xs">
-                  <span>{String(primaryCitation?.source_title || requirement.name || "Official Portal")}</span>
-                  {(primaryCitation?.locator || requirement.statutory_act) && (
-                    <span className="text-[11px] bg-amber-100/70 px-2 py-0.5 rounded text-amber-800 font-mono">
-                      {String(primaryCitation?.locator || requirement.statutory_act)}
-                    </span>
+                <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between font-semibold text-amber-950 text-xs">
+                    <span>{String(primaryCitation?.source_title || requirement.name || "Official Portal")}</span>
+                    {(primaryCitation?.locator || requirement.statutory_act) && (
+                      <span className="text-[11px] bg-amber-100/70 px-2 py-0.5 rounded text-amber-800 font-mono">
+                        {String(primaryCitation?.locator || requirement.statutory_act)}
+                      </span>
+                    )}
+                  </div>
+                  {(primaryCitation?.excerpt || requirement.description) && (
+                    <blockquote className="border-l-2 border-amber-400 pl-3 italic text-amber-900 text-xs">
+                      &quot;{String(primaryCitation?.excerpt || requirement.description)}&quot;
+                    </blockquote>
                   )}
                 </div>
-                {(primaryCitation?.excerpt || requirement.description) && (
-                  <blockquote className="border-l-2 border-amber-400 pl-3 italic text-amber-900 text-xs">
-                    "{String(primaryCitation?.excerpt || requirement.description)}"
-                  </blockquote>
-                )}
               </div>
-            </div>
-          ) : (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-slate-500">
-              <span className="font-semibold text-slate-700">Statutory Notice:</span> Derived from published central and state regulatory gazettes.
-            </div>
-          );
-        })()}
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-slate-500">
+                <span className="font-semibold text-slate-700">Statutory Notice:</span> Derived from published central and state regulatory gazettes.
+              </div>
+            );
+          })()}
 
           {/* Engine Assessment */}
           <div className="rounded-xl border border-slate-200/80 p-3.5 bg-white space-y-1">

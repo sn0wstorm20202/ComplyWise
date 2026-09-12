@@ -238,6 +238,8 @@ export interface AssessmentSummary {
   current_step: number;
   readiness_score?: number | null;
   requirements_count?: number;
+  profile_version_id?: string | null;
+  profile_version_number?: number | null;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
@@ -252,6 +254,7 @@ export interface AssessmentSummary {
     upcoming_deadlines?: number;
     [key: string]: any;
   };
+  [key: string]: any;
 }
 
 export interface Assessment extends AssessmentSummary {
@@ -275,12 +278,14 @@ export interface BusinessSummary {
   msme_scale?: string | null;
   turnover?: string | null;
   latest_profile_version?: number | null;
+  profile_version?: number | null;
   product_description?: string | null;
   assessment_count: number;
   latest_assessment?: AssessmentSummary | null;
   last_assessed_at?: string | null;
   created_at: string;
   updated_at: string;
+  [key: string]: any;
 }
 
 export interface UserProfileHome {

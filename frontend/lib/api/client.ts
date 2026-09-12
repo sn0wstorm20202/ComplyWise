@@ -12,23 +12,29 @@
 
 import { ApiEnvelope, ApiErrorEnvelope, ApiErrorDetail } from "@/types";
 
-function getApiBaseUrl(): string {
+export function getApiBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
     return process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/+$/, "");
   }
   if (
     typeof window !== "undefined" &&
     window.location &&
-    window.location.origin &&
-    !window.location.origin.includes("localhost") &&
-    !window.location.origin.includes("127.0.0.1")
+    window.location.origin
   ) {
-    return `${window.location.origin}/api/v1`;
+    if (window.location.hostname === "frontend-woad-eight-18.vercel.app") {
+      return "https://backend-delta-inky-91.vercel.app/api/v1";
+    }
+    if (
+      !window.location.origin.includes("localhost") &&
+      !window.location.origin.includes("127.0.0.1")
+    ) {
+      return `${window.location.origin}/api/v1`;
+    }
   }
   return "http://127.0.0.1:8000/api/v1";
 }
 
-const API_BASE_URL = getApiBaseUrl();
+export const API_BASE_URL = getApiBaseUrl();
 
 export class ApiError extends Error {
   readonly code: string;
@@ -60,14 +66,16 @@ export function setAuthToken(token: string | null): void {
 
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
+  timeoutMs?: number;
 }
 
 export async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { params, headers: customHeaders, ...init } = options;
+  const { params, headers: customHeaders, timeoutMs = 25000, ...init } = options;
 
+  const baseUrl = getApiBaseUrl();
   let url = endpoint.startsWith("http")
     ? endpoint
-    : `${API_BASE_URL}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
+    : `${baseUrl}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
 
   if (params) {
     const searchParams = new URLSearchParams();
@@ -93,10 +101,25 @@ export async function request<T>(endpoint: string, options: RequestOptions = {})
     headers["Authorization"] = `Token ${token}`;
   }
 
-  const res = await fetch(url, {
-    ...init,
-    headers,
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers,
+      signal: init.signal || controller.signal,
+    });
+  } catch (err: unknown) {
+    clearTimeout(timer);
+    if (err instanceof Error && (err.name === "AbortError" || err.message?.includes("aborted"))) {
+      throw new ApiError("TIMEOUT", `Request to ${endpoint} timed out after ${timeoutMs}ms`, 408);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (res.status === 204) {
     return {} as T;

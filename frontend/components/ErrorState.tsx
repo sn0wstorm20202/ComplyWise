@@ -15,9 +15,9 @@ export function ErrorState({
 }: ErrorStateProps) {
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50/50 p-8 text-center ${className}`}
+      className={`flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50/70 p-8 text-center shadow-2xs ${className}`}
     >
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-rose-100 border border-rose-200 text-rose-600">
         <svg
           className="h-5 w-5"
           fill="none"
@@ -38,7 +38,7 @@ export function ErrorState({
         <button
           type="button"
           onClick={onRetry}
-          className="mt-4 inline-flex items-center rounded-lg border border-rose-300 bg-white px-3.5 py-1.5 text-xs font-medium text-rose-800 shadow-xs hover:bg-rose-50 transition-colors"
+          className="mt-4 inline-flex items-center rounded-full border border-rose-300 bg-white px-4 py-1.5 text-xs font-medium text-rose-800 hover:bg-rose-50 transition-colors cursor-pointer shadow-2xs"
         >
           Try Again
         </button>

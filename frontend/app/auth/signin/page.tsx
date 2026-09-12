@@ -1,40 +1,45 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ErrorState from "@/components/ErrorState";
-import { authApi } from "@/lib/api/auth";
+import { useAuth } from "@/context/AuthContext";
 import { businessesApi } from "@/lib/api/businesses";
-import { setAuthToken } from "@/lib/api/client";
 
-export default function SignInPage() {
+function SignInContent() {
   const router = useRouter();
-  const [mode, setMode] = useState<"signin" | "register">("signin");
+  const searchParams = useSearchParams();
+  const redirectTarget = searchParams.get("redirect") || "/dashboard";
+
+  const { login, register, fastDemoLogin } = useAuth();
+  const initialMode = searchParams.get("mode") === "register" ? "register" : "signin";
+
+  const [mode, setMode] = useState<"signin" | "register">(initialMode);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function resolveAndRedirect() {
+  async function resolveWorkspaceAndRedirect(fallbackUrl: string) {
     try {
       const ws = await businessesApi.getWorkspace();
-      if (ws.active_business_id) {
+      if (ws?.active_business_id) {
         localStorage.setItem("complywise_active_business_id", ws.active_business_id);
       }
-      if (ws.active_assessment_id) {
+      if (ws?.active_assessment_id) {
         localStorage.setItem("complywise_active_assessment_id", ws.active_assessment_id);
       }
-      if (ws.redirect_url) {
+      if (ws?.redirect_url && fallbackUrl === "/dashboard") {
         router.push(ws.redirect_url);
         return;
       }
     } catch {
-      // Fallback if workspace query fails
+      // Non-blocking workspace restoration fallback
     }
-    router.push("/onboarding");
+    router.push(fallbackUrl);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -44,17 +49,17 @@ export default function SignInPage() {
 
     try {
       if (mode === "signin") {
-        const session = await authApi.login(email, password);
-        setAuthToken(session.token);
-        await resolveAndRedirect();
+        await login(email, password);
+        await resolveWorkspaceAndRedirect(redirectTarget);
       } else {
-        const session = await authApi.register(email, password, fullName);
-        setAuthToken(session.token);
-        await resolveAndRedirect();
+        await register(email, password, fullName);
+        await resolveWorkspaceAndRedirect("/onboarding");
       }
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Authentication failed. Please verify credentials.";
+        err instanceof Error
+          ? err.message
+          : "Authentication failed. Please verify credentials.";
       setError(message);
     } finally {
       setLoading(false);
@@ -64,27 +69,9 @@ export default function SignInPage() {
   async function handleDemoLogin() {
     setLoading(true);
     setError(null);
-    const demoEmail = "compliance.officer@example.com";
-    const demoPassword = "CompliancePass123!";
-    const demoName = "Lead Compliance Officer";
-
     try {
-      // Try login first
-      try {
-        const session = await authApi.login(demoEmail, demoPassword);
-        setAuthToken(session.token);
-        await resolveAndRedirect();
-        return;
-      } catch {
-        // If login failed, register demo account
-        const session = await authApi.register(
-          demoEmail,
-          demoPassword,
-          demoName
-        );
-        setAuthToken(session.token);
-        await resolveAndRedirect();
-      }
+      await fastDemoLogin();
+      await resolveWorkspaceAndRedirect(redirectTarget);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to authenticate demo user.";
@@ -95,19 +82,19 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col">
       <Navbar />
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200/80 p-8 shadow-xs space-y-6">
+        <div className="w-full max-w-md bg-white rounded-2xl border border-[#E2E8F0] p-8 shadow-xs space-y-6">
           <div className="text-center space-y-2">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white font-bold text-xl shadow-xs">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#0F172A] text-white font-bold text-xl shadow-2xs">
               CW
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950">
+            <h1 className="text-2xl font-sans font-bold tracking-tight text-[#0F172A]">
               {mode === "signin" ? "Sign In to ComplyWise" : "Create ComplyWise Account"}
             </h1>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[#64748B]">
               {mode === "signin"
                 ? "Enter your credentials to access industrial compliance intelligence."
                 : "Register to manage multi-jurisdiction statutory requirements."}
@@ -115,17 +102,17 @@ export default function SignInPage() {
           </div>
 
           {/* Tab selector */}
-          <div className="flex rounded-lg bg-slate-100 p-1">
+          <div className="flex rounded-full bg-[#F1F5F9] p-1 border border-[#E2E8F0]">
             <button
               type="button"
               onClick={() => {
                 setMode("signin");
                 setError(null);
               }}
-              className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-all ${
+              className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 mode === "signin"
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-500 hover:text-slate-900"
+                  ? "bg-white text-[#0F172A] shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A]"
               }`}
             >
               Sign In
@@ -136,10 +123,10 @@ export default function SignInPage() {
                 setMode("register");
                 setError(null);
               }}
-              className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-all ${
+              className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 mode === "register"
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-500 hover:text-slate-900"
+                  ? "bg-white text-[#0F172A] shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A]"
               }`}
             >
               Create Account
@@ -157,7 +144,7 @@ export default function SignInPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "register" && (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
                   Full Name
                 </label>
                 <input
@@ -166,13 +153,13 @@ export default function SignInPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="e.g. Ramesh Chandra"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-[#475569] mb-1.5">
                 Work Email
               </label>
               <input
@@ -181,12 +168,12 @@ export default function SignInPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@enterprise.in"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-[#475569] mb-1.5">
                 Password
               </label>
               <input
@@ -195,37 +182,37 @@ export default function SignInPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              className="w-full rounded-full bg-[#0F172A] px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
             >
               {loading
                 ? "Authenticating..."
                 : mode === "signin"
-                ? "Sign In →"
-                : "Create Account →"}
+                ? "Sign In"
+                : "Create Account"}
             </button>
           </form>
 
           {/* Fast Demo Access Button */}
-          <div className="pt-4 border-t border-slate-100 space-y-2">
-            <div className="text-[11px] text-center text-slate-400 font-medium">
-              EVALUATION & HACKATHON JURY ACCESS
+          <div className="pt-4 border-t border-[#E2E8F0] space-y-2">
+            <div className="text-[10px] uppercase tracking-wider text-center text-[#94A3B8] font-bold">
+              EVALUATION &amp; HACKATHON JURY ACCESS
             </div>
             <button
               type="button"
               onClick={handleDemoLogin}
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/70 px-4 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100/70 disabled:opacity-50 transition-colors"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-900 hover:bg-amber-100/80 disabled:opacity-50 transition-colors cursor-pointer shadow-2xs"
             >
-              ⚡ Fast Demo Login (Lead Compliance Officer)
+              Fast Demo Login (Lead Compliance Officer)
             </button>
-            <div className="text-[11px] text-center text-slate-400">
+            <div className="text-[11px] text-center text-[#64748B]">
               Pre-seeded test account with ready industrial parameters
             </div>
           </div>
@@ -234,3 +221,11 @@ export default function SignInPage() {
     </div>
   );
 }
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#F8FAFC]" />}>
+      <SignInContent />
+    </Suspense>
+  );
+}

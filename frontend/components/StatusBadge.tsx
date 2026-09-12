@@ -18,7 +18,7 @@ interface StatusConfig {
 }
 
 const STATUS_CONFIGS: Record<string, StatusConfig> = {
-  // Applicability statuses (Mapped to friendly founder language per Part 12)
+  // Applicability statuses
   APPLICABLE: {
     label: "Required",
     bg: "bg-emerald-50",
@@ -28,10 +28,10 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
   },
   NOT_APPLICABLE: {
     label: "Not Applicable",
-    bg: "bg-slate-50",
-    text: "text-slate-600",
-    border: "border-slate-200",
-    dot: "bg-slate-400",
+    bg: "bg-[#F1F5F9]",
+    text: "text-[#64748B]",
+    border: "border-[#E2E8F0]",
+    dot: "bg-[#94A3B8]",
   },
   NEEDS_INFORMATION: {
     label: "Information Needed",
@@ -63,10 +63,10 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
   },
   ACTION_NEEDED: {
     label: "Action Needed",
-    bg: "bg-indigo-50",
-    text: "text-indigo-700",
-    border: "border-indigo-200",
-    dot: "bg-indigo-500",
+    bg: "bg-rose-50",
+    text: "text-rose-700",
+    border: "border-rose-200",
+    dot: "bg-rose-500",
   },
   POTENTIALLY_RELEVANT: {
     label: "Potentially Relevant",
@@ -76,20 +76,20 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
     dot: "bg-purple-500",
   },
 
-  // Workflow statuses (FRONTEND_INSTRUCTIONS.md §5)
+  // Workflow statuses
   NOT_STARTED: {
     label: "Not Started",
-    bg: "bg-slate-50",
-    text: "text-slate-600",
-    border: "border-slate-200",
-    dot: "bg-slate-400",
+    bg: "bg-[#F1F5F9]",
+    text: "text-[#64748B]",
+    border: "border-[#E2E8F0]",
+    dot: "bg-[#94A3B8]",
   },
   IN_PROGRESS: {
     label: "In Progress",
-    bg: "bg-blue-50",
-    text: "text-blue-700",
-    border: "border-blue-200",
-    dot: "bg-blue-500",
+    bg: "bg-sky-50",
+    text: "text-sky-700",
+    border: "border-sky-200",
+    dot: "bg-sky-500",
   },
   WAITING_FOR_USER: {
     label: "Waiting for User",
@@ -100,17 +100,17 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
   },
   UNDER_REVIEW: {
     label: "Under Review",
-    bg: "bg-indigo-50",
-    text: "text-indigo-700",
-    border: "border-indigo-200",
-    dot: "bg-indigo-500",
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+    dot: "bg-amber-500",
   },
   NEEDS_CORRECTION: {
     label: "Needs Correction",
-    bg: "bg-orange-50",
-    text: "text-orange-700",
-    border: "border-orange-200",
-    dot: "bg-orange-500",
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+    dot: "bg-amber-500",
   },
   READY: {
     label: "Ready to Submit",
@@ -135,33 +135,33 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
   },
   OVERDUE: {
     label: "Overdue",
-    bg: "bg-red-50",
-    text: "text-red-700",
-    border: "border-red-200",
-    dot: "bg-red-500",
+    bg: "bg-rose-50",
+    text: "text-rose-700",
+    border: "border-rose-200",
+    dot: "bg-rose-500",
   },
   BLOCKED: {
     label: "Blocked",
-    bg: "bg-stone-50",
-    text: "text-stone-700",
-    border: "border-stone-300",
-    dot: "bg-stone-500",
+    bg: "bg-[#F1F5F9]",
+    text: "text-[#64748B]",
+    border: "border-[#E2E8F0]",
+    dot: "bg-[#94A3B8]",
   },
 
-  // Document statuses (FRONTEND_INSTRUCTIONS.md §5)
+  // Document statuses
   NOT_UPLOADED: {
     label: "Not Uploaded",
-    bg: "bg-slate-50",
-    text: "text-slate-600",
-    border: "border-slate-200",
-    dot: "bg-slate-400",
+    bg: "bg-[#F1F5F9]",
+    text: "text-[#64748B]",
+    border: "border-[#E2E8F0]",
+    dot: "bg-[#94A3B8]",
   },
   UPLOADED: {
     label: "Uploaded",
-    bg: "bg-blue-50",
-    text: "text-blue-700",
-    border: "border-blue-200",
-    dot: "bg-blue-500",
+    bg: "bg-sky-50",
+    text: "text-sky-700",
+    border: "border-sky-200",
+    dot: "bg-sky-500",
   },
   PROCESSING: {
     label: "Processing",
@@ -193,27 +193,27 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
   },
   EXPIRED: {
     label: "Expired",
-    bg: "bg-red-50",
-    text: "text-red-700",
-    border: "border-red-200",
-    dot: "bg-red-500",
+    bg: "bg-rose-50",
+    text: "text-rose-700",
+    border: "border-rose-200",
+    dot: "bg-rose-500",
   },
   REPLACEMENT_REQUIRED: {
     label: "Replacement Required",
-    bg: "bg-orange-50",
-    text: "text-orange-700",
-    border: "border-orange-200",
-    dot: "bg-orange-500",
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+    dot: "bg-amber-500",
   },
 };
 
 export function StatusBadge({ status, className = "", size = "md" }: StatusBadgeProps) {
   const config = STATUS_CONFIGS[status] || {
     label: status.replace(/_/g, " "),
-    bg: "bg-slate-50",
-    text: "text-slate-700",
-    border: "border-slate-200",
-    dot: "bg-slate-400",
+    bg: "bg-[#F1F5F9]",
+    text: "text-[#64748B]",
+    border: "border-[#E2E8F0]",
+    dot: "bg-[#94A3B8]",
   };
 
   const sizeStyles =

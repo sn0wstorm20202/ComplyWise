@@ -258,12 +258,15 @@ def test_orchestration_pipeline_runs_all_stages(food_business):
 
 @pytest.mark.django_db
 def test_smart_question_planner_targets_dynamic_questions(food_business):
-    """Planner must return 7-9 relevant questions for an active business."""
+    """Planner must return applicable dynamic questions within safety bounds without duplicates."""
     plan_res = plan_adaptive_smart_questions(food_business)
     assert "questions" in plan_res
     questions = plan_res["questions"]
     assert len(questions) >= 5
-    assert len(questions) <= 15
+    assert len(questions) <= 20
+    q_keys = [q["variable_key"] for q in questions]
+    assert len(q_keys) == len(set(q_keys)), "Question keys must be unique"
+    assert all("question_text" in q and "why_it_matters" in q for q in questions)
 
 
 @pytest.mark.django_db

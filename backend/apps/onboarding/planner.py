@@ -23,6 +23,7 @@ Smart Questions serve as an intelligent PRE-DISCOVERY INTERVIEW:
 
 from __future__ import annotations
 
+from collections import Counter
 import json
 import logging
 import re
@@ -47,9 +48,9 @@ from apps.onboarding.models import SmartQuestionInstance, SmartQuestionPlan
 
 logger = logging.getLogger(__name__)
 
-TARGET_QUESTIONS_COUNT = 15
+TARGET_QUESTIONS_COUNT = 16
 MIN_QUESTIONS_PER_ROUND = 12
-MAX_QUESTIONS_PER_ROUND = 15
+MAX_QUESTIONS_PER_ROUND = 20
 MAX_ROUNDS = 2
 
 
@@ -886,6 +887,83 @@ def _build_context_driven_fallback_questions(
                 "expected_discovery_impact": "Focuses discovery on CPCB EPR portal registration for batteries/e-waste.",
                 "domain": "ENVIRONMENTAL_SAFETY",
             },
+            {
+                "target_variable_id": "plant_machinery_investment",
+                "is_canonical": True,
+                "question_text": "What is your total capital investment in plant, machinery, and operational equipment (in INR)?",
+                "answer_type": "NUMBER",
+                "allowed_values": [],
+                "priority": 1,
+                "reason": "Plant & machinery valuation determines MSME statutory tiering (Micro, Small, Medium) under the MSMED Act and qualifies capital subsidy schemes.",
+                "expected_discovery_impact": "Directs regulatory harvesting to MSME development schemes and capital subsidy thresholds.",
+                "domain": "COMPLIANCE",
+            },
+            {
+                "target_variable_id": "legal_constitution",
+                "is_canonical": True,
+                "question_text": "What is the formal legal constitution of your enterprise (e.g. Pvt Ltd, LLP, Partnership, Sole Proprietorship)?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": ["Pvt Ltd", "LLP", "Partnership", "Sole Proprietorship"],
+                "priority": 1,
+                "reason": "Constitution governs MCA corporate compliance, statutory audit rules, director KYC, and board reporting mandates.",
+                "expected_discovery_impact": "Determines MCA filing forms, director disclosure schedules, and statutory audit obligations.",
+                "domain": "COMPLIANCE",
+            },
+            {
+                "target_variable_id": "lifecycle_stage",
+                "is_canonical": True,
+                "question_text": "What is your current operational lifecycle stage (e.g. Pre-commissioning Setup, Expanding, or Fully Operational)?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": ["Pre-commissioning Setup", "Expanding", "Fully Operational"],
+                "priority": 1,
+                "reason": "Operational stage separates pre-establishment statutory approvals (CTE, building plan) from operational licenses (CTO, factory license).",
+                "expected_discovery_impact": "Separates pre-construction approvals from ongoing operational renewals.",
+                "domain": "COMPLIANCE",
+            },
+            {
+                "target_variable_id": "ownership_social_category",
+                "is_canonical": True,
+                "question_text": "What is the social category of the enterprise's primary promoter or majority shareholder?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": ["General", "SC", "ST", "OBC"],
+                "priority": 2,
+                "reason": "Promoter social category qualifies the enterprise for preferential procurement quotas and enhanced subsidies under Central/State MSME schemes.",
+                "expected_discovery_impact": "Unlocks SC/ST Hub incentives and specialized state industrial subsidies.",
+                "domain": "SCHEMES",
+            },
+            {
+                "target_variable_id": "ownership_gender",
+                "is_canonical": True,
+                "question_text": "Is the enterprise woman-owned or co-founded by women (holding 51%+ equity)?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Woman-owned enterprises unlock dedicated credit guarantees, grant subsidies, and SIDBI priority financing windows.",
+                "expected_discovery_impact": "Identifies Stand-Up India and state women-entrepreneurship subsidy eligibility.",
+                "domain": "SCHEMES",
+            },
+            {
+                "target_variable_id": "district",
+                "is_canonical": True,
+                "question_text": "In which municipal district is your primary factory or operating facility located?",
+                "answer_type": "TEXT",
+                "allowed_values": [],
+                "priority": 2,
+                "reason": "District location dictates local municipal trade licenses, district industrial centre (DIC) registrations, and local zoning permissions.",
+                "expected_discovery_impact": "Filters district-level DIC incentives and municipal council permits.",
+                "domain": "COMPLIANCE",
+            },
+            {
+                "target_variable_id": "state",
+                "is_canonical": True,
+                "question_text": "In which Indian State or Union Territory is your primary operating premises registered?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [],
+                "priority": 1,
+                "reason": "State jurisdiction governs State Pollution Control Board, state labour departments, and state industrial policy incentives.",
+                "expected_discovery_impact": "Establishes primary state regulatory portal and inspectorate jurisdiction.",
+                "domain": "COMPLIANCE",
+            },
         ]
         for q in physical_pool:
             k = q["target_variable_id"]
@@ -1274,7 +1352,7 @@ Conduct the pre-discovery interview. Understand this specific business, detect a
 
     for rule in central_rules:
         for rv in sorted(_extract_ast_variables(rule.condition_ast)):
-            if rv not in known_keys and rv not in existing_keys and len(planned_items) < MAX_QUESTIONS_PER_ROUND:
+            if rv not in known_keys and rv not in existing_keys:
                 if not is_food and rv in food_vars:
                     continue
                 if not is_med and rv in med_vars:
@@ -1286,7 +1364,7 @@ Conduct the pre-discovery interview. Understand this specific business, detect a
                 var_def = get_variable(rv)
                 if var_def:
                     existing_keys.add(rv)
-                    planned_items.append({
+                    planned_items.insert(0, {
                         "question_id": f"Q_{rv}",
                         "target_variable_id": rv,
                         "variable_key": rv,
@@ -1300,8 +1378,8 @@ Conduct the pre-discovery interview. Understand this specific business, detect a
                         "answer_type": str(var_def.data_type),
                         "data_type": str(var_def.data_type),
                         "options": [opt.value for opt in var_def.options] if var_def.options else [],
-                        "priority": "2",
-                        "information_gain": 0.80,
+                        "priority": "1",
+                        "information_gain": 0.95,
                     })
 
     # Final strict post-processing sector isolation filter
@@ -1387,6 +1465,30 @@ Conduct the pre-discovery interview. Understand this specific business, detect a
         assessment.question_plan = plan
         assessment.save(update_fields=["question_plan"])
 
+    # Candidate requirements for business jurisdiction to calculate rule dependency frequency
+    reqs_query = RequirementDefinition.objects.filter(status=KnowledgeStatus.PUBLISHED)
+    jurisdictions = {"CENTRAL"}
+    if context.state:
+        jurisdictions.add(context.state)
+    if context.state_name:
+        jurisdictions.add(context.state_name)
+        jurisdictions.add(context.state_name.upper())
+    raw_st = str(context.raw_variables.get("state") or "").strip()
+    if raw_st:
+        jurisdictions.add(raw_st)
+        jurisdictions.add(raw_st.upper())
+    reqs_query = reqs_query.filter(jurisdiction__in=list(jurisdictions))
+
+    candidate_req_ids = set(reqs_query.values_list("requirement_id", flat=True))
+    candidate_rules = RuleVersion.objects.filter(
+        requirement__requirement_id__in=candidate_req_ids,
+        status=KnowledgeStatus.PUBLISHED,
+    )
+    var_frequency: Counter[str] = Counter()
+    for rule in candidate_rules:
+        for rv in _extract_ast_variables(rule.condition_ast):
+            var_frequency[rv] += 1
+
     output_questions: list[dict[str, Any]] = []
 
     for item in planned_items:
@@ -1405,6 +1507,7 @@ Conduct the pre-discovery interview. Understand this specific business, detect a
         else:
             resolved_options = []
 
+        dep_count = var_frequency.get(k, 0)
         q_inst = SmartQuestionInstance.objects.create(
             plan=plan,
             business=business,
@@ -1421,32 +1524,44 @@ Conduct the pre-discovery interview. Understand this specific business, detect a
             unit=(var_def.unit or "") if var_def else "",
             priority=str(item.get("priority", "1")),
             information_gain=float(item.get("information_gain", 0.90)),
+            rule_dependency_count=dep_count,
             status="UNANSWERED",
         )
 
         output_questions.append({
             "id": str(q_inst.id),
+            "question_id": q_inst.question_id,
             "code": var_def.code if var_def else "DYN",
             "key": k,
             "variable_key": k,
+            "variable_id": k,
             "target_variable_id": k,
             "is_canonical": bool(var_def is not None),
             "label": var_def.label if var_def else k.replace("dynamic_", "").replace("_", " ").title(),
             "question": q_inst.question_text,
             "question_text": q_inst.question_text,
             "data_type": q_inst.data_type,
+            "answer_type": q_inst.data_type,
             "why_it_matters": q_inst.why_it_matters,
             "reason": q_inst.reason,
             "expected_discovery_impact": q_inst.expected_discovery_impact,
             "unit": q_inst.unit,
             "options": resolved_options,
+            "allowed_values": [opt["value"] if isinstance(opt, dict) else str(opt) for opt in resolved_options],
             "current_value": context.raw_variables.get(k),
             "priority": q_inst.priority,
             "information_gain": q_inst.information_gain,
             "domains": q_inst.domains,
             "required": True if (q_inst.priority == "1" or (var_def and var_def.default_relevance == Relevance.CORE)) else False,
             "rule_dependency_count": q_inst.rule_dependency_count,
+            "candidate_rules_count": q_inst.rule_dependency_count,
         })
+
+    sector_name = context.industry_hint or "manufacturing and commercial"
+    personalization_summary = (
+        f"Selected {len(output_questions)} questions focusing on {sector_name} statutory clearances, "
+        f"MSME capital tiers, and environmental mandates under Indian law."
+    )
 
     return {
         "business_id": str(business.id),
@@ -1457,6 +1572,7 @@ Conduct the pre-discovery interview. Understand this specific business, detect a
         "status": "ACTIVE",
         "personalization_header": f"Pre-Discovery Interview for {business.name}",
         "personalization_subtitle": f"Targeted questions formulating search topics across official portals for {context.state_name}.",
+        "personalization_summary": personalization_summary,
         "business_summary": business_summary,
         "regulatory_discovery_intent": discovery_intent.as_dict(),
         "information_gaps": information_gaps_list,

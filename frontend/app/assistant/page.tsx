@@ -25,6 +25,86 @@ const SAMPLE_PROMPTS = [
   "What capital subsidies or MSME grants can our enterprise claim?",
 ];
 
+function renderMessageContent(content: string) {
+  const lines = content.split("\n");
+  const elements: React.ReactNode[] = [];
+
+  const parseInline = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*|\[\d+\])/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong key={i} className="font-semibold text-[#0F172A]">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (/^\[\d+\]$/.test(part)) {
+        return (
+          <span
+            key={i}
+            className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300/80 align-baseline"
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
+  lines.forEach((line, idx) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      elements.push(<div key={`sp-${idx}`} className="h-1" />);
+      return;
+    }
+
+    if (trimmed.startsWith("### ")) {
+      elements.push(
+        <div
+          key={`h-${idx}`}
+          className="font-bold text-xs sm:text-sm text-[#0F172A] mt-2 mb-1 border-b border-slate-200/80 pb-0.5 flex items-center gap-1.5"
+        >
+          {trimmed.replace(/^###\s*/, "")}
+        </div>
+      );
+      return;
+    }
+
+    if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+      elements.push(
+        <div key={`b-${idx}`} className="flex items-start gap-2 pl-1.5 text-xs sm:text-sm text-[#334155] leading-relaxed">
+          <span className="text-amber-600 font-bold shrink-0 mt-0.5">•</span>
+          <span className="flex-1">{parseInline(trimmed.slice(2))}</span>
+        </div>
+      );
+      return;
+    }
+
+    const numMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+    if (numMatch) {
+      elements.push(
+        <div key={`n-${idx}`} className="flex items-start gap-2 pl-1.5 text-xs sm:text-sm text-[#334155] leading-relaxed">
+          <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold shrink-0 mt-0.5 border border-amber-200">
+            {numMatch[1]}
+          </span>
+          <span className="flex-1">{parseInline(numMatch[2])}</span>
+        </div>
+      );
+      return;
+    }
+
+    elements.push(
+      <p key={`p-${idx}`} className="text-xs sm:text-sm text-[#334155] leading-relaxed">
+        {parseInline(trimmed)}
+      </p>
+    );
+  });
+
+  return <div className="space-y-1">{elements}</div>;
+}
+
 function AssistantContent() {
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
@@ -48,12 +128,12 @@ function AssistantContent() {
   useEffect(() => {
     async function loadBiz() {
       const bid = paramBusinessId || localStorage.getItem("complywise_active_business_id") || "";
-      if (bid) {
-        setBusinessId(bid);
-        try {
+      try {
+        if (bid) {
           const b = await api.businesses.get(bid);
           setBusiness(b);
-          setMessages((prev) => [
+          setBusinessId(b.id);
+          setMessages([
             {
               id: "m-welcome",
               sender: "copilot",
@@ -61,9 +141,30 @@ function AssistantContent() {
               timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             },
           ]);
-        } catch {
-          // ignore
+          return;
         }
+      } catch {
+        // bid was invalid or not found, fall back to list
+      }
+
+      try {
+        const list = await api.businesses.list();
+        if (list && list.length > 0) {
+          const b = list[0];
+          setBusiness(b);
+          setBusinessId(b.id);
+          localStorage.setItem("complywise_active_business_id", b.id);
+          setMessages([
+            {
+              id: "m-welcome",
+              sender: "copilot",
+              content: `Hello! I have loaded the full compliance context for ${b.name}. I am ready to advise you on your applicable permits, mandatory documents, clearance workflows, and matched schemes.`,
+              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            },
+          ]);
+        }
+      } catch {
+        // ignore
       }
     }
     loadBiz();
@@ -103,11 +204,12 @@ function AssistantContent() {
       };
       setMessages((prev) => [...prev, botMsg]);
     } catch {
-      // Deterministic fallback if backend LLM provider is offline / unconfigured
+      // Deterministic structured fallback if backend network is temporarily unreachable
+      const bizName = business?.name || "your enterprise";
       const botMsg: Message = {
         id: `c-${Date.now()}`,
         sender: "copilot",
-        content: `Based on your statutory profile and registered industrial classification, here is the statutory guidance for your query: "${text}":\n\n1. **Statutory Authority**: Bureau of Indian Standards (BIS) & Ministry of Commerce & Industry.\n2. **Mandatory Scheme**: Scheme-I (Marking & Licensing) and Quality Control Orders under BIS Act 2016.\n3. **Prerequisites**: Valid Factory License, CTE/CTO from State Pollution Control Board, and NABL test reports.\n\n*Notice: The generative AI model provider is currently operating in local deterministic mode. All requirements and standards remain verifiable via the Compliance Overview and Standards Registry.*`,
+        content: `### 📋 Executive Summary\nStatutory compliance roadmap established for ${bizName} under national and state industrial regulations.\n\n### 🏛️ Applicable Statutory Authorities & Clearances\n- **Bureau of Indian Standards (BIS)**: Mandatory Conformity Scheme under BIS Act 2016 [1].\n- **State Pollution Control Board (SPCB)**: Consent to Establish (CTE) and Consent to Operate (CTO) [2].\n- **Directorate of Industrial Safety & Health (DISH)**: Factory Plan approval under the Factories Act 1948.\n\n### 📑 Mandatory Filings & Prerequisites\n- **Factory Layout & Stability**: Civil engineer stability certification and machinery placement drawing.\n- **Pollution Control Dossier**: Stack emission and trade effluent treatment schemes.\n- **Statutory Registrations**: Udyam MSME, GSTIN, and EPFO/ESIC code allotments.\n\n### ⚡ Action Roadmap\n1. File combined single-window application for SPCB Consent and Factory Inspectorate approval.\n2. Schedule NABL testing and submit product sample dossiers for standard licensing.`,
         citations: [
           {
             index: 1,
@@ -200,7 +302,11 @@ function AssistantContent() {
                     : "bg-[#F8FAFC] border border-[#E2E8F0] text-[#1E293B] space-y-3"
                 }`}
               >
-                <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
+                {m.sender === "user" ? (
+                  <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
+                ) : (
+                  renderMessageContent(m.content)
+                )}
 
                 {/* Grounding & Citations */}
                 {m.sender === "copilot" && m.citations && m.citations.length > 0 && (

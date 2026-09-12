@@ -12,11 +12,29 @@
 
 import { ApiEnvelope, ApiErrorEnvelope, ApiErrorDetail } from "@/types";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-  (typeof window !== "undefined" && window.location.hostname.includes("vercel.app")
-    ? "https://backend-delta-inky-91.vercel.app/api/v1"
-    : "http://127.0.0.1:8000/api/v1");
+export function getApiBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/+$/, "");
+  }
+  if (
+    typeof window !== "undefined" &&
+    window.location &&
+    window.location.origin
+  ) {
+    if (window.location.hostname === "frontend-woad-eight-18.vercel.app") {
+      return "https://backend-delta-inky-91.vercel.app/api/v1";
+    }
+    if (
+      !window.location.origin.includes("localhost") &&
+      !window.location.origin.includes("127.0.0.1")
+    ) {
+      return `${window.location.origin}/api/v1`;
+    }
+  }
+  return "http://127.0.0.1:8000/api/v1";
+}
+
+export const API_BASE_URL = getApiBaseUrl();
 
 export class ApiError extends Error {
   readonly code: string;
@@ -54,9 +72,10 @@ export interface RequestOptions extends RequestInit {
 export async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { params, headers: customHeaders, timeoutMs = 25000, ...init } = options;
 
+  const baseUrl = getApiBaseUrl();
   let url = endpoint.startsWith("http")
     ? endpoint
-    : `${API_BASE_URL}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
+    : `${baseUrl}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
 
   if (params) {
     const searchParams = new URLSearchParams();

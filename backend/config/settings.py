@@ -59,9 +59,18 @@ if not SECRET_KEY:
             "See .env.example."
         )
 
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1],.vercel.app")
-if IS_VERCEL or ".vercel.app" in os.getenv("DJANGO_ALLOWED_HOSTS", ""):
-    ALLOWED_HOSTS.extend(["*", ".vercel.app", "now.sh"])
+ALLOWED_HOSTS = env_list(
+    "DJANGO_ALLOWED_HOSTS",
+    "*" if (IS_VERCEL or DEBUG) else "localhost,127.0.0.1,[::1],.vercel.app",
+)
+if IS_VERCEL or DEBUG or "*" in ALLOWED_HOSTS:
+    for host in ["*", ".vercel.app", "now.sh", "localhost", "127.0.0.1"]:
+        if host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(host)
+else:
+    for host in [".vercel.app", "localhost", "127.0.0.1", "[::1]"]:
+        if host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(host)
 
 #: The Django admin is an internal knowledge-curation tool (TRD_v2.0 §21), not a
 #: public surface. Always on in DEBUG; opt-in elsewhere.
@@ -211,6 +220,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "common.authentication.SafeTokenAuthentication",
         "rest_framework.authentication.TokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
@@ -242,8 +252,7 @@ from config.cors import (
     get_cors_allowed_origins,
     get_csrf_trusted_origins,
 )
-
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = bool(DEBUG or IS_VERCEL)
 CORS_ALLOWED_ORIGINS = get_cors_allowed_origins(
     is_production=IS_PRODUCTION,
     allow_localhost_in_prod=env_bool("CORS_ALLOW_LOCALHOST_IN_PRODUCTION", default=False),
@@ -257,7 +266,7 @@ if "https://frontend-woad-eight-18.vercel.app" not in CORS_ALLOWED_ORIGINS:
     CORS_ALLOWED_ORIGINS.append("https://frontend-woad-eight-18.vercel.app")
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https:\/\/.*\.vercel\.app$",
+    r"^https://.*\.vercel\.app$",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = CORS_ALLOW_METHODS
@@ -270,10 +279,15 @@ CSRF_TRUSTED_ORIGINS = get_csrf_trusted_origins(
     is_production=IS_PRODUCTION,
     allow_localhost_in_prod=env_bool("CORS_ALLOW_LOCALHOST_IN_PRODUCTION", default=False),
 )
-if IS_VERCEL:
-    for vercel_csrf in ["https://*.vercel.app", "https://frontend-woad-eight-18.vercel.app"]:
-        if vercel_csrf not in CSRF_TRUSTED_ORIGINS:
-            CSRF_TRUSTED_ORIGINS.append(vercel_csrf)
+for vercel_csrf in [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://*.vercel.app",
+    "https://*.now.sh",
+    "https://frontend-woad-eight-18.vercel.app",
+]:
+    if vercel_csrf not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(vercel_csrf)
 
 # ---------------------------------------------------------------------------
 # i18n / static

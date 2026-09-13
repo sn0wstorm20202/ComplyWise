@@ -2,9 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Menu, X, ArrowRight } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
-import { LanguageSelector } from "../LanguageSelector";
+import { Shield, Menu, X, ArrowRight } from "lucide-react";
 
 interface LandingNavbarProps {
   onRequestDemo: () => void;
@@ -12,7 +10,6 @@ interface LandingNavbarProps {
 
 export function LandingNavbar({ onRequestDemo }: LandingNavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { t } = useLanguage();
 
   const navLinks = [
     { label: "Product", href: "#product" },
@@ -32,7 +29,7 @@ export function LandingNavbar({ onRequestDemo }: LandingNavbarProps) {
             </div>
             <div className="flex items-center gap-2">
               <span className="font-sans text-sm font-bold tracking-tight text-[#0F172A]">
-                {t("common.appName")}
+                ComplyWise
               </span>
               <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-mono font-medium bg-amber-50 text-amber-800 border border-amber-200">
                 BIS
@@ -43,7 +40,7 @@ export function LandingNavbar({ onRequestDemo }: LandingNavbarProps) {
           {/* Subtle Development Status Signal */}
           <div className="hidden xl:inline-flex items-center gap-2 rounded-full bg-slate-50 border border-slate-200 px-3 py-0.5 text-[11px] font-medium text-slate-600">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{t("header.problemStatement")}</span>
+            <span>Problem Statement 26130 · Active Build</span>
           </div>
         </div>
 
@@ -61,37 +58,32 @@ export function LandingNavbar({ onRequestDemo }: LandingNavbarProps) {
         </nav>
 
         {/* Right CTA Actions */}
-        <div className="hidden sm:flex items-center gap-2.5">
-          <LanguageSelector compact={true} />
-
+        <div className="hidden sm:flex items-center gap-3">
           <Link
             href="/auth/signin"
-            className="text-xs font-medium text-slate-600 hover:text-[#0F172A] px-2.5 py-1.5 transition-colors"
+            className="text-xs font-medium text-slate-600 hover:text-[#0F172A] px-3 py-1.5 transition-colors"
           >
-            {t("navigation.signIn")}
+            Sign In
           </Link>
 
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#0F172A] hover:bg-slate-800 text-white px-3.5 py-1.5 text-xs font-semibold shadow-xs transition-all"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#0F172A] hover:bg-slate-800 text-white px-4 py-1.5 text-xs font-semibold shadow-xs transition-all"
           >
-            <span>{t("header.exploreWorkspace")}</span>
+            <span>Live Dashboard</span>
             <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
 
         {/* Mobile Hamburger Toggle */}
-        <div className="md:hidden flex items-center gap-2">
-          <LanguageSelector compact={true} />
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            type="button"
-            aria-label="Toggle navigation menu"
-            className="p-1.5 text-slate-600 hover:text-[#0F172A] rounded-md cursor-pointer"
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          type="button"
+          aria-label="Toggle navigation menu"
+          className="md:hidden p-1.5 text-slate-600 hover:text-[#0F172A] rounded-md cursor-pointer"
+        >
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
 
       {/* Mobile Dropdown */}
@@ -112,13 +104,13 @@ export function LandingNavbar({ onRequestDemo }: LandingNavbarProps) {
               href="/auth/signin"
               className="font-semibold text-slate-600 hover:text-[#0F172A]"
             >
-              {t("navigation.signIn")}
+              Sign In
             </Link>
             <Link
               href="/dashboard"
               className="rounded-full bg-[#0F172A] text-white px-4 py-1.5 font-semibold text-xs"
             >
-              {t("header.exploreWorkspace")}
+              Live Dashboard
             </Link>
           </div>
         </div>

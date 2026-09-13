@@ -10,10 +10,8 @@ import ErrorState from "@/components/ErrorState";
 import { api } from "@/lib/api";
 import { DEMO_DOCUMENTS } from "@/data/demo/documents";
 import type { DocumentsListResponse } from "@/lib/api/documents";
-import { useLanguage } from "@/context/LanguageContext";
 
 function DocumentsContent() {
-  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
 
@@ -106,13 +104,13 @@ function DocumentsContent() {
         <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
           <div>
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#E2E8F0] bg-[#F1F5F9] text-[#0F172A] text-[11px] font-semibold tracking-wider uppercase mb-2">
-              {t("common.appName")} · {t("documents.title")}
+              Screen 10 · Statutory Repository
             </div>
             <h1 className="font-sans text-2xl sm:text-3xl text-[#0F172A] font-bold tracking-tight">
-              {t("documents.title")}
+              Statutory Document Checklist
             </h1>
             <p className="text-xs text-[#64748B] mt-1.5 max-w-2xl leading-relaxed">
-              {t("documents.subtitle")}
+              Documents catalogued for the regulatory requirements identified for this enterprise. Upload certificates and proofs for automated pre-validation.
             </p>
           </div>
 
@@ -121,7 +119,7 @@ function DocumentsContent() {
               href={`/dashboard?business_id=${businessId}`}
               className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
             >
-              ← {t("navigation.dashboard")}
+              ← Dashboard
             </Link>
             {uploadAvailable && (
               <button
@@ -129,7 +127,7 @@ function DocumentsContent() {
                 onClick={() => setShowUpload(!showUpload)}
                 className="inline-flex items-center gap-2 rounded-full bg-[#18181B] px-4 py-2 text-xs font-semibold text-white hover:bg-[#27272A] transition-all shadow-2xs cursor-pointer"
               >
-                <span>+</span> {t("documents.uploadDocument")}
+                <span>+</span> Upload Document
               </button>
             )}
           </div>
@@ -183,10 +181,10 @@ function DocumentsContent() {
             <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
               <div>
                 <h2 className="font-sans font-bold text-lg text-[#0F172A]">
-                  {t("documents.uploadDocument")}
+                  Upload Statutory Evidence
                 </h2>
                 <p className="text-xs text-[#64748B] mt-0.5">
-                  {t("documents.dropzoneText")}
+                  Submit digital files for AI clause matching and metadata verification
                 </p>
               </div>
               <button
@@ -251,14 +249,14 @@ function DocumentsContent() {
                 onClick={() => setShowUpload(false)}
                 className="rounded-full border border-[#E2E8F0] px-4 py-1.5 text-xs font-medium text-[#64748B] hover:bg-[#F8FAFC]"
               >
-                {t("common.cancel")}
+                Cancel
               </button>
               <button
                 type="submit"
                 disabled={uploading}
                 className="rounded-full bg-[#18181B] px-5 py-1.5 text-xs font-semibold text-white hover:bg-[#27272A] disabled:opacity-50 transition-all shadow-2xs"
               >
-                {uploading ? t("common.submitting") : t("common.submit")}
+                {uploading ? "Analyzing Document..." : "Submit & Pre-Validate"}
               </button>
             </div>
           </form>
@@ -296,10 +294,10 @@ function DocumentsContent() {
           <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs">
             <div className="text-3xl mb-3">📁</div>
             <h3 className="font-sans font-bold text-lg text-[#0F172A]">
-              {t("common.noData")}
+              No documents recorded for current requirements
             </h3>
             <p className="text-xs text-[#64748B] mt-2 max-w-md mx-auto leading-relaxed">
-              {t("documents.searchDocuments")}
+              Published knowledge names specific required documents for certain frameworks. An empty list indicates missing statutory metadata, not necessarily exemption from filing.
             </p>
           </div>
         ) : (
@@ -356,7 +354,7 @@ function DocumentsContent() {
                     href={`/documents/${doc.id}`}
                     className="inline-flex items-center gap-1.5 text-xs text-[#0F172A] hover:underline font-semibold transition-colors"
                   >
-                    <span>{t("common.viewDetails")}</span>
+                    <span>View Dossier</span>
                     <span className="text-sm">→</span>
                   </Link>
                 </div>

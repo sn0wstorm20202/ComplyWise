@@ -186,43 +186,8 @@ def derive_business_calendar(
                 "is_action_required": days_27 <= 30,
             })
 
-    # -----------------------------------------------------------------------
-    # DEMO TEST CASES — clearly isolated synthetic deadlines for live demo.
-    # These flow through the real notification pipeline unchanged.
-    # They are NOT real regulatory requirements — purely for demonstration.
-    # -----------------------------------------------------------------------
-    demo_t7_date = today + timedelta(days=7)
-    demo_t1_date = today + timedelta(days=1)
-
-    events.append({
-        "id": "DEMO_TEST::T7-CALENDAR-ONLY",
-        "title": "⚠ DEMO TEST — Deadline in 7 Days (Calendar Reminder Only)",
-        "date": demo_t7_date.isoformat(),
-        "type": "DEMO_TEST",
-        "authority": "ComplyWise Demo",
-        "status": "DEMO",
-        "days_remaining": 7,
-        "basis": "Synthetic test case to demonstrate T-7 Google Calendar notification dispatch.",
-        "anchored_on": f"Auto-generated demo date: {demo_t7_date.isoformat()}",
-        "is_action_required": True,
-    })
-
-    events.append({
-        "id": "DEMO_TEST::T1-CALENDAR-AND-EMAIL",
-        "title": "⚠ DEMO TEST — Deadline in 1 Day (Calendar + Email)",
-        "date": demo_t1_date.isoformat(),
-        "type": "DEMO_TEST",
-        "authority": "ComplyWise Demo",
-        "status": "DEMO",
-        "days_remaining": 1,
-        "basis": "Synthetic test case to demonstrate T-1 Google Calendar + Email notification dispatch.",
-        "anchored_on": f"Auto-generated demo date: {demo_t1_date.isoformat()}",
-        "is_action_required": True,
-    })
-
     # Sort events chronologically by date
     events.sort(key=lambda e: e["date"])
-
 
     return {
         "business_id": str(business.id),

@@ -8,19 +8,13 @@ import { request } from "./client";
 import { AssistantChatResponse } from "@/types";
 
 export const assistantApi = {
-  chat: (
-    prompt: string,
-    businessId?: string | null,
-    assessmentId?: string | null,
-    language?: string
-  ): Promise<AssistantChatResponse> =>
+  chat: (prompt: string, businessId?: string | null, assessmentId?: string | null): Promise<AssistantChatResponse> =>
     request<AssistantChatResponse>("/assistant/chat", {
       method: "POST",
       body: JSON.stringify({
         prompt,
         ...(businessId ? { business_id: businessId } : {}),
         ...(assessmentId ? { assessment_id: assessmentId } : {}),
-        ...(language ? { language } : {}),
       }),
     }),
 };

@@ -10,10 +10,8 @@ import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import { api } from "@/lib/api";
 import { Business, AssessmentSummary, BusinessProfileData } from "@/types";
-import { useLanguage } from "@/context/LanguageContext";
 
 export default function BusinessDetailPage() {
-  const { t } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const businessId = params.id as string;
@@ -107,7 +105,7 @@ export default function BusinessDetailPage() {
         {/* Breadcrumb */}
         <div className="mb-4 flex items-center gap-2 text-xs text-slate-500">
           <Link href="/profile" className="hover:text-indigo-600">
-            {t("navigation.profile")}
+            My Businesses
           </Link>
           <span>/</span>
           <span className="font-semibold text-slate-700">{business.name}</span>
@@ -136,7 +134,7 @@ export default function BusinessDetailPage() {
                   href={`/dashboard?business_id=${business.id}&assessment_id=${latestCompleted.id}`}
                   className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
                 >
-                  {t("navigation.dashboard")}
+                  View Latest Dashboard
                 </Link>
               ) : null}
 
@@ -149,7 +147,7 @@ export default function BusinessDetailPage() {
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                {creatingAssessment ? t("common.loading") : `${t("navigation.onboarding")} (#${assessments.length + 1})`}
+                {creatingAssessment ? "Creating..." : "Start New Assessment (#" + (assessments.length + 1) + ")"}
               </button>
             </div>
           </div>

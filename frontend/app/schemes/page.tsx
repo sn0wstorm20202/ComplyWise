@@ -10,10 +10,8 @@ import { api } from "@/lib/api";
 import CapabilityUnavailableNotice from "@/components/CapabilityUnavailableNotice";
 import { DEMO_SCHEMES } from "@/data/demo/schemes";
 import type { SchemesListResponse } from "@/lib/api/schemes";
-import { useLanguage } from "@/context/LanguageContext";
 
 function SchemesContent() {
-  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
 
@@ -64,13 +62,13 @@ function SchemesContent() {
         <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
           <div>
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#E2E8F0] bg-[#F1F5F9] text-[#0F172A] text-[11px] font-semibold tracking-wider uppercase mb-2">
-              {t("common.appName")} · {t("navigation.schemes")}
+              Screen 13 · Government Incentives
             </div>
             <h1 className="font-sans text-2xl sm:text-3xl text-[#0F172A] font-bold tracking-tight">
-              {t("navigation.schemes")}
+              Government Schemes & Subsidies
             </h1>
             <p className="text-xs text-[#64748B] mt-1.5 max-w-2xl leading-relaxed">
-              {t("dashboard.subtitle")}
+              Incentives, testing fee waivers, and capital subsidies mapped directly from your Udyam classification and industrial standard filings.
             </p>
           </div>
 
@@ -79,7 +77,7 @@ function SchemesContent() {
               href={`/dashboard?business_id=${businessId}`}
               className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
             >
-              ← {t("navigation.dashboard")}
+              ← Dashboard
             </Link>
           </div>
         </div>
@@ -107,10 +105,10 @@ function SchemesContent() {
           <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs">
             <div className="text-3xl mb-3">💰</div>
             <h3 className="font-sans font-bold text-lg text-[#0F172A]">
-              {t("common.noData")}
+              No published scheme rule satisfied by enterprise profile
             </h3>
             <p className="text-xs text-[#64748B] mt-2 max-w-md mx-auto leading-relaxed">
-              {t("dashboard.subtitle")}
+              Scheme rules were verified against enterprise turnover and category records. None currently meet the published threshold for active subsidies.
             </p>
           </div>
         ) : (
@@ -155,7 +153,7 @@ function SchemesContent() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:underline transition-colors"
                     >
-                      <span>{t("common.learnMore")}</span>
+                      <span>Official Portal</span>
                       <span className="text-sm">↗</span>
                     </a>
                   )}

@@ -15,7 +15,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useBusinessContext } from "@/context/BusinessContext";
-import { useLanguage } from "@/context/LanguageContext";
 
 interface ApplicationRecord {
   id: string;
@@ -74,7 +73,6 @@ const DEMO_APPLICATIONS: ApplicationRecord[] = [
 ];
 
 function ApplicationsContent() {
-  const { t } = useLanguage();
   const { profile } = useBusinessContext();
   const [filter, setFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -99,18 +97,18 @@ function ApplicationsContent() {
         <div className="bg-white rounded-[10px] border border-[#E2E8F0] p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#64748B] tracking-wide uppercase">
-                {t("common.appName")} · {profile.businessName}
+              <span className="text-xs font-semibold text-amber-800 tracking-wide uppercase">
+                Statutory Filings · {profile.businessName}
               </span>
-              <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 border border-emerald-200">
-                {t("navigation.applications")}
+              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
+                Official Portal Handoff Tracking
               </span>
             </div>
             <h1 className="text-2xl font-sans font-bold tracking-tight text-[#0F172A] mt-1">
-              {t("navigation.applications")}
+              Applications &amp; Portal Filings
             </h1>
             <p className="text-xs text-[#64748B] mt-0.5">
-              {t("dashboard.activeWorkflows")}
+              Live status tracking for applications submitted to official government single-window portals.
             </p>
           </div>
 
@@ -146,7 +144,7 @@ function ApplicationsContent() {
                     : "text-[#64748B] hover:text-[#0F172A]"
                 }`}
               >
-                {st === "ALL" ? t("common.all") : st.replace(/_/g, " ")}
+                {st.replace(/_/g, " ")}
               </button>
             ))}
           </div>
@@ -155,7 +153,7 @@ function ApplicationsContent() {
             <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#94A3B8]" />
             <input
               type="text"
-              placeholder={`${t("common.search")}...`}
+              placeholder="Search reference # or authority..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="rounded-full bg-white border border-[#E2E8F0] pl-8 pr-4 py-1.5 text-xs text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none shadow-2xs"

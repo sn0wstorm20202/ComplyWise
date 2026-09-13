@@ -14,7 +14,6 @@ import {
   Filter,
 } from "lucide-react";
 import { useBusinessContext } from "@/context/BusinessContext";
-import { useLanguage } from "@/context/LanguageContext";
 
 interface NotificationItem {
   id: string;
@@ -88,7 +87,6 @@ const DEMO_NOTIFICATIONS: NotificationItem[] = [
 
 function NotificationsContent() {
   const { profile } = useBusinessContext();
-  const { t } = useLanguage();
   const [filter, setFilter] = useState<string>("ALL");
   const [notifications, setNotifications] = useState<NotificationItem[]>(DEMO_NOTIFICATIONS);
 
@@ -125,17 +123,17 @@ function NotificationsContent() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-amber-800 tracking-wide uppercase">
-                {t("notifications.activityCenter", { businessName: profile.businessName })}
+                Activity Center · {profile.businessName}
               </span>
               <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700 border border-slate-200 font-medium">
-                {t("notifications.unreadCount", { count: notifications.filter((n) => !n.isRead).length })}
+                {notifications.filter((n) => !n.isRead).length} Unread Alerts
               </span>
             </div>
             <h1 className="text-2xl font-sans font-bold tracking-tight text-[#0F172A] mt-1">
-              {t("notifications.title")}
+              Compliance Notifications &amp; Alerts
             </h1>
             <p className="text-xs text-[#64748B] mt-0.5">
-              {t("notifications.subtitle")}
+              Statutory renewal reminders, document expiry notices, and regulatory updates.
             </p>
           </div>
 
@@ -145,7 +143,7 @@ function NotificationsContent() {
               onClick={markAllRead}
               className="px-4 py-1.5 rounded-full bg-white border border-[#E2E8F0] hover:bg-slate-50 text-xs font-semibold text-[#0F172A] transition-colors cursor-pointer shadow-2xs"
             >
-              {t("notifications.markAllRead")}
+              Mark All as Read
             </button>
           </div>
         </div>
@@ -153,12 +151,12 @@ function NotificationsContent() {
         {/* Filters */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
           {[
-            { key: "ALL", label: t("notifications.filterAll") },
-            { key: "UNREAD", label: t("notifications.filterUnread") },
-            { key: "DEADLINE", label: t("notifications.filterDeadlines") },
-            { key: "DOCUMENT_ISSUE", label: t("notifications.filterDocuments") },
-            { key: "REGULATORY_UPDATE", label: t("notifications.filterUpdates") },
-            { key: "RENEWAL", label: t("notifications.filterRenewals") },
+            { key: "ALL", label: "All Notifications" },
+            { key: "UNREAD", label: "Unread" },
+            { key: "DEADLINE", label: "Deadlines" },
+            { key: "DOCUMENT_ISSUE", label: "Document Gaps" },
+            { key: "REGULATORY_UPDATE", label: "Gazette Updates" },
+            { key: "RENEWAL", label: "Renewals" },
           ].map((item) => (
             <button
               key={item.key}

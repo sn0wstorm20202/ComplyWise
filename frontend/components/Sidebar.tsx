@@ -15,7 +15,6 @@ import {
   Settings,
   Headphones,
 } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
 
 export type NavView =
   | "dashboard"
@@ -43,23 +42,21 @@ interface NavItem {
 }
 
 export function Sidebar({ activeView, onSelectView, isMobile = false }: SidebarProps) {
-  const { t } = useLanguage();
-
   const primaryItems: NavItem[] = [
-    { id: "dashboard", label: t("navigation.dashboard"), icon: LayoutDashboard },
-    { id: "compliance", label: t("navigation.compliance"), icon: ShieldCheck },
-    { id: "documents", label: t("navigation.documents"), icon: FileText },
-    { id: "workflows", label: t("navigation.workflows"), icon: GitFork },
-    { id: "calendar", label: t("navigation.calendar"), icon: Calendar },
-    { id: "standards", label: t("navigation.standards"), icon: Target },
-    { id: "schemes", label: t("navigation.schemes"), icon: Award },
-    { id: "updates", label: t("navigation.updates"), icon: Info },
-    { id: "assistant", label: t("navigation.assistant"), icon: Sparkles },
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "compliance", label: "Compliance", icon: ShieldCheck },
+    { id: "documents", label: "Documents", icon: FileText },
+    { id: "workflows", label: "Workflows", icon: GitFork },
+    { id: "calendar", label: "Calendar", icon: Calendar },
+    { id: "standards", label: "Standards", icon: Target },
+    { id: "schemes", label: "Schemes & Benefits", icon: Award },
+    { id: "updates", label: "Regulatory Updates", icon: Info },
+    { id: "assistant", label: "AI Assistant", icon: Sparkles },
   ];
 
   const secondaryItems: NavItem[] = [
-    { id: "profile", label: t("navigation.profile"), icon: FileSpreadsheet },
-    { id: "settings", label: t("navigation.settings"), icon: Settings },
+    { id: "profile", label: "Business Profile", icon: FileSpreadsheet },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   return (

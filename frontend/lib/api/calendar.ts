@@ -23,25 +23,6 @@ export interface CalendarListResponse {
   not_covered_reason: string;
 }
 
-export interface DeadlineNotificationRecord {
-  id: string;
-  requirement_id: string;
-  deadline_date: string;
-  offset_days: number;
-  channel: "GOOGLE_CALENDAR" | "EMAIL";
-  status: "DELIVERED" | "SIMULATED" | "FAILED" | "PENDING";
-  language: string;
-  subject_or_title: string;
-  recipient: string;
-  created_at: string;
-  details: Record<string, unknown>;
-}
-
-export interface DeadlineNotificationsResponse {
-  count: number;
-  notifications: DeadlineNotificationRecord[];
-}
-
 export const calendarApi = {
   list: (businessId: string, assessmentId?: string): Promise<CalendarListResponse> =>
     request<CalendarListResponse>(
@@ -49,7 +30,4 @@ export const calendarApi = {
         ? `/businesses/${businessId}/calendar?assessment_id=${assessmentId}`
         : `/businesses/${businessId}/calendar`
     ),
-
-  listNotifications: (businessId: string): Promise<DeadlineNotificationsResponse> =>
-    request<DeadlineNotificationsResponse>(`/businesses/${businessId}/calendar/notifications`),
 };

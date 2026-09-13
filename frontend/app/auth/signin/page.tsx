@@ -6,11 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ErrorState from "@/components/ErrorState";
 import { useAuth } from "@/context/AuthContext";
-import { useLanguage } from "@/context/LanguageContext";
 import { businessesApi } from "@/lib/api/businesses";
 
 function SignInContent() {
-  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTarget = searchParams.get("redirect") || "/dashboard";
@@ -94,12 +92,12 @@ function SignInContent() {
               CW
             </div>
             <h1 className="text-2xl font-sans font-bold tracking-tight text-[#0F172A]">
-              {mode === "signin" ? t("auth.signInTitle") : t("auth.signUpTitle")}
+              {mode === "signin" ? "Sign In to ComplyWise" : "Create ComplyWise Account"}
             </h1>
             <p className="text-xs text-[#64748B]">
               {mode === "signin"
-                ? t("auth.signInSubtitle")
-                : t("auth.signUpSubtitle")}
+                ? "Enter your credentials to access industrial compliance intelligence."
+                : "Register to manage multi-jurisdiction statutory requirements."}
             </p>
           </div>
 
@@ -117,7 +115,7 @@ function SignInContent() {
                   : "text-[#64748B] hover:text-[#0F172A]"
               }`}
             >
-              {t("navigation.signIn")}
+              Sign In
             </button>
             <button
               type="button"
@@ -131,7 +129,7 @@ function SignInContent() {
                   : "text-[#64748B] hover:text-[#0F172A]"
               }`}
             >
-              {t("auth.createAccount")}
+              Create Account
             </button>
           </div>
 
@@ -147,7 +145,7 @@ function SignInContent() {
             {mode === "register" && (
               <div>
                 <label className="block text-xs font-semibold text-[#475569] mb-1.5">
-                  {t("auth.fullNameLabel")}
+                  Full Name
                 </label>
                 <input
                   type="text"
@@ -162,7 +160,7 @@ function SignInContent() {
 
             <div>
               <label className="block text-xs font-semibold text-[#475569] mb-1.5">
-                {t("auth.emailLabel")}
+                Work Email
               </label>
               <input
                 type="email"
@@ -176,7 +174,7 @@ function SignInContent() {
 
             <div>
               <label className="block text-xs font-semibold text-[#475569] mb-1.5">
-                {t("auth.passwordLabel")}
+                Password
               </label>
               <input
                 type="password"
@@ -194,10 +192,10 @@ function SignInContent() {
               className="w-full rounded-full bg-[#0F172A] px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
             >
               {loading
-                ? t("common.submitting")
+                ? "Authenticating..."
                 : mode === "signin"
-                ? t("auth.signInBtn")
-                : t("auth.registerBtn")}
+                ? "Sign In"
+                : "Create Account"}
             </button>
           </form>
 
@@ -230,4 +228,4 @@ export default function SignInPage() {
       <SignInContent />
     </Suspense>
   );
-}
+}

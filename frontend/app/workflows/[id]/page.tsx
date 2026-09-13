@@ -10,14 +10,12 @@ import {
   ChevronRight,
   ArrowLeft,
 } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default function WorkflowDetailPage({ params }: PageProps) {
-  const { t } = useLanguage();
   const resolvedParams = use(params);
   const wfId = resolvedParams.id;
 
@@ -33,7 +31,7 @@ export default function WorkflowDetailPage({ params }: PageProps) {
           <div className="flex items-center gap-2 text-xs text-[#64748B]">
             <Folder className="h-3.5 w-3.5 text-[#64748B]" />
             <Link href="/workflows" className="hover:text-[#0F172A] transition-colors">
-              {t("navigation.workflows")}
+              Workflows
             </Link>
             <ChevronRight className="h-3 w-3 text-[#CBD5E1]" />
             <span className="text-[#0F172A] font-mono font-medium">{wf.standardCode}</span>
@@ -44,7 +42,7 @@ export default function WorkflowDetailPage({ params }: PageProps) {
             className="inline-flex items-center gap-1.5 text-xs font-medium text-[#64748B] hover:text-[#0F172A] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>{t("common.back")}</span>
+            <span>Back to Roadmaps</span>
           </Link>
         </div>
 

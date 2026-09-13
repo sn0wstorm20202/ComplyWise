@@ -9,10 +9,8 @@ import {
   ExternalLink,
   ArrowRight,
 } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
 
 export default function RegulatoryUpdatesPage() {
-  const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [filterLevel, setFilterLevel] = useState<string>("ALL");
 
@@ -33,13 +31,13 @@ export default function RegulatoryUpdatesPage() {
         <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
           <div className="space-y-1">
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#E2E8F0] bg-[#F1F5F9] text-[#0F172A] text-[11px] font-semibold tracking-wider uppercase mb-1">
-              {t("common.appName")} · {t("navigation.updates")}
+              Gazette Monitor · Regulatory Intelligence
             </div>
             <h1 className="font-sans text-2xl sm:text-3xl text-[#0F172A] font-bold tracking-tight">
-              {t("navigation.updates")}
+              Official Gazette & QCO Intelligence
             </h1>
             <p className="text-xs text-[#64748B] max-w-2xl leading-relaxed">
-              {t("dashboard.regulatoryUpdates")}
+              Continuous tracking of DPIIT Quality Control Orders, BIS Technical Circulars, and CPCB mandates.
             </p>
           </div>
 
@@ -49,7 +47,7 @@ export default function RegulatoryUpdatesPage() {
               <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#64748B]" />
               <input
                 type="text"
-                placeholder={`${t("common.search")}...`}
+                placeholder="Search gazette or standard..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-3 py-1.5 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] text-xs text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F172A] focus:outline-hidden"
@@ -68,7 +66,7 @@ export default function RegulatoryUpdatesPage() {
                       : "text-[#64748B] hover:text-[#0F172A]"
                   }`}
                 >
-                  {lvl === "ALL" ? t("common.all") : lvl}
+                  {lvl}
                 </button>
               ))}
             </div>
@@ -160,7 +158,7 @@ export default function RegulatoryUpdatesPage() {
                     href={`/regulatory-updates/${item.id}`}
                     className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#18181B] text-white font-semibold text-xs hover:bg-[#27272A] transition-all shadow-2xs"
                   >
-                    <span>{t("common.viewDetails")}</span>
+                    <span>Analyze Impact</span>
                     <ArrowRight className="h-3 w-3" />
                   </Link>
                 </div>

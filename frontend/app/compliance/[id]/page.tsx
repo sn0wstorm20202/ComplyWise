@@ -11,7 +11,6 @@ import { api } from "@/lib/api";
 import { sanitizeExternalUrl } from "@/lib/url";
 import { RequirementDetail } from "@/types";
 import { DEMO_REQUIREMENTS } from "@/data/demo/compliance";
-import { useLanguage } from "@/context/LanguageContext";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -20,7 +19,6 @@ import { normalizeRequirementDetail } from "@/lib/normalizeRequirementDetail";
 export { normalizeRequirementDetail };
 
 function RequirementDetailContent({ params }: PageProps) {
-  const { t } = useLanguage();
   const resolvedParams = use(params);
   const requirementId = resolvedParams.id;
 
@@ -109,11 +107,11 @@ function RequirementDetailContent({ params }: PageProps) {
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-2 text-xs text-[#64748B]">
             <Link href="/dashboard" className="hover:text-[#0F172A] transition-colors">
-              {t("navigation.dashboard")}
+              Dashboard
             </Link>
             <span>/</span>
             <Link href="/compliance" className="hover:text-[#0F172A] transition-colors">
-              {t("navigation.compliance")}
+              Compliance Matrix
             </Link>
             <span>/</span>
             <span className="font-mono font-bold text-[#0F172A] bg-[#F1F5F9] px-2 py-0.5 rounded border border-[#E2E8F0]">
@@ -125,7 +123,7 @@ function RequirementDetailContent({ params }: PageProps) {
             href="/compliance"
             className="rounded-full border border-[#E2E8F0] bg-white px-4 py-1.5 text-xs font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors shadow-2xs"
           >
-            ← {t("common.back")}
+            ← Back to Matrix
           </Link>
         </div>
 

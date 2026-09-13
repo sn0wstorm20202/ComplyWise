@@ -10,10 +10,8 @@ import { api } from "@/lib/api";
 import { StandardItem } from "@/types";
 
 import { DEMO_STANDARDS } from "@/data/demo/standards";
-import { useLanguage } from "@/context/LanguageContext";
 
 function StandardsContent() {
-  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
 
@@ -80,19 +78,19 @@ function StandardsContent() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#E2E8F0] bg-[#F1F5F9] text-[#0F172A] text-[11px] font-semibold tracking-wider uppercase">
-                {t("common.appName")} · {t("navigation.standards")}
+                Screen 14 · Quality Mandates
               </span>
               {businessId && (
                 <span className="inline-flex items-center rounded-full bg-[#F8FAFC] px-2.5 py-0.5 text-[11px] font-mono text-[#0F172A] border border-[#E2E8F0]">
-                  {t("common.verified")}
+                  Enterprise Profile Synced
                 </span>
               )}
             </div>
             <h1 className="font-sans text-2xl sm:text-3xl text-[#0F172A] font-bold tracking-tight">
-              {t("navigation.standards")}
+              Published Standards & Technical Specifications
             </h1>
             <p className="text-xs text-[#64748B] mt-1.5 max-w-2xl leading-relaxed">
-              {t("complianceView.pageSubtitle")}
+              Search Indian Standards (IS), mandatory Quality Control Orders (QCOs), and test methods linked with statutory evidence citations.
             </p>
           </div>
 
@@ -101,7 +99,7 @@ function StandardsContent() {
               href={businessId ? `/dashboard?business_id=${businessId}` : "/dashboard"}
               className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
             >
-              ← {t("navigation.dashboard")}
+              ← Dashboard
             </Link>
           </div>
         </div>
@@ -119,7 +117,7 @@ function StandardsContent() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t("complianceView.searchPlaceholder")}
+              placeholder="Search by requirement name, authority, standard code (e.g., IS 1293, QCO)..."
               className="flex-1 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2.5 text-xs text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F172A] focus:outline-hidden"
             />
             <button
@@ -127,7 +125,7 @@ function StandardsContent() {
               disabled={loading}
               className="rounded-full bg-[#18181B] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#27272A] disabled:opacity-50 transition-all shadow-2xs cursor-pointer"
             >
-              {t("common.search")}
+              Search
             </button>
             {searchQuery && (
               <button
@@ -138,7 +136,7 @@ function StandardsContent() {
                 }}
                 className="rounded-full border border-[#E2E8F0] px-4 py-2.5 text-xs font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC] transition-colors cursor-pointer"
               >
-                {t("common.cancel")}
+                Clear
               </button>
             )}
           </form>

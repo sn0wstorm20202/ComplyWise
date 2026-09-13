@@ -26,7 +26,6 @@ import {
 import { NavView } from "./Sidebar";
 import { useBusinessContext } from "@/context/BusinessContext";
 import { useAuth } from "@/context/AuthContext";
-import { useLanguage } from "@/context/LanguageContext";
 
 interface DashboardViewProps {
   onNavigateToView: (view: NavView) => void;
@@ -65,7 +64,6 @@ export function DashboardView({
 }: DashboardViewProps) {
   const { profile, dashboardData, liveDashboardSummary } = useBusinessContext();
   const { user } = useAuth();
-  const { t } = useLanguage();
 
   const userName = user?.full_name || profile?.officer || "Somsubhra Dalui";
   const activeCompanyName = profile?.businessName || "Eastern Smart Devices Private Limited";
@@ -105,12 +103,12 @@ export function DashboardView({
           className="flex items-center gap-1.5 hover:text-[#0F172A] transition-colors cursor-pointer"
         >
           <Folder className="h-3.5 w-3.5" />
-          <span>{t("navigation.dashboard")}</span>
+          <span>Home Page</span>
         </button>
         <span className="text-[#CBD5E1]">›</span>
         <span className="flex items-center gap-1.5 text-[#0F172A] font-semibold">
           <Folder className="h-3.5 w-3.5 text-[#64748B]" />
-          <span>{t("navigation.dashboard")}</span>
+          <span>Dashboard</span>
         </span>
       </div>
 
@@ -127,7 +125,7 @@ export function DashboardView({
 
           {/* Level 1: Large Title */}
           <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight font-sans">
-            {t("dashboard.title")}
+            Compliance Dashboard
           </h1>
 
           {/* Company Name (prominent & larger) + Dashboard designation */}
@@ -136,7 +134,7 @@ export function DashboardView({
               {activeCompanyName}
             </span>
             <span className="text-xs sm:text-sm font-semibold text-[#64748B]">
-              {t("common.appName")}
+              Compliance Dashboard
             </span>
           </div>
 

@@ -12,10 +12,8 @@ import CapabilityUnavailableNotice from "@/components/CapabilityUnavailableNotic
 import WorkflowPipeline from "@/components/workflows/WorkflowPipeline";
 import { DEMO_WORKFLOWS } from "@/data/demo/workflows";
 import type { WorkflowsListResponse } from "@/lib/api/workflows";
-import { useLanguage } from "@/context/LanguageContext";
 
 function WorkflowsContent() {
-  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
 
@@ -74,13 +72,13 @@ function WorkflowsContent() {
         <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
           <div>
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#E2E8F0] bg-[#F1F5F9] text-[#0F172A] text-[11px] font-semibold tracking-wider uppercase mb-2">
-              {t("common.appName")} · {t("navigation.workflows")}
+              Screen 11 · Statutory Roadmaps
             </div>
             <h1 className="font-sans text-2xl sm:text-3xl text-[#0F172A] font-bold tracking-tight">
-              {t("navigation.workflows")}
+              Industrial Clearance Workflows
             </h1>
             <p className="text-xs text-[#64748B] mt-1.5 max-w-2xl leading-relaxed">
-              {t("dashboard.activeWorkflows")}
+              Step-by-step statutory application procedures mapped to official regulatory authorities. Steps and prerequisites are verified against published gazette rules.
             </p>
           </div>
 
@@ -89,7 +87,7 @@ function WorkflowsContent() {
               href={`/dashboard?business_id=${businessId}`}
               className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
             >
-              ← {t("navigation.dashboard")}
+              ← Dashboard
             </Link>
           </div>
         </div>

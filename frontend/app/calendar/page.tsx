@@ -10,14 +10,30 @@ import { api } from "@/lib/api";
 import type { CalendarListResponse } from "@/lib/api/calendar";
 import { CalendarEvent } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
-
+import { useBusinessContext } from "@/context/BusinessContext";
+import {
+  Bell,
+  Mail,
+  Calendar as CalendarIcon,
+  RefreshCw,
+  CheckCircle2,
+  ExternalLink,
+  ShieldAlert,
+} from "lucide-react";
 
 function CalendarContent() {
   const { t } = useLanguage();
+  const { activeBusinessId, profile } = useBusinessContext();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
 
   const [loading, setLoading] = useState<boolean>(false);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [syncFeedback, setSyncFeedback] = useState<{
+    dispatched: number;
+    skipped: number;
+    time: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>(() => [
     {
@@ -74,6 +90,7 @@ function CalendarContent() {
   useEffect(() => {
     const bizId =
       paramBusinessId ||
+      activeBusinessId ||
       localStorage.getItem("complywise_active_business_id") ||
       "bb0abb9b-409e-405a-bae1-777540bc0907";
 
@@ -96,7 +113,29 @@ function CalendarContent() {
     }
 
     loadCalendar(bizId);
-  }, [paramBusinessId]);
+  }, [paramBusinessId, activeBusinessId]);
+
+  const handleTriggerSync = async () => {
+    if (!businessId) return;
+    setIsSyncing(true);
+    try {
+      const res = await api.calendar.sync(businessId, { check_overdue: true, include_in_app: true });
+      setSyncFeedback({
+        dispatched: res.dispatched_count,
+        skipped: res.skipped_idempotent_count,
+        time: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+      });
+      // Refresh event list
+      const resp = await api.calendar.list(businessId);
+      if (resp && resp.events && resp.events.length > 0) {
+        setEvents(resp.events);
+      }
+    } catch (err) {
+      console.error("Sync failed:", err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   return (
     <AppShell activeView="calendar">
@@ -117,11 +156,63 @@ function CalendarContent() {
 
           <div className="flex items-center gap-3 shrink-0">
             <Link
+              href="/notifications"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
+            >
+              <Bell className="h-3.5 w-3.5 text-amber-700" />
+              Notification Audit Center
+            </Link>
+            <Link
               href={`/dashboard?business_id=${businessId}`}
               className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
             >
               ← {t("navigation.dashboard")}
             </Link>
+          </div>
+        </div>
+
+        {/* Live Notification & Calendar Sync Control Bar */}
+        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
+                Automated Notification Engine
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-[10px]">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Active
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-[#64748B]">
+              <span className="inline-flex items-center gap-1">
+                <CalendarIcon className="h-3.5 w-3.5 text-sky-600" /> Google Calendar (T-7 & T-1)
+              </span>
+              <span>•</span>
+              <span className="inline-flex items-center gap-1">
+                <Mail className="h-3.5 w-3.5 text-emerald-600" /> Email Alert (T-1 Urgent)
+              </span>
+              <span>•</span>
+              <span className="inline-flex items-center gap-1">
+                <Bell className="h-3.5 w-3.5 text-purple-600" /> In-App Read Tracking
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {syncFeedback && (
+              <span className="text-xs text-emerald-700 font-medium bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                Synced at {syncFeedback.time}: {syncFeedback.dispatched} dispatched, {syncFeedback.skipped} skipped
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleTriggerSync}
+              disabled={isSyncing}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0F172A] hover:bg-slate-800 text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer disabled:opacity-60"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+              {isSyncing ? "Evaluating Deadlines..." : "Sync Deadlines Now"}
+            </button>
           </div>
         </div>
 
@@ -181,11 +272,25 @@ function CalendarContent() {
                   </h3>
 
                   <p className="text-xs text-[#475569] leading-relaxed">{evt.basis}</p>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1.5">
+                    <span className="inline-flex items-center gap-1 text-[10px] text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200/60 font-medium">
+                      <CalendarIcon className="h-2.5 w-2.5" /> Calendar: T-7, T-1
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60 font-medium">
+                      <Mail className="h-2.5 w-2.5" /> Email: T-1
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[10px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200/60 font-medium">
+                      <Bell className="h-2.5 w-2.5" /> In-App Center
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
                   <span className="text-xs font-mono font-medium text-[#0F172A] bg-[#F8FAFC] px-3 py-1 rounded-full border border-[#E2E8F0]">
-                    {evt.days_remaining ? `${evt.days_remaining} days remaining` : `${evt.period_value || 14} days left`}
+                    {evt.days_remaining !== undefined
+                      ? `${evt.days_remaining} days remaining`
+                      : `${evt.period_value || 14} days left`}
                   </span>
                   <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
                     evt.status === "URGENT"

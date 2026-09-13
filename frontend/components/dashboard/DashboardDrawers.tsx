@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   FileText,
@@ -15,6 +15,9 @@ import { DashboardData } from "@/data/demo";
 import { DEMO_REQUIREMENTS } from "@/data/demo/compliance";
 import { DEMO_DOCUMENTS } from "@/data/demo/documents";
 import StatusBadge from "@/components/StatusBadge";
+import { useBusinessContext } from "@/context/BusinessContext";
+import { api } from "@/lib/api";
+import { DeadlineNotificationRecord, DeadlineNotificationsResponse } from "@/lib/api/calendar";
 
 /* -------------------------------------------------------------------------
    1. Activity Timeline Drawer
@@ -696,80 +699,153 @@ export function TeamInviteModal({
 export function NotificationsPopover({
   isOpen,
   onClose,
+  onNotificationsRead,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  onNotificationsRead?: () => void;
 }) {
+  const { activeBusinessId } = useBusinessContext();
+  const [alerts, setAlerts] = useState<
+    Array<{
+      id: string;
+      title: string;
+      desc: string;
+      time: string;
+      urgent: boolean;
+      channel: string;
+      isRead: boolean;
+    }>
+  >([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (!isOpen || !activeBusinessId) return;
+
+    let mounted = true;
+    api.calendar
+      .listNotifications(activeBusinessId, { limit: 5 })
+      .then((res: DeadlineNotificationsResponse) => {
+        if (!mounted) return;
+        if (res.notifications && res.notifications.length > 0) {
+          const mapped = res.notifications.map((n: DeadlineNotificationRecord) => ({
+            id: n.id,
+            title: n.subject_or_title || `Requirement: ${n.requirement_id}`,
+            desc:
+              n.event_type === "OVERDUE"
+                ? `Statutory deadline ${n.deadline_date} is overdue. Penalty escalation risk.`
+                : `Deadline: ${n.deadline_date} (T-${n.offset_days} alert)`,
+            time: new Date(n.created_at).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            urgent: n.priority === "HIGH" || n.priority === "CRITICAL" || n.event_type === "OVERDUE",
+            channel: n.channel,
+            isRead: n.is_read,
+          }));
+          setAlerts(mapped);
+          setUnreadCount(mapped.filter((m: { isRead: boolean }) => !m.isRead).length);
+        } else {
+          setAlerts([
+            {
+              id: "demo-fallback-1",
+              title: "Statutory Deadline Reminder Active",
+              desc: "Periodic boiler inspection and BIS lab renewals monitored automatically.",
+              time: "Today",
+              urgent: false,
+              channel: "GOOGLE_CALENDAR",
+              isRead: true,
+            },
+          ]);
+          setUnreadCount(0);
+        }
+      })
+      .catch(() => {
+        // Fallback gracefully
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [isOpen, activeBusinessId]);
+
   if (!isOpen) return null;
 
-  const alerts = [
-    {
-      id: "nt-1",
-      title: "NABL Type-Test Report Expiring Soon",
-      desc: "IS 1293:2019 test certificate has 14 days remaining before 3-year mandatory interval.",
-      time: "10 mins ago",
-      urgent: true,
-    },
-    {
-      id: "nt-2",
-      title: "New Gazette Notification Published",
-      desc: "DPIIT Electrical Accessories Amendment Order 2025 issued.",
-      time: "2 hours ago",
-      urgent: false,
-    },
-    {
-      id: "nt-3",
-      title: "Surveillance Audit Scheduled",
-      desc: "BIS Regional Office inspection planned for 14 Jun 2026.",
-      time: "1 day ago",
-      urgent: false,
-    },
-  ];
+  const handleMarkAllRead = async () => {
+    if (activeBusinessId) {
+      try {
+        await api.calendar.markAllRead(activeBusinessId);
+        setAlerts((prev) => prev.map((a) => ({ ...a, isRead: true })));
+        setUnreadCount(0);
+        if (onNotificationsRead) onNotificationsRead();
+      } catch (err) {
+        console.error("Failed to mark all read:", err);
+      }
+    }
+  };
 
   return (
     <div className="absolute right-0 top-10 z-50 w-80 sm:w-96 bg-white rounded-[14px] shadow-2xl border border-[#E2E8F0] p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150 select-none">
       <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2.5">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-[#0F172A] text-sm">Regulatory Notifications</span>
-          <span className="px-2 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-600 font-semibold text-[10px]">
-            3 New
-          </span>
+          <span className="font-semibold text-[#0F172A] text-sm">Regulatory & Deadline Alerts</span>
+          {unreadCount > 0 ? (
+            <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-semibold text-[10px]">
+              {unreadCount} New
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium text-[10px]">
+              All Read
+            </span>
+          )}
         </div>
-        <button onClick={onClose} className="text-[#64748B] hover:text-[#0F172A]">
+        <button onClick={onClose} className="text-[#64748B] hover:text-[#0F172A] cursor-pointer">
           <X className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="space-y-2">
-        {alerts.map((a) => (
-          <div
-            key={a.id}
-            className={`p-3 rounded-[10px] border text-xs transition-colors ${
-              a.urgent
-                ? "bg-rose-50/50 border-rose-200"
-                : "bg-[#F8FAFC] border-[#E2E8F0]"
-            }`}
-          >
-            <div className="flex items-start justify-between gap-1.5">
-              <span className="font-medium text-[#0F172A]">{a.title}</span>
-              <span className="text-[10px] text-[#64748B] shrink-0">{a.time}</span>
+      <div className="space-y-2 max-h-72 overflow-y-auto">
+        {alerts.length === 0 ? (
+          <div className="py-6 text-center text-xs text-[#64748B]">No recent compliance alerts.</div>
+        ) : (
+          alerts.map((a) => (
+            <div
+              key={a.id}
+              className={`p-3 rounded-[10px] border text-xs transition-colors ${
+                !a.isRead
+                  ? "bg-amber-50/40 border-amber-200"
+                  : a.urgent
+                  ? "bg-rose-50/40 border-rose-200"
+                  : "bg-[#F8FAFC] border-[#E2E8F0]"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-1.5">
+                <div className="flex items-center gap-1.5">
+                  {!a.isRead && <span className="h-1.5 w-1.5 rounded-full bg-amber-600 shrink-0" />}
+                  <span className="font-semibold text-[#0F172A]">{a.title}</span>
+                </div>
+                <span className="text-[10px] text-[#64748B] shrink-0">{a.time}</span>
+              </div>
+              <p className="text-[#475569] mt-1 leading-relaxed">{a.desc}</p>
             </div>
-            <p className="text-[#475569] mt-1 leading-relaxed">{a.desc}</p>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
-      <div className="pt-2 border-t border-[#E2E8F0] flex justify-between text-xs">
+      <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between text-xs">
         <Link
-          href="/calendar"
+          href="/notifications"
           onClick={onClose}
-          className="font-medium text-[#0F172A] hover:underline"
+          className="font-semibold text-amber-800 hover:text-amber-900"
         >
-          View Statutory Calendar →
+          View Full Alert Center →
         </Link>
         <button
-          onClick={onClose}
-          className="text-[#64748B] hover:text-[#0F172A] text-xs"
+          type="button"
+          onClick={handleMarkAllRead}
+          className="text-[#64748B] hover:text-[#0F172A] text-xs cursor-pointer font-medium"
         >
           Mark all read
         </button>

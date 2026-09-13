@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Bell,
@@ -25,6 +25,7 @@ import { useBusinessContext } from "@/context/BusinessContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { LanguageSelector } from "./LanguageSelector";
+import { api } from "@/lib/api";
 
 interface TopBarProps {
   activePill: "dashboard" | "compliance" | "reports";
@@ -42,13 +43,34 @@ export function TopBar({
 }: TopBarProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { profile, availableProfiles, userBusinesses, switchProfile } = useBusinessContext();
+  const { profile, activeBusinessId, availableProfiles, userBusinesses, switchProfile } = useBusinessContext();
   const { t } = useLanguage();
 
-  const [unreadNotifications, setUnreadNotifications] = useState(true);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
+  // Synchronize unread badge with real calendar notification summary
+  useEffect(() => {
+    if (!activeBusinessId) return;
+
+    let isMounted = true;
+    api.calendar
+      .getSummary(activeBusinessId)
+      .then((res) => {
+        if (isMounted && res) {
+          setUnreadCount(res.unread_count || 0);
+        }
+      })
+      .catch(() => {
+        // graceful fallback
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeBusinessId]);
 
   async function handleLogout() {
     setProfileDropdownOpen(false);
@@ -139,13 +161,14 @@ export function TopBar({
             aria-label={t("header.notificationsAria")}
             onClick={() => {
               setNotificationsOpen((prev) => !prev);
-              setUnreadNotifications(false);
             }}
             className="relative h-8 w-8 rounded-full bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] shadow-2xs transition-colors cursor-pointer"
           >
             <Bell className="h-4 w-4" />
-            {unreadNotifications && (
-              <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-rose-500 ring-2 ring-white" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white font-bold text-[9px] flex items-center justify-center ring-2 ring-white">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
             )}
           </button>
 
@@ -164,6 +187,7 @@ export function TopBar({
           <NotificationsPopover
             isOpen={notificationsOpen}
             onClose={() => setNotificationsOpen(false)}
+            onNotificationsRead={() => setUnreadCount(0)}
           />
 
           {/* User Profile Avatar Dropdown */}

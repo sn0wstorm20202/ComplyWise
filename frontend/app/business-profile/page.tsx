@@ -6,6 +6,7 @@ import AppShell from "@/components/AppShell";
 import { useBusinessContext } from "@/context/BusinessContext";
 import { api } from "@/lib/api";
 import { AssessmentSummary, BusinessSummary } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   INITIAL_DATABASE_BUSINESSES,
   INITIAL_DATABASE_ASSESSMENTS,
@@ -83,6 +84,7 @@ function formatScale(turnoverStr?: string | number | null, investmentStr?: strin
 }
 
 export default function BusinessProfilePage() {
+  const { t } = useLanguage();
   const {
     profile,
     updateProfile,
@@ -309,16 +311,16 @@ export default function BusinessProfilePage() {
             <div className="flex items-center gap-1.5 text-xs text-[#64748B] font-medium">
               <Folder className="h-3.5 w-3.5 text-[#64748B]" />
               <Link href="/dashboard" className="hover:text-[#0F172A] transition-colors">
-                Dashboard
+                {t("navigation.dashboard")}
               </Link>
               <ChevronRight className="h-3 w-3 text-[#94A3B8]" />
-              <span className="text-[#0F172A] font-semibold">Business Profiles</span>
+              <span className="text-[#0F172A] font-semibold">{t("navigation.profile")}</span>
             </div>
             <h1 className="text-3xl font-sans font-bold tracking-tight text-[#0F172A]">
-              Enterprise Regulatory Directory
+              {t("businessProfile.title")}
             </h1>
             <p className="text-xs text-[#64748B]">
-              Manage your 10 registered industrial enterprises and 12 statutory assessments across India.
+              {t("businessProfile.subtitle")}
             </p>
           </div>
 
@@ -330,7 +332,7 @@ export default function BusinessProfilePage() {
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#E2E8F0] bg-white text-xs font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
             >
               <RefreshCw className={`h-3.5 w-3.5 text-[#64748B] ${loadingDb ? "animate-spin" : ""}`} />
-              <span>Refresh</span>
+              <span>{t("common.refresh")}</span>
             </button>
 
             <Link
@@ -338,7 +340,7 @@ export default function BusinessProfilePage() {
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-semibold hover:bg-emerald-100 transition-colors shadow-2xs"
             >
               <Plus className="h-3.5 w-3.5 text-emerald-700" />
-              <span>New Assessment</span>
+              <span>{t("navigation.onboarding")}</span>
             </Link>
 
             <button
@@ -347,7 +349,7 @@ export default function BusinessProfilePage() {
               className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#0F172A] text-white text-xs font-semibold hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
             >
               <Edit3 className="h-3.5 w-3.5" />
-              <span>{isEditing ? "Cancel Edit" : "Edit Profile"}</span>
+              <span>{isEditing ? t("common.cancel") : t("common.edit")}</span>
             </button>
           </div>
         </div>

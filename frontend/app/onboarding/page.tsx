@@ -23,6 +23,7 @@ import {
   ComplianceRequirementItem,
 } from "@/types";
 import { useBusinessContext } from "@/context/BusinessContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { DEMO_REQUIREMENTS } from "@/data/demo/compliance";
 
 const STEPS = [
@@ -414,11 +415,20 @@ export function generateAdaptiveFallbackQuestions(
 function OnboardingContent() {
   const router = useRouter();
   const { updateProfile } = useBusinessContext();
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams?.get("business_id") || null;
   const paramAssessmentId = searchParams?.get("assessment_id") || null;
   const isExplicitNew = searchParams?.get("new") === "true";
   const isNewAssessment = searchParams?.get("new_assessment") === "true" || searchParams?.get("new_assessment") === "1";
+
+  const steps = useMemo(() => [
+    { num: 1, id: "profile", label: t("onboarding.step1") },
+    { num: 2, id: "products", label: t("onboarding.step2") },
+    { num: 3, id: "questions", label: t("onboarding.step3") },
+    { num: 4, id: "analysis", label: t("onboarding.step4") },
+    { num: 5, id: "results", label: t("onboarding.step5") },
+  ], [t]);
 
   const [step, setStep] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
@@ -1225,10 +1235,10 @@ function OnboardingContent() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
             <div>
               <span className="text-xs font-semibold text-amber-800 tracking-wide uppercase">
-                Problem Statement 26130 · Compliance Onboarding
+                {t("onboarding.problemStatement")}
               </span>
               <h1 className="text-xl sm:text-2xl font-sans font-bold tracking-tight text-[#0F172A] mt-0.5">
-                {STEPS.find((s) => s.num === step)?.label}
+                {steps.find((s) => s.num === step)?.label}
               </h1>
             </div>
             {business ? (
@@ -1250,12 +1260,12 @@ function OnboardingContent() {
                   onClick={handleStartFresh}
                   className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
                 >
-                  + New Entity
+                  {t("onboarding.newEntity")}
                 </button>
               </div>
             ) : (
               <div className="flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs text-amber-800 font-semibold">
-                <span>New Entity Assessment</span>
+                <span>{t("onboarding.newEntityAssessment")}</span>
               </div>
             )}
           </div>
@@ -1263,7 +1273,7 @@ function OnboardingContent() {
           {/* Stepper Dots & Links */}
           <nav aria-label="Progress" className="mt-6">
             <ol className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4">
-              {STEPS.map((s) => {
+              {steps.map((s) => {
                 const isCurrent = s.num === step;
                 const isCompleted = s.num < step;
                 return (
@@ -1495,7 +1505,7 @@ function OnboardingContent() {
                 disabled={loading}
                 className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
               >
-                {loading ? "Saving Profile..." : "Continue to Products & Activities →"}
+                {loading ? t("onboarding.savingProfile") : t("onboarding.continueToProducts")}
               </button>
             </div>
           </form>
@@ -1579,7 +1589,7 @@ function OnboardingContent() {
                 onClick={() => setStep(1)}
                 className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
               >
-                ← Back to Profile
+                {t("onboarding.backToProfile")}
               </button>
 
               <button
@@ -1587,7 +1597,7 @@ function OnboardingContent() {
                 disabled={loading}
                 className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
               >
-                {loading ? "Analyzing Operations..." : "Continue to Smart Questions →"}
+                {loading ? t("onboarding.analyzingOperations") : t("onboarding.generateQuestions")}
               </button>
             </div>
           </form>
@@ -1836,7 +1846,7 @@ function OnboardingContent() {
                     onClick={() => setStep(2)}
                     className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs w-full sm:w-auto"
                   >
-                    ← Back to Products
+                    {t("onboarding.backToProducts")}
                   </button>
 
                   <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -2132,7 +2142,7 @@ function OnboardingContent() {
                   href={`/dashboard?business_id=${business?.id}`}
                   className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-5 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs"
                 >
-                  Enter Overview Dashboard →
+                  {t("onboarding.enterDashboard")}
                 </Link>
               </div>
 
@@ -2311,14 +2321,14 @@ function OnboardingContent() {
                     href={`/compliance?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
                     className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors shadow-2xs"
                   >
-                    View All Compliance Mandates
+                    {t("onboarding.viewAllMandates")}
                   </Link>
 
                   <Link
                     href={`/dashboard?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
                     className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-6 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors shadow-2xs"
                   >
-                    Enter Overview Dashboard →
+                    {t("onboarding.enterDashboard")}
                   </Link>
                 </div>
               </div>

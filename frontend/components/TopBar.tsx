@@ -23,6 +23,8 @@ import { NavView } from "./Sidebar";
 import { NotificationsPopover, TeamInviteModal } from "./dashboard/DashboardDrawers";
 import { useBusinessContext } from "@/context/BusinessContext";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
+import { LanguageSelector } from "./LanguageSelector";
 
 interface TopBarProps {
   activePill: "dashboard" | "compliance" | "reports";
@@ -41,6 +43,7 @@ export function TopBar({
   const router = useRouter();
   const { user, logout } = useAuth();
   const { profile, availableProfiles, userBusinesses, switchProfile } = useBusinessContext();
+  const { t } = useLanguage();
 
   const [unreadNotifications, setUnreadNotifications] = useState(true);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -92,7 +95,7 @@ export function TopBar({
             }`}
           >
             <LayoutDashboard className={`h-3.5 w-3.5 ${activePill === "dashboard" ? "text-white" : "text-[#64748B]"}`} />
-            <span>Dashboard</span>
+            <span>{t("navigation.dashboard")}</span>
           </button>
 
           <button
@@ -105,7 +108,7 @@ export function TopBar({
             }`}
           >
             <ShieldCheck className={`h-3.5 w-3.5 ${activePill === "compliance" ? "text-white" : "text-[#64748B]"}`} />
-            <span>Compliance</span>
+            <span>{t("navigation.compliance")}</span>
           </button>
 
           <button
@@ -118,19 +121,22 @@ export function TopBar({
             }`}
           >
             <Flag className={`h-3.5 w-3.5 ${activePill === "reports" ? "text-white" : "text-[#64748B]"}`} />
-            <span>Reports</span>
+            <span>{t("navigation.reports")}</span>
           </button>
         </nav>
       </div>
 
       {/* Right: Utility Actions + Profile */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        {/* Visible Language Selector */}
+        <LanguageSelector />
+
         {/* Action Icons (Alerts, Mail) */}
         <div className="flex items-center gap-2 relative">
           {/* Notification Bell */}
           <button
             type="button"
-            aria-label="Notifications"
+            aria-label={t("header.notificationsAria")}
             onClick={() => {
               setNotificationsOpen((prev) => !prev);
               setUnreadNotifications(false);
@@ -146,7 +152,7 @@ export function TopBar({
           {/* Mail Envelope */}
           <button
             type="button"
-            aria-label="Messages"
+            aria-label={t("header.messagesAria")}
             onClick={() => onNavigateToView("assistant")}
             title="BIS Copilot Assistant Messages"
             className="h-8 w-8 rounded-full bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] shadow-2xs transition-colors cursor-pointer"
@@ -165,7 +171,7 @@ export function TopBar({
             <button
               type="button"
               onClick={() => setProfileDropdownOpen((prev) => !prev)}
-              aria-label="User profile menu"
+              aria-label={t("header.profileMenuAria")}
               className="flex items-center gap-1.5 p-0.5 rounded-full hover:bg-gray-100 transition-colors cursor-pointer focus:outline-hidden"
             >
               <div className="h-7 w-7 rounded-full bg-[#18181B] text-white flex items-center justify-center shrink-0 shadow-2xs">
@@ -186,13 +192,13 @@ export function TopBar({
                   </div>
                   <div className="mt-1 font-mono text-[10px] text-[#64748B] flex items-center justify-between">
                     <span>{profile.businessName}</span>
-                    <span className="text-emerald-600 font-bold">● Active</span>
+                    <span className="text-emerald-600 font-bold">● {t("common.active")}</span>
                   </div>
                 </div>
 
                 <div className="py-1">
                   <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#94A3B8] flex items-center justify-between">
-                    <span>Switch Enterprise</span>
+                    <span>{t("navigation.switchEnterprise")}</span>
                     <span className="font-mono text-[9px] text-slate-400 font-normal">
                       {userBusinesses && userBusinesses.length > 0
                         ? `${userBusinesses.length} Registered`
@@ -242,7 +248,7 @@ export function TopBar({
                     className="w-full text-left px-3 py-2 rounded-[8px] text-[#475569] hover:text-[#0F172A] hover:bg-[#F8FAFC] flex items-center gap-2 cursor-pointer transition-colors"
                   >
                     <User className="h-3.5 w-3.5 text-[#94A3B8]" />
-                    <span>Business Profile</span>
+                    <span>{t("navigation.profile")}</span>
                   </button>
 
                   <button
@@ -253,7 +259,7 @@ export function TopBar({
                     className="w-full text-left px-3 py-2 rounded-[8px] text-[#475569] hover:text-[#0F172A] hover:bg-[#F8FAFC] flex items-center gap-2 cursor-pointer transition-colors"
                   >
                     <Settings className="h-3.5 w-3.5 text-[#94A3B8]" />
-                    <span>Settings</span>
+                    <span>{t("navigation.settings")}</span>
                   </button>
 
                   <Link
@@ -262,7 +268,7 @@ export function TopBar({
                     className="w-full text-left px-3 py-2 rounded-[8px] text-indigo-600 hover:bg-indigo-50 flex items-center gap-2 font-medium transition-colors"
                   >
                     <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
-                    <span>Run New Onboarding</span>
+                    <span>{t("topBar.runOnboarding")}</span>
                   </Link>
 
                   <button
@@ -270,7 +276,7 @@ export function TopBar({
                     className="w-full text-left px-3 py-2 rounded-[8px] text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-medium transition-colors cursor-pointer border-t border-[#F1F5F9] mt-1"
                   >
                     <LogOut className="h-3.5 w-3.5 text-rose-600" />
-                    <span>Sign Out</span>
+                    <span>{t("navigation.signOut")}</span>
                   </button>
                 </div>
               </div>

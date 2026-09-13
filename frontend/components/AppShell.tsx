@@ -6,6 +6,7 @@ import TopBar from "./TopBar";
 import SearchModal from "./SearchModal";
 import NewQueryModal from "./NewQueryModal";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface AppShellProps {
   children?: React.ReactNode;
@@ -25,6 +26,7 @@ export function AppShell({
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, loading } = useAuth();
+  const { t } = useLanguage();
   const [internalActiveView, setInternalActiveView] = useState<NavView>("dashboard");
   const [searchOpen, setSearchOpen] = useState(false);
   const [newQueryOpen, setNewQueryOpen] = useState(false);
@@ -77,7 +79,7 @@ export function AppShell({
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 rounded-full border-2 border-[#18181B] border-t-transparent animate-spin" />
           <p className="text-xs font-medium text-[#64748B] tracking-wide">
-            Verifying statutory security credentials...
+            {t("header.verifyingAuth")}
           </p>
         </div>
       </div>
@@ -89,7 +91,7 @@ export function AppShell({
       <div className="min-h-screen bg-[#EDEFF2] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center gap-2">
           <div className="h-6 w-6 rounded-full border-2 border-[#18181B] border-t-transparent animate-spin" />
-          <p className="text-xs text-[#64748B]">Redirecting to authentication portal...</p>
+          <p className="text-xs text-[#64748B]">{t("header.redirectingAuth")}</p>
         </div>
       </div>
     );

@@ -343,8 +343,11 @@ export interface SmartQuestion {
   label: string;
   /** Ready-to-render prompt generated from the variable label. */
   question: string;
+  question_text?: string;
   data_type: string;
   why_it_matters: string;
+  reason?: string;
+  expected_discovery_impact?: string;
   unit: string | null;
   options: SmartQuestionChoice[];
   current_value?: string | number | boolean | string[] | null;
@@ -365,6 +368,22 @@ export interface SmartQuestionsResponse {
   known_variables_count: number;
   /** Rule-referenced variables with no profile definition (knowledge drift). */
   unresolvable_variables: string[];
+}
+
+/** GET /businesses/{id}/onboarding/questions/next & POST /questions/next response. */
+export interface SequentialQuestionResponse {
+  is_complete: boolean;
+  question?: SmartQuestion | null;
+  next_question?: SmartQuestion | null;
+  profile_version?: number;
+  answered_variable?: string;
+}
+
+export interface SequentialAnswerPayload {
+  variable_key: string;
+  value: string | number | boolean | string[];
+  answer_value?: string | number | boolean | string[];
+  assessment_id?: string;
 }
 
 /** POST /businesses/{id}/onboarding/answers response body. */
@@ -445,6 +464,9 @@ export interface PriorityAction {
   /** Derived from `status`, not a separate severity judgement. */
   action_type: string;
   evidence_count: number;
+  source_url?: string;
+  portal_url?: string;
+  portal_name?: string;
 }
 
 /**
@@ -535,6 +557,11 @@ export interface ComplianceRequirementItem {
   domain?: string;
   description?: string;
   reason_summary?: string;
+  portal?: string;
+  portal_url?: string;
+  portal_name?: string;
+  source_url?: string;
+  statutory_act?: string;
   citations?: StatutoryEvidenceItem[];
   citation_count?: number;
 }
@@ -598,11 +625,15 @@ export interface RequirementDetail {
     renewal_period_years: number | null;
     not_recorded_note: string | null;
   };
-  /** Filing steps are served only where knowledge records them; never inferred. */
+  source_url?: string;
+  portal_url?: string;
+  portal_name?: string;
   what_to_do_next: {
     steps: string[];
     steps_available: boolean;
     official_portal: string;
+    portal_url?: string;
+    portal_name?: string;
     not_recorded_note: string | null;
   };
   statutory_evidence: StatutoryEvidenceItem[];

@@ -208,12 +208,12 @@ function CalendarContent() {
             </h2>
             <p className="text-xs text-[#64748B] leading-relaxed">{coverage.not_covered_reason}</p>
             <div className="flex flex-wrap gap-2 pt-1">
-              {coverage.not_covered.map((item) => (
+              {coverage.not_covered.map((item, idx) => (
                 <span
-                  key={item}
+                  key={typeof item === "string" ? item : idx}
                   className="inline-flex items-center rounded-full bg-[#F8FAFC] px-3 py-1 text-[11px] font-medium text-[#64748B] border border-[#E2E8F0]"
                 >
-                  {item.replace(/_/g, " ")}
+                  {String(item || "").replace(/_/g, " ")}
                 </span>
               ))}
             </div>

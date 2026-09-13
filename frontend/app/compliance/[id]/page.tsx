@@ -8,6 +8,7 @@ import StatusBadge from "@/components/StatusBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import { api } from "@/lib/api";
+import { sanitizeExternalUrl } from "@/lib/url";
 import { RequirementDetail } from "@/types";
 import { DEMO_REQUIREMENTS } from "@/data/demo/compliance";
 import { useLanguage } from "@/context/LanguageContext";
@@ -174,7 +175,33 @@ function RequirementDetailContent({ params }: PageProps) {
                   </p>
                 </div>
 
-                <div className="shrink-0">
+                <div className="shrink-0 flex items-center gap-2">
+                  {(() => {
+                    const heroUrl = sanitizeExternalUrl(
+                      detail.what_to_do_next.portal_url ||
+                      detail.what_to_do_next.official_portal ||
+                      detail.portal_url ||
+                      detail.source_url ||
+                      detail.statutory_evidence[0]?.canonical_url
+                    );
+                    const heroLabel =
+                      detail.what_to_do_next.portal_name ||
+                      detail.portal_name ||
+                      "Official Statutory Portal";
+                    if (!heroUrl) return null;
+                    return (
+                      <a
+                        href={heroUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors shadow-2xs cursor-pointer"
+                        title={`Open statutory filing portal: ${heroLabel}`}
+                      >
+                        <span>🔗 {heroLabel}</span>
+                        <span>↗</span>
+                      </a>
+                    );
+                  })()}
                   <StatusBadge status={detail.status} size="md" />
                 </div>
               </div>
@@ -296,19 +323,40 @@ function RequirementDetailContent({ params }: PageProps) {
                     </p>
                   )}
 
-                  {detail.what_to_do_next.official_portal && (
-                    <div className="flex items-start gap-3 p-3.5 rounded-xl border border-blue-200 bg-blue-50/50 text-xs">
-                      <span className="font-semibold text-blue-900 shrink-0">Portal:</span>
-                      <a
-                        href={detail.what_to_do_next.official_portal}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-semibold text-blue-700 hover:underline break-all"
-                      >
-                        {detail.what_to_do_next.official_portal} ↗
-                      </a>
-                    </div>
-                  )}
+                  {(() => {
+                    const filingPortalUrl = sanitizeExternalUrl(
+                      detail.what_to_do_next.portal_url ||
+                      detail.what_to_do_next.official_portal ||
+                      detail.portal_url ||
+                      detail.source_url
+                    );
+                    const filingPortalName =
+                      detail.what_to_do_next.portal_name ||
+                      detail.portal_name ||
+                      `${detail.authority} Filing Portal`;
+                    if (!filingPortalUrl) return null;
+                    return (
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-blue-200 bg-blue-50/50 text-xs">
+                        <div className="space-y-0.5 min-w-0">
+                          <span className="font-bold text-blue-950 block">
+                            Direct Statutory Application Portal:
+                          </span>
+                          <span className="text-[#64748B] font-medium block">
+                            {filingPortalName}
+                          </span>
+                        </div>
+                        <a
+                          href={filingPortalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0F172A] font-semibold text-white hover:bg-slate-800 transition shadow-2xs shrink-0 self-start sm:self-auto cursor-pointer"
+                        >
+                          <span>Open Filing Portal</span>
+                          <span>↗</span>
+                        </a>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -353,18 +401,22 @@ function RequirementDetailContent({ params }: PageProps) {
                           {ev.locator}: &ldquo;{ev.excerpt}&rdquo;
                         </div>
 
-                        {ev.canonical_url && (
-                          <div className="flex justify-end pt-1">
-                            <a
-                              href={ev.canonical_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs font-semibold text-blue-600 hover:underline"
-                            >
-                              Official Gazette Reference ↗
-                            </a>
-                          </div>
-                        )}
+                        {(() => {
+                          const gazetteUrl = sanitizeExternalUrl(ev.canonical_url);
+                          if (!gazetteUrl) return null;
+                          return (
+                            <div className="flex justify-end pt-1">
+                              <a
+                                href={gazetteUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs font-semibold text-blue-600 hover:underline"
+                              >
+                                Official Gazette Reference ↗
+                              </a>
+                            </div>
+                          );
+                        })()}
                       </div>
                     ))}
                   </div>

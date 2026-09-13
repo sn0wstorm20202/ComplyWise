@@ -1,24 +1,41 @@
-"""Adaptive Smart Question Planner.
+"""Adaptive Smart Question Planner — Pre-Discovery Information Gathering Architecture.
 
-Authority: Milestone Task — Objective 2; PRD_v2.0 §10, §11; TRD_v2.0 §8, §12.
+Authority: ComplyWise Smart Question Intelligence Correction Milestone.
+PRD_v2.0 §10, §11; TRD_v2.0 §8, §12.
 
-Plans high-information questions tailored specifically to a business's operational reality,
-products, and industry to uncover statutory compliances, support schemes, and technical standards.
-Maps every question to a canonical variable (V01-V19).
-Supports iterative rounds with deterministic stopping conditions and links to Assessment instances.
+CORE ARCHITECTURE:
+Smart Questions are NOT a static questionnaire or a fixed question bank.
+Smart Questions serve as an intelligent PRE-DISCOVERY INTERVIEW:
+1. Business Understanding: Analyze what the enterprise actually manufactures, formulates,
+   processes, stores, sells, imports, exports, or operates under Indian Central & State jurisdictions.
+2. Divergence & Ambiguity Detection: If the company name (e.g. 'BluePeak MedTech Devices')
+   and operational description (e.g. 'convert waste into pesticides') diverge, ask a high-priority
+   clarification question to establish the real operational scope.
+3. Open-Ended Information Gaps: Identify DiscoveryInformationGap objects representing unknown
+   facts that materially refine upcoming regulatory search queries on official portals and gazettes.
+4. Smart Question Generation: Convert the highest-value gaps into founder-friendly questions.
+   - If a gap aligns with an existing canonical variable (V01-V43), map target_variable_id to it.
+   - If NO canonical variable exists, formulate a descriptive dynamic key (e.g., 'dynamic_pesticide_category')
+     so the LLM is NEVER constrained or gated by a predefined variable catalog.
+   - NEVER ask for facts that are already known in the profile.
+   - NEVER dump a generic 6-variable factory questionnaire on unseen businesses.
 """
 
 from __future__ import annotations
 
+from collections import Counter
 import json
 import logging
-from collections import Counter
+import re
+import uuid
+from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from common.enums import KnowledgeStatus
 from domain.context.business_context import DerivedBusinessContext, build_business_context
 from domain.profile.variables import (
     PROFILE_VARIABLES,
+    VARIABLES_BY_KEY,
     Relevance,
     get_variable,
     resolve_variable_options,
@@ -27,419 +44,1000 @@ from domain.providers import get_llm_provider
 from domain.providers.base import ChatMessage
 from apps.businesses.models import Business
 from apps.knowledge.models import RequirementDefinition, RuleVersion
+from apps.onboarding.adaptive import (
+    KnowledgeBaseAnalysis,
+    analyze_candidate_rules,
+    analyze_rule,
+    extract_ast_variables,
+)
 from apps.onboarding.models import SmartQuestionInstance, SmartQuestionPlan
 
 logger = logging.getLogger(__name__)
 
-MIN_REQUIRED_QUESTIONS = 6
-MIN_QUESTIONS_PER_ROUND = 6
+TARGET_QUESTIONS_COUNT = 16
+MIN_QUESTIONS_PER_ROUND = 12
 MAX_QUESTIONS_PER_ROUND = 20
 MAX_ROUNDS = 2
 
-QUESTION_PLANNER_SYSTEM_PROMPT = """You are an expert industrial compliance and regulatory intake planner for ComplyWise.
-Your task is to generate 7 to 10 high-value intake questions tailored precisely to what this specific business actually manufactures, processes, or operates.
 
-THE CORE PHILOSOPHY:
-You must NOT produce a generic static checklist. You must understand the specific industry, product categories, operating scale, and manufacturing/service processes of THIS business.
-Frame questions so that a founder immediately recognizes they are tailored to their specific operational reality:
-- Medical device manufacturing: talk about cleanrooms, sterilization, bio-medical waste, electronic components, clinical quality certifications, export markets.
-- Food processing: talk about processing lines, food safety, water potability, boiler steam, cold chain storage, agricultural inputs, packaging.
-- Precision engineering / automotive: talk about CNC machines, machining coolants, metal plating, hazardous waste, OEM supply chain, ISO/IATF standards.
-- Other sectors: tailor directly to their products, factory scale, discharges, and trade intents.
+@dataclass
+class DiscoveryInformationGap:
+    """A material operational ambiguity that refining upcoming regulatory discovery requires resolving."""
+    gap_id: str
+    description: str
+    business_reason: str
+    expected_discovery_impact: str
+    domain: str
+    target_field: str | None = None
+    priority: int = 1
+    confidence: float = 0.90
 
-CRITICAL RULES:
-1. Every question MUST map to one of the provided CANDIDATE_VARIABLE_KEYS using its exact variable_id.
-2. Do NOT invent unrecognized variable IDs.
-3. Do NOT ask for information that is already known in KNOWN_VARIABLES.
-4. Frame questions in natural, professional, founder-friendly conversational English.
-5. Provide a clear reason explaining why this question matters for statutory compliance, government incentives/subsidies (schemes), or technical standards/certifications.
-6. Target approximately 7 to 10 high-value questions (minimum 6, maximum 10).
-7. Return ONLY a valid JSON object matching the contract below.
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
 
-OUTPUT FORMAT (JSON ONLY, NO MARKDOWN, NO CODEBLOCKS):
+
+@dataclass
+class RegulatoryDiscoveryIntent:
+    """Structured pre-discovery intent object feeding downstream regulatory discovery."""
+    business_type: str
+    primary_activity: str
+    secondary_activities: list[str] = field(default_factory=list)
+    products: list[str] = field(default_factory=list)
+    relevant_jurisdictions: list[str] = field(default_factory=list)
+    likely_sectors: list[str] = field(default_factory=list)
+    possible_regulatory_domains: list[str] = field(default_factory=list)
+    search_topics: list[str] = field(default_factory=list)
+    unresolved_facts: list[str] = field(default_factory=list)
+    information_gaps: list[str] = field(default_factory=list)
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+QUESTION_PLANNER_SYSTEM_PROMPT = """You are the Lead Regulatory Intake Planner for ComplyWise, an intelligent Indian statutory compliance and regulatory discovery system.
+
+SECTOR ISOLATION RULES (STRICT INVARIANT):
+- PHYSICAL / AGRO / FOOD PROCESSING: NEVER ask about digital software, cloud hosting, IT cybersecurity, or medical devices (e.g., do NOT ask processes_personal_data, cloud_hosting_location, critical_cyber_services, cdsco_device_risk_class, cleanroom_iso_class).
+- DIGITAL SAAS / CLOUD SOFTWARE: NEVER ask about physical factory operations, environmental emissions, or medical devices (e.g., do NOT ask connected_power_load, effluent_emission_generation, hazardous_waste_generation, boiler_installed, daily_processing_capacity, food_contact_packaging, cdsco_device_risk_class).
+- MEDICAL DEVICES: NEVER ask about food processing, agrochemicals, or cloud software (e.g., do NOT ask daily_processing_capacity, organic_claim, food_contact_packaging, cloud_hosting_location).
+
+
+YOUR MISSION:
+Conduct an intelligent Pre-Discovery Interview with the business founder.
+Your goal is NOT to fill pre-existing variable slots or paraphrase a fixed questionnaire.
+Your goal is to:
+1. UNDERSTAND THE BUSINESS: Analyze what the company actually manufactures, formulates, processes, stores, provides, sells, imports, exports, or operates under Indian law.
+2. DETECT CONFLICTS & DIVERGENCES: If the business name (e.g. 'BluePeak MedTech Devices') and product/activity description (e.g. 'collect waste and convert into pesticides') appear divergent or contradictory, ask a high-priority clarification question to establish the real operational scope being assessed.
+3. IDENTIFY REGULATORY DISCOVERY GAPS: Formulate DiscoveryInformationGap objects for operational facts that are currently unknown or ambiguous, where knowing the answer materially changes which official portals, gazettes, acts, approvals, registrations, or standards (e.g., CIBRC, SPCB, CDSCO, FSSAI, PESO, DGFT, BIS, etc.) must be searched.
+4. GENERATE EXACTLY 15 HIGH-VALUE QUESTIONS: Convert the most valuable information gaps into clear, professional, founder-friendly questions. The interview questionnaire must be standardized to exactly 15 dynamic questions tailored to the business profile, manufacturing scale, and state jurisdiction.
+
+CANONICAL VARIABLES vs DYNAMIC FIELDS:
+You are provided with a catalog of platform canonical variables (CANONICAL_VARIABLE_CATALOG) for reference mapping.
+- If an information gap directly corresponds to a canonical variable in the catalog (e.g. daily processing capacity, personal data processing, CDSCO device risk class, cleanroom ISO class, turnover, etc.), set target_variable_id to that canonical variable key and set is_canonical: true.
+- If the information gap targets a domain-specific operational fact that is NOT in the catalog (for example: biopesticide vs chemical pesticide under the Insecticides Act, waste feedstock origin, hazardous chemical formulation, drone flight altitude, metallurgical alloy standard, clinical trial phase, etc.), invent a clear descriptive snake_case key (e.g. 'dynamic_pesticide_category', 'dynamic_feedstock_source') and set is_canonical: false.
+- NEVER force an enterprise to answer unrelated canonical variables (such as asking a digital SaaS company about factory power load, or asking a pesticide manufacturer about medical cleanrooms).
+- NEVER ask for facts that are ALREADY KNOWN in the profile.
+
+OUTPUT FORMAT (STRICT JSON ONLY, NO CODEBLOCKS, NO MARKDOWN):
 {
-  "personalization_summary": "Tailored intake questions formulated for <Business Name> based on its <activity> in <State>.",
+  "business_summary": "Detailed synthesis of business operations, scale, and activity.",
+  "divergence_note": "Optional note if name and description appear divergent, otherwise null.",
+  "regulatory_search_intent": {
+    "business_type": "...",
+    "primary_activity": "...",
+    "secondary_activities": ["..."],
+    "products": ["..."],
+    "relevant_jurisdictions": ["..."],
+    "likely_sectors": ["..."],
+    "possible_regulatory_domains": ["..."],
+    "search_topics": [
+      "Official portal search query 1",
+      "Official portal search query 2"
+    ],
+    "unresolved_facts": ["..."],
+    "information_gaps": ["..."]
+  },
+  "information_gaps": [
+    {
+      "gap_id": "GAP_1",
+      "description": "What is missing and why",
+      "business_reason": "Why this fact is critical for regulatory classification",
+      "expected_discovery_impact": "How this refines upcoming search queries on official portals",
+      "domain": "REGULATORY_DOMAIN",
+      "priority": 1,
+      "confidence": 0.95
+    }
+  ],
+  "reasoning_summary": "Why these specific questions were prioritized for regulatory discovery.",
   "questions": [
     {
-      "question_id": "Q_connected_power_load",
-      "question_text": "What is the anticipated connected electrical power load (in HP) for your manufacturing machinery and facilities?",
-      "variable_id": "connected_power_load",
-      "answer_type": "DECIMAL",
-      "allowed_values": [],
+      "question_id": "Q_1",
+      "target_variable_id": "canonical_key_or_dynamic_key",
+      "is_canonical": true,
+      "question_text": "Clear, founder-friendly question text",
+      "answer_type": "SINGLE_CHOICE | MULTI_CHOICE | BOOLEAN | NUMBER | TEXT",
+      "allowed_values": ["Option 1", "Option 2"],
       "priority": 1,
-      "information_gain": 0.95,
-      "reason": "Determines factory registration thresholds under the Factories Act and power sanction approvals from the state electricity board.",
-      "domains": ["COMPLIANCE", "STANDARDS"]
+      "reason": "Why this question matters for discovering applicable rules",
+      "expected_discovery_impact": "How knowing this answer refines regulatory search queries",
+      "domain": "REGULATORY_DOMAIN"
     }
   ]
 }
 """
 
 
+def _build_canonical_catalog() -> list[dict[str, Any]]:
+    """Build lightweight summary of canonical variables to provide as a mapping reference."""
+    catalog: list[dict[str, Any]] = []
+    for pv in PROFILE_VARIABLES:
+        opts = [o.value for o in pv.options] if pv.options else []
+        catalog.append({
+            "key": pv.key,
+            "label": pv.label,
+            "data_type": str(pv.data_type),
+            "options": opts,
+            "description": pv.why_it_matters,
+        })
+    return catalog
+
+
 def _extract_ast_variables(node: Any) -> set[str]:
-    found: set[str] = set()
-    if isinstance(node, dict):
-        if "var" in node and isinstance(node["var"], str):
-            found.add(node["var"].strip())
-        for v in node.values():
-            found.update(_extract_ast_variables(v))
-    elif isinstance(node, list):
-        for item in node:
-            found.update(_extract_ast_variables(item))
-    return found
+    """Recursively collect variable keys referenced in an AST condition."""
+    return extract_ast_variables(node)
 
 
 def _build_context_driven_fallback_questions(
     context: DerivedBusinessContext,
-    candidate_keys: list[str],
-    var_frequency: Counter[str],
-) -> list[dict[str, Any]]:
-    """Generate dynamic, context-tailored questions when LLM is unavailable or unconfigured.
-
-    Inspects the actual product description, industry hint, and operational keywords
-    to synthesize tailored questions without hardcoding company names.
+    business_name: str,
+    known_keys: set[str],
+) -> tuple[RegulatoryDiscoveryIntent, list[dict[str, Any]], list[dict[str, Any]]]:
+    """Gracefully formulate discovery intent and dynamic questions when LLM is unavailable.
+    
+    CRITICAL: Never dumps the generic 6 factory variables on an unfamiliar business.
+    Extracts operational keywords and detects name-vs-activity conflicts.
     """
-    desc = (getattr(context, "product_description", "") or "").lower()
-    ind = (getattr(context, "industry_hint", "") or "").lower()
-    activity = (getattr(context, "primary_activity", "") or "").lower()
-    combined_text = f"{desc} {ind} {activity}".strip()
+    desc = (context.product_description or "").lower()
+    name_lower = (business_name or "").lower()
+    state_name = context.state_name or "India"
 
-    # Semantic sector detection from product description and activity keywords
-    is_medtech = any(w in combined_text for w in ["med", "device", "surgical", "health", "diagnostic", "biomed", "implant", "clinical", "hospital", "pharma"])
-    is_food = any(w in combined_text for w in ["food", "fruit", "beverage", "snack", "dehydrat", "dairy", "bakery", "spice", "agro", "grain", "tea", "coffee", "meat", "fish", "edible", "juice"])
-    is_auto_machining = any(w in combined_text for w in ["auto", "machin", "metal", "cnc", "precision", "gear", "component", "fastener", "casting", "forging", "tool", "engine", "vehicle"])
-    is_electronics = any(w in combined_text for w in ["electron", "pcb", "semiconductor", "sensor", "iot", "circuit", "battery", "hardware", "telecom"])
-    is_chemical = any(w in combined_text for w in ["chem", "paint", "polymer", "resin", "solvent", "fertilizer", "pesticide", "coating"])
+    search_topics: list[str] = []
+    gaps: list[dict[str, Any]] = []
+    questions: list[dict[str, Any]] = []
 
-    sector_label = (
-        "medical device manufacturing" if is_medtech
-        else "food and agro processing" if is_food
-        else "precision engineering and automotive manufacturing" if is_auto_machining
-        else "electronics and hardware assembly" if is_electronics
-        else "chemical and materials processing" if is_chemical
-        else "industrial operations"
+    # 1. Detect Conflict between Business Name and Product Description
+    name_has_med = any(w in name_lower for w in ["medtech", "medical", "device", "surgical", "pharma", "biotech"])
+    desc_has_pesticide = any(w in desc for w in ["pesticide", "waste", "fertilizer", "crop", "biomass", "recycle"])
+    desc_has_saas = bool(re.search(r"\b(software|saas|cloud|platform|digital|apps?)\b", desc))
+    desc_has_food = any(w in desc for w in ["food", "fruit", "beverage", "snack", "bakery", "dairy"])
+
+    if name_has_med and desc_has_pesticide:
+        q_id = "scope_activity_clarification"
+        gaps.append({
+            "gap_id": "GAP_SCOPE_DIVERGENCE",
+            "description": "Business entity name mentions MedTech while operational description focuses on waste/pesticides.",
+            "business_reason": "Prevents misrouting to CDSCO medical device regulations if operations are environmental agrochemical processing.",
+            "expected_discovery_impact": "Directs regulatory harvesting to CIBRC / SPCB portals rather than CDSCO medical device licensing.",
+            "domain": "SCOPE_VALIDATION",
+            "priority": 1,
+            "confidence": 0.98,
+        })
+        questions.append({
+            "question_id": f"Q_{q_id}",
+            "target_variable_id": q_id,
+            "is_canonical": False,
+            "question_text": f"Your entity name mentions medical technology, but your operational description details waste conversion into pesticides. Which primary operations are being assessed for compliance?",
+            "answer_type": "SINGLE_CHOICE",
+            "allowed_values": [
+                "Waste collection and pesticide / agrochemical manufacturing",
+                "Medical device & healthcare diagnostic manufacturing",
+                "Both activities under separate operating divisions",
+            ],
+            "priority": 1,
+            "reason": "Resolves whether Central Insecticides Board (CIBRC) or CDSCO Medical Device Rules apply.",
+            "expected_discovery_impact": "Directs search to CIBRC / SPCB portals rather than CDSCO medical device licensing.",
+            "domain": "SCOPE_VALIDATION",
+        })
+
+    # 2. Domain-Aware Dynamic Inquiry
+    if desc_has_pesticide or "pesticide" in desc or "waste" in desc:
+        search_topics.extend([
+            f"Central Insecticides Board CIBRC pesticide manufacture license guidelines India",
+            f"{state_name} pollution control board consent to establish pesticide chemical plant",
+            "Solid Waste Management Rules feedstock authorization guidelines CPCB",
+        ])
+        if "dynamic_pesticide_category" not in known_keys:
+            questions.append({
+                "question_id": "Q_dynamic_pesticide_category",
+                "target_variable_id": "dynamic_pesticide_category",
+                "is_canonical": False,
+                "question_text": "What specific category of pesticide or agricultural input does your facility manufacture?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "Bio-pesticide / Botanical extract",
+                    "Microbial biopesticide",
+                    "Chemical synthetic pesticide formulation",
+                    "Bio-fertilizer / Organic soil conditioner",
+                ],
+                "priority": 1,
+                "reason": "Determines statutory licensing track under the Insecticides Act 1968 vs Fertilizer Control Order.",
+                "expected_discovery_impact": "Refines discovery to CIBRC Schedule vs FCO registration schedules.",
+                "domain": "AGROCHEMICALS_AND_WASTE",
+            })
+        if "dynamic_waste_feedstock_origin" not in known_keys:
+            questions.append({
+                "question_id": "Q_dynamic_waste_feedstock_origin",
+                "target_variable_id": "dynamic_waste_feedstock_origin",
+                "is_canonical": False,
+                "question_text": "What is the primary source of the waste feedstock collected for processing?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "Agricultural crop residue and farm biomass",
+                    "Segregated municipal organic household waste",
+                    "Industrial chemical or packaging waste",
+                ],
+                "priority": 1,
+                "reason": "Determines applicability of Solid Waste Management Rules vs Hazardous Waste Rules.",
+                "expected_discovery_impact": "Directs search to CPCB waste processor registration criteria.",
+                "domain": "ENVIRONMENTAL_SAFETY",
+            })
+        if "dynamic_conversion_method" not in known_keys:
+            questions.append({
+                "question_id": "Q_dynamic_conversion_method",
+                "target_variable_id": "dynamic_conversion_method",
+                "is_canonical": False,
+                "question_text": "Does your proprietary conversion process involve biological fermentation or chemical synthesis?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "Biological fermentation / anaerobic digestion",
+                    "Chemical synthesis and solvent extraction",
+                    "Mechanical grinding and physical extraction",
+                ],
+                "priority": 2,
+                "reason": "Determines SPCB industrial pollution categorization (Red vs Orange category).",
+                "expected_discovery_impact": "Focuses discovery on SPCB Consent to Establish (CTE) fee and effluent schedules.",
+                "domain": "ENVIRONMENTAL_SAFETY",
+            })
+
+    elif desc_has_saas:
+        search_topics.extend([
+            "DPDP Act 2023 personal data processing guidelines MeitY India",
+            "CERT-In cybersecurity incident reporting directives cloud hosting",
+            "Cross border data transfer rules MeitY and software export SOFTEX RBI",
+        ])
+        if "processes_personal_data" not in known_keys:
+            questions.append({
+                "question_id": "Q_processes_personal_data",
+                "target_variable_id": "processes_personal_data",
+                "is_canonical": True,
+                "question_text": "Does your software platform collect, store, or process personal data of users or clients?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 1,
+                "reason": "Determines applicability of the Digital Personal Data Protection (DPDP) Act 2023.",
+                "expected_discovery_impact": "Directs discovery to DPDP Act data fiduciary obligations.",
+                "domain": "DIGITAL_SAAS",
+            })
+        if "cloud_hosting_location" not in known_keys:
+            questions.append({
+                "question_id": "Q_cloud_hosting_location",
+                "target_variable_id": "cloud_hosting_location",
+                "is_canonical": True,
+                "question_text": "Where is your primary cloud production infrastructure hosted?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": ["INDIA_ONLY", "GLOBAL_MULTI_REGION", "OUTSIDE_INDIA"],
+                "priority": 1,
+                "reason": "Determines data localization and CERT-In log retention compliance.",
+                "expected_discovery_impact": "Focuses discovery on CERT-In directives and cross-border data transfer rules.",
+                "domain": "DIGITAL_SAAS",
+            })
+        if "cross_border_data_transfer" not in known_keys:
+            questions.append({
+                "question_id": "Q_cross_border_data_transfer",
+                "target_variable_id": "cross_border_data_transfer",
+                "is_canonical": True,
+                "question_text": "Does your software platform transfer or process customer data outside India?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines cross-border data transfer restrictions under DPDP Act 2023.",
+                "expected_discovery_impact": "Focuses discovery on Central Government blacklisted cross-border data transfer regions.",
+                "domain": "DIGITAL_SAAS",
+            })
+        if "critical_cyber_services" not in known_keys:
+            questions.append({
+                "question_id": "Q_critical_cyber_services",
+                "target_variable_id": "critical_cyber_services",
+                "is_canonical": True,
+                "question_text": "Does your application provide services to Critical Information Infrastructure (CII) or BFSI entities?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines enhanced CERT-In reporting (6-hour mandate) and NCIIPC guidelines.",
+                "expected_discovery_impact": "Directs discovery to mandatory CERT-In cyber audit requirements.",
+                "domain": "DIGITAL_SAAS",
+            })
+        if "export_of_software_services" not in known_keys:
+            questions.append({
+                "question_id": "Q_export_of_software_services",
+                "target_variable_id": "export_of_software_services",
+                "is_canonical": True,
+                "question_text": "Do you export software or cloud services to overseas clients earning foreign exchange?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines RBI SOFTEX form filing and STPI registration compliance.",
+                "expected_discovery_impact": "Refines discovery to STPI SOFTEX certification guidelines.",
+                "domain": "TRADE_COMPLIANCE",
+            })
+
+    elif name_has_med or any(w in desc for w in ["medical", "device", "surgical", "diagnostic", "implant"]):
+        search_topics.extend([
+            "CDSCO medical device manufacturing license Form MD-5 MD-9 guidelines India",
+            "Medical Device Rules 2017 ISO 13485 quality management compliance",
+            "Biocompatibility testing ISO 10993 and cleanroom class validation CDSCO",
+        ])
+        if "cdsco_device_risk_class" not in known_keys:
+            questions.append({
+                "question_id": "Q_cdsco_device_risk_class",
+                "target_variable_id": "cdsco_device_risk_class",
+                "is_canonical": True,
+                "question_text": "What is the CDSCO risk classification of your manufactured medical devices?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": ["CLASS_A_LOW", "CLASS_B_LOW_MODERATE", "CLASS_C_MODERATE_HIGH", "CLASS_D_HIGH"],
+                "priority": 1,
+                "reason": "Determines State Licensing Authority (Class A/B) vs Central Licensing Authority (Class C/D).",
+                "expected_discovery_impact": "Directs harvesting to Central CDSCO Form MD-9 vs State Form MD-5 portals.",
+                "domain": "MEDICAL_DEVICES",
+            })
+        if "is_sterile_at_supply" not in known_keys:
+            questions.append({
+                "question_id": "Q_is_sterile_at_supply",
+                "target_variable_id": "is_sterile_at_supply",
+                "is_canonical": True,
+                "question_text": "Are your medical devices supplied in a sterile state requiring validated sterilization?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 1,
+                "reason": "Determines ethylene oxide / gamma irradiation sterilization audit mandates.",
+                "expected_discovery_impact": "Refines search to CDSCO notified body audit schedules.",
+                "domain": "MEDICAL_DEVICES",
+            })
+        if "cleanroom_iso_class" not in known_keys:
+            questions.append({
+                "question_id": "Q_cleanroom_iso_class",
+                "target_variable_id": "cleanroom_iso_class",
+                "is_canonical": True,
+                "question_text": "What ISO class cleanroom is deployed for your medical manufacturing operations?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": ["ISO_CLASS_5", "ISO_CLASS_7", "ISO_CLASS_8", "CONTROLLED_UNCLASSIFIED", "NONE"],
+                "priority": 2,
+                "reason": "Determines CDSCO environmental air particulate and microbiological validation requirements.",
+                "expected_discovery_impact": "Refines search to Schedule M-III cleanroom environmental specifications.",
+                "domain": "MEDICAL_DEVICES",
+            })
+        if "biocompatibility_tested" not in known_keys:
+            questions.append({
+                "question_id": "Q_biocompatibility_tested",
+                "target_variable_id": "biocompatibility_tested",
+                "is_canonical": True,
+                "question_text": "Have the patient-contact materials undergone ISO 10993 biocompatibility testing?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Mandated for invasive or mucosal contact medical devices under MDR 2017.",
+                "expected_discovery_impact": "Focuses discovery on CDSCO biological evaluation safety testing standards.",
+                "domain": "MEDICAL_DEVICES",
+            })
+        if "active_or_implantable" not in known_keys:
+            questions.append({
+                "question_id": "Q_active_or_implantable",
+                "target_variable_id": "active_or_implantable",
+                "is_canonical": True,
+                "question_text": "Are the medical devices manufactured active (electrically powered) or surgically implantable?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines electrical medical equipment safety (IEC 60601) and post-market clinical follow-up.",
+                "expected_discovery_impact": "Directs discovery to BIS medical electrical equipment safety standards.",
+                "domain": "MEDICAL_DEVICES",
+            })
+
+    elif desc_has_food:
+        search_topics.extend([
+            "FSSAI manufacturing license capacity threshold central vs state schedule",
+            "Food Safety and Standards Packaging Regulations migration testing IS 9845",
+            "Cold chain storage and industrial boiler environmental compliance food industry",
+        ])
+        if "daily_processing_capacity" not in known_keys:
+            questions.append({
+                "question_id": "Q_daily_processing_capacity",
+                "target_variable_id": "daily_processing_capacity",
+                "is_canonical": True,
+                "question_text": "What is your projected daily food processing throughput (in metric tonnes per day)?",
+                "answer_type": "NUMBER",
+                "allowed_values": [],
+                "priority": 1,
+                "reason": "Determines Central FSSAI Schedule 1 license vs State FSSAI license bracket.",
+                "expected_discovery_impact": "Directs regulatory search to FSSAI Central vs State licensing capacity portals.",
+                "domain": "FOOD_SAFETY",
+            })
+        if "food_contact_packaging" not in known_keys:
+            questions.append({
+                "question_id": "Q_food_contact_packaging",
+                "target_variable_id": "food_contact_packaging",
+                "is_canonical": True,
+                "question_text": "Does your packaging come into direct contact with food products?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 1,
+                "reason": "Determines IS 9845 migration testing and food packaging declaration rules.",
+                "expected_discovery_impact": "Focuses discovery on BIS packaging standards.",
+                "domain": "FOOD_SAFETY",
+            })
+        if "cold_chain_storage" not in known_keys:
+            questions.append({
+                "question_id": "Q_cold_chain_storage",
+                "target_variable_id": "cold_chain_storage",
+                "is_canonical": True,
+                "question_text": "Does your facility utilize refrigerated cold chain storage or temperature-controlled warehousing?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines FSSAI cold storage registration and energy efficiency compliance.",
+                "expected_discovery_impact": "Refines search to FSSAI Schedule 4 cold chain storage mandates.",
+                "domain": "FOOD_SAFETY",
+            })
+        if "boiler_installed" not in known_keys:
+            questions.append({
+                "question_id": "Q_boiler_installed",
+                "target_variable_id": "boiler_installed",
+                "is_canonical": True,
+                "question_text": "Does your processing facility operate an industrial boiler or steam generation equipment?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines Indian Boilers Act 1923 registration and annual inspection certificates.",
+                "expected_discovery_impact": "Directs discovery to Chief Inspector of Boilers registration portals.",
+                "domain": "SAFETY_CLEARANCES",
+            })
+        if "organic_claim" not in known_keys and "organic" in desc:
+            questions.append({
+                "question_id": "Q_organic_claim",
+                "target_variable_id": "organic_claim",
+                "is_canonical": True,
+                "question_text": "Do you market or label any of your food products with organic certification claims (Jaivik Bharat)?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines FSSAI Organic Food Regulations 2017 and NPOP certification mandates.",
+                "expected_discovery_impact": "Focuses discovery on Jaivik Bharat logo regulations and APEDA NPOP standards.",
+                "domain": "FOOD_SAFETY",
+            })
+
+    desc_has_mfg = any(w in desc for w in ["manufactur", "machin", "metal", "component", "fabricat", "cnc", "tool", "assembl", "industrial", "pack", "produc", "precis"])
+    if desc_has_mfg and not (desc_has_food or desc_has_saas or desc_has_pesticide or name_has_med):
+        search_topics.extend([
+            f"{state_name} Factories Act registration threshold with power guidelines",
+            f"{state_name} pollution control board consent to establish engineering industry",
+            "Hazardous and Other Wastes Management Rules spent cutting oil disposal CPCB",
+        ])
+        if "annual_turnover" not in known_keys:
+            var_def = get_variable("annual_turnover")
+            if var_def:
+                questions.append({
+                    "question_id": "Q_annual_turnover",
+                    "target_variable_id": "annual_turnover",
+                    "is_canonical": True,
+                    "question_text": "What is your enterprise's projected annual turnover (in INR)?",
+                    "answer_type": "NUMBER",
+                    "allowed_values": [],
+                    "priority": 1,
+                    "reason": "Determines statutory MSME classification and threshold for state vs central licensing.",
+                    "expected_discovery_impact": "Directs regulatory discovery to enterprise scale licensing brackets.",
+                    "domain": "ENTERPRISE_CLASSIFICATION",
+                })
+        if "import_export_intent" not in known_keys:
+            var_def = get_variable("import_export_intent")
+            if var_def:
+                questions.append({
+                    "question_id": "Q_import_export_intent",
+                    "target_variable_id": "import_export_intent",
+                    "is_canonical": True,
+                    "question_text": "Does your enterprise plan to import raw materials or export finished goods?",
+                    "answer_type": "SINGLE_CHOICE",
+                    "allowed_values": [opt.value for opt in var_def.options] if var_def.options else ["DOMESTIC_ONLY", "DIRECT_EXPORTER", "MERCHANT_EXPORTER", "IMPORT_AND_EXPORT"],
+                    "priority": 1,
+                    "reason": "Determines mandatory Directorate General of Foreign Trade (DGFT) IEC registration.",
+                    "expected_discovery_impact": "Directs regulatory search to DGFT foreign trade policy requirements.",
+                    "domain": "TRADE_COMPLIANCE",
+                })
+        if "dynamic_machining_process_type" not in known_keys:
+            questions.append({
+                "question_id": "Q_dynamic_machining_process_type",
+                "target_variable_id": "dynamic_machining_process_type",
+                "is_canonical": False,
+                "question_text": "What specific manufacturing or machining processes are performed at your facility (e.g. CNC milling, lathe turning, stamping)?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "Precision CNC milling and lathe turning (dry/coolant)",
+                    "Sheet metal stamping and deep drawing",
+                    "Electroplating and chemical surface finishing",
+                    "Mechanical assembly and testing only",
+                ],
+                "priority": 1,
+                "reason": "Determines SPCB Consent to Establish pollution categorization (Orange vs Green category).",
+                "expected_discovery_impact": "Directs discovery to SPCB engineering industry consent schedules.",
+                "domain": "OPERATIONAL_SCOPE",
+            })
+        if "dynamic_surface_treatment_finish" not in known_keys:
+            questions.append({
+                "question_id": "Q_dynamic_surface_treatment_finish",
+                "target_variable_id": "dynamic_surface_treatment_finish",
+                "is_canonical": False,
+                "question_text": "Do your finished components undergo chemical surface treatment, electroplating, anodizing, or heat treatment?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 1,
+                "reason": "Determines Red category industrial pollution consent under SPCB guidelines.",
+                "expected_discovery_impact": "Focuses discovery on hazardous waste disposal and SPCB CTE fee schedules.",
+                "domain": "ENVIRONMENTAL_SAFETY",
+            })
+        if "plant_machinery_investment" not in known_keys:
+            var_def = get_variable("plant_machinery_investment")
+            if var_def:
+                questions.append({
+                    "question_id": "Q_plant_machinery_investment",
+                    "target_variable_id": "plant_machinery_investment",
+                    "is_canonical": True,
+                    "question_text": "What is your enterprise's total investment in plant, machinery, and equipment (in INR)?",
+                    "answer_type": "NUMBER",
+                    "allowed_values": [],
+                    "priority": 1,
+                    "reason": "Determines statutory MSME classification (Micro vs Small vs Medium Enterprise).",
+                    "expected_discovery_impact": "Directs discovery to MSMED Act thresholds and state industrial incentive schemes.",
+                    "domain": "ENTERPRISE_CLASSIFICATION",
+                })
+        if "connected_power_load" not in known_keys:
+            var_def = get_variable("connected_power_load")
+            if var_def:
+                questions.append({
+                    "question_id": "Q_connected_power_load",
+                    "target_variable_id": "connected_power_load",
+                    "is_canonical": True,
+                    "question_text": "What is your facility's total connected electrical power load (in HP or kW)?",
+                    "answer_type": "NUMBER",
+                    "allowed_values": [],
+                    "priority": 2,
+                    "reason": "Determines Factories Act threshold (10 HP with power) and electricity duty slabs.",
+                    "expected_discovery_impact": "Refines search to State Factories Rules power thresholds.",
+                    "domain": "FACTORY_LICENSING",
+                })
+        if "hazardous_waste_generation" not in known_keys:
+            var_def = get_variable("hazardous_waste_generation")
+            if var_def:
+                questions.append({
+                    "question_id": "Q_hazardous_waste_generation",
+                    "target_variable_id": "hazardous_waste_generation",
+                    "is_canonical": True,
+                    "question_text": "Does your manufacturing operation generate spent cutting fluids, oily sludge, or hazardous waste?",
+                    "answer_type": "BOOLEAN",
+                    "allowed_values": ["true", "false"],
+                    "priority": 2,
+                    "reason": "Determines Hazardous and Other Wastes Management Rules authorization mandates.",
+                    "expected_discovery_impact": "Directs search to SPCB Form 1 hazardous waste authorization schedules.",
+                    "domain": "ENVIRONMENTAL_SAFETY",
+                })
+        if "effluent_emission_generation" not in known_keys:
+            var_def = get_variable("effluent_emission_generation")
+            if var_def:
+                questions.append({
+                    "question_id": "Q_effluent_emission_generation",
+                    "target_variable_id": "effluent_emission_generation",
+                    "is_canonical": True,
+                    "question_text": "Does your operation discharge industrial trade effluent or machine wash-water?",
+                    "answer_type": "BOOLEAN",
+                    "allowed_values": ["true", "false"],
+                    "priority": 2,
+                    "reason": "Determines Water Act Section 25 consent and effluent treatment plant requirements.",
+                    "expected_discovery_impact": "Refines search to SPCB consent conditions.",
+                    "domain": "ENVIRONMENTAL_SAFETY",
+                })
+
+    # Cross-border export destination check
+    if context.is_cross_border and "export_destination" not in known_keys:
+        questions.append({
+            "question_id": "Q_export_destination",
+            "target_variable_id": "export_destination",
+            "is_canonical": True,
+            "question_text": "Which target export markets or countries do you plan to ship your products to (e.g. US, EU, UAE)?",
+            "answer_type": "TEXT",
+            "allowed_values": [],
+            "priority": 2,
+            "reason": "Determines international technical standards, phytosanitary certificates, and DGFT export protocols.",
+            "expected_discovery_impact": "Focuses discovery on destination market regulatory requirements and DGFT guidelines.",
+            "domain": "TRADE_COMPLIANCE",
+        })
+
+    # State specific published rules check
+    if context.state:
+        state_rules = RuleVersion.objects.filter(
+            jurisdiction=context.state,
+            status=KnowledgeStatus.PUBLISHED,
+        )
+        for rule in state_rules:
+            for rv in sorted(_extract_ast_variables(rule.condition_ast)):
+                if rv not in known_keys and not any(q["target_variable_id"] == rv for q in questions):
+                    var_def = get_variable(rv)
+                    if var_def:
+                        questions.append({
+                            "question_id": f"Q_{rv}",
+                            "target_variable_id": rv,
+                            "is_canonical": True,
+                            "question_text": f"What is your enterprise's {var_def.label.lower()}?",
+                            "answer_type": str(var_def.data_type),
+                            "allowed_values": [opt.value for opt in var_def.options] if var_def.options else [],
+                            "priority": 2,
+                            "reason": f"Required by state-specific published rule for {state_name}.",
+                            "expected_discovery_impact": f"Directs regulatory discovery to {state_name} state portal schedules.",
+                            "domain": "STATE_REGULATION",
+                        })
+
+    # Supplementary pool to ensure 15 questions standard
+    existing_q_ids = {q["target_variable_id"] for q in questions}
+
+    if desc_has_saas:
+        saas_pool = [
+            {
+                "target_variable_id": "dynamic_data_retention_policy",
+                "is_canonical": False,
+                "question_text": "Does your digital platform enforce a formal personal data retention schedule and automated erasure mechanism?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines statutory compliance under Section 8 of the Digital Personal Data Protection (DPDP) Act 2023.",
+                "expected_discovery_impact": "Directs discovery to DPDP Act data fiduciary obligations.",
+                "domain": "DATA_PROTECTION",
+            },
+            {
+                "target_variable_id": "dynamic_certin_incident_readiness",
+                "is_canonical": False,
+                "question_text": "Does your technical team maintain system access logs for 180 days and possess a 6-hour cybersecurity incident reporting protocol?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Mandatory under CERT-In Directions 2022 under Section 70B of the Information Technology Act.",
+                "expected_discovery_impact": "Directs search to CERT-In cybersecurity reporting frameworks.",
+                "domain": "CYBER_SECURITY",
+            },
+            {
+                "target_variable_id": "dynamic_grievance_redressal_officer",
+                "is_canonical": False,
+                "question_text": "Has your organization designated and publicly displayed the contact details of a Data Grievance Redressal Officer?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Statutorily required under Information Technology (Intermediary Guidelines) Rules 2021 & DPDP Act.",
+                "expected_discovery_impact": "Focuses discovery on intermediary guidelines and user grievance mechanisms.",
+                "domain": "DIGITAL_COMPLIANCE",
+            },
+            {
+                "target_variable_id": "dynamic_payment_gateway_integration",
+                "is_canonical": False,
+                "question_text": "Does your software accept electronic payments or process financial transactions through third-party payment gateways?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines Reserve Bank of India (RBI) Payment Aggregator (PA) and Tokenization guidelines.",
+                "expected_discovery_impact": "Focuses discovery on RBI digital payment compliance frameworks.",
+                "domain": "FINTECH_REGULATION",
+            },
+            {
+                "target_variable_id": "dynamic_children_personal_data",
+                "is_canonical": False,
+                "question_text": "Does your service process personal data belonging to children (under 18 years) or track their behavioral patterns?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines Section 9 DPDP Act mandates on verifiable parental consent and prohibition of behavioral tracking.",
+                "expected_discovery_impact": "Directs search to DPDP Act child data protection stipulations.",
+                "domain": "DATA_PROTECTION",
+            },
+            {
+                "target_variable_id": "dynamic_iso_soc2_audits",
+                "is_canonical": False,
+                "question_text": "Has your cloud architecture undergone third-party SOC 2 Type II or ISO/IEC 27001 security certification?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines international cybersecurity baseline recognition under MeitY guidelines.",
+                "expected_discovery_impact": "Focuses search on government procurement cloud security empanelment.",
+                "domain": "CYBER_SECURITY",
+            },
+        ]
+        for q in saas_pool:
+            k = q["target_variable_id"]
+            if k not in known_keys and k not in existing_q_ids and len(questions) < TARGET_QUESTIONS_COUNT:
+                q["question_id"] = f"Q_{k}"
+                questions.append(q)
+                existing_q_ids.add(k)
+    else:
+        physical_pool = [
+            {
+                "target_variable_id": "contract_worker_count",
+                "is_canonical": True,
+                "question_text": "How many contract or temporary workers are deployed through contractors at your facility at peak operations?",
+                "answer_type": "NUMBER",
+                "allowed_values": [],
+                "priority": 1,
+                "reason": "Determines mandatory registration under Section 7 of the Contract Labour (Regulation & Abolition) Act 1970.",
+                "expected_discovery_impact": "Directs regulatory discovery to State Labour Commissioner contract labor registration rules.",
+                "domain": "LABOUR_SAFETY",
+            },
+            {
+                "target_variable_id": "boiler_installed",
+                "is_canonical": True,
+                "question_text": "Does your manufacturing facility operate an industrial steam boiler, thermic fluid heater, or steam generator?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 1,
+                "reason": "Determines statutory registration, inspection, and boiler attendant certification under the Indian Boilers Act 1923.",
+                "expected_discovery_impact": "Focuses discovery on Chief Inspector of Boilers approval schedules.",
+                "domain": "FACTORY_SAFETY",
+            },
+            {
+                "target_variable_id": "dynamic_air_emission_sources",
+                "is_canonical": False,
+                "question_text": "Does your facility operate industrial diesel generator (DG) sets, chimney exhausts, or process kilns that discharge emissions?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines stack height monitoring and Consent to Operate under Section 21 of the Air (P&CP) Act 1981.",
+                "expected_discovery_impact": "Directs discovery to SPCB air emission consent conditions and acoustic enclosure norms.",
+                "domain": "ENVIRONMENTAL_SAFETY",
+            },
+            {
+                "target_variable_id": "dynamic_packaging_type_plastic",
+                "is_canonical": False,
+                "question_text": "Does your enterprise utilize plastic packaging, plastic containers, or pre-packaged wrappers for distributing products?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines mandatory Extended Producer Responsibility (EPR) registration under Plastic Waste Management Rules 2016.",
+                "expected_discovery_impact": "Directs discovery to CPCB centralized EPR plastic waste registration portal.",
+                "domain": "ENVIRONMENTAL_SAFETY",
+            },
+            {
+                "target_variable_id": "dynamic_raw_materials_hazardous",
+                "is_canonical": False,
+                "question_text": "Do you store, formulate, or handle scheduled hazardous, toxic, or flammable chemicals in bulk at your premises?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines notification of major accident hazard installations under MSIHC Rules 1989 and on-site emergency plans.",
+                "expected_discovery_impact": "Focuses discovery on DISH (Factory Inspectorate) chemical safety approvals.",
+                "domain": "HAZARDOUS_SAFETY",
+            },
+            {
+                "target_variable_id": "dynamic_groundwater_extraction",
+                "is_canonical": False,
+                "question_text": "Does your facility extract groundwater via dedicated on-site borewells or tube-wells for industrial or washing use?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines mandatory No Objection Certificate (NOC) from Central Ground Water Authority (CGWA) or State Ground Water Authority.",
+                "expected_discovery_impact": "Directs discovery to CGWA industrial abstraction guidelines.",
+                "domain": "ENVIRONMENTAL_SAFETY",
+            },
+            {
+                "target_variable_id": "dynamic_product_bis_standard",
+                "is_canonical": False,
+                "question_text": "Are your manufactured components or finished commodities governed by mandatory Bureau of Indian Standards (BIS) Quality Control Orders?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines mandatory ISI mark license or Compulsory Registration Scheme (CRS) prior to commercial sale.",
+                "expected_discovery_impact": "Directs discovery to BIS product certification schedules.",
+                "domain": "QUALITY_STANDARDS",
+            },
+            {
+                "target_variable_id": "dynamic_storage_flammables",
+                "is_canonical": False,
+                "question_text": "Does your plant store bulk petroleum fuels, solvents, paints, LPG, or compressed gas cylinders exceeding statutory threshold limits?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines storage licensing from Petroleum and Explosives Safety Organisation (PESO) under Petroleum Rules 2002.",
+                "expected_discovery_impact": "Focuses discovery on PESO Form XIV license schedules.",
+                "domain": "HAZARDOUS_SAFETY",
+            },
+            {
+                "target_variable_id": "dynamic_trade_license_municipality",
+                "is_canonical": False,
+                "question_text": "Has a formal municipal trade license or industrial health clearance been issued for this operational site?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines compliance with State Municipal Acts and local urban local body licensing mandates.",
+                "expected_discovery_impact": "Directs discovery to local municipal industrial trade licensing rules.",
+                "domain": "LOCAL_GOVERNANCE",
+            },
+            {
+                "target_variable_id": "dynamic_fire_safety_noc",
+                "is_canonical": False,
+                "question_text": "Does the manufacturing premises possess a valid Fire Safety No Objection Certificate (NOC) from the State Fire Services?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Statutorily mandatory for all factory sheds, storage godowns, and industrial occupancies under State Fire Safety Acts.",
+                "expected_discovery_impact": "Directs discovery to State Fire Prevention and Safety Measures rules.",
+                "domain": "FIRE_SAFETY",
+            },
+            {
+                "target_variable_id": "dynamic_battery_ewaste_handling",
+                "is_canonical": False,
+                "question_text": "Does your facility refurbish, dismantle, or handle electrical, electronic equipment, or industrial batteries?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines applicability of Battery Waste Management Rules 2022 or E-Waste Management Rules 2022.",
+                "expected_discovery_impact": "Focuses discovery on CPCB EPR portal registration for batteries/e-waste.",
+                "domain": "ENVIRONMENTAL_SAFETY",
+            },
+            {
+                "target_variable_id": "plant_machinery_investment",
+                "is_canonical": True,
+                "question_text": "What is your total capital investment in plant, machinery, and operational equipment (in INR)?",
+                "answer_type": "NUMBER",
+                "allowed_values": [],
+                "priority": 1,
+                "reason": "Plant & machinery valuation determines MSME statutory tiering (Micro, Small, Medium) under the MSMED Act and qualifies capital subsidy schemes.",
+                "expected_discovery_impact": "Directs regulatory harvesting to MSME development schemes and capital subsidy thresholds.",
+                "domain": "COMPLIANCE",
+            },
+            {
+                "target_variable_id": "legal_constitution",
+                "is_canonical": True,
+                "question_text": "What is the formal legal constitution of your enterprise (e.g. Pvt Ltd, LLP, Partnership, Sole Proprietorship)?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": ["Pvt Ltd", "LLP", "Partnership", "Sole Proprietorship"],
+                "priority": 1,
+                "reason": "Constitution governs MCA corporate compliance, statutory audit rules, director KYC, and board reporting mandates.",
+                "expected_discovery_impact": "Determines MCA filing forms, director disclosure schedules, and statutory audit obligations.",
+                "domain": "COMPLIANCE",
+            },
+            {
+                "target_variable_id": "lifecycle_stage",
+                "is_canonical": True,
+                "question_text": "What is your current operational lifecycle stage (e.g. Pre-commissioning Setup, Expanding, or Fully Operational)?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": ["Pre-commissioning Setup", "Expanding", "Fully Operational"],
+                "priority": 1,
+                "reason": "Operational stage separates pre-establishment statutory approvals (CTE, building plan) from operational licenses (CTO, factory license).",
+                "expected_discovery_impact": "Separates pre-construction approvals from ongoing operational renewals.",
+                "domain": "COMPLIANCE",
+            },
+            {
+                "target_variable_id": "ownership_social_category",
+                "is_canonical": True,
+                "question_text": "What is the social category of the enterprise's primary promoter or majority shareholder?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": ["General", "SC", "ST", "OBC"],
+                "priority": 2,
+                "reason": "Promoter social category qualifies the enterprise for preferential procurement quotas and enhanced subsidies under Central/State MSME schemes.",
+                "expected_discovery_impact": "Unlocks SC/ST Hub incentives and specialized state industrial subsidies.",
+                "domain": "SCHEMES",
+            },
+            {
+                "target_variable_id": "ownership_gender",
+                "is_canonical": True,
+                "question_text": "Is the enterprise woman-owned or co-founded by women (holding 51%+ equity)?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Woman-owned enterprises unlock dedicated credit guarantees, grant subsidies, and SIDBI priority financing windows.",
+                "expected_discovery_impact": "Identifies Stand-Up India and state women-entrepreneurship subsidy eligibility.",
+                "domain": "SCHEMES",
+            },
+            {
+                "target_variable_id": "district",
+                "is_canonical": True,
+                "question_text": "In which municipal district is your primary factory or operating facility located?",
+                "answer_type": "TEXT",
+                "allowed_values": [],
+                "priority": 2,
+                "reason": "District location dictates local municipal trade licenses, district industrial centre (DIC) registrations, and local zoning permissions.",
+                "expected_discovery_impact": "Filters district-level DIC incentives and municipal council permits.",
+                "domain": "COMPLIANCE",
+            },
+            {
+                "target_variable_id": "state",
+                "is_canonical": True,
+                "question_text": "In which Indian State or Union Territory is your primary operating premises registered?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [],
+                "priority": 1,
+                "reason": "State jurisdiction governs State Pollution Control Board, state labour departments, and state industrial policy incentives.",
+                "expected_discovery_impact": "Establishes primary state regulatory portal and inspectorate jurisdiction.",
+                "domain": "COMPLIANCE",
+            },
+        ]
+        for q in physical_pool:
+            k = q["target_variable_id"]
+            if k not in known_keys and k not in existing_q_ids and len(questions) < TARGET_QUESTIONS_COUNT:
+                q["question_id"] = f"Q_{k}"
+                questions.append(q)
+                existing_q_ids.add(k)
+
+    questions = questions[:TARGET_QUESTIONS_COUNT]
+
+    intent = RegulatoryDiscoveryIntent(
+        business_type=f"{business_name} Operational Profile",
+        primary_activity=context.primary_activity or context.product_description[:80] or "Commercial Operations",
+        secondary_activities=["Cross-border trade"] if context.is_cross_border else ["Domestic distribution"],
+        products=[p.strip() for p in (context.product_description or "Commercial goods").split(",")[:4]],
+        relevant_jurisdictions=[state_name, "CENTRAL"],
+        likely_sectors=["Agrochemical & Environmental" if desc_has_pesticide else "Commercial Operations"],
+        possible_regulatory_domains=["Pollution Control Board", "State Licensing Authority"],
+        search_topics=search_topics,
+        unresolved_facts=[q["target_variable_id"] for q in questions],
+        information_gaps=[g.get("description", "") for g in gaps] if gaps else ["Specific product classification"],
     )
 
-    tailored_map: dict[str, dict[str, Any]] = {
-        "annual_turnover": {
-            "question_text": (
-                f"What is your anticipated annual turnover from {sector_label} (in INR)?"
-                if (is_medtech or is_food or is_auto_machining or is_electronics)
-                else "What is your projected or current annual business turnover (in INR)?"
-            ),
-            "reason": "Turnover determines statutory licensing brackets (e.g. Central vs State authority), MSME enterprise scale, and GST filing thresholds.",
-            "domains": ["COMPLIANCE", "SCHEMES"],
-            "priority": 1,
-            "information_gain": 0.95,
-        },
-        "connected_power_load": {
-            "question_text": (
-                "What is the anticipated connected electrical power load (in HP) for your cleanroom, production lines, and testing equipment?" if is_medtech else
-                "What is the anticipated connected electrical power load (in HP) for your food processing machinery, refrigeration, and cold chain?" if is_food else
-                "What is the connected electrical power load (in HP) for your CNC machine tools, compressors, and shop-floor equipment?" if is_auto_machining else
-                "What is the connected electrical power load (in HP) for your surface mount technology (SMT) and testing lines?" if is_electronics else
-                "What is the anticipated connected electrical power load (in HP) for your facility?"
-            ),
-            "reason": "Connected electrical load determines registration thresholds under state Factory Acts and Pollution Control Board consent categories.",
-            "domains": ["COMPLIANCE", "STANDARDS"],
-            "priority": 1,
-            "information_gain": 0.93,
-        },
-        "effluent_emission_generation": {
-            "question_text": (
-                "Will your manufacturing, component cleaning, or sterilization processes produce liquid trade effluent or air emissions?" if is_medtech else
-                "Will your food processing operations generate wash water, processing trade effluent, or boiler emissions?" if is_food else
-                "Will your machining operations produce liquid trade effluent, coolant discharge, or exhaust emissions?" if is_auto_machining else
-                "Will your facility generate industrial trade effluent, chemical rinse water, or air emissions?"
-            ),
-            "reason": "Discharges and emissions mandate Consent to Establish (CTE) and Consent to Operate (CTO) from the State Pollution Control Board under Water & Air Acts.",
-            "domains": ["COMPLIANCE"],
-            "priority": 1,
-            "information_gain": 0.92,
-        },
-        "hazardous_waste_generation": {
-            "question_text": (
-                "Will your facility generate hazardous or bio-medical waste (such as chemical solvents, sterilization residues, or electronic scrap)?" if is_medtech else
-                "Will your facility generate or handle hazardous chemical waste (e.g. industrial refrigerants or chemical cleaning agents)?" if is_food else
-                "Will your operations generate hazardous waste (such as spent cutting oils, chemical sludge, or metal treatment residues)?" if is_auto_machining else
-                "Will your electronic assembly produce hazardous waste like solder dross, spent flux, or chemical cleaners?" if is_electronics else
-                "Will your operations store, use, or generate hazardous waste materials?"
-            ),
-            "reason": "Hazardous waste handling requires dedicated statutory authorization under CPCB/SPCB Hazardous Waste Management Rules.",
-            "domains": ["COMPLIANCE", "STANDARDS"],
-            "priority": 2,
-            "information_gain": 0.90,
-        },
-        "total_worker_count": {
-            "question_text": (
-                "What is your anticipated total workforce (including biomedical engineers, cleanroom technicians, and support staff)?" if is_medtech else
-                "What is your anticipated total workforce (including food handlers, machine operators, and quality supervisors)?" if is_food else
-                "What is your total workforce count on the manufacturing shop floor and facility?" if is_auto_machining else
-                "What is the total number of workers employed at your premises?"
-            ),
-            "reason": "Workforce size determines applicability of the Factories Act (thresholds at 10 or 20 workers), EPF, and ESI employee social security registrations.",
-            "domains": ["COMPLIANCE", "SCHEMES"],
-            "priority": 2,
-            "information_gain": 0.88,
-        },
-        "contract_worker_count": {
-            "question_text": (
-                "Do you plan to engage contract personnel for packaging, logistics, cleanroom maintenance, or facility security?" if is_medtech else
-                "Do you plan to engage contract labour for seasonal food packing, warehousing, or facility sanitation?" if is_food else
-                "Do you plan to engage contract workers for machining support, component handling, or shop-floor logistics?" if is_auto_machining else
-                "Do you plan to engage contract workers or third-party staffing for operations?"
-            ),
-            "reason": "Engaging contract labour triggers principal employer registration under the Contract Labour (Regulation and Abolition) Act once statutory thresholds are reached.",
-            "domains": ["COMPLIANCE"],
-            "priority": 3,
-            "information_gain": 0.84,
-        },
-        "import_export_intent": {
-            "question_text": (
-                "Do you plan to export finished medical devices to overseas markets or import specialized medical-grade raw materials?" if is_medtech else
-                "Do you plan to export processed food products to international buyers or import specialized food ingredients?" if is_food else
-                "Do you plan to export manufactured precision components or import specialized alloy tooling?" if is_auto_machining else
-                "Do you plan to engage in international cross-border trade (importing raw materials or exporting finished products)?"
-            ),
-            "reason": "Cross-border trade mandates an Importer-Exporter Code (IEC) from DGFT, customs duty authorizations, and unlocks export incentive schemes.",
-            "domains": ["COMPLIANCE", "SCHEMES", "STANDARDS"],
-            "priority": 2,
-            "information_gain": 0.91,
-        },
-        "export_destination": {
-            "question_text": (
-                "Which destination countries or regions do you plan to export to (e.g. US, European Union, Southeast Asia, Middle East)?"
-            ),
-            "reason": "Specific destination jurisdictions require harmonized technical standards, country-specific testing dossiers, and quality certifications.",
-            "domains": ["STANDARDS", "SCHEMES"],
-            "priority": 3,
-            "information_gain": 0.82,
-        },
-        "industrial_zone_status": {
-            "question_text": (
-                f"Is your {sector_label} facility located inside a notified industrial area / technology park or outside?"
-            ),
-            "reason": "Zoning status affects municipal trade approvals, pollution board siting restrictions, and state industrial policy capital subsidies.",
-            "domains": ["COMPLIANCE", "SCHEMES"],
-            "priority": 3,
-            "information_gain": 0.85,
-        },
-        "ecommerce_operations": {
-            "question_text": (
-                "Will you sell products directly to consumers or business clients through online platforms or digital e-commerce channels?"
-            ),
-            "reason": "Digital sales introduce Legal Metrology e-commerce declarations, consumer protection mandates, and multi-state GST tax registrations.",
-            "domains": ["COMPLIANCE"],
-            "priority": 4,
-            "information_gain": 0.80,
-        },
-        "multi_state_operations": {
-            "question_text": (
-                "Do you plan to operate manufacturing, warehousing, or sales facilities across more than one Indian state?"
-            ),
-            "reason": "Inter-state presence determines Central versus State regulatory jurisdiction and triggers multi-state GST and regulatory compliance registrations.",
-            "domains": ["COMPLIANCE"],
-            "priority": 4,
-            "information_gain": 0.81,
-        },
-        "plant_machinery_investment": {
-            "question_text": (
-                "What is your total capital investment in cleanroom infrastructure, plant, and diagnostic/testing machinery (in INR)?" if is_medtech else
-                "What is your total capital investment in processing lines, commercial refrigeration, and packaging machinery (in INR)?" if is_food else
-                "What is your total capital investment in CNC machines, foundry equipment, and plant tooling (in INR)?" if is_auto_machining else
-                "What is your total capital investment in SMT lines, assembly tools, and laboratory test gear (in INR)?" if is_electronics else
-                "What is your total investment in plant, machinery, and operational equipment (in INR)?"
-            ),
-            "reason": "Plant & machinery valuation determines MSME statutory tiering (Micro, Small, Medium) under the MSMED Act and qualifies capital subsidy schemes.",
-            "domains": ["COMPLIANCE", "SCHEMES"],
-            "priority": 1,
-            "information_gain": 0.94,
-        },
-        "ownership_social_category": {
-            "question_text": "What is the social category of the enterprise's primary promoter or majority shareholder?",
-            "reason": "Promoter social category qualifies the enterprise for preferential procurement quotas and enhanced subsidies under Central/State MSME schemes.",
-            "domains": ["SCHEMES"],
-            "priority": 4,
-            "information_gain": 0.78,
-        },
-        "ownership_gender": {
-            "question_text": "Is the enterprise woman-owned or co-founded by women (holding 51%+ equity)?",
-            "reason": "Woman-owned enterprises unlock dedicated credit guarantees, grant subsidies, and SIDBI priority financing windows.",
-            "domains": ["SCHEMES"],
-            "priority": 4,
-            "information_gain": 0.79,
-        },
-        "legal_constitution": {
-            "question_text": "What is the formal legal constitution of your enterprise (e.g. Pvt Ltd, LLP, Partnership, Sole Proprietorship)?",
-            "reason": "Constitution governs MCA corporate compliance, statutory audit rules, director KYC, and board reporting mandates.",
-            "domains": ["COMPLIANCE"],
-            "priority": 1,
-            "information_gain": 0.96,
-        },
-        "lifecycle_stage": {
-            "question_text": f"What is your current operational lifecycle stage for {sector_label} (e.g. Pre-commissioning Setup, Expanding, or Fully Operational)?",
-            "reason": "Operational stage separates pre-establishment statutory approvals (CTE, building plan) from operational licenses (CTO, factory license).",
-            "domains": ["COMPLIANCE"],
-            "priority": 1,
-            "information_gain": 0.95,
-        },
-        "district": {
-            "question_text": "In which municipal district is your primary factory or operating facility located?",
-            "reason": "District location dictates local municipal trade licenses, district industrial centre (DIC) registrations, and local zoning permissions.",
-            "domains": ["COMPLIANCE", "SCHEMES"],
-            "priority": 3,
-            "information_gain": 0.83,
-        },
-        "state": {
-            "question_text": "In which Indian State or Union Territory is your primary operating premises registered?",
-            "reason": "State jurisdiction governs State Pollution Control Board, state labour departments, and state industrial policy incentives.",
-            "domains": ["COMPLIANCE", "SCHEMES"],
-            "priority": 1,
-            "information_gain": 0.98,
-        },
-    }
+    for q in questions:
+        q["variable_key"] = q["target_variable_id"]
 
-    fallback_items: list[dict[str, Any]] = []
-    for k in candidate_keys:
-        var_def = get_variable(k)
-        if not var_def:
-            continue
-
-        if k in tailored_map:
-            t = tailored_map[k]
-            fallback_items.append({
-                "question_id": f"Q_{k}",
-                "variable_id": k,
-                "question_text": t["question_text"],
-                "answer_type": str(var_def.data_type),
-                "allowed_values": [opt.value for opt in var_def.options] if var_def.options else [],
-                "priority": t.get("priority", 2),
-                "information_gain": t.get("information_gain", 0.85),
-                "reason": t["reason"],
-                "domains": t.get("domains", ["COMPLIANCE"]),
-            })
-        else:
-            label = var_def.label
-            if label.lower().startswith("generates ") or label.lower().startswith("sells ") or label.lower().startswith("operates "):
-                q_text = f"Does your enterprise {label.lower()}?"
-            elif not label.endswith("?"):
-                q_text = f"What is your enterprise's {label.lower()}?"
-            else:
-                q_text = label
-
-            fallback_items.append({
-                "question_id": f"Q_{k}",
-                "variable_id": k,
-                "question_text": q_text,
-                "answer_type": str(var_def.data_type),
-                "allowed_values": [opt.value for opt in var_def.options] if var_def.options else [],
-                "priority": 1 if (var_def.default_relevance == Relevance.CORE or var_frequency.get(k, 0) > 0) else 3,
-                "information_gain": 0.90 if var_frequency.get(k, 0) > 0 else 0.75,
-                "reason": var_def.why_it_matters or "Statutory classification variable for industrial compliance and approvals.",
-                "domains": ["COMPLIANCE"],
-            })
-
-    return fallback_items
+    return intent, gaps, questions
 
 
 def plan_adaptive_smart_questions(
     business: Business,
     round_number: int = 1,
     assessment_id: str | None = None,
+    batch_size: int | None = None,
 ) -> dict[str, Any]:
-    """Dynamically plan adaptive smart questions for a business.
+    """Dynamically plan adaptive smart questions for a business as a Pre-Discovery Interview.
 
-    Uses LLM question planning with rich structured context and fallback heuristics.
-    Maps questions strictly to canonical profile variables (V01-V19).
+    Pipeline:
+    1. Business Understanding: Understand what the company actually manufactures, formulates,
+       processes, stores, provides, sells, imports, exports, or operates.
+    2. Conflict Detection: Identify divergences between business name and operational description.
+    3. Deterministic AST-Aware Rules Analysis: Evaluate published rules using three-valued Kleene
+       logic; identify which missing variables are decision-relevant for UNKNOWN rules.
+    4. Smart Question Generation: Convert high-value gaps and decision-relevant variables into
+       founder-friendly questions.
     """
     context = build_business_context(business)
 
-    # Resolve assessment if passed
+    # Resolve assessment if passed or latest
     assessment = None
     if assessment_id:
         assessment = business.assessments.filter(pk=assessment_id).first()
     if assessment is None:
         assessment = business.assessments.order_by("-assessment_number").first()
 
-    # Candidate requirements for business jurisdiction (matching code, name, and raw state)
-    reqs_query = RequirementDefinition.objects.filter(status=KnowledgeStatus.PUBLISHED)
-    jurisdictions = {"CENTRAL"}
-    if context.state:
-        jurisdictions.add(context.state)
-    if context.state_name:
-        jurisdictions.add(context.state_name)
-        jurisdictions.add(context.state_name.upper())
-    raw_st = str(context.raw_variables.get("state") or "").strip()
-    if raw_st:
-        jurisdictions.add(raw_st)
-        jurisdictions.add(raw_st.upper())
-    reqs_query = reqs_query.filter(jurisdiction__in=list(jurisdictions))
-
-    candidate_req_ids = set(reqs_query.values_list("requirement_id", flat=True))
-    candidate_rules = RuleVersion.objects.filter(
-        requirement__requirement_id__in=candidate_req_ids,
-        status=KnowledgeStatus.PUBLISHED,
-    )
-
-    var_frequency: Counter[str] = Counter()
-    for rule in candidate_rules:
-        for rv in _extract_ast_variables(rule.condition_ast):
-            var_frequency[rv] += 1
-
-    # 1. Missing variables referenced in candidate published rules
-    missing_rule_vars = sorted(
-        [k for k in var_frequency if k in context.missing_variable_keys],
-        key=lambda k: var_frequency[k],
-        reverse=True,
-    )
-
-    # 2. Key statutory threshold & branching variables across operations, scale, environment, and finance
-    branching_priority = [
-        "annual_turnover",
-        "plant_machinery_investment",
-        "total_worker_count",
-        "contract_worker_count",
-        "connected_power_load",
-        "effluent_emission_generation",
-        "import_export_intent",
-        "export_destination",
-        "industrial_zone_status",
-        "ecommerce_operations",
-        "multi_state_operations",
-        "ownership_social_category",
-        "ownership_gender",
-    ]
-    unanswered_branching = [
-        k for k in branching_priority if k in context.missing_variable_keys
-    ]
-
-    # 3. Unanswered core profile variables
-    unanswered_core_vars = [
-        pv.key
-        for pv in PROFILE_VARIABLES
-        if pv.default_relevance == Relevance.CORE and pv.key in context.missing_variable_keys
-    ]
-
-    # 4. Any remaining unanswered canonical profile variables
-    unanswered_other_vars = [
-        pv.key
-        for pv in PROFILE_VARIABLES
-        if pv.key in context.missing_variable_keys and pv.key not in {"product_description", "hazardous_waste_generation"}
-    ]
-
-    # Combine candidate variables in strict precedence order
-    candidate_keys = list(dict.fromkeys(
-        missing_rule_vars + unanswered_branching + unanswered_core_vars + unanswered_other_vars
-    ))
-
-    # Stopping condition: No missing variables or max rounds exhausted
-    if not candidate_keys or round_number > MAX_ROUNDS:
-        reason = "ROUNDS_EXHAUSTED" if round_number > MAX_ROUNDS else "ALL_CRITICAL_VARIABLES_SATISFIED"
-        plan, _ = SmartQuestionPlan.objects.get_or_create(
-            business=business,
-            round_number=round_number,
-            defaults={"status": "COMPLETED", "stopping_reason": reason, "assessment": assessment},
-        )
+    # If exceeding MAX_ROUNDS, terminate with COMPLETED
+    if round_number > MAX_ROUNDS:
+        reason = "ROUNDS_EXHAUSTED"
+        plan = SmartQuestionPlan.objects.filter(business=business, round_number=round_number).order_by("-created_at").first()
+        if plan:
+            plan.status = "COMPLETED"
+            plan.stopping_reason = reason
+            plan.business_summary = f"Intake complete for {business.name} after {MAX_ROUNDS} rounds."
+            plan.reasoning_summary = "Maximum adaptive interview rounds reached."
+            plan.save(update_fields=["status", "stopping_reason", "business_summary", "reasoning_summary"])
+        else:
+            plan = SmartQuestionPlan.objects.create(
+                business=business,
+                round_number=round_number,
+                status="COMPLETED",
+                stopping_reason=reason,
+                assessment=assessment,
+                business_summary=f"Intake complete for {business.name} after {MAX_ROUNDS} rounds.",
+                regulatory_search_intent={},
+                information_gaps=[],
+                reasoning_summary="Maximum adaptive interview rounds reached.",
+            )
         if assessment and not assessment.question_plan:
             assessment.question_plan = plan
             assessment.save(update_fields=["question_plan"])
@@ -448,61 +1046,117 @@ def plan_adaptive_smart_questions(
             "business_id": str(business.id),
             "business_name": business.name,
             "assessment_id": str(assessment.id) if assessment else None,
+            "plan_id": str(plan.id),
             "round": round_number,
             "status": "COMPLETED",
             "stopping_reason": reason,
-            "personalization_header": f"Assessment complete for {business.name}",
-            "personalization_subtitle": "All necessary profile details have been collected.",
+            "personalization_header": f"Intake Completed for {business.name}",
+            "personalization_subtitle": "Maximum interview rounds reached.",
             "questions": [],
             "total_questions": 0,
             "total_missing": len(context.missing_variable_keys),
-            "known_variables_count": len(context.known_variable_keys),
-            "context_summary": context.as_dict(),
         }
 
-    # Prepare structured candidate variable specifications for LLM input
-    var_specs = []
-    for k in candidate_keys:
-        var_def = get_variable(k)
-        if var_def:
-            var_specs.append({
-                "variable_id": var_def.key,
-                "label": var_def.label,
-                "data_type": str(var_def.data_type),
-                "why_it_matters": var_def.why_it_matters,
-                "options": [opt.value for opt in var_def.options] if var_def.options else [],
-                "rule_dependency_count": var_frequency.get(k, 0),
-            })
-
-    known_vars_summary = {
-        k: context.raw_variables.get(k)
-        for k in context.known_variable_keys
+    # Collect all facts already known from previous intake steps or versions
+    known_facts: dict[str, Any] = {
+        "business_name": business.name,
+        "legal_constitution": context.legal_constitution,
+        "state": context.state,
+        "state_name": context.state_name,
+        "district": context.district,
+        "industrial_zone_status": context.industrial_zone_status,
+        "lifecycle_stage": context.lifecycle_stage,
+        "product_description": context.product_description,
+        "trade_intent": context.trade_intent,
+        "msme_scale": context.msme_scale,
     }
+    for k in context.known_variable_keys:
+        val = context.raw_variables.get(k)
+        if val is not None and val != "":
+            known_facts[k] = val
 
+    known_keys = set(known_facts.keys())
+
+    # Build reference catalog of canonical variables
+    canonical_catalog = _build_canonical_catalog()
+
+    # Multi-round history
+    previous_rounds_answers: dict[str, Any] = {}
+    if round_number > 1:
+        prev_plans = business.question_plans.filter(round_number__lt=round_number)
+        for p in prev_plans:
+            for q in p.questions.filter(is_answered=True):
+                previous_rounds_answers[q.variable_key] = q.answer_value
+
+    # --------------------------------------------------------------------------
+    # Deterministic AST-Aware Analysis of Published Statutory Rules (AUTHORITY)
+    # --------------------------------------------------------------------------
+    candidate_rules_qs = RuleVersion.objects.filter(
+        status=KnowledgeStatus.PUBLISHED,
+        requirement__status=KnowledgeStatus.PUBLISHED,
+    ).select_related("requirement")
+
+    candidate_jurisdictions = {"CENTRAL"}
+    if context.state:
+        candidate_jurisdictions.add(context.state)
+        candidate_jurisdictions.add(context.state.upper())
+    candidate_rules = list(candidate_rules_qs.filter(jurisdiction__in=list(candidate_jurisdictions)))
+
+    kb_analysis = analyze_candidate_rules(candidate_rules, context)
+
+    business_summary = f"{business.name} operations located in {context.state_name}."
+    reasoning_summary = "Formulated discovery information gaps to refine upcoming regulatory searches."
+    discovery_intent = RegulatoryDiscoveryIntent(
+        business_type=f"{business.name} Entity",
+        primary_activity=context.primary_activity or context.product_description[:80] or "Commercial Operations",
+        secondary_activities=["Cross-border trade"] if context.is_cross_border else ["Domestic distribution"],
+        products=[p.strip() for p in (context.product_description or "Commercial goods").split(",")[:4]],
+        relevant_jurisdictions=[context.state_name or "India", "CENTRAL"],
+        likely_sectors=["Industrial & Commercial Operations"],
+        possible_regulatory_domains=["Central & State Statutory Authorities"],
+        search_topics=[],
+        unresolved_facts=[],
+        information_gaps=[],
+    )
+    information_gaps_list: list[dict[str, Any]] = []
     planned_items: list[dict[str, Any]] = []
-    personalization_summary = f"Questions tailored to: {business.name}"
 
+    # --------------------------------------------------------------------------
+    # Invoke LLM for Business Understanding & Information Gap Interview Planning
+    # --------------------------------------------------------------------------
     provider = get_llm_provider()
-    if provider.is_configured:
-        prompt = f"""BUSINESS PROFILE CONTEXT:
-Business Name: {business.name}
+    llm_succeeded = False
+
+    # In sequential adaptive mode (batch_size is not None), questioning is driven
+    # deterministically by AST rule evaluation and Kleene logic without LLM latency.
+    should_call_llm = provider.is_configured and (batch_size is None)
+
+    if should_call_llm:
+        prompt = f"""BUSINESS PROFILE:
+Business Legal / Operating Name: {business.name}
 Legal Constitution: {context.legal_constitution or 'Not specified'}
-State / Jurisdiction: {context.state_name} ({context.state})
-District: {context.district or 'Not specified'}
-Primary Activity: {context.primary_activity or 'Manufacturing / Processing'}
-Products / Activity Description:
+Registered State / Jurisdiction: {context.state_name} ({context.state})
+District / City: {context.district or 'Not specified'}
+Industrial Zone Siting: {context.industrial_zone_status or 'Not specified'}
+Lifecycle Stage: {context.lifecycle_stage or 'Operational'}
+Enterprise Scale (MSME): {context.msme_scale}
+
+PRODUCT & ACTIVITY DESCRIPTION:
 {context.product_description}
 
-Enterprise Scale (MSMED Act): {context.msme_scale}
-Industry Sector / Tags: {context.industry_hint or 'Industrial operations'}
+IMPORT / EXPORT TRADE INTENT:
+{context.trade_intent or 'Domestic operations'}
 
-KNOWN VARIABLES (DO NOT ASK FOR THESE):
-{json.dumps(known_vars_summary, indent=2)}
+ALREADY KNOWN FACTS (DO NOT ASK ABOUT THESE):
+{json.dumps(known_facts, indent=2)}
 
-CANDIDATE MISSING VARIABLES TO CHOOSE FROM:
-{json.dumps(var_specs, indent=2)}
+PREVIOUS ROUND INTERVIEW ANSWERS:
+{json.dumps(previous_rounds_answers, indent=2) if previous_rounds_answers else "None (Round 1 Intake)"}
 
-Formulate approximately 7 to 10 high-value questions (minimum 6, maximum {MAX_QUESTIONS_PER_ROUND}) tailored specifically to this business's operational reality."""
+CANONICAL VARIABLE CATALOG (REFERENCE ONLY FOR MAPPING):
+{json.dumps(canonical_catalog, indent=2)}
+
+Conduct the pre-discovery interview. Understand this specific business, detect any name-vs-activity conflicts, determine information gaps, and generate EXACTLY 15 high-value discovery questions."""
 
         try:
             res = provider.complete(
@@ -511,7 +1165,7 @@ Formulate approximately 7 to 10 high-value questions (minimum 6, maximum {MAX_QU
                     ChatMessage(role="user", content=prompt),
                 ],
                 temperature=0.1,
-                max_output_tokens=2000,
+                max_output_tokens=4000,
             )
             content = res.text.strip()
             if content.startswith("```"):
@@ -523,148 +1177,447 @@ Formulate approximately 7 to 10 high-value questions (minimum 6, maximum {MAX_QU
                 content = "\n".join(lines).strip()
 
             parsed = json.loads(content)
-            personalization_summary = parsed.get("personalization_summary") or personalization_summary
-            raw_qs = parsed.get("questions", [])
+            business_summary = parsed.get("business_summary") or business_summary
+            reasoning_summary = parsed.get("reasoning_summary") or reasoning_summary
 
-            valid_keys_set = set(candidate_keys)
+            if parsed.get("regulatory_search_intent"):
+                intent_data = parsed["regulatory_search_intent"]
+                discovery_intent = RegulatoryDiscoveryIntent(
+                    business_type=intent_data.get("business_type", discovery_intent.business_type),
+                    primary_activity=intent_data.get("primary_activity", discovery_intent.primary_activity),
+                    secondary_activities=intent_data.get("secondary_activities", discovery_intent.secondary_activities),
+                    products=intent_data.get("products", discovery_intent.products),
+                    relevant_jurisdictions=intent_data.get("relevant_jurisdictions", discovery_intent.relevant_jurisdictions),
+                    likely_sectors=intent_data.get("likely_sectors", discovery_intent.likely_sectors),
+                    possible_regulatory_domains=intent_data.get("possible_regulatory_domains", discovery_intent.possible_regulatory_domains),
+                    search_topics=intent_data.get("search_topics", discovery_intent.search_topics),
+                    unresolved_facts=intent_data.get("unresolved_facts", discovery_intent.unresolved_facts),
+                    information_gaps=intent_data.get("information_gaps", discovery_intent.information_gaps),
+                )
+
+            if parsed.get("information_gaps") and isinstance(parsed["information_gaps"], list):
+                information_gaps_list = parsed["information_gaps"]
+
+            raw_qs = parsed.get("questions", [])
             seen_vars: set[str] = set()
 
             for item in raw_qs:
-                var_key = item.get("variable_id") or item.get("variable_key")
-                if not var_key or var_key not in valid_keys_set or var_key in seen_vars:
+                var_key = str(
+                    item.get("target_variable_id")
+                    or item.get("variable_key")
+                    or item.get("variable_id")
+                    or item.get("key")
+                    or ""
+                ).strip().lower()
+
+                # Clean snake_case key
+                var_key = re.sub(r"[^a-z0-9_]+", "_", var_key).strip("_")
+
+                if not var_key or var_key in seen_vars or var_key in known_keys:
                     continue
                 seen_vars.add(var_key)
 
-                # Validate domains
-                domains = item.get("domains")
-                if not isinstance(domains, list) or not domains:
-                    domains = ["COMPLIANCE"]
-                domains = [d for d in domains if d in {"COMPLIANCE", "SCHEMES", "STANDARDS"}] or ["COMPLIANCE"]
+                is_canonical = bool(item.get("is_canonical", False) or var_key in VARIABLES_BY_KEY)
+                domains_val = item.get("domains")
+                if not isinstance(domains_val, list) or not domains_val:
+                    d_single = item.get("domain")
+                    domains_val = [d_single] if d_single else ["COMPLIANCE"]
+
+                ans_type = str(item.get("answer_type") or item.get("data_type") or "TEXT").upper()
+                opts = item.get("allowed_values") or item.get("options") or []
+
+                # If canonical variable exists, synchronize options if missing
+                var_def = get_variable(var_key)
+                if var_def:
+                    is_canonical = True
+                    if not opts and var_def.options:
+                        opts = [o.value for o in var_def.options]
+                    ans_type = str(var_def.data_type)
 
                 planned_items.append({
                     "question_id": item.get("question_id") or f"Q_{var_key}",
+                    "target_variable_id": var_key,
                     "variable_key": var_key,
+                    "is_canonical": is_canonical,
                     "question_text": str(item.get("question_text", "")).strip(),
-                    "why_it_matters": str(item.get("reason", "")).strip() or str(item.get("why_it_matters", "")).strip(),
                     "reason": str(item.get("reason", "")).strip(),
-                    "domains": domains,
-                    "priority": item.get("priority", 1),
+                    "why_it_matters": str(item.get("reason", "")).strip(),
+                    "expected_discovery_impact": str(item.get("expected_discovery_impact", "")).strip(),
+                    "domains": domains_val,
+                    "domain": item.get("domain") or domains_val[0],
+                    "answer_type": ans_type,
+                    "data_type": ans_type,
+                    "options": opts,
+                    "priority": str(item.get("priority", "1")),
                     "information_gain": float(item.get("information_gain", 0.90)),
                 })
-        except Exception as e:
-            logger.warning("LLM question planning failed, using dynamic context fallback: %s", e)
 
-    # Fallback to dynamic context-driven question generation if LLM was unavailable or returned insufficient items
-    required_count = min(len(candidate_keys), MAX_QUESTIONS_PER_ROUND)
-    if len(planned_items) < required_count:
-        logger.info("Using context-driven dynamic question fallback for %s (target: %d questions)", business.name, required_count)
-        fallback_items = _build_context_driven_fallback_questions(context, candidate_keys, var_frequency)
+            if len(planned_items) >= MIN_QUESTIONS_PER_ROUND:
+                llm_succeeded = True
+        except Exception as exc:
+            logger.warning("LLM question planning failed, using dynamic context fallback: %s", exc)
 
+    # --------------------------------------------------------------------------
+    # Fallback to Deterministic Context-Driven Extraction if LLM Failed
+    # --------------------------------------------------------------------------
+    if not llm_succeeded and (batch_size is None or not candidate_rules):
+        fb_intent, fb_gaps, fb_questions = _build_context_driven_fallback_questions(
+            context,
+            business.name,
+            known_keys,
+        )
+        discovery_intent = fb_intent
+        information_gaps_list = fb_gaps
         existing_keys = {item["variable_key"] for item in planned_items}
-        for fb in fallback_items:
-            vk = fb["variable_id"]
-            if vk not in existing_keys:
-                planned_items.append({
-                    "question_id": fb["question_id"],
-                    "variable_key": vk,
-                    "question_text": fb["question_text"],
-                    "why_it_matters": fb["reason"],
-                    "reason": fb["reason"],
-                    "domains": fb["domains"],
-                    "priority": fb["priority"],
-                    "information_gain": fb["information_gain"],
-                })
-                existing_keys.add(vk)
-            if len(planned_items) >= MAX_QUESTIONS_PER_ROUND:
-                break
+        for q in fb_questions:
+            k = q["target_variable_id"]
+            if k not in existing_keys and k not in known_keys:
+                existing_keys.add(k)
+                planned_items.append(q)
 
-    # Guarantee that candidate rule-dependent variables are included in planned items
-    existing_keys = {item["variable_key"] for item in planned_items}
-    for mk in missing_rule_vars:
-        if mk not in existing_keys:
-            fb = next((f for f in _build_context_driven_fallback_questions(context, [mk], var_frequency) if f["variable_id"] == mk), None)
-            if fb:
-                planned_items.insert(0, {
-                    "question_id": fb["question_id"],
-                    "variable_key": mk,
-                    "question_text": fb["question_text"],
-                    "why_it_matters": fb["reason"],
-                    "reason": fb["reason"],
-                    "domains": fb["domains"],
-                    "priority": fb["priority"],
-                    "information_gain": fb["information_gain"],
-                })
-                existing_keys.add(mk)
+    # --------------------------------------------------------------------------
+    # Sector Isolation Filtering (Invariant: Zero cross-contamination)
+    # --------------------------------------------------------------------------
+    desc_lower = (context.product_description or "").lower()
+    name_lower = (business.name or "").lower()
+    is_food = any(w in desc_lower for w in ["food", "fruit", "beverage", "snack", "bakery", "dairy", "agro"])
+    is_saas = bool(re.search(r"\b(software|saas|cloud|platform|digital|apps?)\b", desc_lower))
+    is_med = any(w in desc_lower or w in name_lower for w in ["medtech", "medical", "device", "surgical", "diagnostic", "implant", "catheter"])
+    is_pesticide = any(w in desc_lower for w in ["pesticide", "waste", "fertilizer", "crop", "biomass", "recycle"])
 
-    # Cap at MAX_QUESTIONS_PER_ROUND
-    planned_items = planned_items[:MAX_QUESTIONS_PER_ROUND]
+    if is_food and not is_pesticide:
+        planned_items = [
+            q for q in planned_items
+            if q["variable_key"] not in {
+                "cdsco_device_risk_class", "is_sterile_at_supply", "cleanroom_iso_class",
+                "biocompatibility_tested", "active_or_implantable",
+                "processes_personal_data", "cloud_hosting_location", "critical_cyber_services",
+                "cross_border_data_transfer", "export_of_software_services",
+                "epr_target_obligation", "wireless_rf_features",
+            }
+        ]
+    elif is_saas:
+        planned_items = [
+            q for q in planned_items
+            if q["variable_key"] not in {
+                "connected_power_load", "effluent_emission_generation", "hazardous_waste_generation",
+                "boiler_installed", "daily_processing_capacity", "food_contact_packaging", "cold_chain_storage",
+                "cleanroom_iso_class", "cdsco_device_risk_class", "is_sterile_at_supply", "epr_target_obligation",
+                "organic_claim", "biocompatibility_tested", "active_or_implantable",
+            }
+        ]
+    elif is_med and not is_pesticide:
+        planned_items = [
+            q for q in planned_items
+            if q["variable_key"] not in {
+                "daily_processing_capacity", "boiler_installed", "food_contact_packaging", "organic_claim",
+                "processes_personal_data", "cloud_hosting_location", "critical_cyber_services",
+                "cross_border_data_transfer", "export_of_software_services",
+                "cold_chain_storage", "epr_target_obligation", "wireless_rf_features",
+            }
+        ]
 
-    # Create SmartQuestionPlan and SmartQuestionInstances in DB
+    # --------------------------------------------------------------------------
+    # Published Rules Alignment: AST-Aware Adaptive Decision Variables
+    # --------------------------------------------------------------------------
+    rule_driven_items: list[dict[str, Any]] = []
+    seen_rule_vars: set[str] = set()
+
+    CANONICAL_VARIABLE_QUESTIONS: dict[str, str] = {
+        "annual_turnover": "What is your enterprise's approximate annual turnover (in INR)?",
+        "plant_machinery_investment": "What is your enterprise's total investment in plant, machinery, and equipment (in INR)?",
+        "total_worker_count": "What is the peak total number of workers and employees engaged at your facility?",
+        "contract_worker_count": "How many contract or temporary workers are engaged through third-party contractors?",
+        "connected_power_load": "What is the sanctioned electrical connected load (in HP or kW) for your facility?",
+        "effluent_emission_generation": "Does your facility generate trade effluent, air emissions, or toxic industrial discharges?",
+        "hazardous_waste_generation": "Does your unit generate, handle, or store any hazardous wastes specified under CPCB schedules?",
+        "import_export_intent": "Does your enterprise plan to import raw materials or export finished goods across borders?",
+        "boiler_installed": "Is an industrial boiler or steam-generating pressure vessel installed and operated on your premises?",
+        "daily_processing_capacity": "What is your facility's peak daily food processing or production capacity (in metric tonnes)?",
+        "food_contact_packaging": "Do you manufacture, pack, or store materials that come into direct contact with food products?",
+        "cold_chain_storage": "Does your operation include refrigerated storage, cold rooms, or temperature-controlled transit?",
+        "organic_claim": "Do you label or market products with organic claims requiring Jaivik Bharat certification?",
+        "cdsco_device_risk_class": "What is the CDSCO Medical Device classification for your manufactured products?",
+        "is_sterile_at_supply": "Are your manufactured medical products supplied in a sterile state to healthcare providers?",
+        "cleanroom_iso_class": "What ISO classification standard does your cleanroom manufacturing area meet?",
+        "biocompatibility_tested": "Have your medical materials undergone ISO 10993 biocompatibility testing?",
+        "active_or_implantable": "Are your medical devices surgically implantable or powered active devices?",
+        "processes_personal_data": "Does your software platform collect, store, or process personal data of Indian citizens?",
+        "cloud_hosting_location": "Where are your production cloud servers and user databases physically hosted?",
+        "critical_cyber_services": "Does your application provide critical services to government or regulated financial institutions?",
+        "cross_border_data_transfer": "Does your organization transfer personal or customer data outside India?",
+        "export_of_software_services": "Do you export software or IT-enabled services to clients outside India?",
+        "epr_target_obligation": "Do you introduce packaged plastic into the market requiring Extended Producer Responsibility (EPR)?",
+        "wireless_rf_features": "Does your hardware product incorporate Wi-Fi, Bluetooth, or wireless RF transmitter modules?",
+    }
+
+    for rv in kb_analysis.ranked_variables:
+        if rv in known_keys or rv in seen_rule_vars:
+            continue
+        seen_rule_vars.add(rv)
+        var_def = get_variable(rv)
+        dep_count = kb_analysis.variable_impact.get(rv, 0)
+        info_gain = round(dep_count / max(kb_analysis.unresolved_count, 1), 4) if kb_analysis.unresolved_count > 0 else 1.0
+        info_gain = max(0.1, min(1.0, info_gain))
+
+        q_text = CANONICAL_VARIABLE_QUESTIONS.get(rv)
+        if not q_text:
+            q_text = f"What is your enterprise's {var_def.label.lower()}?" if var_def else f"Please specify {rv.replace('_', ' ')}."
+
+        domains_list = ["STATUTORY_COMPLIANCE"]
+        rule_driven_items.append({
+            "question_id": f"Q_{rv}",
+            "target_variable_id": rv,
+            "variable_key": rv,
+            "is_canonical": bool(var_def is not None),
+            "question_text": q_text,
+            "reason": f"Evaluated by {dep_count} unresolved statutory compliance rule(s).",
+            "why_it_matters": (var_def.why_it_matters if var_def else "") or f"Required to resolve {dep_count} applicable statutory rules.",
+            "expected_discovery_impact": f"Directly resolves legal uncertainty for {dep_count} compliance rule(s).",
+            "domains": domains_list,
+            "domain": domains_list[0],
+            "answer_type": str(var_def.data_type) if var_def else "TEXT",
+            "data_type": str(var_def.data_type) if var_def else "TEXT",
+            "options": [opt.value for opt in var_def.options] if var_def and var_def.options else [],
+            "priority": "1",
+            "information_gain": info_gain,
+            "rule_dependency_count": dep_count,
+            "candidate_rules_count": dep_count,
+        })
+
+    # Merge rule_driven_items (highest priority) with planned_items (pre-discovery)
+    combined_items: list[dict[str, Any]] = []
+    seen_combined: set[str] = set()
+
+    for item in rule_driven_items:
+        k = item["variable_key"]
+        if k not in seen_combined and k not in known_keys:
+            seen_combined.add(k)
+            combined_items.append(item)
+
+    for item in planned_items:
+        k = item["variable_key"]
+        if k not in seen_combined and k not in known_keys:
+            seen_combined.add(k)
+            combined_items.append(item)
+
+    # Sector Isolation Filtering (Invariant: Zero cross-contamination)
+    food_forbidden = {
+        "cdsco_device_risk_class", "is_sterile_at_supply", "cleanroom_iso_class",
+        "biocompatibility_tested", "active_or_implantable",
+        "processes_personal_data", "cloud_hosting_location", "critical_cyber_services",
+        "cross_border_data_transfer", "export_of_software_services",
+        "epr_target_obligation", "wireless_rf_features",
+    }
+    saas_forbidden = {
+        "connected_power_load", "effluent_emission_generation", "hazardous_waste_generation",
+        "boiler_installed", "daily_processing_capacity", "food_contact_packaging", "cold_chain_storage",
+        "cleanroom_iso_class", "cdsco_device_risk_class", "is_sterile_at_supply", "epr_target_obligation",
+        "organic_claim", "biocompatibility_tested", "active_or_implantable",
+    }
+    med_forbidden = {
+        "daily_processing_capacity", "boiler_installed", "food_contact_packaging", "organic_claim",
+        "processes_personal_data", "cloud_hosting_location", "critical_cyber_services",
+        "cross_border_data_transfer", "export_of_software_services",
+        "cold_chain_storage", "epr_target_obligation", "wireless_rf_features",
+    }
+
+    if is_food and not is_pesticide:
+        combined_items = [q for q in combined_items if q["variable_key"] not in food_forbidden]
+    elif is_saas:
+        combined_items = [q for q in combined_items if q["variable_key"] not in saas_forbidden]
+    elif is_med and not is_pesticide:
+        combined_items = [q for q in combined_items if q["variable_key"] not in med_forbidden]
+
+    if batch_size is not None:
+        # Pure sequential adaptive mode: driven strictly by unresolved rules
+        if candidate_rules and kb_analysis.unresolved_count == 0:
+            planned_items = []
+        elif candidate_rules and not kb_analysis.ranked_variables:
+            planned_items = []
+        else:
+            # Only ask decision-relevant variables for candidate rules (or discovery if no rules)
+            rule_vars = set(kb_analysis.ranked_variables)
+            relevant_items = [q for q in combined_items if not candidate_rules or q["variable_key"] in rule_vars]
+            planned_items = relevant_items[:max(1, batch_size)]
+    else:
+        # Standard batch mode:
+        if round_number > 1 and candidate_rules and kb_analysis.unresolved_count == 0:
+            planned_items = []
+        elif round_number > 1 and not kb_analysis.ranked_variables:
+            planned_items = []
+        else:
+            # If intake questionnaire needs more items for fresh business pre-discovery, pad with context fallback
+            if len(combined_items) < TARGET_QUESTIONS_COUNT and round_number == 1:
+                _, _, fb_questions = _build_context_driven_fallback_questions(
+                    context,
+                    business.name,
+                    known_keys,
+                )
+                if is_food and not is_pesticide:
+                    fb_questions = [q for q in fb_questions if q["target_variable_id"] not in food_forbidden]
+                elif is_saas:
+                    fb_questions = [q for q in fb_questions if q["target_variable_id"] not in saas_forbidden]
+                elif is_med and not is_pesticide:
+                    fb_questions = [q for q in fb_questions if q["target_variable_id"] not in med_forbidden]
+
+                existing_keys = {item["variable_key"] for item in combined_items}
+                for q in fb_questions:
+                    k = q.get("variable_key") or q.get("target_variable_id")
+                    if k and k not in existing_keys and k not in known_keys:
+                        existing_keys.add(k)
+                        combined_items.append(q)
+                        if len(combined_items) >= TARGET_QUESTIONS_COUNT:
+                            break
+
+            planned_items = combined_items[:TARGET_QUESTIONS_COUNT]
+
+    # Stopping condition: If no questions remain
+    if not planned_items:
+        reason = (
+            "ALL_RULES_RESOLVED"
+            if candidate_rules and kb_analysis.unresolved_count == 0
+            else ("SUFFICIENT_INFORMATION_GATHERED" if round_number > 1 else "ALL_CRITICAL_VARIABLES_SATISFIED")
+        )
+        plan = SmartQuestionPlan.objects.filter(business=business, round_number=round_number).order_by("-created_at").first()
+        if plan:
+            plan.status = "COMPLETED"
+            plan.stopping_reason = reason
+            plan.business_summary = business_summary
+            plan.regulatory_search_intent = discovery_intent.as_dict()
+            plan.information_gaps = information_gaps_list
+            plan.reasoning_summary = reasoning_summary
+            plan.save(update_fields=["status", "stopping_reason", "business_summary", "regulatory_search_intent", "information_gaps", "reasoning_summary"])
+        else:
+            plan = SmartQuestionPlan.objects.create(
+                business=business,
+                round_number=round_number,
+                status="COMPLETED",
+                stopping_reason=reason,
+                assessment=assessment,
+                business_summary=business_summary,
+                regulatory_search_intent=discovery_intent.as_dict(),
+                information_gaps=information_gaps_list,
+                reasoning_summary=reasoning_summary,
+            )
+        if assessment and not assessment.question_plan:
+            assessment.question_plan = plan
+            assessment.save(update_fields=["question_plan"])
+
+        return {
+            "business_id": str(business.id),
+            "business_name": business.name,
+            "assessment_id": str(assessment.id) if assessment else None,
+            "plan_id": str(plan.id),
+            "round": round_number,
+            "status": "COMPLETED",
+            "stopping_reason": reason,
+            "personalization_header": f"Pre-Discovery Interview Complete for {business.name}",
+            "personalization_subtitle": "Sufficient operational clarity collected for targeted regulatory search.",
+            "questions": [],
+            "total_questions": 0,
+            "total_missing": len(context.missing_variable_keys),
+            "known_variables_count": len(context.known_variable_keys),
+            "context_summary": context.as_dict(),
+            "regulatory_discovery_intent": discovery_intent.as_dict(),
+            "information_gaps": information_gaps_list,
+        }
+
+    # Persist SmartQuestionPlan record
     plan = SmartQuestionPlan.objects.create(
         business=business,
         assessment=assessment,
         round_number=round_number,
         status="ACTIVE",
+        business_summary=business_summary,
+        regulatory_search_intent=discovery_intent.as_dict(),
+        information_gaps=information_gaps_list,
+        reasoning_summary=reasoning_summary,
     )
-
-    if assessment:
+    if assessment and not assessment.question_plan:
         assessment.question_plan = plan
         assessment.save(update_fields=["question_plan"])
 
-    instances: list[SmartQuestionInstance] = []
     output_questions: list[dict[str, Any]] = []
 
     for item in planned_items:
         k = item["variable_key"]
         var_def = get_variable(k)
-        if not var_def:
-            continue
 
+        # Resolve options: canonical options if defined, otherwise format choice list
+        raw_opts = item.get("options") or item.get("allowed_values") or []
+        if var_def and var_def.options:
+            resolved_options = resolve_variable_options(var_def)
+        elif raw_opts:
+            resolved_options = [
+                {"value": str(opt), "label": str(opt)}
+                for opt in raw_opts
+            ]
+        else:
+            resolved_options = []
+
+        dep_count = kb_analysis.variable_impact.get(k, 0)
+        info_gain = (
+            round(dep_count / max(kb_analysis.unresolved_count, 1), 4)
+            if kb_analysis.unresolved_count > 0 and dep_count > 0
+            else float(item.get("information_gain", 0.85))
+        )
+        info_gain = max(0.05, min(1.0, info_gain))
         q_inst = SmartQuestionInstance.objects.create(
             plan=plan,
             business=business,
             question_id=item.get("question_id", f"Q_{k}"),
+            target_variable_id=k,
             variable_key=k,
-            question_text=item.get("question_text", var_def.label),
-            why_it_matters=item.get("why_it_matters", var_def.why_it_matters),
-            reason=item.get("reason", item.get("why_it_matters", "")),
+            question_text=item.get("question_text", (var_def.label if var_def else k)),
+            why_it_matters=item.get("reason", (var_def.why_it_matters if var_def else "")),
+            reason=item.get("reason", ""),
+            expected_discovery_impact=item.get("expected_discovery_impact", ""),
             domains=item.get("domains", ["COMPLIANCE"]),
-            data_type=str(var_def.data_type),
-            options=resolve_variable_options(var_def),
-            unit=var_def.unit or "",
+            data_type=item.get("data_type", (str(var_def.data_type) if var_def else "TEXT")),
+            options=resolved_options,
+            unit=(var_def.unit or "") if var_def else "",
             priority=str(item.get("priority", "1")),
-            information_gain=float(item.get("information_gain", 1.0)),
-            rule_dependency_count=var_frequency.get(k, 0),
+            information_gain=float(item.get("information_gain", 0.90)),
+            rule_dependency_count=dep_count,
+            status="UNANSWERED",
         )
-        instances.append(q_inst)
 
         output_questions.append({
             "id": str(q_inst.id),
             "question_id": q_inst.question_id,
-            "code": var_def.code,
+            "code": var_def.code if var_def else "DYN",
             "key": k,
             "variable_key": k,
             "variable_id": k,
-            "label": var_def.label,
+            "target_variable_id": k,
+            "is_canonical": bool(var_def is not None),
+            "label": var_def.label if var_def else k.replace("dynamic_", "").replace("_", " ").title(),
             "question": q_inst.question_text,
             "question_text": q_inst.question_text,
             "data_type": q_inst.data_type,
             "answer_type": q_inst.data_type,
             "why_it_matters": q_inst.why_it_matters,
             "reason": q_inst.reason,
-            "domains": q_inst.domains,
+            "expected_discovery_impact": q_inst.expected_discovery_impact,
             "unit": q_inst.unit,
-            "options": q_inst.options,
-            "allowed_values": [opt["value"] if isinstance(opt, dict) else opt for opt in q_inst.options],
+            "options": resolved_options,
+            "allowed_values": [opt["value"] if isinstance(opt, dict) else str(opt) for opt in resolved_options],
             "current_value": context.raw_variables.get(k),
             "priority": q_inst.priority,
             "information_gain": q_inst.information_gain,
-            "required": var_def.default_relevance == Relevance.CORE,
+            "domains": q_inst.domains,
+            "required": True if (q_inst.priority == "1" or (var_def and var_def.default_relevance == Relevance.CORE)) else False,
             "rule_dependency_count": q_inst.rule_dependency_count,
             "candidate_rules_count": q_inst.rule_dependency_count,
         })
 
     sector_name = context.industry_hint or "manufacturing and commercial"
+    personalization_summary = (
+        f"Selected {len(output_questions)} questions focusing on {sector_name} statutory clearances, "
+        f"MSME capital tiers, and environmental mandates under Indian law."
+    )
+
     return {
         "business_id": str(business.id),
         "business_name": business.name,
@@ -672,12 +1625,32 @@ Formulate approximately 7 to 10 high-value questions (minimum 6, maximum {MAX_QU
         "plan_id": str(plan.id),
         "round": round_number,
         "status": "ACTIVE",
-        "personalization_header": f"Questions tailored to: {business.name}",
-        "personalization_subtitle": f"Based on your {sector_name} activity, we need a few more details to build your comprehensive compliance, schemes, and standards plan.",
+        "personalization_header": f"Pre-Discovery Interview for {business.name}",
+        "personalization_subtitle": f"Targeted questions formulating search topics across official portals for {context.state_name}.",
         "personalization_summary": personalization_summary,
+        "business_summary": business_summary,
+        "regulatory_discovery_intent": discovery_intent.as_dict(),
+        "information_gaps": information_gaps_list,
+        "reasoning_summary": reasoning_summary,
         "questions": output_questions,
         "total_questions": len(output_questions),
         "total_missing": len(context.missing_variable_keys),
         "known_variables_count": len(context.known_variable_keys),
         "context_summary": context.as_dict(),
     }
+
+
+def get_next_adaptive_question(
+    business: Business,
+    assessment_id: str | None = None,
+) -> dict[str, Any] | None:
+    """Sequential adaptive questioning: returns the single highest-impact unresolved question."""
+    plan_result = plan_adaptive_smart_questions(
+        business,
+        round_number=1,
+        assessment_id=assessment_id,
+        batch_size=1,
+    )
+    questions = plan_result.get("questions", [])
+    return questions[0] if questions else None
+

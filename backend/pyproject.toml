@@ -3,7 +3,6 @@ name = "complywise-backend"
 version = "0.1.0"
 description = "ComplyWise compliance intelligence backend (modular monolith)"
 requires-python = ">=3.12"
-
 dependencies = [
     "Django>=5.2,<6.1",
     "djangorestframework>=3.16",

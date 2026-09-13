@@ -720,6 +720,25 @@ Dashboard result                      IMPLEMENTED  — all counts from the lates
   - Unit & Integration Test Suites: 30/30 passed (`test_business_context.py`, `test_smart_question_planner.py`, `test_regulatory_discovery.py`, `test_business_isolation_regression.py`, `test_dynamic_behavior.py`, `test_dynamic_engine_invariant.py`, `test_fixtures_regression.py`, `test_live_firecrawl_smoke.py`).
   - Playwright Chrome E2E test with unseen business (*Eastern GridCell Energy Pvt. Ltd.* in West Bengal): full onboarding, adaptive questioning, live discovery, initial results, dashboard provenance banner, and filtered compliance matrix with 0 console errors and 0 page errors.
 
+---
+
+### Task Milestone: Environment-Driven, Production-Safe CORS & CSRF Architecture
+
+Implemented fully production-ready, domain-agnostic CORS and CSRF configuration:
+- **Canonical Origin Parsing & Validation (`backend/config/cors.py`):**
+  - Extracts comma-separated origins, trims whitespace, discards empty tokens, and deduplicates while preserving order.
+  - Strict origin validation enforcing scheme (`http://` or `https://`), network location, and rejection of wildcards (`*`), path components, queries, and fragments.
+  - Production enforcement: Disallows `*` wildcard and insecure `http://` schemes. Enforces HTTPS for all production origins. Disallows `localhost` in production unless explicitly opted in via `CORS_ALLOW_LOCALHOST_IN_PRODUCTION=True`.
+  - Fail-safe startup validation: In production (`DJANGO_DEBUG=False`), missing or malformed `CORS_ALLOWED_ORIGINS` raises an actionable `CorsConfigurationError` on startup.
+- **Centralized Settings (`backend/config/settings.py`):**
+  - Integrated `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, `CORS_ALLOW_CREDENTIALS`, `CORS_ALLOW_METHODS`, `CORS_ALLOW_HEADERS`, and `CORS_PREFLIGHT_MAX_AGE`.
+  - Zero hardcoding of deployment domains: Azure Application Settings or environment variables inject frontend origins at runtime without backend source-code changes.
+- **Automated Test Suite (`backend/tests/test_cors.py`):**
+  - 21/21 tests passing covering allowed localhost origins, production origins, multiple origins, unlisted origins, OPTIONS preflight requests, credentials handling, authenticated cross-origin requests, wildcard rejections, missing variable failures, whitespace handling, and syntax validation.
+- **Documentation & Configuration Templates:**
+  - Updated `.env.example`, `README.md` (Section 7), and frontend integration contract (`NEXT_PUBLIC_API_BASE_URL`).
+
+
 
 
 

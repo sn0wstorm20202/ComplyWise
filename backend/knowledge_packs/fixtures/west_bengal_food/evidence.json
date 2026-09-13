@@ -1,0 +1,30 @@
+[
+  {
+    "evidence_id": "EVD-FACTORIES-ACT-10-POWER-WB",
+    "source_id": "SRC-FACTORIES-ACT-1948-WB",
+    "locator": "Section 2(m)(i), Factories Act 1948",
+    "excerpt": "Manufacturing premises in West Bengal employing ten or more workers with the aid of electrical power must obtain factory building approval and factory license from the Chief Inspector of Factories.",
+    "structured_fact": {
+      "worker_threshold": 10,
+      "power_required": true,
+      "state": "WEST_BENGAL"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "1958-01-01",
+    "effective_until": null
+  },
+  {
+    "evidence_id": "EVD-WBPCB-CTE-FOOD",
+    "source_id": "SRC-WATER-AIR-ACTS-WB",
+    "locator": "Section 25 Water Act & Section 21 Air Act",
+    "excerpt": "Any person establishing an industrial plant, processing facility, or food manufacturing unit in West Bengal must obtain prior Consent to Establish from West Bengal Pollution Control Board.",
+    "structured_fact": {
+      "mandatory_consent": "Consent to Establish",
+      "authority": "WBPCB",
+      "state": "WEST_BENGAL"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "1981-05-16",
+    "effective_until": null
+  }
+]

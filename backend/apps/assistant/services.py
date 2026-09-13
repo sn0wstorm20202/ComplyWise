@@ -192,25 +192,32 @@ def _generate_structured_compact_answer(
     wf_lines: list[str] | None = None,
     std_lines: list[str] | None = None,
     scheme_lines: list[str] | None = None,
+    language: str = "en",
 ) -> str:
     q = prompt.lower()
     biz_name = business.name if business else "Your Industrial Enterprise"
     state_str = getattr(ctx, "state_name", "State Industrial Jurisdiction") if ctx else "State Industrial Jurisdiction"
     scale_str = getattr(ctx, "msme_scale", "MSME Enterprise") if ctx else "MSME Enterprise"
 
+    h_summary = "### 📋 कार्यकारी सारांश (Executive Summary)" if language == "hi" else "### 📋 নির্বাহী সারসংক্ষেপ (Executive Summary)" if language == "bn" else "### 📋 Executive Summary"
+    h_auth = "### 🏛️ लागू वैधानिक प्राधिकरण और मंजूरियां" if language == "hi" else "### 🏛️ প্রযোজ্য সংবিধিবদ্ধ কর্তৃপক্ষ এবং অনুমোদন" if language == "bn" else "### 🏛️ Applicable Statutory Authorities & Clearances"
+    h_filings = "### 📑 अनिवार्य फाइलिंग और पूर्व-आवश्यकताएं" if language == "hi" else "### 📑 বাধ্যতামূলক ফাইলিং এবং পূর্বশর্ত" if language == "bn" else "### 📑 Mandatory Filings & Prerequisites"
+    h_roadmap = "### ⚡ कार्रवाई रोडमैप (Action Roadmap)" if language == "hi" else "### ⚡ কর্মপরিকল্পনা রোডম্যাপ (Action Roadmap)" if language == "bn" else "### ⚡ Action Roadmap"
+
+
     # 1. Environmental Clearances (CTE / CTO / SPCB / CPCB)
     if any(k in q for k in ["cte", "consent to establish", "consent to operate", "cto", "environment", "pollution", "spcb", "cpcb", "water act", "air act"]):
         return (
-            "### 📋 Executive Summary\n"
+            f"{h_summary}\n"
             f"Consent to Establish (CTE) is the mandatory pre-construction environmental authorization required under Section 25 of the Water Act 1974 and Section 21 of the Air Act 1981 before {biz_name} installs plant machinery in {state_str}.\n\n"
-            "### 🏛️ Applicable Statutory Authorities & Clearances\n"
+            f"{h_auth}\n"
             f"- **State Pollution Control Board (SPCB)**: Grants CTE (based on pollution index score) and subsequently Consent to Operate (CTO) prior to commercial run [2].\n"
             "- **Central Pollution Control Board (CPCB)**: Enforces National Ambient Air Quality standards and hazardous waste rules [1].\n\n"
-            "### 📑 Mandatory Filings & Prerequisites\n"
+            f"{h_filings}\n"
             "- **Form I Application**: Complete project report with water mass balance and wastewater discharge characteristics.\n"
             "- **Plant Blueprint**: Approved site layout indicating Effluent Treatment Plant (ETP/STP) location and stack height specs.\n"
             "- **Land Registry & Load Sanction**: Industrial land lease deed and sanctioned electrical power load contract.\n\n"
-            "### ⚡ Action Roadmap\n"
+            f"{h_roadmap}\n"
             "1. File the consolidated Form I application on the State Online Consent Management Portal (OCMMS) with statutory fees.\n"
             "2. Complete ETP commissioning and apply for Consent to Operate (CTO) 45 days prior to trial production."
         )
@@ -219,17 +226,17 @@ def _generate_structured_compact_answer(
     if any(k in q for k in ["subsidy", "subsidies", "grant", "grants", "msme", "incentive", "capital", "scheme", "financial"]):
         scheme_summary = scheme_lines[0] if (scheme_lines and len(scheme_lines) > 0) else "Credit Guarantee & Capital Subsidy"
         return (
-            "### 📋 Executive Summary\n"
+            f"{h_summary}\n"
             f"As a recognized {scale_str} operating in {state_str}, {biz_name} can leverage central capital investment incentives, collateral-free credit guarantees, and green manufacturing subsidies.\n\n"
-            "### 🏛️ Applicable Statutory Authorities & Clearances\n"
+            f"{h_auth}\n"
             "- **Ministry of MSME (MoMSME)**: CGTMSE collateral-free credit facility up to ₹5 Crore and Udyam MSME priority lending [1].\n"
             "- **State Directorate of Industries**: Capital Investment Subsidy (15%–25%), Stamp Duty reimbursement, and Net SGST refunds [2].\n"
             f"- **Matched Schemes**: {scheme_summary}.\n\n"
-            "### 📑 Mandatory Filings & Prerequisites\n"
+            f"{h_filings}\n"
             "- **Statutory Identity**: Valid Udyam Registration Certificate and bank-approved Detailed Project Report (DPR).\n"
             "- **CA Investment Certificate**: Certified breakdown of investment in plant, machinery, and equipment.\n"
             "- **Bank Sanction & Land Proof**: Term loan sanction letter and industrial park land allotment letter.\n\n"
-            "### ⚡ Action Roadmap\n"
+            f"{h_roadmap}\n"
             "1. Submit eligibility claims on the State Single Window Incentive Module within 180 days of commercial production.\n"
             "2. Enroll on the MSME Champions Portal to claim ZED (Zero Defect Zero Effect) certification fee reimbursements."
         )
@@ -237,16 +244,16 @@ def _generate_structured_compact_answer(
     # 4. Food Safety & FSSAI
     if any(k in q for k in ["food", "fssai", "millet", "edible", "beverage", "processing", "haccp", "organic", "npop"]):
         return (
-            "### 📋 Executive Summary\n"
+            f"{h_summary}\n"
             f"Commercial food processing and packaging by {biz_name} requires statutory licensing under the Food Safety and Standards Act 2006 (FSS Act) to guarantee hygienic processing and consumer safety in {state_str}.\n\n"
-            "### 🏛️ Applicable Statutory Authorities & Clearances\n"
+            f"{h_auth}\n"
             "- **FSSAI (Food Safety & Standards Authority of India)**: Central / State Manufacturing License via the FoSCoS portal [1].\n"
             "- **Legal Metrology Department**: Packaged Commodities Rules 2011 compliance for mandatory net-weight and labeling [2].\n\n"
-            "### 📑 Mandatory Filings & Prerequisites\n"
+            f"{h_filings}\n"
             "- **Water Potability Report**: Laboratory analysis report from an FSSAI-notified NABL lab complying with IS 10500.\n"
             "- **FSMS & FoSTaC Certification**: Food Safety Management System plan and appointment of a certified technical food safety supervisor.\n"
             "- **Plant Blueprint**: Production equipment layout, pest control contract, and finished-product recall procedure.\n\n"
-            "### ⚡ Action Roadmap\n"
+            f"{h_roadmap}\n"
             "1. Submit Form B online via FoSCoS (foscos.fssai.gov.in) with layout blueprint and water potability test.\n"
             "2. Ensure the 14-digit FSSAI license number is embossed on all primary and secondary retail packaging."
         )
@@ -254,16 +261,16 @@ def _generate_structured_compact_answer(
     # 5. Battery, Circular Economy, E-Waste & Recycling
     if any(k in q for k in ["battery", "recycl", "waste", "e-waste", "epr", "hazardous", "plastic"]):
         return (
-            "### 📋 Executive Summary\n"
+            f"{h_summary}\n"
             f"Material recovery, battery handling, and circular recycling operations by {biz_name} are governed by the Battery Waste Management Rules 2022 and CPCB Extended Producer Responsibility (EPR) mandates in {state_str}.\n\n"
-            "### 🏛️ Applicable Statutory Authorities & Clearances\n"
+            f"{h_auth}\n"
             "- **Central Pollution Control Board (CPCB)**: Central EPR Portal registration as a Registered Recycler / Refurbisher [1].\n"
             "- **State Pollution Control Board (SPCB)**: Hazardous Waste Authorization under Form 1 of the Hazardous Waste Rules 2016 [2].\n\n"
-            "### 📑 Mandatory Filings & Prerequisites\n"
+            f"{h_filings}\n"
             "- **Process Flow & Emission Controls**: End-to-end recovery mass balance, acid fume scrubber specs, and air pollution control devices.\n"
             "- **Waste Manifest Compliance**: GPS-enabled transport logistics contract and Form 10 manifest tracking logs.\n"
             "- **Fire & Safety Clearance**: Automatic deluge fire suppression and toxic containment floor coating verification.\n\n"
-            "### ⚡ Action Roadmap\n"
+            f"{h_roadmap}\n"
             "1. Register facility capacity and recovery efficiency percentages on the national CPCB EPR Portal.\n"
             "2. Complete State PCB physical verification to obtain Form 2 hazardous waste authorization."
         )
@@ -271,17 +278,17 @@ def _generate_structured_compact_answer(
     # 6. General Statutory Clearances & Pre-commencement (Default Fallback)
     req_summary = req_lines[0] if (req_lines and len(req_lines) > 0) else "SPCB Consent & Factory Inspectorate Clearances"
     return (
-        "### 📋 Executive Summary\n"
+        f"{h_summary}\n"
         f"To establish statutory compliance for {biz_name} in {state_str}, your enterprise must clear sequential site approvals, environmental consents, safety licenses, and product standards prior to full commercial operations.\n\n"
-        "### 🏛️ Applicable Statutory Authorities & Clearances\n"
+        f"{h_auth}\n"
         f"- **State Pollution Control Board (SPCB)**: Consent to Establish (CTE) before construction, followed by Consent to Operate (CTO) [2].\n"
         "- **Directorate of Industrial Safety & Health (DISH)**: Factory Plan Approval and Factory License under the Factories Act 1948 [3].\n"
         f"- **Statutory Requirements Identified**: {req_summary} [1].\n\n"
-        "### 📑 Mandatory Filings & Prerequisites\n"
+        f"{h_filings}\n"
         "- **Plant Blueprint & Machinery Layout**: Civil stability certificate and power distribution load sanction.\n"
         "- **Pollution Consent Dossier**: Raw material consumption metrics and environmental management plan.\n"
         "- **Statutory Registrations**: Udyam MSME, GSTIN, and EPFO/ESIC labor compliance establishment codes.\n\n"
-        "### ⚡ Action Roadmap\n"
+        f"{h_roadmap}\n"
         "1. Submit the consolidated CTE and factory plan application via the State Industrial Single Window Portal.\n"
         "2. Complete trial run verification and apply for the final operating permits 30 days before market launch."
     )
@@ -320,6 +327,7 @@ def _answer_general_question(
     provider: LLMProvider | None = None,
     business: Any = None,
     assessment_id: str | None = None,
+    language: str = "en",
 ) -> dict[str, Any]:
     """Answer general statutory inquiry from cited evidence and business compliance plan."""
 
@@ -393,6 +401,7 @@ def _answer_general_question(
 
     base = {
         "prompt": prompt,
+        "language": language,
         "business_id": str(business.id) if business else None,
         "business_name": business.name if business else None,
         "assessment_id": assessment_id,
@@ -422,7 +431,6 @@ def _answer_general_question(
             assessment = None
     if dec_run is None:
         dec_run = DecisionRun.objects.filter(business=business).order_by("-created_at").first()
-
     req_lines: list[str] = []
     if dec_run:
         for r in dec_run.results.filter(status=ApplicabilityStatus.APPLICABLE):
@@ -491,6 +499,7 @@ INSTRUCTIONS:
                 wf_lines=wf_lines,
                 std_lines=None,
                 scheme_lines=scheme_lines,
+                language=language,
             )
         generated_by = {"provider": result.provider, "model": result.model}
         grounding = GROUNDED
@@ -505,6 +514,7 @@ INSTRUCTIONS:
             wf_lines=wf_lines,
             std_lines=None,
             scheme_lines=scheme_lines,
+            language=language,
         )
         generated_by = {
             "provider": "complywise_deterministic_intelligence",

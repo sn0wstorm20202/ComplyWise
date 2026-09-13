@@ -112,15 +112,19 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
 
       setBusinesses(list);
 
-      // Select authoritative business or fallback to saved preference
+      // Select preferred business:
+      // If user has an explicit local selection in storage and it exists in the list, respect it.
+      // Otherwise use authoritative server workspace or first business in list.
       const savedId = await storage.getItem(SELECTED_BIZ_KEY);
-      const targetId = authoritativeBizId || savedId;
+      const targetId = (savedId && list.some((b) => b.id === savedId))
+        ? savedId
+        : (authoritativeBizId || list[0]?.id || null);
       const found = list.find((b) => b.id === targetId) || list[0] || null;
       setCurrentBusiness(found);
 
-      if (found && found.id !== savedId) {
+      if (found) {
         await storage.setItem(SELECTED_BIZ_KEY, found.id);
-      } else if (!found) {
+      } else {
         await storage.removeItem(SELECTED_BIZ_KEY);
       }
     } catch (err: unknown) {
@@ -140,12 +144,11 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
 
   const selectBusiness = useCallback(
     async (businessId: string, assessmentId?: string) => {
+      await storage.setItem(SELECTED_BIZ_KEY, businessId);
+      businessApi.updateWorkspace(businessId, assessmentId).catch(() => {});
       const found = businesses.find((b) => b.id === businessId);
       if (found) {
         setCurrentBusiness(found);
-        await storage.setItem(SELECTED_BIZ_KEY, found.id);
-        // Persist switch to backend workspace state asynchronously
-        businessApi.updateWorkspace(businessId, assessmentId).catch(() => {});
       }
     },
     [businesses]
@@ -156,14 +159,24 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       try {
         const created = await businessApi.createBusiness(name);
-        await loadBusinesses();
         await storage.setItem(SELECTED_BIZ_KEY, created.id);
+        businessApi.updateWorkspace(created.id).catch(() => {});
+        const summary: BusinessSummary = {
+          id: created.id,
+          name: created.name,
+          is_active: true,
+          assessment_count: 0,
+          created_at: created.created_at || new Date().toISOString(),
+          updated_at: created.updated_at || new Date().toISOString(),
+        };
+        setCurrentBusiness(summary);
+        setBusinesses((prev) => [summary, ...prev.filter((b) => b.id !== created.id)]);
         return created;
       } finally {
         setIsLoading(false);
       }
     },
-    [loadBusinesses]
+    []
   );
 
   return (

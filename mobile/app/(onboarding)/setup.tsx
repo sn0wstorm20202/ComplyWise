@@ -86,7 +86,7 @@ const TRADE_INTENTS = [
 export default function BusinessSetupScreen() {
   const router = useRouter();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
-  const { businesses, currentBusiness, createBusiness, refreshBusinesses } = useBusiness();
+  const { businesses, currentBusiness, createBusiness, selectBusiness } = useBusiness();
   const isNewSetup = mode === 'new' || !currentBusiness;
 
   // Core Identity & Constitution
@@ -232,8 +232,11 @@ export default function BusinessSetupScreen() {
         tradeIntent
       );
 
-      await refreshBusinesses();
-      router.push('/(onboarding)/questions');
+      await selectBusiness(bizId);
+      router.push({
+        pathname: '/(onboarding)/questions',
+        params: { business_id: bizId },
+      });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save business profile.');
     } finally {

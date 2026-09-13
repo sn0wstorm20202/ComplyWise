@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../src/theme';
 import { useBusiness } from '../../src/features/business';
@@ -22,18 +22,21 @@ import { DashboardSummary } from '../../src/types/dashboard';
 
 export default function ResultsScreen() {
   const router = useRouter();
-  const { currentBusiness } = useBusiness();
+  const { business_id } = useLocalSearchParams<{ business_id?: string }>();
+  const { currentBusiness, selectBusiness } = useBusiness();
+  const activeBizId = business_id || currentBusiness?.id;
+
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadResults() {
-      if (!currentBusiness) {
+      if (!activeBizId) {
         router.replace('/(onboarding)/setup');
         return;
       }
       try {
-        const data = await dashboardApi.getSummary(currentBusiness.id);
+        const data = await dashboardApi.getSummary(activeBizId);
         setSummary(data);
       } catch {
         // Fallback gracefully
@@ -42,7 +45,7 @@ export default function ResultsScreen() {
       }
     }
     loadResults();
-  }, [currentBusiness, router]);
+  }, [activeBizId, router]);
 
   if (loading) {
     return (
@@ -135,7 +138,12 @@ export default function ResultsScreen() {
       {/* CTA to Enter Dashboard */}
       <TouchableOpacity
         style={styles.primaryBtn}
-        onPress={() => router.replace('/(app)')}
+        onPress={async () => {
+          if (activeBizId) {
+            await selectBusiness(activeBizId);
+          }
+          router.replace('/(app)');
+        }}
         activeOpacity={0.8}
       >
         <Text style={styles.primaryBtnText}>Open Executive Dashboard →</Text>

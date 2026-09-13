@@ -6,7 +6,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { StyleSheet, View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../src/theme';
 import { useBusiness } from '../../src/features/business';
@@ -22,7 +22,9 @@ const ANALYSIS_STEPS = [
 
 export default function AnalysisScreen() {
   const router = useRouter();
-  const { currentBusiness } = useBusiness();
+  const { business_id } = useLocalSearchParams<{ business_id?: string }>();
+  const { currentBusiness, selectBusiness } = useBusiness();
+  const activeBizId = business_id || currentBusiness?.id;
 
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export default function AnalysisScreen() {
   }, []);
 
   const runEvaluation = async () => {
-    if (!currentBusiness) {
+    if (!activeBizId) {
       router.replace('/(onboarding)/setup');
       return;
     }
@@ -53,10 +55,15 @@ export default function AnalysisScreen() {
     setError(null);
 
     try {
-      await onboardingApi.evaluate(currentBusiness.id);
-      // Ensure at least a few steps are seen by the user for clarity
+      await onboardingApi.evaluate(activeBizId);
+      if (business_id) {
+        await selectBusiness(business_id);
+      }
       setTimeout(() => {
-        router.replace('/(onboarding)/results');
+        router.replace({
+          pathname: '/(onboarding)/results',
+          params: { business_id: activeBizId },
+        });
       }, 2000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Evaluation engine request failed.');

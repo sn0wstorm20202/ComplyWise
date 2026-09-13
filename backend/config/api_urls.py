@@ -26,6 +26,8 @@ urlpatterns = [
     path("businesses/<uuid:business_id>/", include("apps.dashboard.urls")),
     path("businesses/<uuid:business_id>/", include("apps.requirements.urls")),
     path("businesses/<uuid:business_id>/", include("apps.documents.urls")),
+    path("businesses/<str:business_id>/", include("apps.documents.urls")),
+    path("", include("apps.documents.urls")),
     path("businesses/<uuid:business_id>/", include("apps.workflows.urls")),
     path("businesses/<uuid:business_id>/", include("apps.calendar.urls")),
     path("businesses/<uuid:business_id>/", include("apps.schemes.urls")),

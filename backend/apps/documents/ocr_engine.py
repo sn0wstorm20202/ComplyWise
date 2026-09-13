@@ -221,6 +221,63 @@ def extract_text_from_file_bytes(file_bytes: bytes, file_name: str) -> dict[str,
                 "error": str(exc),
             }
 
+    # Case 4: HTML Documents (.html, .htm)
+    if ext in {".html", ".htm"}:
+        try:
+            raw_html = file_bytes.decode("utf-8", errors="ignore")
+            # Strip script, style, and HTML markup
+            clean_text = re.sub(r"<script.*?</script>", "", raw_html, flags=re.DOTALL | re.IGNORECASE)
+            clean_text = re.sub(r"<style.*?</style>", "", clean_text, flags=re.DOTALL | re.IGNORECASE)
+            clean_text = re.sub(r"<[^>]+>", " ", clean_text)
+            clean_text = re.sub(r"\s+", " ", clean_text).strip()
+            words = re.findall(r"[A-Za-z0-9_\-\.\/]+", clean_text)
+            return {
+                "extracted_text": clean_text,
+                "word_count": len(words),
+                "character_count": len(clean_text),
+                "source_type": "HTML_DOCUMENT",
+                "has_readable_text": len(words) >= 3,
+                "error": None,
+            }
+        except Exception as exc:
+            return {
+                "extracted_text": "",
+                "word_count": 0,
+                "character_count": 0,
+                "source_type": "HTML_ERROR",
+                "has_readable_text": False,
+                "error": str(exc),
+            }
+
+    # Case 5: Word Document (.docx)
+    if ext == ".docx":
+        try:
+            import zipfile
+            import xml.etree.ElementTree as ET
+            with zipfile.ZipFile(io.BytesIO(file_bytes)) as z:
+                xml_content = z.read("word/document.xml")
+            tree = ET.fromstring(xml_content)
+            paragraphs = [node.text for node in tree.iter() if node.tag.endswith("}t") and node.text]
+            clean_text = " ".join(paragraphs).strip()
+            words = re.findall(r"[A-Za-z0-9_\-\.\/]+", clean_text)
+            return {
+                "extracted_text": clean_text,
+                "word_count": len(words),
+                "character_count": len(clean_text),
+                "source_type": "DOCX_DOCUMENT",
+                "has_readable_text": len(words) >= 3,
+                "error": None,
+            }
+        except Exception as exc:
+            return {
+                "extracted_text": "",
+                "word_count": 0,
+                "character_count": 0,
+                "source_type": "DOCX_ERROR",
+                "has_readable_text": False,
+                "error": str(exc),
+            }
+
     # Case 4: Other / unsupported extensions
     return {
         "extracted_text": "",

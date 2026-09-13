@@ -55,9 +55,20 @@ def post_json(
             if exc.code == 429 and attempt < max_retries:
                 time.sleep(1.5 * (2**attempt))
                 continue
-            raise ProviderError(
-                f"{provider} returned HTTP {exc.code}. Response body withheld from the log."
-            ) from None
+            err_detail = ""
+            try:
+                raw_body = exc.read().decode("utf-8", errors="replace")
+                err_data = json.loads(raw_body)
+                if isinstance(err_data, dict):
+                    if "error" in err_data:
+                        err_obj = err_data["error"]
+                        err_detail = err_obj.get("message") if isinstance(err_obj, dict) else str(err_obj)
+                    elif "message" in err_data:
+                        err_detail = err_data["message"]
+            except Exception:
+                pass
+            msg = f"{provider} returned HTTP {exc.code} ({err_detail})" if err_detail else f"{provider} returned HTTP {exc.code}."
+            raise ProviderError(msg) from None
         except urllib.error.URLError as exc:
             raise ProviderError(f"{provider} could not be reached: {exc.reason}") from None
         except json.JSONDecodeError:

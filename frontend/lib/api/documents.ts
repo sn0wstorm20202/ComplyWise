@@ -115,4 +115,25 @@ export const documentsApi = {
         body: JSON.stringify({ document_id: documentId, portal_uploaded: portalUploaded }),
       }
     ),
+
+  getLLMConfig: (): Promise<{
+    provider: string;
+    model: string;
+    is_configured: boolean;
+    key_preview: string | null;
+  }> => request("/documents/config-llm"),
+
+  saveLLMConfig: (
+    apiKey: string,
+    model: string = "gpt-4o-mini"
+  ): Promise<{
+    success: boolean;
+    provider: string;
+    model: string;
+    key_preview: string;
+  }> =>
+    request("/documents/config-llm", {
+      method: "POST",
+      body: JSON.stringify({ openai_api_key: apiKey, model }),
+    }),
 };

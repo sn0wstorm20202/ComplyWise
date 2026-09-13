@@ -16,6 +16,8 @@ import {
   Filter,
   Sparkles,
   ScanText,
+  Key,
+  Zap,
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import StatusBadge from "@/components/StatusBadge";
@@ -96,12 +98,24 @@ function DocumentsContent() {
   } | null>(null);
   const [verificationProgressStep, setVerificationProgressStep] = useState<number>(0);
 
-  // Load saved portal upload state
+  // OpenAI API Configuration state
+  const [llmConfig, setLlmConfig] = useState<{
+    provider: string;
+    model: string;
+    is_configured: boolean;
+    key_preview: string | null;
+  } | null>(null);
+  const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
+  const [apiKeyInput, setApiKeyInput] = useState<string>("");
+  const [savingKey, setSavingKey] = useState<boolean>(false);
+  const [configFeedback, setConfigFeedback] = useState<string | null>(null);
+
+  // Load saved portal upload state & LLM config
   useEffect(() => {
     const bizId =
       paramBusinessId ||
       localStorage.getItem("complywise_active_business_id") ||
-      "bb0abb9b-409e-405a-bae1-777540bc0907";
+      "30ce1ab5-2347-46a9-b82b-b5e846a08e0b";
     setBusinessId(bizId);
 
     try {
@@ -114,7 +128,39 @@ function DocumentsContent() {
     }
 
     loadDocuments(bizId);
+
+    // Fetch live LLM configuration
+    api.documents.getLLMConfig()
+      .then((cfg) => setLlmConfig(cfg))
+      .catch(() => {});
   }, [paramBusinessId]);
+
+  async function handleSaveApiKey(e: React.FormEvent) {
+    e.preventDefault();
+    if (!apiKeyInput.trim()) return;
+    setSavingKey(true);
+    setConfigFeedback(null);
+    try {
+      localStorage.setItem("complywise_openai_api_key", apiKeyInput.trim());
+      const res = await api.documents.saveLLMConfig(apiKeyInput.trim());
+      setLlmConfig({
+        provider: res.provider || "openai",
+        model: res.model || "gpt-4o-mini",
+        is_configured: true,
+        key_preview: res.key_preview,
+      });
+      setConfigFeedback("OpenAI API Key successfully configured and saved!");
+      setTimeout(() => {
+        setShowConfigModal(false);
+        setConfigFeedback(null);
+        setApiKeyInput("");
+      }, 1500);
+    } catch (err: any) {
+      setConfigFeedback(`Failed to save: ${err.message || err}`);
+    } finally {
+      setSavingKey(false);
+    }
+  }
 
   async function loadDocuments(bizId: string) {
     setError(null);
@@ -158,7 +204,7 @@ function DocumentsContent() {
     setDocRequirementId(doc.requirement_id || doc.clause_linked || doc.clauseLinked || "Statutory Clause");
     setDocReferenceNumber((doc as any).code || "");
     setDocValidUntil((doc as any).valid_until || (doc as any).validUntil || "2026-12-31");
-    setFileName(doc.file_name || `${(doc.name || "document").toLowerCase().replace(/\s+/g, "_")}.pdf`);
+    setFileName(doc.file_name || "");
     setFileObject(null);
     setShowUpload(true);
   }
@@ -166,8 +212,24 @@ function DocumentsContent() {
   // Execute Systematic Software Verification Layer
   async function handleRunVerificationAndUpload(e: React.FormEvent) {
     e.preventDefault();
-    setUploading(true);
     setError(null);
+
+    const actualFileName = fileObject ? fileObject.name : (fileName || "");
+    if (!fileObject && !actualFileName) {
+      setError("Please attach a document file for verification (PDF, HTML, DOCX, or Image).");
+      return;
+    }
+
+    setUploading(true);
+
+    let clientExtractedText = "";
+    if (fileObject && (fileObject.type.includes("text") || fileObject.name.endsWith(".txt") || fileObject.name.endsWith(".html") || fileObject.name.endsWith(".htm"))) {
+      try {
+        clientExtractedText = await fileObject.text();
+      } catch {
+        // Non-blocking file reading
+      }
+    }
 
     const verificationInput: DocumentVerificationInput = {
       name: docName,
@@ -178,8 +240,9 @@ function DocumentsContent() {
       requirement_authority: docAuthority,
       reference_number: docReferenceNumber,
       valid_until: docValidUntil,
-      file_name: fileName || (fileObject ? fileObject.name : `${docName.toLowerCase().replace(/\s+/g, "_")}.pdf`),
+      file_name: actualFileName,
       file_size_bytes: fileObject ? fileObject.size : 2400000,
+      extracted_text: clientExtractedText,
     };
 
     // Animate 4 systematic verification steps
@@ -195,10 +258,12 @@ function DocumentsContent() {
     // Run systematic software verification engine (Client-side with hybrid API sync)
     let verification = verifyDocument(verificationInput);
 
+    const targetBizId = businessId || "30ce1ab5-2347-46a9-b82b-b5e846a08e0b";
+
     // Attempt backend verification API with real file attachment
     try {
       const backendResp = await api.documents.upload(
-        businessId,
+        targetBizId,
         {
           name: docName,
           category: docCategory,
@@ -215,7 +280,8 @@ function DocumentsContent() {
       if (backendResp && backendResp.verification) {
         verification = backendResp.verification;
       }
-    } catch {
+    } catch (err) {
+      console.warn("Backend document upload & verification error:", err);
       // Offline fallback: client-side engine executed with full precision
     }
 
@@ -325,6 +391,26 @@ function DocumentsContent() {
             >
               ← Dashboard
             </Link>
+            <button
+              type="button"
+              onClick={() => setShowConfigModal(true)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold border transition-all cursor-pointer ${
+                llmConfig?.is_configured
+                  ? "bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
+                  : "bg-slate-100 border-slate-300 text-[#475569] hover:bg-slate-200"
+              }`}
+              title="Configure OpenAI LLM Provider"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+              <span>
+                {llmConfig?.is_configured
+                  ? `OpenAI (${llmConfig.model}) Active`
+                  : "Configure OpenAI API"}
+              </span>
+              {llmConfig?.is_configured && (
+                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
+              )}
+            </button>
             {uploadAvailable && (
               <button
                 type="button"
@@ -561,7 +647,8 @@ function DocumentsContent() {
                 <div className="flex items-center gap-3">
                   <input
                     type="file"
-                    accept=".pdf,.png,.jpg,.jpeg,.tiff,.docx"
+                    required={!fileName && !fileObject}
+                    accept=".pdf,.png,.jpg,.jpeg,.tiff,.docx,.html,.htm,.txt"
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
                         const f = e.target.files[0];
@@ -689,6 +776,82 @@ function DocumentsContent() {
                 </span>
               </div>
 
+              {/* LLM Compliance Scan & Regulatory Analysis (Necessity & Correctness) */}
+              {activeVerificationResult.result.llm_scan_analysis && (
+                <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50/70 to-indigo-50/40 p-5 space-y-4 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-blue-200/80 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-blue-700" />
+                      <h3 className="text-sm font-bold text-[#0F172A]">
+                        LLM Compliance Scan & Regulatory Analysis
+                      </h3>
+                    </div>
+                    <span
+                      className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full ${
+                        activeVerificationResult.result.llm_scan_analysis.compliance_verdict === "COMPLIANT"
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                          : activeVerificationResult.result.llm_scan_analysis.compliance_verdict === "IRRELEVANT"
+                          ? "bg-rose-100 text-rose-800 border border-rose-300"
+                          : "bg-amber-100 text-amber-800 border border-amber-300"
+                      }`}
+                    >
+                      {activeVerificationResult.result.llm_scan_analysis.compliance_verdict}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {/* 1. Document Necessity */}
+                    <div className="bg-white/90 p-3.5 rounded-xl border border-blue-100 space-y-1.5 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#0F172A]">
+                          1. Is document necessary for compliance?
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            activeVerificationResult.result.llm_scan_analysis.is_necessary
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : "bg-rose-50 text-rose-700 border border-rose-200"
+                          }`}
+                        >
+                          {activeVerificationResult.result.llm_scan_analysis.necessity_verdict}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#475569] leading-relaxed">
+                        {activeVerificationResult.result.llm_scan_analysis.necessity_rationale}
+                      </p>
+                    </div>
+
+                    {/* 2. Document Correctness */}
+                    <div className="bg-white/90 p-3.5 rounded-xl border border-blue-100 space-y-1.5 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#0F172A]">
+                          2. Is document correct for compliance?
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            activeVerificationResult.result.llm_scan_analysis.is_correct
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : "bg-rose-50 text-rose-700 border border-rose-200"
+                          }`}
+                        >
+                          {activeVerificationResult.result.llm_scan_analysis.correctness_verdict}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#475569] leading-relaxed">
+                        {activeVerificationResult.result.llm_scan_analysis.correctness_assessment}
+                      </p>
+                    </div>
+                  </div>
+
+                  {activeVerificationResult.result.llm_scan_analysis.llm_summary && (
+                    <div className="text-xs text-[#334155] bg-white/70 p-3 rounded-lg border border-blue-100 flex items-start gap-2">
+                      <span className="font-semibold text-[#0F172A] shrink-0">Scan Summary:</span>
+                      <span className="leading-relaxed">{activeVerificationResult.result.llm_scan_analysis.llm_summary}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* 4 Systematic Verification Checks Breakdown */}
               <div className="space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
@@ -810,7 +973,7 @@ function DocumentsContent() {
                 </div>
 
                 {/* Check 4: AI Pre-Validation & OCR Relevance */}
-                <div className="p-4 rounded-xl border border-[#E2E8F0] bg-white space-y-2">
+                <div className="p-4 rounded-xl border border-[#E2E8F0] bg-white space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       {activeVerificationResult.result.checks.ai_relevance.passed ? (
@@ -822,19 +985,94 @@ function DocumentsContent() {
                         4. AI Pre-Validation & OCR Relevance Analysis
                       </span>
                     </div>
-                    <span
-                      className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
-                        activeVerificationResult.result.checks.ai_relevance.passed
-                          ? "bg-blue-50 text-blue-700 border border-blue-200"
-                          : "bg-rose-50 text-rose-700 border border-rose-200"
-                      }`}
-                    >
-                      {activeVerificationResult.result.checks.ai_relevance.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {activeVerificationResult.result.checks.ai_relevance.ai_call_status === "LIVE_OPENAI_COMPLETION" ||
+                      activeVerificationResult.result.llm_scan_analysis?.ai_call_status === "LIVE_OPENAI_COMPLETION" ? (
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                          <Zap className="h-3 w-3 text-emerald-600" />
+                          <span>OpenAI GPT-4o-mini</span>
+                        </span>
+                      ) : activeVerificationResult.result.checks.ai_relevance.ai_call_status === "OPENAI_ERROR" ||
+                        activeVerificationResult.result.llm_scan_analysis?.ai_call_status === "OPENAI_ERROR" ? (
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                          Fallback Engine (API Error)
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300">
+                          Statutory Regulatory Engine
+                        </span>
+                      )}
+                      <span
+                        className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                          activeVerificationResult.result.checks.ai_relevance.passed
+                            ? "bg-blue-50 text-blue-700 border border-blue-200"
+                            : "bg-rose-50 text-rose-700 border border-rose-200"
+                        }`}
+                      >
+                        {activeVerificationResult.result.checks.ai_relevance.status}
+                      </span>
+                    </div>
                   </div>
+
                   <p className="text-xs text-[#475569] pl-6 leading-relaxed">
                     {activeVerificationResult.result.checks.ai_relevance.message}
                   </p>
+
+                  {/* OpenAI Notice or Error Banner if applicable */}
+                  {(activeVerificationResult.result.checks.ai_relevance.ai_notice ||
+                    activeVerificationResult.result.llm_scan_analysis?.ai_notice) && (
+                    <div className="ml-6 p-2.5 rounded-lg bg-amber-50/80 border border-amber-200 text-[11px] text-amber-900 leading-snug">
+                      <span className="font-semibold">AI Provider Notice: </span>
+                      {activeVerificationResult.result.checks.ai_relevance.ai_notice ||
+                        activeVerificationResult.result.llm_scan_analysis?.ai_notice}
+                    </div>
+                  )}
+
+                  {/* Two-Column LLM Scan Analysis: Necessity & Correctness */}
+                  {activeVerificationResult.result.llm_scan_analysis && (
+                    <div className="ml-6 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div className="p-3 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-[#0F172A] uppercase tracking-wide">
+                            Statutory Necessity
+                          </span>
+                          <span
+                            className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-sm ${
+                              activeVerificationResult.result.llm_scan_analysis.is_necessary
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-rose-100 text-rose-800"
+                            }`}
+                          >
+                            {activeVerificationResult.result.llm_scan_analysis.necessity_verdict}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#475569] leading-snug">
+                          {activeVerificationResult.result.llm_scan_analysis.necessity_rationale}
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-[#0F172A] uppercase tracking-wide">
+                            Statutory Correctness
+                          </span>
+                          <span
+                            className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-sm ${
+                              activeVerificationResult.result.llm_scan_analysis.is_correct
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-rose-100 text-rose-800"
+                            }`}
+                          >
+                            {activeVerificationResult.result.llm_scan_analysis.correctness_verdict}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#475569] leading-snug">
+                          {activeVerificationResult.result.llm_scan_analysis.correctness_assessment}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {activeVerificationResult.result.checks.ai_relevance.issues.length > 0 && (
                     <ul className="pl-10 list-disc text-xs text-rose-700 space-y-0.5">
                       {activeVerificationResult.result.checks.ai_relevance.issues.map((issue, idx) => (
@@ -862,6 +1100,107 @@ function DocumentsContent() {
                   Accept & Save to Repository
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* OpenAI API Configuration Modal */}
+        {showConfigModal && (
+          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-xs">
+            <div className="bg-white rounded-[20px] border border-[#CBD5E1] max-w-lg w-full shadow-2xl p-6 sm:p-8 space-y-5 animate-in zoom-in-95 duration-150">
+              <div className="flex items-start justify-between border-b border-[#E2E8F0] pb-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Key className="h-5 w-5 text-blue-600" />
+                    <h2 className="text-lg font-bold text-[#0F172A]">
+                      OpenAI API Configuration
+                    </h2>
+                  </div>
+                  <p className="text-xs text-[#64748B]">
+                    Configure your OpenAI API key for live GPT-4o-mini statutory document pre-validation and compliance scanning.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowConfigModal(false)}
+                  className="text-[#64748B] hover:text-[#0F172A] text-sm p-1 rounded-md"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Current Status */}
+              <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-[#0F172A]">Model Provider:</span>
+                  <span className="font-mono text-blue-700 font-bold">OpenAI ({llmConfig?.model || "gpt-4o-mini"})</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-[#0F172A]">Status:</span>
+                  <span className="font-mono">
+                    {llmConfig?.is_configured ? (
+                      <span className="text-emerald-700 font-bold flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                        Configured ({llmConfig.key_preview})
+                      </span>
+                    ) : (
+                      <span className="text-amber-700 font-bold flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                        Not Configured
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <form onSubmit={handleSaveApiKey} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
+                    OpenAI API Key (sk-...)
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={apiKeyInput}
+                    onChange={(e) => setApiKeyInput(e.target.value)}
+                    placeholder="sk-proj-..."
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-xs text-[#0F172A] placeholder-[#94A3B8] font-mono focus:border-[#0F172A] focus:outline-hidden"
+                  />
+                  <span className="text-[11px] text-[#64748B] mt-1 block">
+                    The key is saved to backend .env and browser storage to execute live completions on https://api.openai.com.
+                  </span>
+                </div>
+
+                {configFeedback && (
+                  <div
+                    className={`p-3 rounded-lg text-xs font-medium ${
+                      configFeedback.includes("successfully")
+                        ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                        : "bg-rose-50 text-rose-800 border border-rose-200"
+                    }`}
+                  >
+                    {configFeedback}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowConfigModal(false)}
+                    className="rounded-full border border-[#E2E8F0] px-4 py-2 text-xs font-medium text-[#64748B] hover:bg-[#F8FAFC]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingKey || !apiKeyInput.trim()}
+                    className="inline-flex items-center gap-2 rounded-full bg-[#18181B] px-5 py-2 text-xs font-semibold text-white hover:bg-[#27272A] disabled:opacity-50 transition-all shadow-2xs cursor-pointer"
+                  >
+                    <Key className="h-3.5 w-3.5" />
+                    <span>{savingKey ? "Saving & Testing..." : "Save API Key"}</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

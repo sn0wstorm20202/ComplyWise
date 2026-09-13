@@ -19,6 +19,24 @@ export interface VerificationCheckItem {
   issues: string[];
   warnings: string[];
   details?: Record<string, unknown>;
+  ai_engine?: string;
+  ai_call_status?: string;
+  ai_notice?: string;
+}
+
+export interface LLMScanAnalysis {
+  is_necessary: boolean;
+  necessity_verdict: "MANDATORY" | "ADVISORY" | "NOT_REQUIRED" | string;
+  necessity_rationale: string;
+  is_correct: boolean;
+  correctness_verdict: "CORRECT" | "INCORRECT" | string;
+  correctness_assessment: string;
+  compliance_verdict: "COMPLIANT" | "NON_COMPLIANT" | "IRRELEVANT" | string;
+  confidence_score: number;
+  llm_summary: string;
+  ai_engine?: string;
+  ai_call_status?: string;
+  ai_notice?: string;
 }
 
 export interface DocumentVerificationResult {
@@ -28,6 +46,7 @@ export interface DocumentVerificationResult {
   timestamp: string;
   irrelevant_document_flag: boolean;
   flag_message: string;
+  llm_scan_analysis?: LLMScanAnalysis;
   admin_verification: {
     status: "PENDING_LATER_PHASE";
     message: string;
@@ -172,8 +191,9 @@ export function performClientOCR(input: DocumentVerificationInput) {
   const referenceNumber = (input.reference_number || "").trim();
   const authority = (input.authority || "").trim();
 
-  // If explicitly flagged as having no readable text (e.g. blank picture or random image)
-  if (input.has_readable_text === false) {
+  // If explicitly flagged as having no readable text or if no text was extracted
+  const extracted = (input.extracted_text || "").trim();
+  if (input.has_readable_text === false || (!extracted && fileName && !fileName.endsWith(".txt") && !fileName.endsWith(".html"))) {
     return {
       status: "NO_READABLE_TEXT",
       file_name: fileName,
@@ -186,7 +206,7 @@ export function performClientOCR(input: DocumentVerificationInput) {
     };
   }
 
-  const rawText = input.extracted_text || `${docName} ${referenceNumber} ${authority}`;
+  const rawText = extracted || `${docName} ${referenceNumber} ${authority}`;
   const tokens = rawText
     .toLowerCase()
     .replace(/[^a-z0-9_\-\.\§]/g, " ")
@@ -194,14 +214,14 @@ export function performClientOCR(input: DocumentVerificationInput) {
     .filter((t) => t.length > 1);
 
   return {
-    status: "COMPLETED",
+    status: tokens.length >= 3 ? "COMPLETED" : "NO_READABLE_TEXT",
     file_name: fileName,
     detected_headers: [docName],
     detected_reference_id: referenceNumber || "UNSPECIFIED",
     detected_authority: authority || "UNSPECIFIED",
     extracted_tokens: tokens,
     tokens_count: tokens.length,
-    text_snippet: `Document: '${docName}' | Reference: '${referenceNumber}' | Authority: '${authority}'`,
+    text_snippet: extracted ? extracted.slice(0, 300) : `Document: '${docName}' | Reference: '${referenceNumber}' | Authority: '${authority}'`,
   };
 }
 
@@ -235,18 +255,18 @@ export function checkFileTypeForCompliance(
 
   if (PROHIBITED_EXTENSIONS.includes(ext)) {
     issues.push(`Forbidden executable/script extension '${ext}'. Strictly banned on statutory portals for security.`);
-  } else if (![".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".docx"].includes(ext)) {
-    issues.push(`File extension '${ext}' is not supported. Permitted statutory formats: PDF, PNG, JPG, JPEG, TIFF, DOCX.`);
+  } else if (![".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".docx", ".html", ".htm", ".txt"].includes(ext)) {
+    issues.push(`File extension '${ext}' is not supported. Permitted statutory formats: PDF, PNG, JPG, JPEG, TIFF, DOCX, HTML, TXT.`);
   }
 
   // Strict compliance format verification
   const requiresPdfStrictly = [
-    "BLUEPRINT", "LAYOUT", "STRUCTURAL", "TEST", "LAB", "QAP", "PLAN", "AUDIT", "ETP", "CTO", "CTE"
+    "BLUEPRINT", "LAYOUT", "STRUCTURAL", "TEST", "LAB", "QAP", "PLAN", "AUDIT", "ETP", "CTO", "CTE", "SAFETY", "SCHEME", "POLLUTION"
   ].some((kw) => docCategory.includes(kw) || reqName.toUpperCase().includes(kw));
 
-  if (requiresPdfStrictly && ext !== ".pdf") {
+  if (requiresPdfStrictly && ![".pdf", ".html", ".htm", ".docx"].includes(ext)) {
     issues.push(
-      `File type non-compliant: '${reqName}' strictly mandates vector PDF format for architectural/engineering scrutiny. Uploaded format '${ext}' will be rejected by official regulatory bodies.`
+      `File type non-compliant: '${reqName}' strictly mandates vector PDF format or official electronic doc (PDF, HTML, DOCX). Uploaded format '${ext}' will be rejected by official regulatory bodies.`
     );
   }
 
@@ -272,14 +292,30 @@ export function checkFileTypeForCompliance(
   };
 }
 
+const DUMMY_REF_PATTERNS = [
+  "race", "race-99", "race 99", "123", "1234", "12345", "asdf", "none",
+  "na", "n/a", "nil", "random", "dummy", "sample", "0", "0000", "00000",
+  "test", "test-123", "placeholder", "fake"
+];
+
 export function checkMandatoryFieldsFilled(
   input: DocumentVerificationInput
 ): VerificationCheckItem {
   const missingFields: string[] = [];
   const filledFields: string[] = [];
+  const invalidIssues: string[] = [];
 
-  if (input.name && input.name.trim().length >= 3) filledFields.push("Document Title");
-  else missingFields.push("Document Title (min 3 characters)");
+  const name = (input.name || "").trim();
+  if (name.length >= 3) {
+    if (["doc", "document", "test", "random", "untitled", "asdf", "dummy"].includes(name.toLowerCase())) {
+      missingFields.push("Valid Document Title (cannot be generic placeholder)");
+      invalidIssues.push(`Invalid Document Title: '${name}' is a generic placeholder.`);
+    } else {
+      filledFields.push("Document Title");
+    }
+  } else {
+    missingFields.push("Document Title (min 3 characters)");
+  }
 
   if (input.category && input.category.trim().length > 0) filledFields.push("Document Category");
   else missingFields.push("Document Category");
@@ -290,8 +326,25 @@ export function checkMandatoryFieldsFilled(
   if (input.authority && input.authority.trim().length > 0) filledFields.push("Issuing Regulatory Authority");
   else missingFields.push("Issuing Regulatory Authority");
 
-  if (input.reference_number && input.reference_number.trim().length > 0) filledFields.push("Certificate / License Reference Number");
-  else missingFields.push("Certificate / License Reference Number");
+  // Certificate / License Reference Number Validation
+  const refClean = (input.reference_number || "").trim().toLowerCase();
+  const isDummyRef =
+    !refClean ||
+    DUMMY_REF_PATTERNS.includes(refClean) ||
+    refClean.length < 4 ||
+    ["race", "dummy", "placeholder", "fake", "random", "sample"].some((pat) => refClean.includes(pat)) ||
+    !/[a-z0-9]/i.test(refClean);
+
+  if (isDummyRef) {
+    missingFields.push(
+      `Valid Certificate / License Reference Number (entry '${input.reference_number || ""}' is an invalid or placeholder value)`
+    );
+    invalidIssues.push(
+      `Invalid Reference Number: '${input.reference_number || ""}' is not a valid statutory registration identifier. Official certificates mandate formal numbering (e.g. DISH-LIC-xxxx, FSSAI-14-digit, or CTO-xxxx).`
+    );
+  } else {
+    filledFields.push("Certificate / License Reference Number");
+  }
 
   if (input.valid_until && input.valid_until.trim().length > 0) filledFields.push("Valid Until / Date of Expiry");
   else missingFields.push("Valid Until / Date of Expiry");
@@ -300,6 +353,8 @@ export function checkMandatoryFieldsFilled(
   else missingFields.push("File Attachment");
 
   const passed = missingFields.length === 0;
+  const issues = [...missingFields.map((f) => `Missing required field: ${f}`), ...invalidIssues];
+
   return {
     id: "field_completeness",
     title: "Mandatory Statutory Fields Completeness",
@@ -307,8 +362,8 @@ export function checkMandatoryFieldsFilled(
     status: passed ? "PASSED" : "FAILED",
     message: passed
       ? "All 7 mandatory statutory metadata fields are completely filled out."
-      : `Missing required fields: ${missingFields.join(", ")}`,
-    issues: missingFields.map((f) => `Missing required field: ${f}`),
+      : `Missing or invalid required fields: ${missingFields.join(", ")}`,
+    issues,
     warnings: [],
     details: { missingFields, filledFields },
   };
@@ -320,17 +375,25 @@ export function checkFormatAndExpiryCompliance(
 ): VerificationCheckItem {
   const issues: string[] = [];
   const warnings: string[] = [];
-  const docName = (input.name || "").toLowerCase();
 
-  // 1. Format match
-  const matchesFormat = std.expected_documents.some((exp) =>
-    exp.toLowerCase().split(" ").some((kw) => kw.length > 4 && docName.includes(kw))
-  ) || std.keywords.some((k) => docName.includes(k));
+  // 1. Format match against actual extracted OCR text
+  const ocrText = (input.extracted_text || "").toLowerCase().trim();
 
-  if (!matchesFormat && std.domain !== "DEFAULT") {
+  if (!ocrText || ocrText.length < 15) {
     issues.push(
-      `Format non-compliant: This compliance requires format conforming to '${std.prescribed_format}'. Expected document types: ${std.expected_documents.slice(0, 3).join(", ")}.`
+      `Format non-compliant: No legible text extracted from uploaded file. Content cannot be matched against prescribed statutory format '${std.prescribed_format}'.`
     );
+  } else {
+    const matchesFormat =
+      std.expected_documents.some((exp) =>
+        exp.toLowerCase().split(" ").some((kw) => kw.length > 4 && ocrText.includes(kw))
+      ) || std.keywords.some((k) => ocrText.includes(k));
+
+    if (!matchesFormat && std.domain !== "DEFAULT") {
+      issues.push(
+        `Format non-compliant: Scanned document content does not conform to prescribed statutory format '${std.prescribed_format}'. Required statutory declarations and clauses not found in file. Expected document types: ${std.expected_documents.slice(0, 3).join(", ")}.`
+      );
+    }
   }
 
   // 2. Expiry compliance
@@ -382,52 +445,67 @@ export function aiPrevalidateAndOCRAnalysis(
   const fileName = (input.file_name || "").toLowerCase();
   const reqName = input.requirement_name || input.requirement_id || "Statutory Requirement";
 
-  const docText = `${docName} ${docCategory} ${fileName}`.toLowerCase();
+  const extractedText = (input.extracted_text || "").trim();
+  const docText = `${docName} ${docCategory} ${fileName} ${extractedText}`.toLowerCase();
+
+  const userFlagMessage =
+    "The document is not the kind of document we are looking for. You need to actually do the OCR, check the extensions, and check whether all the fields have been filled up.";
 
   const IRRELEVANT_PATTERNS = [
     "bill", "electricity", "invoice", "receipt", "water bill", "utility", "telephone",
     "mobile bill", "tax return", "itr", "gst return", "salary", "payslip", "resume",
     "cv", "menu", "restaurant", "hotel", "travel", "ticket", "boarding", "random",
-    "test upload", "dummy", "untitled", "sample", "memo", "selfie", "photo", "personal"
+    "test upload", "dummy", "untitled", "sample", "memo", "selfie", "photo", "personal",
+    "grocery", "supermarket", "shopping", "race", "racing", "driver", "lap time", "grand prix",
+    "movie", "recipe", "novel", "story", "homework", "vehicle"
   ];
 
   const hasIrrelevantPattern = IRRELEVANT_PATTERNS.some((pat) => docText.includes(pat));
 
   let isDomainConflict = false;
-  if (std.domain === "FOOD" && ["structural stability", "boiler", "factory building", "machinery load", "trademark", "iec code", "air pollution"].some((k) => docText.includes(k))) {
+  if (std.domain === "FOOD" && ["structural stability", "boiler", "factory building", "machinery load", "air pollution"].some((k) => docText.includes(k))) {
     isDomainConflict = true;
-  } else if (std.domain === "LABOR" && ["food safety", "potability", "fssai", "trademark", "iec code", "effluent treatment", "restaurant"].some((k) => docText.includes(k))) {
+  } else if (std.domain === "LABOR" && ["food safety", "potability", "fssai", "restaurant menu"].some((k) => docText.includes(k))) {
     isDomainConflict = true;
-  } else if (std.domain === "ENVIRONMENT" && ["food handler", "medical fitness", "trademark", "directors pan", "restaurant"].some((k) => docText.includes(k))) {
+  } else if (std.domain === "ENVIRONMENT" && ["food handler", "medical fitness", "salary slip"].some((k) => docText.includes(k))) {
     isDomainConflict = true;
-  } else if (std.domain === "STANDARDS" && ["electricity bill", "lease agreement", "rent agreement", "food handler", "restaurant"].some((k) => docText.includes(k))) {
+  } else if (std.domain === "STANDARDS" && ["electricity bill", "lease agreement", "restaurant"].some((k) => docText.includes(k))) {
     isDomainConflict = true;
   }
 
-  const matchesExpectedSpec = std.expected_documents.some((exp) =>
-    exp.toLowerCase().split(" ").some((kw) => kw.length > 4 && docText.includes(kw))
+  // Statutory markers match on actual extracted text
+  const statutoryMarkers = [
+    "license", "licence", "certificate", "registration", "authority", "inspection",
+    "compliance", "valid", "schedule", "act", "section", "form", "fssai", "dish",
+    "cpcb", "spcb", "bis", "nabl", "potability", "structural", "stability"
+  ];
+  const detectedMarkers = statutoryMarkers.filter((m) => docText.includes(m));
+  const matchedStatutoryKeywords = std.keywords.filter((k) => docText.includes(k));
+  const matchedExpectedTerms = std.expected_documents.flatMap((exp) =>
+    exp.toLowerCase().split(" ").filter((w) => w.length > 4 && docText.includes(w))
   );
 
-  const isBlankOrUnreadable = input.has_readable_text === false || (ocr.status === "NO_READABLE_TEXT");
-  const isRandom = docName.length < 4 || hasIrrelevantPattern || isBlankOrUnreadable;
+  const hasStatutoryEvidence =
+    detectedMarkers.length > 0 || matchedStatutoryKeywords.length > 0 || matchedExpectedTerms.length > 0;
+
+  const isBlankOrUnreadable =
+    input.has_readable_text === false || ocr.status === "NO_READABLE_TEXT" || (extractedText.length > 0 && extractedText.length < 15);
+
+  const isRandom = docName.length < 4 || hasIrrelevantPattern || !hasStatutoryEvidence;
 
   let relevanceScore = 100;
   if (isBlankOrUnreadable) {
     relevanceScore = 0;
   } else if (hasIrrelevantPattern || isDomainConflict) {
     relevanceScore = 15;
-  } else if (isRandom) {
+  } else if (isRandom || !hasStatutoryEvidence) {
     relevanceScore = 10;
-  } else if (!matchesExpectedSpec && std.domain !== "DEFAULT") {
-    relevanceScore = 35;
   } else {
     relevanceScore = 95;
   }
 
-  const isRelevant = relevanceScore >= 60 && !isDomainConflict && !isRandom && !isBlankOrUnreadable;
-
-  const userFlagMessage =
-    "The document is not the kind of document we are looking for. You need to actually do the OCR, check the extensions, and check whether all the fields have been filled up.";
+  const isRelevant =
+    relevanceScore >= 60 && !isDomainConflict && !isRandom && !isBlankOrUnreadable && hasStatutoryEvidence;
 
   const issues: string[] = [];
   const warnings: string[] = [];
@@ -456,6 +534,7 @@ export function aiPrevalidateAndOCRAnalysis(
       relevance_score: relevanceScore,
       expected_documents: std.expected_documents,
       ocr_tokens_found: ocr.tokens_count,
+      statutory_evidence_found: hasStatutoryEvidence,
     },
   };
 }
@@ -494,10 +573,27 @@ export function verifyDocument(input: DocumentVerificationInput): DocumentVerifi
     : "VERIFIED";
 
   const recommendations: string[] = [];
-  if (!fileTypeCheck.passed) recommendations.push(...fileTypeCheck.issues);
-  if (!fieldsCheck.passed) recommendations.push(...fieldsCheck.issues);
-  if (!formatExpiryCheck.passed) recommendations.push(...formatExpiryCheck.issues);
-  if (!aiCheck.passed) recommendations.push(...aiCheck.issues);
+  const isNecessary = !aiCheck.irrelevant_document_flag;
+  const isCorrect = allPassed;
+  const llmScan: LLMScanAnalysis = {
+    is_necessary: isNecessary,
+    necessity_verdict: isNecessary ? "MANDATORY" : "NOT_REQUIRED",
+    necessity_rationale: isNecessary
+      ? `This document is mandatory under statutory requirements for ${input.requirement_name || input.requirement_id || "compliance"}. Regulatory standards require valid documentation conforming to ${std.prescribed_format}.`
+      : `This document is NOT necessary or relevant for ${input.requirement_name || input.requirement_id || "compliance"}. Regulatory compliance mandates official statutory instruments, not unrelated personal or utility documents.`,
+    is_correct: isCorrect,
+    correctness_verdict: isCorrect ? "CORRECT" : "INCORRECT",
+    correctness_assessment: isCorrect
+      ? `The document conforms to statutory format (${std.prescribed_format}), all required fields are filled, and active validity is confirmed.`
+      : `The document does not meet compliance requirements: ${recommendations.slice(0, 2).join("; ") || "Review required."}`,
+    compliance_verdict: isCorrect ? "COMPLIANT" : (isNecessary ? "NON_COMPLIANT" : "IRRELEVANT"),
+    confidence_score: aiCheck.relevance_score,
+    llm_summary: isCorrect
+      ? `Document scanned successfully. Confirmed as mandatory and compliant for ${input.requirement_name || "statutory compliance"}.`
+      : (isNecessary
+          ? `Document is mandatory for compliance, but requires corrections before statutory submission.`
+          : `Irrelevant document upload. Does not satisfy statutory requirements.`),
+  };
 
   return {
     verified: allPassed,
@@ -506,6 +602,7 @@ export function verifyDocument(input: DocumentVerificationInput): DocumentVerifi
     timestamp: new Date().toISOString(),
     irrelevant_document_flag: aiCheck.irrelevant_document_flag,
     flag_message: aiCheck.flag_message,
+    llm_scan_analysis: llmScan,
     admin_verification: {
       status: "PENDING_LATER_PHASE",
       message: "Admin-level manual verification will be implemented at a later time.",

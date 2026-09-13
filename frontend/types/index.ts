@@ -777,6 +777,103 @@ export interface AssistantChatResponse {
   /** Present only when a model generated the prose. */
   generated_by?: { provider: string; model: string };
   provider_note?: string;
+  bis_response?: BisQueryResponse;
+}
+
+// ---------------------------------------------------------------------------
+// BIS Standards Intelligence Contract (v2.0)
+// ---------------------------------------------------------------------------
+
+export type AnswerabilityState =
+  | "ANSWERABLE"
+  | "PARTIALLY_ANSWERABLE"
+  | "INSUFFICIENT_EVIDENCE"
+  | "NO_RELEVANT_EVIDENCE"
+  | "CONFLICTING_EVIDENCE"
+  | "AMBIGUOUS_QUERY"
+  | "OUT_OF_CORPUS"
+  | "TEMPORALLY_UNCERTAIN"
+  | "SERVICE_UNAVAILABLE"
+  | "SYSTEM_FAILURE";
+
+export type ClaimStatus =
+  | "SUPPORTED"
+  | "PARTIALLY_SUPPORTED"
+  | "UNSUPPORTED"
+  | "CONFLICTED"
+  | "UNVERIFIED";
+
+export enum AuthorityTier {
+  TIER_1_REGULATORY = 1,
+  TIER_2_STATUTORY_PORTAL = 2,
+  TIER_3_TECHNICAL_DATA = 3,
+  TIER_4_SECONDARY_INFO = 4,
+  TIER_5_UNTRUSTED = 5,
+}
+
+export interface BisClaim {
+  claim_text: string;
+  status: ClaimStatus;
+  citation?: string | null;
+  authority_tier?: number;
+  verification_reason?: string | null;
+}
+
+export interface BisCitation {
+  standard_number: string;
+  standard_year?: number | null;
+  clause_id?: string | null;
+  table_id?: string | null;
+  page_number?: number | null;
+  source_document_id?: string | null;
+  source_hash?: string | null;
+  excerpt: string;
+  canonical_url?: string | null;
+  verifiable: boolean;
+  authority: string;
+}
+
+export interface BisConfidence {
+  score: number;
+  level: string;
+  retrieval_density?: number | null;
+  reranker_margin?: number | null;
+  provenance_completeness?: number | null;
+}
+
+export interface BisTemporal {
+  standard_number?: string | null;
+  standard_year?: number | null;
+  status: string;
+  is_current?: boolean | null;
+  gazette_enforced?: boolean | null;
+  requires_verification: boolean;
+  details?: string | null;
+}
+
+export interface BisQueryRequest {
+  query: string;
+  business_id?: string | null;
+  top_k?: number;
+  correlation_id?: string | null;
+}
+
+export interface BisQueryResponse {
+  version: string;
+  query_id?: string | null;
+  correlation_id?: string | null;
+  query: string;
+  answerability: AnswerabilityState;
+  decision: string;
+  verification_required: boolean;
+  verification_reason?: string | null;
+  answer: string;
+  claims: BisClaim[];
+  citations: BisCitation[];
+  confidence?: BisConfidence | null;
+  temporal?: BisTemporal | null;
+  candidate_standards: Record<string, any>[];
+  execution_metrics?: Record<string, any>;
 }
 
 // ---------------------------------------------------------------------------

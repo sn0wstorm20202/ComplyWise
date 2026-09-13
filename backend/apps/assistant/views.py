@@ -95,5 +95,13 @@ class AssistantChatView(APIView):
                 str(exc),
                 http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
+        except Exception as exc:
+            import logging
+            logging.getLogger("complywise.assistant").exception("Assistant processing failure: %s", exc)
+            return error_response(
+                "ASSISTANT_FAILURE",
+                "The regulatory intelligence assistant encountered an error processing your query.",
+                http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         return Response(envelope(payload), status=status.HTTP_200_OK)

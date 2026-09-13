@@ -20,6 +20,7 @@ REPO_ROOT = BASE_DIR.parent
 
 # `.env` at the repository root is shared by backend and frontend tooling.
 load_dotenv(REPO_ROOT / ".env")
+load_dotenv(BASE_DIR / ".env", override=True)
 
 # Domain packages live directly under backend/ (domain/, common/, apps/).
 sys.path.insert(0, str(BASE_DIR))
@@ -320,12 +321,12 @@ DOCUMENT_MAX_UPLOAD_BYTES = int(os.getenv("DOCUMENT_MAX_UPLOAD_BYTES", str(20 * 
 # ---------------------------------------------------------------------------
 
 #: Active provider for text generation: gemini | openai | grok.
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini")
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
 #: Active provider for embeddings: gemini | openai. (xAI has no embeddings API.)
-EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "gemini")
+EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "openai")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.6-luna")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")

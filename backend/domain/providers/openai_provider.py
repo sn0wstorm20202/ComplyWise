@@ -28,27 +28,65 @@ EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings"
 logger = logging.getLogger(__name__)
 
 
+import os
+
+
+def is_valid_openai_key(key: str | None) -> bool:
+    if not key or not isinstance(key, str):
+        return False
+    k = key.strip()
+    if not k.startswith("sk-") or len(k) < 20:
+        return False
+    if "*" in k:
+        return False  # Masked preview string (e.g. sk-test-*************-key)
+    lower = k.lower()
+    if lower.startswith("sk-test") or any(
+        dummy in lower
+        for dummy in [
+            "testkey", "test-key", "custom-header", "dummy", "placeholder",
+            "fake", "your_openai_api_key", "change-this", "example"
+        ]
+    ):
+        return False
+    return True
+
+
 def _api_key() -> str:
-    return getattr(settings, "OPENAI_API_KEY", "") or ""
+    key = getattr(settings, "OPENAI_API_KEY", "") or os.getenv("OPENAI_API_KEY", "") or ""
+    return key.strip()
 
 
-def _auth_headers(provider: str) -> dict[str, str]:
-    key = _api_key()
-    if not key:
-        raise ProviderNotConfigured(provider, "OPENAI_API_KEY")
+def _auth_headers(provider: str, custom_key: str | None = None) -> dict[str, str]:
+    key = (custom_key or _api_key()).strip()
+    if not is_valid_openai_key(key):
+        raise ProviderNotConfigured(provider, "OPENAI_API_KEY (valid live key required)")
     return {"Authorization": f"Bearer {key}"}
 
 
 class OpenAIProvider(LLMProvider):
     name = "openai"
 
+    def __init__(self, api_key: str | None = None, model: str | None = None) -> None:
+        self._custom_api_key = api_key.strip() if api_key else None
+        self._custom_model = model.strip() if model else None
+
+    def get_api_key(self) -> str:
+        if self._custom_api_key:
+            return self._custom_api_key
+        return _api_key()
+
     @property
     def model(self) -> str:
-        return getattr(settings, "OPENAI_MODEL", "") or ""
+        if self._custom_model:
+            return self._custom_model
+        configured = (getattr(settings, "OPENAI_MODEL", "") or os.getenv("OPENAI_MODEL", "") or "").strip()
+        if not configured or configured in {"gpt-5.6-luna", "gpt-5", "luna"}:
+            return "gpt-4o-mini"
+        return configured
 
     @property
     def is_configured(self) -> bool:
-        return bool(_api_key() and self.model)
+        return bool(is_valid_openai_key(self.get_api_key()) and self.model)
 
     def complete(
         self,
@@ -56,8 +94,9 @@ class OpenAIProvider(LLMProvider):
         *,
         temperature: float = 0.0,
         max_output_tokens: int | None = None,
+        response_format: dict[str, str] | None = None,
     ) -> CompletionResult:
-        headers = _auth_headers(self.name)
+        headers = _auth_headers(self.name, self.get_api_key())
         if not self.model:
             raise ProviderNotConfigured(self.name, "OPENAI_MODEL")
 
@@ -65,12 +104,12 @@ class OpenAIProvider(LLMProvider):
             "model": self.model,
             "messages": [{"role": m.role, "content": m.content} for m in messages],
         }
-        # GPT-5.x series (luna, sol, terra) and reasoning models (o1, o3, o4) have specific parameter contracts:
-        # 1. They only support default temperature (1.0). Supplying custom temperature yields HTTP 400.
-        # 2. Reasoning tokens count against max_completion_tokens. Set reasoning_effort="low" and allocate sufficient budget.
+        if response_format is not None:
+            payload["response_format"] = response_format
+
         is_reasoning_model = any(
             frag in self.model.lower()
-            for frag in ("gpt-5", "luna", "sol", "terra", "o1", "o3", "o4")
+            for frag in ("o1", "o3", "o4")
         )
         if is_reasoning_model:
             payload["reasoning_effort"] = "low"
@@ -79,7 +118,7 @@ class OpenAIProvider(LLMProvider):
         else:
             payload["temperature"] = temperature
             if max_output_tokens is not None:
-                payload["max_completion_tokens"] = max_output_tokens
+                payload["max_tokens"] = max_output_tokens
 
         try:
             data = post_json(CHAT_URL, payload, headers=headers, provider=self.name)

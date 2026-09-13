@@ -17,6 +17,12 @@ Usage:
 
   # Dry-run inspection:
   python manage.py process_deadline_notifications --offset 7 --dry-run
+
+  # Check overdue compliance requirements:
+  python manage.py process_deadline_notifications --check-overdue
+
+  # Retry failed deliveries:
+  python manage.py process_deadline_notifications --retry-failed
 """
 
 from __future__ import annotations
@@ -27,11 +33,15 @@ from typing import Any
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.businesses.models import Business
-from apps.calendar.services import evaluate_and_send_deadline_notifications
+from apps.calendar.policies import NAMED_POLICIES
+from apps.calendar.services import (
+    evaluate_and_send_deadline_notifications,
+    retry_failed_notifications,
+)
 
 
 class Command(BaseCommand):
-    help = "Deterministically process compliance deadline notifications (T-7 Google Calendar, T-1 Calendar + Email)"
+    help = "Deterministically process compliance deadline notifications (T-7 Google Calendar, T-1 Calendar + Email, Overdue, and Policies)"
 
     def add_arguments(self, parser):  # noqa: ANN001
         parser.add_argument(
@@ -62,6 +72,28 @@ class Command(BaseCommand):
             action="store_true",
             help="Bypass idempotency filter (for testing duplicate handling).",
         )
+        parser.add_argument(
+            "--check-overdue",
+            action="store_true",
+            help="Explicitly evaluate and alert on overdue compliance deadlines.",
+        )
+        parser.add_argument(
+            "--retry-failed",
+            action="store_true",
+            help="Retry previously failed notification dispatches.",
+        )
+        parser.add_argument(
+            "--policy",
+            type=str,
+            default="default",
+            choices=list(NAMED_POLICIES.keys()),
+            help="Notification policy schedule to apply ('default', 'low', 'medium', 'high', 'critical').",
+        )
+        parser.add_argument(
+            "--with-in-app",
+            action="store_true",
+            help="Explicitly generate in-app notification records.",
+        )
 
     def _safe_write(self, msg: str, style_func=None) -> None:
         formatted = style_func(msg) if style_func else msg
@@ -78,6 +110,10 @@ class Command(BaseCommand):
         lang = options.get("lang", "en")
         dry_run = options.get("dry_run", False)
         force = options.get("force", False)
+        check_overdue = options.get("check_overdue", False)
+        retry_failed = options.get("retry_failed", False)
+        policy_name = options.get("policy", "default")
+        with_in_app = options.get("with_in_app", False)
 
         businesses = Business.objects.filter(is_active=True)
         if biz_id_arg:
@@ -90,14 +126,29 @@ class Command(BaseCommand):
             if not businesses.exists():
                 raise CommandError(f"No active business found matching '{biz_id_arg}'.")
 
+        # 1. If retry requested
+        if retry_failed:
+            self._safe_write("Retrying failed notifications...", self.style.NOTICE)
+            total_retried = 0
+            for biz in businesses:
+                res = retry_failed_notifications(business=biz)
+                cnt = res.get("total_retried", 0)
+                total_retried += cnt
+                if cnt:
+                    self._safe_write(f"  {biz.name}: retried {cnt} notification(s).", self.style.SUCCESS)
+            self._safe_write(f"Retry phase complete. Total retried: {total_retried}.\n", self.style.SUCCESS)
+
         self._safe_write(
             f"Processing deadline notifications for {businesses.count()} business(es)... "
-            f"[Offset: {'Live Date' if offset is None else f'Simulated T-{offset}'}, Language: {lang}, Dry Run: {dry_run}]",
+            f"[Offset: {'Live Date' if offset is None else f'Simulated T-{offset}'}, Policy: {policy_name}, "
+            f"Language: {lang}, Overdue Check: {check_overdue}, Dry Run: {dry_run}]",
             self.style.NOTICE,
         )
 
         total_dispatched = 0
         total_skipped = 0
+        upcoming_count = 0
+        overdue_count = 0
 
         for biz in businesses:
             self._safe_write(f"\n--- Enterprise: {biz.name} ({biz.id}) ---")
@@ -107,6 +158,9 @@ class Command(BaseCommand):
                 language=lang,
                 dry_run=dry_run,
                 force=force,
+                policy=policy_name,
+                check_overdue=check_overdue if check_overdue else None,
+                include_in_app=True if with_in_app else None,
             )
 
             dispatched = result.get("dispatched", [])
@@ -116,15 +170,23 @@ class Command(BaseCommand):
 
             if dispatched:
                 for item in dispatched:
+                    is_ovd = item.get("event_type") == "OVERDUE"
+                    if is_ovd:
+                        overdue_count += 1
+                        offset_str = f"Overdue +{item['offset_days']}d"
+                    else:
+                        upcoming_count += 1
+                        offset_str = f"T-{item['offset_days']}"
+
                     self._safe_write(
-                        f"  [DISPATCHED] {item['channel']} -> {item['requirement_id']} (T-{item['offset_days']}) "
-                        f"to {item.get('user_email', 'User')}: {item.get('subject_or_title')}",
+                        f"  [DISPATCHED] {item['channel']} -> {item['requirement_id']} ({offset_str}) "
+                        f"[{item.get('priority', 'MEDIUM')}] to {item.get('user_email', 'User')}: {item.get('subject_or_title')}",
                         self.style.SUCCESS,
                     )
             if skipped:
                 for item in skipped:
                     self._safe_write(
-                        f"  [IDEMPOTENT SKIP] {item['channel']} -> {item['requirement_id']} (T-{item['offset_days']}): {item['reason']}",
+                        f"  [IDEMPOTENT SKIP] {item['channel']} -> {item['requirement_id']} (offset {item['offset_days']}): {item['reason']}",
                         self.style.WARNING,
                     )
 
@@ -132,7 +194,7 @@ class Command(BaseCommand):
                 self._safe_write("  (No deadline matched notification criteria for this execution)", self.style.NOTICE)
 
         self._safe_write(
-            f"\nFinished. Total dispatched: {total_dispatched}, Total skipped (idempotency): {total_skipped}.",
+            f"\nFinished. Total dispatched: {total_dispatched} (Upcoming: {upcoming_count}, Overdue: {overdue_count}), "
+            f"Total skipped (idempotency): {total_skipped}.",
             self.style.SUCCESS,
         )
-

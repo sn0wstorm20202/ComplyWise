@@ -7,6 +7,7 @@ import {
   FileText,
   GitFork,
   Calendar,
+  Bell,
   Target,
   Award,
   Info,
@@ -23,6 +24,7 @@ export type NavView =
   | "documents"
   | "workflows"
   | "calendar"
+  | "notifications"
   | "standards"
   | "schemes"
   | "updates"
@@ -51,6 +53,7 @@ export function Sidebar({ activeView, onSelectView, isMobile = false }: SidebarP
     { id: "documents", label: t("navigation.documents"), icon: FileText },
     { id: "workflows", label: t("navigation.workflows"), icon: GitFork },
     { id: "calendar", label: t("navigation.calendar"), icon: Calendar },
+    { id: "notifications", label: "Alerts & Notifications", icon: Bell },
     { id: "standards", label: t("navigation.standards"), icon: Target },
     { id: "schemes", label: t("navigation.schemes"), icon: Award },
     { id: "updates", label: t("navigation.updates"), icon: Info },

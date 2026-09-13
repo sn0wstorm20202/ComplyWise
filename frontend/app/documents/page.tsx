@@ -371,7 +371,7 @@ function DocumentsContent() {
   });
 
   return (
-    <AppShell activeView="documents">
+    <AppShell activeView="documents" requireAuth={false}>
       <div className="space-y-6 max-w-7xl mx-auto pb-12">
         {/* Header */}
         <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">

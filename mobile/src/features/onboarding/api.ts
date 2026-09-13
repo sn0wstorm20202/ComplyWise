@@ -8,6 +8,7 @@ import {
   EvaluateResponse,
   OnboardingStatus,
   SmartQuestionPlan,
+  SequentialQuestionResponse,
 } from '../../types/onboarding';
 
 export const onboardingApi = {
@@ -61,6 +62,33 @@ export const onboardingApi = {
     );
   },
 
+  getNextQuestion: async (
+    businessId: string,
+    assessmentId?: string
+  ): Promise<SequentialQuestionResponse> => {
+    return client.get<SequentialQuestionResponse>(
+      `businesses/${businessId}/onboarding/questions/next`,
+      {
+        params: assessmentId ? { assessment_id: assessmentId } : undefined,
+      }
+    );
+  },
+
+  submitSequentialAnswer: async (
+    businessId: string,
+    key: string,
+    value: unknown,
+    assessmentId?: string
+  ): Promise<unknown> => {
+    return client.post(`businesses/${businessId}/onboarding/questions/next`, {
+      key,
+      value,
+      variable_key: key,
+      answer_value: value,
+      ...(assessmentId ? { assessment_id: assessmentId } : {}),
+    });
+  },
+
   getStatus: async (
     businessId: string,
     assessmentId?: string
@@ -73,7 +101,23 @@ export const onboardingApi = {
     );
   },
 
-  evaluate: async (businessId: string): Promise<EvaluateResponse> => {
-    return client.post<EvaluateResponse>(`businesses/${businessId}/evaluate`);
+  evaluate: async (
+    businessId: string,
+    assessmentId?: string
+  ): Promise<EvaluateResponse> => {
+    return client.post<EvaluateResponse>(
+      `businesses/${businessId}/evaluate`,
+      assessmentId ? { assessment_id: assessmentId } : {}
+    );
+  },
+
+  orchestrateDiscovery: async (
+    businessId: string,
+    assessmentId?: string
+  ): Promise<unknown> => {
+    return client.post(
+      `businesses/${businessId}/analysis/orchestrate`,
+      assessmentId ? { assessment_id: assessmentId } : {}
+    );
   },
 };

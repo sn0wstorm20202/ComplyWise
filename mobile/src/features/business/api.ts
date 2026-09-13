@@ -23,7 +23,41 @@ export interface UserHomeResponse {
   total_assessments: number;
 }
 
+export interface UserWorkspaceResponse {
+  user_id: string;
+  email: string;
+  has_workspace: boolean;
+  active_business_id?: string | null;
+  active_business_name?: string | null;
+  active_assessment_id?: string | null;
+  active_assessment_number?: number | null;
+  active_assessment_title?: string | null;
+  active_assessment_status?: string | null;
+  current_step?: number;
+  redirect_target?: 'DASHBOARD' | 'ONBOARDING';
+  redirect_url?: string;
+  updated_at?: string;
+}
+
 export const businessApi = {
+  getWorkspace: async (): Promise<UserWorkspaceResponse> => {
+    try {
+      return await client.get<UserWorkspaceResponse>('user/workspace');
+    } catch {
+      return await client.get<UserWorkspaceResponse>('users/workspace');
+    }
+  },
+
+  updateWorkspace: async (
+    businessId?: string,
+    assessmentId?: string
+  ): Promise<UserWorkspaceResponse> => {
+    return client.post<UserWorkspaceResponse>('user/workspace', {
+      ...(businessId ? { business_id: businessId } : {}),
+      ...(assessmentId ? { assessment_id: assessmentId } : {}),
+    });
+  },
+
   getUserHome: async (): Promise<UserHomeResponse> => {
     try {
       return await client.get<UserHomeResponse>('user/profile');

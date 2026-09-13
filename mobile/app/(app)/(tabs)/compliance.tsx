@@ -435,7 +435,7 @@ export default function ComplianceScreen() {
             description="No requirements recorded for the selected filter."
           />
         ) : (
-          filteredItems.map((item) => {
+          filteredItems.map((item, idx) => {
             const statusStr = (item.status as string) || '';
             const isCritical = statusStr === 'CRITICAL' || statusStr === 'DANGER';
             const isAction = statusStr === 'NEEDS_INFORMATION' || statusStr === 'CONFLICT_REVIEW' || statusStr === 'WARNING';
@@ -443,7 +443,7 @@ export default function ComplianceScreen() {
 
             return (
               <TouchableOpacity
-                key={item.requirement_id}
+                key={`${item.requirement_id || 'req'}-${idx}`}
                 style={styles.reqCard}
                 onPress={() => router.push(`/(app)/compliance/${item.requirement_id}` as any)}
                 activeOpacity={0.8}

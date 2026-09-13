@@ -4,6 +4,7 @@ import { theme } from '../../src/theme';
 export default function AppLayout() {
   return (
     <Stack
+      initialRouteName="(tabs)"
       screenOptions={{
         headerShown: false,
         contentStyle: {
@@ -11,6 +12,7 @@ export default function AppLayout() {
         },
       }}
     >
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="compliance/[id]"

@@ -492,8 +492,8 @@ export default function DiscoverScreen() {
                         {s.citations && s.citations.length > 0 ? (
                           <View style={styles.citationsContainer}>
                             <Text style={styles.citationsHeader}>Statutory Citations</Text>
-                            {s.citations.map((c) => (
-                              <View key={c.evidence_id} style={styles.citationMiniCard}>
+                            {s.citations.map((c, cIdx) => (
+                              <View key={`${c.evidence_id || 'ev'}-${cIdx}`} style={styles.citationMiniCard}>
                                 <View style={styles.citationMiniHeader}>
                                   <Text style={styles.citationAuthText}>{c.authority}</Text>
                                   <Badge label={c.verification_status} variant="COMPLIANT" />
@@ -629,8 +629,8 @@ export default function DiscoverScreen() {
                 </Text>
               </Card>
             ) : updatesData?.updates && updatesData.updates.length > 0 ? (
-              updatesData.updates.map((u: RegulatoryUpdateItem) => (
-                <View key={u.id} style={styles.standardCard}>
+              updatesData.updates.map((u: RegulatoryUpdateItem, uIdx: number) => (
+                <View key={`${u.id || 'upd'}-${uIdx}`} style={styles.standardCard}>
                   <View style={styles.cardHeader}>
                     <View style={styles.categoryBadge}>
                       <Text style={styles.categoryBadgeText}>{u.authority}</Text>

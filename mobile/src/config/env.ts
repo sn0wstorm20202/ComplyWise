@@ -29,7 +29,7 @@ const configuredApiUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
 export const config: AppConfig = {
   environment: currentEnvironment,
   apiBaseUrl: configuredApiUrl ? configuredApiUrl.replace(/\/+$/, '') : DEPLOYED_API_BASE_URL,
-  apiTimeoutMs: 15000,
+  apiTimeoutMs: 45000,
   appName: 'ComplyWise',
   appVersion: '1.0.0',
   enableDebugLogging: currentEnvironment !== 'production',

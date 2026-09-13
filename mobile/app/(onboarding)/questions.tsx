@@ -171,7 +171,7 @@ export default function SmartQuestionsScreen() {
         </View>
       ) : (
         questions.map((q, idx) => (
-          <View key={q.key || idx} style={styles.questionCard}>
+          <View key={`${q.key || 'q'}-${idx}`} style={styles.questionCard}>
             <Text style={styles.questionNumber}>QUESTION {idx + 1}</Text>
             <Text style={styles.questionTitle}>{q.label || q.question_text}</Text>
 
@@ -210,11 +210,11 @@ export default function SmartQuestionsScreen() {
               </View>
             ) : q.options && q.options.length > 0 ? (
               <View style={styles.optionsList}>
-                {q.options.map((opt) => {
+                {q.options.map((opt, optIdx) => {
                   const isSel = answers[q.key] === opt.value;
                   return (
                     <TouchableOpacity
-                      key={opt.value}
+                      key={`${opt.value}-${optIdx}`}
                       style={[styles.optionItem, isSel && styles.optionItemActive]}
                       onPress={() => handleAnswerChange(q.key, opt.value)}
                       activeOpacity={0.7}

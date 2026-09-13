@@ -118,8 +118,8 @@ export default function ResultsScreen() {
       {summary?.priority_actions && summary.priority_actions.length > 0 ? (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Priority Statutory Actions</Text>
-          {summary.priority_actions.slice(0, 3).map((action) => (
-            <View key={action.requirement_id} style={styles.actionCard}>
+          {summary.priority_actions.slice(0, 3).map((action, idx) => (
+            <View key={`${action.requirement_id || 'action'}-${idx}`} style={styles.actionCard}>
               <View style={styles.actionHeader}>
                 <View style={styles.actionPill}>
                   <Text style={styles.actionPillText}>{action.authority}</Text>

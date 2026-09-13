@@ -66,3 +66,24 @@ export interface EvaluateResponse {
   action_required_count?: number;
   status: string;
 }
+
+export interface SequentialQuestionItem {
+  key: string;
+  text: string;
+  help_text?: string;
+  type: string;
+  options?: Array<{ label: string; value: string | number | boolean }>;
+  category?: string;
+}
+
+export interface SequentialQuestionResponse {
+  is_complete: boolean;
+  question?: SequentialQuestionItem | null;
+  next_question?: SequentialQuestionItem | null;
+  progress?: {
+    answered_count: number;
+    total_estimated: number;
+    percent: number;
+  };
+}
+

@@ -68,9 +68,11 @@ async function request<T>(
     }
   }
 
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+
   const headers: Record<string, string> = {
     Accept: 'application/json',
-    ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    ...(body !== undefined && !isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...customHeaders,
   };
 
@@ -81,34 +83,42 @@ async function request<T>(
     }
   }
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const payloadBody = isFormData ? (body as FormData) : (body !== undefined ? JSON.stringify(body) : undefined);
 
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      method,
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      signal: controller.signal,
-    });
-  } catch (err: unknown) {
-    clearTimeout(timer);
-    if (err instanceof Error && (err.name === 'AbortError' || err.message?.includes('aborted'))) {
+  async function executeFetch(attempt = 1): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, {
+        method,
+        headers,
+        body: payloadBody,
+        signal: controller.signal,
+      });
+    } catch (err: unknown) {
+      clearTimeout(timer);
+      const isAbort = err instanceof Error && (err.name === 'AbortError' || err.message?.includes('aborted'));
+      if (attempt < 2 && method === 'GET' && isAbort) {
+        return executeFetch(attempt + 1);
+      }
+      if (isAbort) {
+        throw new ApiError(
+          'TIMEOUT',
+          `Network request to ${endpoint} timed out after ${timeoutMs}ms. Verify backend reachability.`,
+          408
+        );
+      }
       throw new ApiError(
-        'TIMEOUT',
-        `Network request to ${endpoint} timed out after ${timeoutMs}ms. Verify backend reachability.`,
-        408
+        'NETWORK_ERROR',
+        err instanceof Error ? err.message : 'Unable to connect to the ComplyWise backend.',
+        0
       );
+    } finally {
+      clearTimeout(timer);
     }
-    throw new ApiError(
-      'NETWORK_ERROR',
-      err instanceof Error ? err.message : 'Unable to connect to the ComplyWise backend.',
-      0
-    );
-  } finally {
-    clearTimeout(timer);
   }
+
+  const response = await executeFetch();
 
   if (response.status === 204) {
     return {} as T;

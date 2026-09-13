@@ -16,10 +16,12 @@ const SELECTED_BIZ_KEY = 'complywise_selected_business_id';
 export interface BusinessContextValue {
   businesses: BusinessSummary[];
   currentBusiness: BusinessSummary | null;
+  activeAssessmentId: string | null;
+  workspaceRedirectTarget: 'DASHBOARD' | 'ONBOARDING' | null;
   isLoading: boolean;
   isLoaded: boolean;
   error: string | null;
-  selectBusiness: (businessId: string) => Promise<void>;
+  selectBusiness: (businessId: string, assessmentId?: string) => Promise<void>;
   refreshBusinesses: () => Promise<void>;
   createBusiness: (name: string) => Promise<Business>;
 }
@@ -30,6 +32,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   const [businesses, setBusinesses] = useState<BusinessSummary[]>([]);
   const [currentBusiness, setCurrentBusiness] = useState<BusinessSummary | null>(null);
+  const [activeAssessmentId, setActiveAssessmentId] = useState<string | null>(null);
+  const [workspaceRedirectTarget, setWorkspaceRedirectTarget] = useState<'DASHBOARD' | 'ONBOARDING' | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +42,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
     if (!isAuthenticated) {
       setBusinesses([]);
       setCurrentBusiness(null);
+      setActiveAssessmentId(null);
+      setWorkspaceRedirectTarget(null);
       setIsLoading(false);
       setIsLoaded(true);
       return;
@@ -46,6 +52,29 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
+
+      // 1. Fetch authoritative server workspace state (PRD §30 Boundary 1.3)
+      let authoritativeBizId: string | null = null;
+      let authoritativeBizName: string | null = null;
+      try {
+        const ws = await businessApi.getWorkspace();
+        if (ws) {
+          if (ws.active_assessment_id) {
+            setActiveAssessmentId(ws.active_assessment_id);
+          }
+          if (ws.redirect_target) {
+            setWorkspaceRedirectTarget(ws.redirect_target);
+          }
+          if (ws.has_workspace && ws.active_business_id) {
+            authoritativeBizId = ws.active_business_id;
+            authoritativeBizName = ws.active_business_name || null;
+          }
+        }
+      } catch (wsErr) {
+        console.warn('Workspace state fetch notice:', wsErr);
+      }
+
+      // 2. Fetch user's registered businesses
       let list: BusinessSummary[] = [];
 
       try {
@@ -69,12 +98,26 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // If authoritative business is not in list but user owns it, inject it
+      if (authoritativeBizId && !list.find((b) => b.id === authoritativeBizId)) {
+        list.unshift({
+          id: authoritativeBizId,
+          name: authoritativeBizName || 'Active Enterprise',
+          is_active: true,
+          assessment_count: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      }
+
       setBusinesses(list);
 
-      // Check saved preference or default to first business
+      // Select authoritative business or fallback to saved preference
       const savedId = await storage.getItem(SELECTED_BIZ_KEY);
-      const found = list.find((b) => b.id === savedId) || list[0] || null;
+      const targetId = authoritativeBizId || savedId;
+      const found = list.find((b) => b.id === targetId) || list[0] || null;
       setCurrentBusiness(found);
+
       if (found && found.id !== savedId) {
         await storage.setItem(SELECTED_BIZ_KEY, found.id);
       } else if (!found) {
@@ -96,11 +139,13 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   }, [loadBusinesses]);
 
   const selectBusiness = useCallback(
-    async (businessId: string) => {
+    async (businessId: string, assessmentId?: string) => {
       const found = businesses.find((b) => b.id === businessId);
       if (found) {
         setCurrentBusiness(found);
         await storage.setItem(SELECTED_BIZ_KEY, found.id);
+        // Persist switch to backend workspace state asynchronously
+        businessApi.updateWorkspace(businessId, assessmentId).catch(() => {});
       }
     },
     [businesses]
@@ -126,6 +171,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       value={{
         businesses,
         currentBusiness,
+        activeAssessmentId,
+        workspaceRedirectTarget,
         isLoading,
         isLoaded,
         error,

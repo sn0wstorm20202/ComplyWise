@@ -391,5 +391,114 @@ def test_factory_license_image_ocr_verification_passes():
     assert result["llm_scan_analysis"]["compliance_verdict"] == "COMPLIANT"
 
 
+def test_factory_license_photo_with_photo_keyword_passes():
+    """Verify that a photo of a factory license named 'factory_photo.jpg' with 'photo' in text passes."""
+    from apps.documents.verification import verify_document
+    from PIL import Image, ImageDraw
+    import io
+
+    img = Image.new("RGB", (900, 450), color="white")
+    d = ImageDraw.Draw(img)
+    d.text((40, 40), "GOVERNMENT OF MAHARASHTRA", fill="black")
+    d.text((40, 80), "DIRECTORATE OF INDUSTRIAL SAFETY & HEALTH (DISH)", fill="black")
+    d.text((40, 120), "FACTORIES ACT 1948 - FORM 4 - FACTORY LICENSE", fill="black")
+    d.text((40, 160), "Licence No: DISH-MH-2024-8849", fill="black")
+    d.text((40, 200), "Valid Until: 2028-12-31", fill="black")
+    d.text((40, 240), "Affix recent passport size photo of the occupier / manager", fill="black")
+
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    img_bytes = buf.getvalue()
+
+    result = verify_document({
+        "name": "Factory License Photo Upload",
+        "category": "Statutory Proof",
+        "authority": "DISH",
+        "requirement_id": "Factories Act 1948 §6",
+        "reference_number": "DISH-MH-2024-8849",
+        "valid_until": "2028-12-31",
+        "file_name": "factory_license_photo.jpg",  # Filename has 'photo'
+        "file_size_bytes": len(img_bytes),
+        "file_content_bytes": img_bytes,
+    })
+
+    assert result["verified"] is True
+    assert result["overall_status"] == "PASSED"
+    assert result["irrelevant_document_flag"] is False
+    assert result["checks"]["ai_relevance"]["passed"] is True
+    assert result["llm_scan_analysis"]["is_necessary"] is True
+    assert result["llm_scan_analysis"]["is_correct"] is True
 
 
+def test_factory_license_sideways_orientation_recovery():
+    """Verify that a sideways smartphone photo (rotated 90 degrees) is orientation-recovered by OCR."""
+    from apps.documents.verification import verify_document
+    from PIL import Image, ImageDraw
+    import io
+
+    # Create normal image
+    img = Image.new("RGB", (1000, 500), color="white")
+    d = ImageDraw.Draw(img)
+    d.text((50, 50), "GOVERNMENT OF MAHARASHTRA", fill="black")
+    d.text((50, 100), "DIRECTORATE OF INDUSTRIAL SAFETY AND HEALTH", fill="black")
+    d.text((50, 150), "FACTORIES ACT 1948 - FORM 4 - FACTORY LICENSE", fill="black")
+    d.text((50, 200), "Licence No: DISH-MH-2024-9912", fill="black")
+    d.text((50, 250), "Valid Until: 2028-12-31", fill="black")
+
+    # Rotate 90 degrees (simulating smartphone camera holding angle)
+    sideways_img = img.rotate(90, expand=True)
+
+    buf = io.BytesIO()
+    sideways_img.save(buf, format="PNG")
+    img_bytes = buf.getvalue()
+
+    result = verify_document({
+        "name": "Factory License",
+        "category": "Statutory Proof",
+        "authority": "DISH",
+        "requirement_id": "Factories Act 1948 §6",
+        "reference_number": "DISH-MH-2024-9912",
+        "valid_until": "2028-12-31",
+        "file_name": "sideways_camera_shot.png",
+        "file_size_bytes": len(img_bytes),
+        "file_content_bytes": img_bytes,
+    })
+
+    assert result["verified"] is True
+    assert result["overall_status"] == "PASSED"
+    assert result["irrelevant_document_flag"] is False
+    assert result["checks"]["ai_relevance"]["passed"] is True
+
+
+def test_factory_license_auto_derives_reference_and_expiry_from_image():
+    """Verify that uploading a factory license without pre-filled reference number or expiry auto-derives them from OCR."""
+    from apps.documents.verification import verify_document
+    from PIL import Image, ImageDraw
+    import io
+
+    img = Image.new("RGB", (900, 450), color="white")
+    d = ImageDraw.Draw(img)
+    d.text((40, 40), "GOVERNMENT OF MAHARASHTRA", fill="black")
+    d.text((40, 80), "DIRECTORATE OF INDUSTRIAL SAFETY & HEALTH", fill="black")
+    d.text((40, 120), "FACTORIES ACT 1948 - REGISTRATION AND LICENCE TO WORK A FACTORY", fill="black")
+    d.text((40, 160), "Licence No: DISH/MH/2024/9941", fill="black")
+    d.text((40, 200), "Valid Until: 2028-12-31", fill="black")
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    img_bytes = buf.getvalue()
+
+    # Intentionally omit reference_number and valid_until
+    result = verify_document({
+        "name": "Factory License",
+        "category": "Statutory Proof",
+        "file_name": "license_document.png",
+        "file_size_bytes": len(img_bytes),
+        "file_content_bytes": img_bytes,
+    })
+
+    assert result["verified"] is True
+    assert result["overall_status"] == "PASSED"
+    assert result["checks"]["field_completeness"]["passed"] is True
+    assert result["checks"]["format_and_expiry"]["passed"] is True
+    assert result["checks"]["ai_relevance"]["passed"] is True

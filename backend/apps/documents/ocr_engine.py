@@ -92,9 +92,11 @@ def _preprocess_image_for_ocr(input_path: str) -> list[str]:
     """Generate high-readability preprocessed temporary images for OCR.
 
     Handles:
-    - RGBA transparency conversion to crisp white background.
-    - Low-resolution upscaling (LANCZOS) so characters are large enough for OCR.
-    - Margin padding (40px white border) so border text isn't skipped.
+    - EXIF camera orientation auto-transposition (corrects sideways / upside-down mobile photos).
+    - Format conversion to RGB on white background.
+    - Dimension normalization: keeps max dimension <= 3800px (Windows OCR limit 4096px).
+    - Resolution upscaling (LANCZOS) for low-dpi snapshots so characters are large enough.
+    - Margin padding (45px white border) so border text isn't skipped.
     - High-contrast variant for low-contrast smartphone photos.
     """
     if not PIL_AVAILABLE:
@@ -105,7 +107,13 @@ def _preprocess_image_for_ocr(input_path: str) -> list[str]:
     processed_paths: list[str] = []
     try:
         with Image.open(input_path) as raw_img:
-            # 1. Normalize color space to RGB on white background
+            # 1. Apply EXIF orientation transposition (essential for smartphone photos)
+            try:
+                raw_img = ImageOps.exif_transpose(raw_img)
+            except Exception:
+                pass
+
+            # 2. Normalize color space to RGB on white background
             if raw_img.mode in ("RGBA", "LA") or (raw_img.mode == "P" and "transparency" in raw_img.info):
                 bg = Image.new("RGB", raw_img.size, (255, 255, 255))
                 if raw_img.mode == "P":
@@ -119,11 +127,18 @@ def _preprocess_image_for_ocr(input_path: str) -> list[str]:
             else:
                 base_img = raw_img.copy()
 
-            # 2. Add padding so edge text is not clipped by Windows OCR engine
+            # 3. Add padding so edge text is not clipped by Windows OCR engine
             padded_img = ImageOps.expand(base_img, border=45, fill="white")
 
-            # 3. Upscale if resolution is low (Windows OCR recognizes best when characters are >= 35px tall)
+            # 4. Dimension bounds normalization:
+            # Windows Media OCR fails if either dimension > 4096. Keep safely under 3800.
             w, h = padded_img.size
+            if max(w, h) > 3800:
+                downscale = 3600.0 / max(w, h)
+                padded_img = padded_img.resize((int(w * downscale), int(h * downscale)), Image.Resampling.LANCZOS)
+                w, h = padded_img.size
+
+            # Upscale if low resolution (characters must be at least ~30px for OCR)
             if max(w, h) < 1800 or min(w, h) < 800:
                 scale_factor = min(3.0, max(1.5, 1800.0 / max(w, h)))
                 new_w = int(w * scale_factor)
@@ -132,13 +147,13 @@ def _preprocess_image_for_ocr(input_path: str) -> list[str]:
             else:
                 scaled_img = padded_img
 
-            # Save primary enhanced image
+            # Candidate 1: Primary normalized and padded image
             tmp1 = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
             scaled_img.save(tmp1.name, format="PNG")
             tmp1.close()
             processed_paths.append(tmp1.name)
 
-            # 4. Secondary pass: contrast enhancement for noisy or faded mobile snapshots
+            # Candidate 2: High contrast enhancement for noisy or faded mobile snapshots
             enhancer = ImageEnhance.Contrast(scaled_img)
             contrast_img = enhancer.enhance(1.7)
             tmp2 = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
@@ -153,38 +168,87 @@ def _preprocess_image_for_ocr(input_path: str) -> list[str]:
     return processed_paths
 
 
+def _score_ocr_text(text: str) -> int:
+    """Score extracted text quality by word count and statutory markers."""
+    if not text:
+        return 0
+    words = re.findall(r"[A-Za-z0-9_\-\.\/]+", text)
+    if len(words) < 2:
+        return 0
+    statutory_markers = [
+        "license", "licence", "certificate", "registration", "factory", "factories",
+        "dish", "fssai", "safety", "health", "form", "act", "valid", "directorate",
+        "industrial", "occupier", "manager", "inspection", "compliance", "government",
+        "spcb", "cpcb", "bis", "nabl", "potability", "structural", "stability"
+    ]
+    text_lower = text.lower()
+    marker_hits = sum(1 for m in statutory_markers if m in text_lower)
+    return len(words) + (marker_hits * 12)
+
+
 def _ocr_image_file(file_path: str) -> str:
-    """OCR an image file using multi-stage winsdk (Windows Media OCR) or pytesseract."""
+    """OCR an image file using multi-stage winsdk (Windows Media OCR) or pytesseract, with orientation recovery."""
     preprocessed_paths = _preprocess_image_for_ocr(file_path)
-    extracted_candidates: list[str] = []
+    # Include original file path in candidate pool
+    candidates = list(preprocessed_paths)
+    if file_path not in candidates:
+        candidates.append(file_path)
+
+    extracted_results: list[str] = []
+
+    def _try_ocr_on_file(img_path: str) -> str:
+        if WINSDK_OCR_AVAILABLE:
+            t = _run_winsdk_ocr_isolated(img_path)
+            if t and len(t.strip()) > 0:
+                return t.strip()
+        if PYTESSERACT_AVAILABLE and PIL_AVAILABLE:
+            try:
+                img = Image.open(img_path)
+                t = pytesseract.image_to_string(img)
+                if t and len(t.strip()) > 0:
+                    return t.strip()
+            except Exception:
+                pass
+        return ""
 
     try:
-        for candidate_path in preprocessed_paths:
-            # 1. Native Windows OCR via winsdk (highest accuracy on Windows 10/11)
-            if WINSDK_OCR_AVAILABLE:
-                text = _run_winsdk_ocr_isolated(candidate_path)
-                if text and len(text.strip()) > 0:
-                    extracted_candidates.append(text.strip())
-                    # If we got substantial legible text (> 40 chars), we can stop early
-                    if len(text.strip()) >= 40:
-                        break
+        for p in candidates:
+            text = _try_ocr_on_file(p)
+            if text:
+                extracted_results.append(text)
+                # If strong statutory text (> 45 chars and recognized statutory marker), accept immediately
+                if len(text) >= 45 and any(m in text.lower() for m in ["license", "licence", "factory", "form", "fssai", "dish", "act", "certificate"]):
+                    return text
 
-            # 2. Pytesseract fallback
-            if PYTESSERACT_AVAILABLE and PIL_AVAILABLE:
-                try:
-                    img = Image.open(candidate_path)
-                    text = pytesseract.image_to_string(img)
-                    if text and len(text.strip()) > 0:
-                        extracted_candidates.append(text.strip())
-                        if len(text.strip()) >= 40:
-                            break
-                except Exception as exc:
-                    logger.debug("pytesseract error on %s: %s", candidate_path, exc)
+        best_initial = max(extracted_results, key=_score_ocr_text) if extracted_results else ""
+        if _score_ocr_text(best_initial) >= 15:
+            return best_initial
 
-        # Pick candidate with the highest word count
-        if extracted_candidates:
-            best = max(extracted_candidates, key=lambda t: len(t.split()))
-            return best.strip()
+        # If text is minimal (< 4 words) or empty, test multi-angle orientation (90°, 270°, 180°).
+        # Camera snapshots without EXIF orientation frequently arrive sideways (90° or 270°).
+        if PIL_AVAILABLE and candidates:
+            primary_path = candidates[0]
+            try:
+                with Image.open(primary_path) as base_for_rot:
+                    for angle in (90, 270, 180):
+                        rot_img = base_for_rot.rotate(angle, expand=True)
+                        tmp_rot = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+                        rot_img.save(tmp_rot.name, format="PNG")
+                        tmp_rot.close()
+                        try:
+                            rot_text = _try_ocr_on_file(tmp_rot.name)
+                            if rot_text:
+                                extracted_results.append(rot_text)
+                                if any(m in rot_text.lower() for m in ["license", "licence", "factory", "form", "fssai", "dish", "act"]):
+                                    return rot_text
+                        finally:
+                            if os.path.exists(tmp_rot.name):
+                                os.unlink(tmp_rot.name)
+            except Exception as rot_exc:
+                logger.debug("Multi-orientation OCR attempt failed: %s", rot_exc)
+
+        if extracted_results:
+            return max(extracted_results, key=_score_ocr_text).strip()
 
         return ""
     finally:
@@ -283,8 +347,8 @@ def extract_text_from_file_bytes(file_bytes: bytes, file_name: str) -> dict[str,
                 "error": f"Invalid or corrupt PDF file: {exc}",
             }
 
-    # Case 2: Image Files (.png, .jpg, .jpeg, .tiff, .bmp, .webp)
-    if ext in {".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".webp"}:
+    # Case 2: Image Files (.png, .jpg, .jpeg, .tiff, .bmp, .webp, .jfif, .pjpeg)
+    if ext in {".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".webp", ".jfif", ".pjpeg"}:
         with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
             tmp.write(file_bytes)
             tmp_path = tmp.name

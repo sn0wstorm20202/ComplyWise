@@ -272,7 +272,7 @@ export function checkFileTypeForCompliance(
   const dotIdx = fileName.lastIndexOf(".");
   const ext = dotIdx !== -1 ? fileName.substring(dotIdx).toLowerCase() : "";
 
-  const permitted = [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".docx", ".html", ".htm", ".txt"];
+  const permitted = [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".jfif", ".pjpeg", ".docx", ".html", ".htm", ".txt"];
 
   if (PROHIBITED_EXTENSIONS.includes(ext)) {
     issues.push(`Forbidden executable/script extension '${ext}'. Strictly banned on statutory portals for security.`);
@@ -281,7 +281,7 @@ export function checkFileTypeForCompliance(
   }
 
   // If uploading image scan for multi-page architectural CAD layouts, add advisory note
-  const isImage = [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"].includes(ext);
+  const isImage = [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".jfif", ".pjpeg"].includes(ext);
   const requiresPdfStrictly = docCategory.includes("BLUEPRINT CAD") || reqName.toUpperCase().includes("BLUEPRINT CAD");
   if (isImage && requiresPdfStrictly) {
     warnings.push("Advisory: Regulatory portals recommend vector PDF in addition to image scans for complex multi-page architectural CAD drawings.");
@@ -469,24 +469,28 @@ export function aiPrevalidateAndOCRAnalysis(
     "The document is not the kind of document we are looking for. You need to actually do the OCR, check the extensions, and check whether all the fields have been filled up.";
 
   const IRRELEVANT_PATTERNS = [
-    "bill", "electricity", "invoice", "receipt", "water bill", "utility", "telephone",
-    "mobile bill", "tax return", "itr", "gst return", "salary", "payslip", "resume",
-    "cv", "menu", "restaurant", "hotel", "travel", "ticket", "boarding", "random",
-    "test upload", "dummy", "untitled", "sample", "memo", "selfie", "photo", "personal",
-    "grocery", "supermarket", "shopping", "race", "racing", "driver", "lap time", "grand prix",
-    "movie", "recipe", "novel", "story", "homework", "vehicle"
+    "electricity bill", "water bill", "utility bill", "telephone bill", "mobile bill",
+    "tax return", "salary slip", "payslip", "curriculum vitae", "personal resume",
+    "restaurant menu", "dinner menu", "lunch menu", "beverage menu", "hotel booking",
+    "boarding pass", "flight ticket", "train ticket", "movie ticket",
+    "grocery list", "supermarket receipt", "shopping receipt",
+    "race driver", "lap time", "grand prix", "racing team",
+    "cooking recipe", "food recipe", "story book", "homework assignment",
+    "dummy test upload", "random file test"
   ];
 
-  const hasIrrelevantPattern = IRRELEVANT_PATTERNS.some((pat) => docText.includes(pat));
+  let hasIrrelevantPattern = IRRELEVANT_PATTERNS.some((pat) =>
+    new RegExp(`\\b${pat.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")}\\b`, "i").test(docText)
+  );
 
   let isDomainConflict = false;
   if (std.domain === "FOOD" && ["structural stability", "boiler", "factory building", "machinery load", "air pollution"].some((k) => docText.includes(k))) {
     isDomainConflict = true;
-  } else if (std.domain === "LABOR" && ["food safety", "potability", "fssai", "restaurant menu"].some((k) => docText.includes(k))) {
+  } else if (std.domain === "LABOR" && ["food safety", "potability", "restaurant menu"].some((k) => docText.includes(k))) {
     isDomainConflict = true;
   } else if (std.domain === "ENVIRONMENT" && ["food handler", "medical fitness", "salary slip"].some((k) => docText.includes(k))) {
     isDomainConflict = true;
-  } else if (std.domain === "STANDARDS" && ["electricity bill", "lease agreement", "restaurant"].some((k) => docText.includes(k))) {
+  } else if (std.domain === "STANDARDS" && ["electricity bill", "lease agreement"].some((k) => docText.includes(k))) {
     isDomainConflict = true;
   }
 
@@ -504,6 +508,11 @@ export function aiPrevalidateAndOCRAnalysis(
 
   const hasStatutoryEvidence =
     detectedMarkers.length > 0 || matchedStatutoryKeywords.length > 0 || matchedExpectedTerms.length > 0;
+
+  // Genuine statutory evidence overrules any incidental non-statutory phrase match
+  if (hasStatutoryEvidence && !isDomainConflict) {
+    hasIrrelevantPattern = false;
+  }
 
   const isBlankOrUnreadable =
     input.has_readable_text === false || ocr.status === "NO_READABLE_TEXT" || (extractedText.length > 0 && extractedText.length < 15);

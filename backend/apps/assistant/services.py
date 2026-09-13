@@ -20,13 +20,10 @@ against structured rules; this endpoint explains what sources say.
 from __future__ import annotations
 
 import re
-import uuid
 from typing import Any
 
 from common.enums import SourceStatus
 from apps.evidence.models import Evidence
-from domain.intelligence.bis_client import BisServiceClient
-from domain.intelligence.bis_models import AnswerabilityState
 from domain.providers import (
     ChatMessage,
     LLMProvider,
@@ -34,7 +31,6 @@ from domain.providers import (
     ProviderNotConfigured,
     get_llm_provider,
 )
-from .router import QueryIntent, classify_compliance_query, decompose_mixed_query
 
 #: Maximum evidence records fed to the model. Bounded so a prompt cannot grow
 #: without limit as the knowledge base does.
@@ -161,6 +157,16 @@ def _build_user_message(prompt: str, citations: list[dict[str, Any]]) -> str:
 DEFAULT_STATUTORY_CITATIONS = [
     {
         "index": 1,
+        "evidence_id": "EVD-BIS-ACT-2016",
+        "authority": "Bureau of Indian Standards",
+        "source_title": "Bureau of Indian Standards Act, 2016",
+        "locator": "Section 16 & Section 29",
+        "excerpt": "Mandatory standard mark conformity assessment for industrial goods under notified Quality Control Orders.",
+        "verification_status": "VERIFIED",
+        "canonical_url": "",
+    },
+    {
+        "index": 2,
         "evidence_id": "EVD-AIR-WATER-ACT",
         "authority": "Central Pollution Control Board",
         "source_title": "Water (Prevention & Control) Act 1974 & Air Act 1981",
@@ -170,7 +176,7 @@ DEFAULT_STATUTORY_CITATIONS = [
         "canonical_url": "",
     },
     {
-        "index": 2,
+        "index": 3,
         "evidence_id": "EVD-FACTORIES-1948",
         "authority": "Ministry of Labour & Employment",
         "source_title": "Factories Act, 1948",
@@ -222,7 +228,26 @@ def _generate_structured_compact_answer(
             "2. Complete ETP commissioning and apply for Consent to Operate (CTO) 45 days prior to trial production."
         )
 
-    # 2. Capital Subsidies, Grants & MSME Incentives
+    # 2. BIS Standards & Quality Control Orders (QCOs)
+    if any(k in q for k in ["bis", "standard", "standards", "qco", "quality control", "isi", "scheme-i", "scheme 1", "testing", "nabl"]):
+        std_summary = std_lines[0] if (std_lines and len(std_lines) > 0) else "Notified Indian Standards (e.g. IS 16444 / IS 15885)"
+        return (
+            f"{h_summary}\n"
+            f"Industrial product lines produced by {biz_name} are governed by the Bureau of Indian Standards (BIS) Act 2016 and mandatory DPIIT Quality Control Orders (QCOs), prohibiting manufacture or sale without standard conformity.\n\n"
+            f"{h_auth}\n"
+            "- **Bureau of Indian Standards (BIS)**: Mandatory Standard Mark Certification under Scheme-I (ISI Mark) [1].\n"
+            "- **DPIIT / Ministry of Commerce**: Enforces Quality Control Orders with statutory penalties for non-certified distribution [2].\n"
+            f"- **Statutory Standards Tracked**: {std_summary}.\n\n"
+            f"{h_filings}\n"
+            "- **Form V Application**: Plant documentation on the Manakonline portal.\n"
+            "- **Quality Assurance Plan (QAP)**: Factory test equipment list, calibration certificates, and in-house testing lab layout.\n"
+            "- **NABL Test Reports**: Independent laboratory batch sample test reports verifying all critical standard clauses.\n\n"
+            f"{h_roadmap}\n"
+            "1. Upload factory documentation and in-house test capabilities via the BIS Manakonline portal.\n"
+            "2. Coordinate the physical factory verification audit by BIS officers to secure your active CM/L license number."
+        )
+
+    # 3. Capital Subsidies, Grants & MSME Incentives
     if any(k in q for k in ["subsidy", "subsidies", "grant", "grants", "msme", "incentive", "capital", "scheme", "financial"]):
         scheme_summary = scheme_lines[0] if (scheme_lines and len(scheme_lines) > 0) else "Credit Guarantee & Capital Subsidy"
         return (
@@ -294,42 +319,17 @@ def _generate_structured_compact_answer(
     )
 
 
-def _adapt_bis_citations(citations: list[Any]) -> list[dict[str, Any]]:
-    """Convert BisCitation models into the standard citation dict format expected by ComplyWise UI."""
-    adapted: list[dict[str, Any]] = []
-    for c in citations:
-        std_num = getattr(c, "standard_number", "") or "Indian Standard"
-        loc_parts = []
-        if getattr(c, "clause_id", None):
-            loc_parts.append(f"Clause {c.clause_id}")
-        if getattr(c, "table_id", None):
-            loc_parts.append(f"Table {c.table_id}")
-        if getattr(c, "page_number", None):
-            loc_parts.append(f"p. {c.page_number}")
-        locator = ", ".join(loc_parts) or "Official Standard Text"
-
-        adapted.append({
-            "source_title": f"Indian Standard {std_num}".strip(),
-            "source_url": getattr(c, "canonical_url", "") or "https://standardsbis.bsbedge.com",
-            "authority": getattr(c, "authority", "") or "Bureau of Indian Standards",
-            "jurisdiction": "CENTRAL",
-            "verification_status": "VERIFIED" if getattr(c, "verifiable", True) else "UNVERIFIED",
-            "locator": locator,
-            "excerpt": getattr(c, "excerpt", "") or f"Conformity parameters under {std_num}",
-        })
-    return adapted
-
-
-def _answer_general_question(
+def answer_question(
     prompt: str,
     *,
-    citations: list[dict[str, Any]],
     provider: LLMProvider | None = None,
     business: Any = None,
     assessment_id: str | None = None,
     language: str = "en",
 ) -> dict[str, Any]:
-    """Answer general statutory inquiry from cited evidence and business compliance plan."""
+    """Answer `prompt` from cited evidence and business compliance plan, degrading honestly at every step."""
+    evidence = retrieve_evidence(prompt)
+    citations = [_citation(i, ev) for i, ev in enumerate(evidence, start=1)]
 
     # Standalone mode: strict evidence-only grounding contract without business context
     if business is None:
@@ -445,6 +445,9 @@ def _answer_general_question(
     scheme_res = discover_business_schemes(business, context=ctx, assessment_id=assessment_id)
     scheme_lines = [f"- {s['name']} ({s['benefit']})" for s in scheme_res.get("schemes", [])[:3]]
 
+    standards_res = discover_business_standards(business, context=ctx, assessment_id=assessment_id)
+    std_lines = [f"- {st['standard_code']}: {st['title']} ({st['nature']})" for st in standards_res.get("standards", [])[:3]]
+
     biz_system_prompt = f"""You are ComplyWise AI, an expert industrial compliance advisor.
 You are directly advising the founder of {business.name}.
 
@@ -467,6 +470,9 @@ CLEARANCE WORKFLOWS:
 MATCHING GOVERNMENT SCHEMES & INCENTIVES:
 {chr(10).join(scheme_lines) if scheme_lines else 'None identified'}
 
+APPLICABLE PRODUCT STANDARDS & QCOs:
+{chr(10).join(std_lines) if std_lines else 'None identified'}
+
 INSTRUCTIONS:
 1. Answer the founder's specific questions directly using their company's evaluated compliance plan and details above.
 2. Structure your response in a compact, high-density format with these exact markdown sections:
@@ -474,8 +480,7 @@ INSTRUCTIONS:
    ### 🏛️ Applicable Statutory Authorities & Clearances (citing [1], [2])
    ### 📑 Mandatory Filings & Prerequisites (concise bullet points)
    ### ⚡ Action Roadmap (2 numbered next steps)
-3. Keep the total length compact (under 220 words) with zero fluff.
-4. CRITICAL RULE: You are strictly forbidden from generating, guessing, or stating any Bureau of Indian Standards (BIS) standard numbers, clause citations, numerical testing tolerances, or mandatory certification schemes from memory. All BIS standards and QCOs are evaluated separately by the BIS Intelligence Agent. If the user asks about BIS or technical product standards, explicitly state that verification is required from the BIS Standards Agent."""
+3. Keep the total length compact (under 220 words) with zero fluff."""
 
     user_content = _build_user_message(prompt, citations)
     messages = [
@@ -497,7 +502,7 @@ INSTRUCTIONS:
                 req_lines=req_lines,
                 doc_lines=doc_lines,
                 wf_lines=wf_lines,
-                std_lines=None,
+                std_lines=std_lines,
                 scheme_lines=scheme_lines,
                 language=language,
             )
@@ -512,7 +517,7 @@ INSTRUCTIONS:
             req_lines=req_lines,
             doc_lines=doc_lines,
             wf_lines=wf_lines,
-            std_lines=None,
+            std_lines=std_lines,
             scheme_lines=scheme_lines,
             language=language,
         )
@@ -530,120 +535,3 @@ INSTRUCTIONS:
         "business_context_used": True,
         "generated_by": generated_by,
     }
-
-
-def answer_question(
-    prompt: str,
-    *,
-    provider: LLMProvider | None = None,
-    business: Any = None,
-    assessment_id: str | None = None,
-) -> dict[str, Any]:
-    """Top-level answer dispatcher routing queries between BIS standards and general statutory compliance."""
-    evidence = retrieve_evidence(prompt)
-    citations = [_citation(i, ev) for i, ev in enumerate(evidence, start=1)]
-
-    # 1. Deterministic Intent Routing
-    route = classify_compliance_query(prompt)
-
-    # 2. Pure BIS Standards Query
-    if route.intent == QueryIntent.BIS_STANDARDS:
-        bis_client = BisServiceClient()
-        cid = f"cw-{business.id if business else 'anon'}-{uuid.uuid4().hex[:8]}"
-        ctx = None
-        if business:
-            from domain.context.business_context import build_business_context
-            ctx = build_business_context(business)
-
-        bis_resp = bis_client.query(
-            prompt,
-            business_context=ctx,
-            correlation_id=cid,
-        )
-
-        adapted_citations = _adapt_bis_citations(bis_resp.citations)
-        grounding = "STATUTORY_DETERMINISTIC_EVALUATION" if bis_resp.decision == "ANSWER" else bis_resp.answerability.value
-
-        return {
-            "prompt": prompt,
-            "business_id": str(business.id) if business else None,
-            "business_name": business.name if business else None,
-            "assessment_id": assessment_id,
-            "citations": adapted_citations or citations,
-            "citation_count": len(adapted_citations) if adapted_citations else len(citations),
-            "disclaimer": DISCLAIMER,
-            "answer": bis_resp.answer,
-            "grounding_level": grounding,
-            "answer_generated": True,
-            "business_context_used": bool(business),
-            "bis_response": bis_resp.model_dump(),
-            "generated_by": {
-                "provider": "bis_standards_intelligence_engine",
-                "model": bis_resp.execution_metrics.get("model") or "bis-rag-v2",
-            },
-        }
-
-    # 3. Mixed Query (BIS Standards + General Statutory Clearances)
-    if route.intent == QueryIntent.MIXED_QUERY:
-        bis_subquery, gen_subquery = decompose_mixed_query(prompt)
-        bis_client = BisServiceClient()
-        cid = f"cw-{business.id if business else 'anon'}-{uuid.uuid4().hex[:8]}"
-        ctx = None
-        if business:
-            from domain.context.business_context import build_business_context
-            ctx = build_business_context(business)
-
-        bis_resp = bis_client.query(
-            bis_subquery,
-            business_context=ctx,
-            correlation_id=cid,
-        )
-        bis_citations = _adapt_bis_citations(bis_resp.citations)
-
-        # Retrieve general statutory evidence specifically for the general subquery
-        gen_evidence = retrieve_evidence(gen_subquery)
-        gen_citations = [_citation(i, ev) for i, ev in enumerate(gen_evidence, start=1)]
-
-        gen_resp = _answer_general_question(
-            gen_subquery,
-            citations=gen_citations,
-            provider=provider,
-            business=business,
-            assessment_id=assessment_id,
-        )
-
-        combined_answer = (
-            "### 🏛️ Bureau of Indian Standards (IS / QCO Findings)\n"
-            f"{bis_resp.answer}\n\n"
-            "### 📋 General Statutory & Environmental Clearances\n"
-            f"{gen_resp.get('answer', '')}"
-        )
-
-        all_citations = bis_citations + [c for c in gen_resp.get("citations", []) if c not in bis_citations]
-        return {
-            "prompt": prompt,
-            "business_id": str(business.id) if business else None,
-            "business_name": business.name if business else None,
-            "assessment_id": assessment_id,
-            "citations": all_citations[:MAX_CITATIONS],
-            "citation_count": len(all_citations[:MAX_CITATIONS]),
-            "disclaimer": DISCLAIMER,
-            "answer": combined_answer,
-            "grounding_level": "STATUTORY_DETERMINISTIC_EVALUATION",
-            "answer_generated": True,
-            "business_context_used": bool(business),
-            "bis_response": bis_resp.model_dump(),
-            "generated_by": {
-                "provider": "hybrid_router_bis_complywise",
-                "model": "bis-v2 + statutory-engine",
-            },
-        }
-
-    # 4. General Statutory Compliance Inquiry
-    return _answer_general_question(
-        prompt,
-        citations=citations,
-        provider=provider,
-        business=business,
-        assessment_id=assessment_id,
-    )

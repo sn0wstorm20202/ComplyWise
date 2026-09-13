@@ -197,28 +197,6 @@ def liveness_payload() -> dict[str, Any]:
     }
 
 
-def check_bis_engine() -> dict[str, Any]:
-    """Check connectivity and readiness of the internal BIS Standards Intelligence Engine."""
-    enabled = getattr(settings, "ENABLE_BIS_INTEGRATION", True)
-    if not enabled:
-        return {
-            "status": "disabled",
-            "enabled": False,
-            "note": "BIS Standards Intelligence integration is disabled in configuration.",
-        }
-
-    try:
-        from domain.intelligence.bis_client import BisServiceClient
-        client = BisServiceClient()
-        return client.check_health()
-    except Exception as exc:
-        return {
-            "status": "unreachable",
-            "healthy": False,
-            "error": str(exc),
-        }
-
-
 def readiness_payload() -> tuple[dict[str, Any], bool]:
     """Return `(payload, is_ready)`.
 
@@ -233,7 +211,6 @@ def readiness_payload() -> tuple[dict[str, Any], bool]:
         "knowledge_packs": check_knowledge_packs(),
         "integrations": check_integrations(),
         "providers": check_providers(),
-        "bis_engine": check_bis_engine(),
     }
     is_ready = database.get("status") in {OK, DEGRADED}
     overall = OK if database.get("status") == OK else (DEGRADED if is_ready else UNAVAILABLE)

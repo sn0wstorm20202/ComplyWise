@@ -15,7 +15,6 @@ registration scheme covers — a claim nothing in the system had established.
 
 from __future__ import annotations
 
-import uuid
 from typing import Any
 
 from rest_framework import status
@@ -31,7 +30,6 @@ from apps.knowledge.models import RequirementDefinition
 
 from apps.businesses.models import Business
 from domain.intelligence.standards_discovery import discover_business_standards
-from domain.intelligence.bis_client import BisServiceClient
 
 #: Requirement category holding standards/certification obligations.
 STANDARD_CATEGORY = "STANDARD"
@@ -190,39 +188,3 @@ class StandardsSearchView(APIView):
             ),
             status=status.HTTP_200_OK,
         )
-
-
-class BisAgentQueryView(APIView):
-    """Direct query endpoint for the BIS Standards Intelligence Engine (Screen 14 / BISAgent component)."""
-
-    permission_classes = [AllowAny]
-
-    def post(self, request: Request) -> Response:
-        query = str(request.data.get("query", "") or "").strip()
-        if not query:
-            return Response(
-                envelope({"error": "Query is required."}),
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        business_id = request.data.get("business_id")
-        business = None
-        ctx = None
-        if business_id:
-            business = Business.objects.filter(pk=business_id, is_active=True).first()
-            if business:
-                from domain.context.business_context import build_business_context
-                ctx = build_business_context(business)
-
-        top_k = int(request.data.get("top_k", 5))
-        client = BisServiceClient()
-        cid = f"cw-bis-view-{uuid.uuid4().hex[:8]}"
-
-        bis_resp = client.query(
-            query,
-            business_context=ctx,
-            top_k=top_k,
-            correlation_id=cid,
-        )
-
-        return Response(envelope(bis_resp.model_dump()), status=status.HTTP_200_OK)

@@ -9,7 +9,7 @@
  */
 
 import { request } from "./client";
-import { StandardItem, BisQueryResponse } from "@/types";
+import { StandardItem } from "@/types";
 
 export interface StandardsSearchResponse {
   query: string;
@@ -27,14 +27,5 @@ export const standardsApi = {
         ...(businessId ? { business_id: businessId } : {}),
         ...(assessmentId ? { assessment_id: assessmentId } : {}),
       },
-    }),
-
-  bisQuery: (query: string, businessId?: string | null): Promise<BisQueryResponse> =>
-    request<BisQueryResponse>("/standards/bis-query", {
-      method: "POST",
-      body: JSON.stringify({
-        query,
-        ...(businessId ? { business_id: businessId } : {}),
-      }),
     }),
 };

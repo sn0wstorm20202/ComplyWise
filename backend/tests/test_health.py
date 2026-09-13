@@ -39,7 +39,7 @@ def test_readiness_reports_each_dependency(api_client):
     response = api_client.get("/api/v1/health/ready")
     assert response.status_code in (200, 503)
     checks = response.json()["data"]["checks"]
-    assert set(checks) == {"database", "pgvector", "knowledge_packs", "integrations", "providers"}
+    assert set(checks) == {"database", "pgvector", "knowledge_packs", "integrations", "providers", "bis_engine"}
     # The database check must have actually run a query, not been assumed.
     assert checks["database"]["status"] in {"ok", "degraded", "unavailable"}
 

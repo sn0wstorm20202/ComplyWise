@@ -80,7 +80,7 @@ export default function RegisterScreen() {
         password,
         full_name: fullName,
       });
-      // Navigation is automatically handled by the AuthGuard in _layout.tsx
+      router.replace('/(onboarding)/setup');
     } catch {
       // Handled by AuthContext
     }

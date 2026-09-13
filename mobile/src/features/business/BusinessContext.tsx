@@ -10,7 +10,6 @@ import { Business, BusinessSummary } from '../../types/business';
 import { businessApi } from './api';
 import { storage } from '../../storage';
 import { useAuth } from '../auth/useAuth';
-import { INITIAL_DATABASE_BUSINESSES } from '../../data/userProfileHomeData';
 
 const SELECTED_BIZ_KEY = 'complywise_selected_business_id';
 
@@ -29,20 +28,18 @@ const BusinessContext = createContext<BusinessContextValue | null>(null);
 
 export function BusinessProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
-  const [businesses, setBusinesses] = useState<BusinessSummary[]>(INITIAL_DATABASE_BUSINESSES);
-  const [currentBusiness, setCurrentBusiness] = useState<BusinessSummary | null>(
-    INITIAL_DATABASE_BUSINESSES[0] || null
-  );
+  const [businesses, setBusinesses] = useState<BusinessSummary[]>([]);
+  const [currentBusiness, setCurrentBusiness] = useState<BusinessSummary | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadBusinesses = useCallback(async () => {
     if (!isAuthenticated) {
-      setBusinesses(INITIAL_DATABASE_BUSINESSES);
-      setCurrentBusiness(INITIAL_DATABASE_BUSINESSES[0] || null);
+      setBusinesses([]);
+      setCurrentBusiness(null);
       setIsLoading(false);
-      setIsLoaded(false);
+      setIsLoaded(true);
       return;
     }
 
@@ -72,11 +69,6 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // If still empty, fall back to canonical Supabase database profiles (same as web)
-      if (list.length === 0) {
-        list = INITIAL_DATABASE_BUSINESSES;
-      }
-
       setBusinesses(list);
 
       // Check saved preference or default to first business
@@ -85,10 +77,12 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       setCurrentBusiness(found);
       if (found && found.id !== savedId) {
         await storage.setItem(SELECTED_BIZ_KEY, found.id);
+      } else if (!found) {
+        await storage.removeItem(SELECTED_BIZ_KEY);
       }
     } catch (err: unknown) {
-      setBusinesses(INITIAL_DATABASE_BUSINESSES);
-      setCurrentBusiness(INITIAL_DATABASE_BUSINESSES[0] || null);
+      setBusinesses([]);
+      setCurrentBusiness(null);
       const msg = err instanceof Error ? err.message : 'Failed to load business profile.';
       setError(msg);
     } finally {

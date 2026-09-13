@@ -15,7 +15,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../src/theme';
 import { useBusiness } from '../../src/features/business';
@@ -85,10 +85,12 @@ const TRADE_INTENTS = [
 
 export default function BusinessSetupScreen() {
   const router = useRouter();
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
   const { businesses, currentBusiness, createBusiness, refreshBusinesses } = useBusiness();
+  const isNewSetup = mode === 'new' || !currentBusiness;
 
   // Core Identity & Constitution
-  const [businessName, setBusinessName] = useState(currentBusiness?.name || '');
+  const [businessName, setBusinessName] = useState(isNewSetup ? '' : (currentBusiness?.name || ''));
   const [legalConstitution, setLegalConstitution] = useState('PRIVATE_LIMITED');
   const [lifecycleStage, setLifecycleStage] = useState('OPERATIONAL');
 
@@ -111,9 +113,9 @@ export default function BusinessSetupScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pre-fill existing business profile if available
+  // Pre-fill existing business profile only if editing an existing entity
   const preloadProfile = useCallback(async () => {
-    if (!currentBusiness?.id) return;
+    if (isNewSetup || !currentBusiness?.id) return;
     try {
       const profileData = await businessApi.getBusinessProfile(currentBusiness.id);
       const cv = profileData.current_version?.variables;
@@ -178,7 +180,7 @@ export default function BusinessSetupScreen() {
 
     try {
       let bizId = currentBusiness?.id;
-      if (!bizId || (currentBusiness && currentBusiness.name !== trimmedName)) {
+      if (isNewSetup || !bizId || (currentBusiness && currentBusiness.name !== trimmedName)) {
         const created = await createBusiness(trimmedName);
         bizId = created.id;
       }

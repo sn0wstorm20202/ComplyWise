@@ -29,10 +29,11 @@ import { EmptyState } from '../../../src/components/common/EmptyState';
 import { useBusiness } from '../../../src/features/business';
 import { workApi } from '../../../src/features/work/api';
 import {
-  BusinessWorkflow,
   CalendarEvent,
-  WorkflowStep,
+  StatutoryWorkflow,
+  WorkflowStageNode,
 } from '../../../src/types/work';
+import { DEMO_STATUTORY_WORKFLOWS } from '../../../src/data/statutoryWorkflows';
 
 type SubTab = 'DOCUMENTS' | 'WORKFLOWS' | 'CALENDAR';
 
@@ -112,98 +113,6 @@ function getDeterministicDocuments(): DocumentDetailItem[] {
   ];
 }
 
-function getDeterministicWorkflows(): BusinessWorkflow[] {
-  return [
-    {
-      id: 'WF-01',
-      requirement_id: 'REQ-FACTORY-01',
-      title: 'Factory Licence Annual Renewal',
-      authority: 'Directorate of Industrial Safety',
-      status: 'IN_PROGRESS',
-      steps: [
-        {
-          step_number: 1,
-          title: 'Compile Previous Licence & Layout Plan',
-          description: 'Gather registration certificate and updated plant blueprint.',
-          is_completed: true,
-        },
-        {
-          step_number: 2,
-          title: 'Pay Annual Statutory Treasury Fee',
-          description: 'Generate challan on directorate portal (₹12,500).',
-          is_completed: true,
-        },
-        {
-          step_number: 3,
-          title: 'Submit Online Renewal Application Form 2',
-          description: 'Upload certified documents and submit digital token.',
-          is_completed: false,
-        },
-        {
-          step_number: 4,
-          title: 'Departmental Field Verification',
-          description: 'Inspector site visit and final endorsement.',
-          is_completed: false,
-        },
-      ],
-    },
-    {
-      id: 'WF-02',
-      requirement_id: 'REQ-FIRE-02',
-      title: 'Fire Safety NOC Clearance',
-      authority: 'State Fire Department',
-      status: 'IN_PROGRESS',
-      steps: [
-        {
-          step_number: 1,
-          title: 'Hydrant & Extinguisher Inspection',
-          description: 'NOC audit by authorized fire safety engineer.',
-          is_completed: true,
-        },
-        {
-          step_number: 2,
-          title: 'Evacuation Drill & Staff Training',
-          description: 'Conduct bi-annual fire emergency evacuation training.',
-          is_completed: false,
-        },
-        {
-          step_number: 3,
-          title: 'Portal Submission & Clearance Receipt',
-          description: 'Receive digital NOC certificate.',
-          is_completed: false,
-        },
-      ],
-    },
-    {
-      id: 'WF-03',
-      requirement_id: 'REQ-CTO-03',
-      title: 'Pollution Control Board Consent Renewal',
-      authority: 'State Pollution Control Board',
-      status: 'READY',
-      steps: [
-        {
-          step_number: 1,
-          title: 'Quarterly Effluent & Air Stack Testing',
-          description: 'Laboratory analysis report from NABL accredited lab.',
-          is_completed: true,
-        },
-        {
-          step_number: 2,
-          title: 'Online Application on OCMMS Portal',
-          description: 'Submit renewal application and pay water cess fee.',
-          is_completed: true,
-        },
-        {
-          step_number: 3,
-          title: 'Grant of Consent (CTO Extension)',
-          description: 'Final order issued with 1-year statutory validity.',
-          is_completed: true,
-        },
-      ],
-    },
-  ];
-}
-
 function getDeterministicCalendar(): CalendarEvent[] {
   return [
     {
@@ -255,7 +164,6 @@ export default function WorkScreen() {
   const [activeTab, setActiveTab] = useState<SubTab>('DOCUMENTS');
 
   const [documents, setDocuments] = useState<DocumentDetailItem[]>([]);
-  const [workflows, setWorkflows] = useState<BusinessWorkflow[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -264,6 +172,138 @@ export default function WorkScreen() {
 
   // Document details modal
   const [selectedDoc, setSelectedDoc] = useState<DocumentDetailItem | null>(null);
+
+  // Statutory Interactive Workflows State
+  const [statutoryWorkflows, setStatutoryWorkflows] =
+    useState<StatutoryWorkflow[]>(DEMO_STATUTORY_WORKFLOWS);
+  const [selectedWfIndex, setSelectedWfIndex] = useState<number>(0);
+  const currentWf = statutoryWorkflows[selectedWfIndex] || statutoryWorkflows[0];
+  const [selectedStageId, setSelectedStageId] = useState<string>(
+    currentWf.stages[currentWf.currentStageIndex]?.id || currentWf.stages[0].id
+  );
+  const [wfSuccessBanner, setWfSuccessBanner] = useState<string | null>(null);
+  const [reviewStage, setReviewStage] = useState<WorkflowStageNode | null>(null);
+
+  const activeStage =
+    currentWf.stages.find((s) => s.id === selectedStageId) || currentWf.stages[0];
+
+  const selectWorkflow = (idx: number) => {
+    setSelectedWfIndex(idx);
+    const targetWf = statutoryWorkflows[idx];
+    if (targetWf) {
+      setSelectedStageId(
+        targetWf.stages[targetWf.currentStageIndex]?.id || targetWf.stages[0].id
+      );
+    }
+  };
+
+  const handleToggleChecklistItem = (stageId: string, itemIdx: number) => {
+    setStatutoryWorkflows((prevWfs) =>
+      prevWfs.map((wf, wIdx) => {
+        if (wIdx !== selectedWfIndex) return wf;
+        const updatedStages = wf.stages.map((st) => {
+          if (st.id !== stageId) return st;
+          const updatedChecklist = (st.checklist || []).map((c, cIdx) =>
+            cIdx === itemIdx ? { ...c, done: !c.done } : c
+          );
+          return { ...st, checklist: updatedChecklist };
+        });
+        return { ...wf, stages: updatedStages };
+      })
+    );
+  };
+
+  const handleCheckAll = (stageId: string) => {
+    setStatutoryWorkflows((prevWfs) =>
+      prevWfs.map((wf, wIdx) => {
+        if (wIdx !== selectedWfIndex) return wf;
+        const updatedStages = wf.stages.map((st) => {
+          if (st.id !== stageId) return st;
+          const updatedChecklist = (st.checklist || []).map((c) => ({ ...c, done: true }));
+          return { ...st, checklist: updatedChecklist };
+        });
+        return { ...wf, stages: updatedStages };
+      })
+    );
+  };
+
+  const handleCompleteAndAdvance = (stage: WorkflowStageNode) => {
+    const wf = statutoryWorkflows[selectedWfIndex];
+    const stageIndex = wf.stages.findIndex((s) => s.id === stage.id);
+    const nextIndex = stageIndex + 1;
+    const hasNext = nextIndex < wf.stages.length;
+
+    setStatutoryWorkflows((prevWfs) =>
+      prevWfs.map((w, wIdx) => {
+        if (wIdx !== selectedWfIndex) return w;
+        const updatedStages = w.stages.map((st, idx) => {
+          if (idx === stageIndex) {
+            return {
+              ...st,
+              status: 'COMPLETED' as const,
+              checklist: (st.checklist || []).map((item) => ({ ...item, done: true })),
+              updatedAt: 'Just now',
+            };
+          }
+          if (idx === nextIndex) {
+            return {
+              ...st,
+              status: 'IN_PROGRESS' as const,
+              updatedAt: 'Just now',
+            };
+          }
+          return st;
+        });
+
+        const nextStageIdx = hasNext ? nextIndex : stageIndex;
+        return {
+          ...w,
+          currentStageIndex: nextStageIdx,
+          status: hasNext ? w.status : ('COMPLETED' as const),
+          blocker: stage.number === 3 ? null : w.blocker,
+          stages: updatedStages,
+        };
+      })
+    );
+
+    if (hasNext) {
+      const nextStage = wf.stages[nextIndex];
+      setSelectedStageId(nextStage.id);
+      setWfSuccessBanner(
+        `✓ Stage ${stage.number} (${stage.name}) audit approved & completed! Stage progress bar updated to green. Advanced to Stage ${nextStage.number} (${nextStage.name}).`
+      );
+    } else {
+      const hasNextWorkflow = selectedWfIndex + 1 < statutoryWorkflows.length;
+      if (hasNextWorkflow) {
+        const nextWfIndex = selectedWfIndex + 1;
+        const nextWf = statutoryWorkflows[nextWfIndex];
+        setWfSuccessBanner(
+          `✓ Stage ${stage.number} completed! Workflow ${selectedWfIndex + 1} fully certified. Automatically advancing to Workflow ${nextWfIndex + 1} (${nextWf.title})...`
+        );
+        setTimeout(() => {
+          selectWorkflow(nextWfIndex);
+        }, 1200);
+      } else {
+        setWfSuccessBanner(
+          `✓ Final Stage ${stage.number} successfully completed! All statutory clearance workflows are fully certified.`
+        );
+      }
+    }
+
+    setTimeout(() => {
+      setWfSuccessBanner(null);
+    }, 7000);
+  };
+
+  const handleResetWorkflow = () => {
+    setStatutoryWorkflows(DEMO_STATUTORY_WORKFLOWS);
+    const initialWf = DEMO_STATUTORY_WORKFLOWS[selectedWfIndex];
+    setSelectedStageId(
+      initialWf.stages[initialWf.currentStageIndex]?.id || initialWf.stages[0].id
+    );
+    setWfSuccessBanner('Workflow reset to active audit stage for live verification.');
+    setTimeout(() => setWfSuccessBanner(null), 3000);
+  };
 
   const fetchData = useCallback(async () => {
     if (!currentBusiness) {
@@ -295,16 +335,7 @@ export default function WorkScreen() {
           setDocuments(getDeterministicDocuments());
         }
       } else if (activeTab === 'WORKFLOWS') {
-        try {
-          const res = await workApi.getWorkflows(currentBusiness.id);
-          if (res && res.workflows && res.workflows.length > 0) {
-            setWorkflows(res.workflows);
-          } else {
-            setWorkflows(getDeterministicWorkflows());
-          }
-        } catch {
-          setWorkflows(getDeterministicWorkflows());
-        }
+        // Interactive statutoryWorkflows pipeline is active
       } else if (activeTab === 'CALENDAR') {
         try {
           const res = await workApi.getCalendar(currentBusiness.id);
@@ -397,7 +428,7 @@ export default function WorkScreen() {
                 activeTab === 'WORKFLOWS' && styles.tabPillTextActive,
               ]}
             >
-              Workflows ({workflows.length})
+              Workflows ({statutoryWorkflows.length})
             </Text>
           </TouchableOpacity>
 
@@ -558,58 +589,405 @@ export default function WorkScreen() {
           </View>
         )}
 
-        {/* 2. WORKFLOWS VIEW */}
+        {/* 2. WORKFLOWS VIEW (Interactive Statutory Pipeline) */}
         {!loading && activeTab === 'WORKFLOWS' && (
           <View>
-            {workflows.length === 0 ? (
-              <EmptyState
-                icon="git-network-outline"
-                title="No Workflows Available"
-                description="Procedural roadmaps are automatically compiled from statutory filing guidelines."
-              />
-            ) : (
-              workflows.map((wf) => (
-                <View key={wf.id || wf.requirement_id} style={styles.workflowCard}>
-                  <View style={styles.workflowCardTop}>
-                    <View style={styles.authorityPill}>
-                      <Text style={styles.workflowAuthority}>{wf.authority}</Text>
-                    </View>
-                    <Text style={styles.workflowStepCount}>
-                      {wf.steps?.length || 4} Statutory Steps
+            {/* Top Workflow Selector Tabs */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.wfSelectorScroll}
+              style={styles.wfSelectorWrapper}
+            >
+              {statutoryWorkflows.map((wf, idx) => {
+                const isSel = idx === selectedWfIndex;
+                const isDone = wf.status === 'COMPLETED';
+                return (
+                  <TouchableOpacity
+                    key={wf.id}
+                    style={[
+                      styles.wfSelectorChip,
+                      isSel && styles.wfSelectorChipActive,
+                      isDone && styles.wfSelectorChipDone,
+                    ]}
+                    onPress={() => selectWorkflow(idx)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name={
+                        isDone
+                          ? 'checkmark-circle'
+                          : isSel
+                          ? 'radio-button-on'
+                          : 'git-network-outline'
+                      }
+                      size={14}
+                      color={isDone ? '#059669' : isSel ? '#047857' : '#64748B'}
+                    />
+                    <Text
+                      style={[
+                        styles.wfSelectorChipText,
+                        isSel && styles.wfSelectorChipTextActive,
+                        isDone && styles.wfSelectorChipTextDone,
+                      ]}
+                    >
+                      {idx + 1}. {wf.standardCode}
+                    </Text>
+                    {isDone ? (
+                      <View style={styles.wfDoneMiniPill}>
+                        <Text style={styles.wfDoneMiniPillText}>Certified</Text>
+                      </View>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {/* Notification Banner */}
+            {wfSuccessBanner ? (
+              <View style={styles.wfBanner}>
+                <Ionicons name="checkmark-circle" size={18} color="#047857" />
+                <Text style={styles.wfBannerText}>{wfSuccessBanner}</Text>
+                <TouchableOpacity
+                  onPress={() => setWfSuccessBanner(null)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="close" size={16} color="#047857" />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
+            {/* Blocker Alert if active on current stage */}
+            {currentWf.blocker && activeStage.number === 3 ? (
+              <View style={styles.wfBlockerAlert}>
+                <Ionicons name="warning" size={18} color="#B45309" />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.wfBlockerTitle}>Active Statutory Gate Requirement:</Text>
+                  <Text style={styles.wfBlockerText}>{currentWf.blocker}</Text>
+                </View>
+              </View>
+            ) : null}
+
+            {/* Main Workflow Card */}
+            <View style={styles.interactiveWfCard}>
+              {/* Card Header */}
+              <View style={styles.interactiveWfHeader}>
+                <View style={styles.wfMetaBadgeRow}>
+                  <View style={styles.wfCodeBadge}>
+                    <Text style={styles.wfCodeBadgeText}>{currentWf.standardCode}</Text>
+                  </View>
+                  <View style={styles.wfAuthorityBadge}>
+                    <Text style={styles.wfAuthorityBadgeText}>{currentWf.authority}</Text>
+                  </View>
+                  <View style={styles.wfInteractiveBadge}>
+                    <Ionicons name="sparkles" size={11} color="#047857" />
+                    <Text style={styles.wfInteractiveBadgeText}>Interactive Pipeline</Text>
+                  </View>
+                </View>
+
+                <Text style={styles.interactiveWfTitle}>{currentWf.title}</Text>
+
+                <View style={styles.wfStatusRow}>
+                  <Text style={styles.wfDueDateText}>
+                    Deadline: <Text style={styles.wfDueDateBold}>{currentWf.dueDate}</Text>
+                  </Text>
+                  <View style={styles.wfActiveStagePill}>
+                    <Text style={styles.wfActiveStagePillText}>
+                      Stage {currentWf.currentStageIndex + 1} of {currentWf.totalStages} Active
                     </Text>
                   </View>
-                  <Text style={styles.workflowTitle}>{wf.title}</Text>
+                  <TouchableOpacity
+                    style={styles.wfResetBtn}
+                    onPress={handleResetWorkflow}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="reload-outline" size={14} color="#64748B" />
+                  </TouchableOpacity>
+                </View>
+              </View>
 
-                  <View style={styles.stepsList}>
-                    {wf.steps?.map((step: WorkflowStep, sIdx: number) => (
-                      <View key={sIdx} style={styles.stepRow}>
+              {/* Horizontal Timeline Graph */}
+              <View style={styles.timelineContainer}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.timelineScrollContent}
+                >
+                  {/* Progress Line */}
+                  <View style={styles.timelineLineBase}>
+                    <View
+                      style={[
+                        styles.timelineLineProgress,
+                        {
+                          width: `${Math.min(
+                            100,
+                            Math.max(
+                              0,
+                              (currentWf.currentStageIndex /
+                                Math.max(1, currentWf.stages.length - 1)) *
+                                100
+                            )
+                          )}%`,
+                        },
+                      ]}
+                    />
+                  </View>
+
+                  {/* Stage Nodes */}
+                  {currentWf.stages.map((stage) => {
+                    const isCompleted = stage.status === 'COMPLETED';
+                    const isInProgress = stage.status === 'IN_PROGRESS';
+                    const isSelected = stage.id === selectedStageId;
+
+                    return (
+                      <TouchableOpacity
+                        key={stage.id}
+                        style={styles.nodeWrapper}
+                        onPress={() => setSelectedStageId(stage.id)}
+                        activeOpacity={0.7}
+                      >
                         <View
                           style={[
-                            styles.stepDot,
-                            step.is_completed && styles.stepDotCompleted,
+                            styles.nodeCircle,
+                            isCompleted && styles.nodeCircleCompleted,
+                            isInProgress && styles.nodeCircleInProgress,
+                            isSelected && styles.nodeCircleSelected,
+                          ]}
+                        >
+                          {isCompleted ? (
+                            <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                          ) : (
+                            <Text
+                              style={[
+                                styles.nodeNumberText,
+                                (isInProgress || isCompleted) && styles.nodeNumberTextActive,
+                              ]}
+                            >
+                              {stage.number}
+                            </Text>
+                          )}
+                        </View>
+                        <Text
+                          style={[
+                            styles.nodeLabel,
+                            isSelected && styles.nodeLabelSelected,
+                            isCompleted && styles.nodeLabelCompleted,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {stage.name}
+                        </Text>
+                        <View
+                          style={[
+                            styles.nodeMiniPill,
+                            isCompleted && styles.nodeMiniPillCompleted,
+                            isInProgress && styles.nodeMiniPillInProgress,
                           ]}
                         >
                           <Text
                             style={[
-                              styles.stepNumText,
-                              step.is_completed && styles.stepNumTextCompleted,
+                              styles.nodeMiniPillText,
+                              isCompleted && styles.nodeMiniPillTextCompleted,
+                              isInProgress && styles.nodeMiniPillTextInProgress,
                             ]}
                           >
-                            {step.is_completed ? '✓' : step.step_number || sIdx + 1}
+                            {isCompleted ? 'Verified ✓' : isInProgress ? 'In Progress' : 'Pending'}
                           </Text>
                         </View>
-                        <View style={styles.stepInfo}>
-                          <Text style={styles.stepTitleText}>{step.title}</Text>
-                          {step.description ? (
-                            <Text style={styles.stepDescText}>{step.description}</Text>
-                          ) : null}
-                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              {/* Selected Stage Detail Box */}
+              <View style={styles.stageDetailBox}>
+                <View style={styles.stageDetailTop}>
+                  <View
+                    style={[
+                      styles.stageNumberCircle,
+                      activeStage.status === 'COMPLETED' && styles.stageNumberCircleDone,
+                      activeStage.status === 'IN_PROGRESS' && styles.stageNumberCircleActive,
+                    ]}
+                  >
+                    <Text style={styles.stageNumberCircleText}>{activeStage.number}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.stageNameRow}>
+                      <Text style={styles.stageNameTitle}>
+                        Stage {activeStage.number}: {activeStage.name}
+                      </Text>
+                      <View
+                        style={[
+                          styles.stageStatusBadge,
+                          activeStage.status === 'COMPLETED' && styles.stageStatusBadgeDone,
+                          activeStage.status === 'IN_PROGRESS' && styles.stageStatusBadgeActive,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.stageStatusBadgeText,
+                            activeStage.status === 'COMPLETED' && styles.stageStatusBadgeTextDone,
+                            activeStage.status === 'IN_PROGRESS' &&
+                              styles.stageStatusBadgeTextActive,
+                          ]}
+                        >
+                          {activeStage.status}
+                        </Text>
                       </View>
-                    ))}
+                    </View>
+                    <Text style={styles.stageDesc}>{activeStage.description}</Text>
                   </View>
                 </View>
-              ))
-            )}
+
+                {/* Assigned & Target Schedule */}
+                <View style={styles.stageMetaRow}>
+                  <View style={styles.stageMetaItem}>
+                    <Ionicons name="person-outline" size={13} color="#64748B" />
+                    <Text style={styles.stageMetaText}>
+                      Assigned:{' '}
+                      <Text style={styles.stageMetaBold}>{activeStage.assignedTo}</Text>
+                    </Text>
+                  </View>
+                  {activeStage.estimatedCompletion ? (
+                    <View style={styles.stageMetaItem}>
+                      <Ionicons name="calendar-outline" size={13} color="#64748B" />
+                      <Text style={styles.stageMetaText}>
+                        Target:{' '}
+                        <Text style={styles.stageMetaBold}>
+                          {activeStage.estimatedCompletion}
+                        </Text>
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                {/* Interactive Checklist of Prerequisites */}
+                {activeStage.checklist && activeStage.checklist.length > 0 ? (
+                  <View style={styles.checklistSection}>
+                    <View style={styles.checklistHeader}>
+                      <Text style={styles.checklistHeaderText}>
+                        Statutory Checklist &amp; Verification (
+                        <Text style={{ color: '#047857', fontWeight: '700' }}>
+                          {activeStage.checklist.filter((c) => c.done).length}
+                        </Text>{' '}
+                        of {activeStage.checklist.length} Verified)
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => handleCheckAll(activeStage.id)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text style={styles.markAllBtnText}>Mark All Verified</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.checklistItemsList}>
+                      {activeStage.checklist.map((item, idx) => (
+                        <TouchableOpacity
+                          key={idx}
+                          style={[
+                            styles.checklistItemCard,
+                            item.done && styles.checklistItemCardDone,
+                          ]}
+                          onPress={() => handleToggleChecklistItem(activeStage.id, idx)}
+                          activeOpacity={0.7}
+                        >
+                          <View
+                            style={[
+                              styles.checkboxBox,
+                              item.done && styles.checkboxBoxDone,
+                            ]}
+                          >
+                            {item.done ? (
+                              <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                            ) : null}
+                          </View>
+                          <Text
+                            style={[
+                              styles.checklistItemLabel,
+                              item.done && styles.checklistItemLabelDone,
+                            ]}
+                          >
+                            {item.label}
+                          </Text>
+                          <View
+                            style={[
+                              styles.checklistMiniBadge,
+                              item.done && styles.checklistMiniBadgeDone,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.checklistMiniBadgeText,
+                                item.done && styles.checklistMiniBadgeTextDone,
+                              ]}
+                            >
+                              {item.done ? 'Verified' : 'Pending'}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
+
+                {/* Action Controls: Review Checklist & Submit Audit / Complete Stage */}
+                <View style={styles.stageActionRow}>
+                  {activeStage.status === 'COMPLETED' ? (
+                    <View style={styles.stageCompletedNotice}>
+                      <Ionicons name="checkmark-circle" size={16} color="#059669" />
+                      <Text style={styles.stageCompletedNoticeText}>
+                        This stage has passed statutory test criteria and is certified.
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.stageActionPrompt}>
+                      Complete checklist criteria, then tap{' '}
+                      <Text style={{ fontWeight: '700', color: '#0F172A' }}>
+                        {activeStage.number === 3 ? 'Please Submit Audit' : 'Complete & Advance'}
+                      </Text>{' '}
+                      to advance the pipeline.
+                    </Text>
+                  )}
+
+                  <View style={styles.actionButtonsWrap}>
+                    <TouchableOpacity
+                      style={styles.reviewChecklistBtn}
+                      onPress={() => setReviewStage(activeStage)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="document-text-outline" size={14} color="#0F172A" />
+                      <Text style={styles.reviewChecklistBtnText}>Review Checklist</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.submitAuditBtn,
+                        activeStage.status === 'COMPLETED' && styles.submitAuditBtnDone,
+                      ]}
+                      onPress={() => handleCompleteAndAdvance(activeStage)}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons
+                        name={activeStage.status === 'COMPLETED' ? 'checkmark-circle' : 'sparkles'}
+                        size={14}
+                        color="#FFFFFF"
+                      />
+                      <Text style={styles.submitAuditBtnText}>
+                        {activeStage.status === 'COMPLETED'
+                          ? 'Stage Verified ✓'
+                          : activeStage.number === 3
+                          ? 'Please Submit Audit'
+                          : activeStage.actionCta || 'Complete & Advance'}
+                      </Text>
+                      {activeStage.status !== 'COMPLETED' ? (
+                        <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+                      ) : null}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </View>
           </View>
         )}
 
@@ -705,6 +1083,68 @@ export default function WorkScreen() {
               activeOpacity={0.8}
             >
               <Text style={styles.modalDoneBtnText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Review Checklist Modal */}
+      <Modal
+        visible={!!reviewStage}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setReviewStage(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderTitleWrap}>
+                <Text style={styles.modalLabel}>AUDIT REVIEW DOSSIER</Text>
+                <Text style={styles.modalTitle}>
+                  Stage {reviewStage?.number}: {reviewStage?.name}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.closeBtn}
+                onPress={() => setReviewStage(null)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Ionicons name="close" size={22} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <View style={styles.specRow}>
+                <Text style={styles.specLabel}>Statutory Objective</Text>
+                <Text style={styles.specVal}>{reviewStage?.description}</Text>
+              </View>
+
+              <View style={styles.specRow}>
+                <Text style={styles.specLabel}>Compliance Officer In-Charge</Text>
+                <Text style={styles.specVal}>{reviewStage?.assignedTo}</Text>
+              </View>
+
+              <View style={styles.specRow}>
+                <Text style={styles.specLabel}>Checklist Verification Progress</Text>
+                <Text style={[styles.specVal, { color: '#047857', fontWeight: '700' }]}>
+                  {reviewStage?.checklist?.filter((c) => c.done).length || 0} of{' '}
+                  {reviewStage?.checklist?.length || 0} items verified (
+                  {Math.round(
+                    ((reviewStage?.checklist?.filter((c) => c.done).length || 0) /
+                      Math.max(1, reviewStage?.checklist?.length || 1)) *
+                      100
+                  )}
+                  %)
+                </Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.modalDoneBtn, { backgroundColor: '#059669' }]}
+              onPress={() => setReviewStage(null)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalDoneBtnText}>Dismiss Review</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1222,6 +1662,560 @@ const styles = StyleSheet.create({
   modalDoneBtnText: {
     fontSize: 14,
     fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  wfSelectorWrapper: {
+    marginBottom: 12,
+  },
+  wfSelectorScroll: {
+    gap: 8,
+    paddingVertical: 2,
+  },
+  wfSelectorChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  wfSelectorChipActive: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#10B981',
+  },
+  wfSelectorChipDone: {
+    borderColor: '#A7F3D0',
+  },
+  wfSelectorChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  wfSelectorChipTextActive: {
+    color: '#047857',
+    fontWeight: '700',
+  },
+  wfSelectorChipTextDone: {
+    color: '#059669',
+  },
+  wfDoneMiniPill: {
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 10,
+  },
+  wfDoneMiniPillText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#047857',
+  },
+  wfBanner: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  wfBannerText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#065F46',
+    fontWeight: '500',
+    lineHeight: 17,
+  },
+  wfBlockerAlert: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  wfBlockerTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#92400E',
+    textTransform: 'uppercase',
+  },
+  wfBlockerText: {
+    fontSize: 12,
+    color: '#B45309',
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  interactiveWfCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  interactiveWfHeader: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    paddingBottom: 14,
+    marginBottom: 14,
+  },
+  wfMetaBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+    marginBottom: 8,
+  },
+  wfCodeBadge: {
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  wfCodeBadgeText: {
+    fontFamily: 'monospace',
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  wfAuthorityBadge: {
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  wfAuthorityBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  wfInteractiveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  wfInteractiveBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#047857',
+  },
+  interactiveWfTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginVertical: 4,
+  },
+  wfStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 6,
+    gap: 8,
+  },
+  wfDueDateText: {
+    fontSize: 11,
+    color: '#64748B',
+  },
+  wfDueDateBold: {
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  wfActiveStagePill: {
+    backgroundColor: '#059669',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  wfActiveStagePillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  wfResetBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  timelineContainer: {
+    marginVertical: 14,
+    position: 'relative',
+  },
+  timelineScrollContent: {
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+    alignItems: 'center',
+    minWidth: 420,
+  },
+  timelineLineBase: {
+    position: 'absolute',
+    top: 28,
+    left: 24,
+    right: 24,
+    height: 3,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 2,
+  },
+  timelineLineProgress: {
+    height: '100%',
+    backgroundColor: '#059669',
+    borderRadius: 2,
+  },
+  nodeWrapper: {
+    alignItems: 'center',
+    width: 84,
+    marginHorizontal: 4,
+  },
+  nodeCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  nodeCircleCompleted: {
+    backgroundColor: '#059669',
+    borderColor: '#059669',
+  },
+  nodeCircleInProgress: {
+    backgroundColor: '#047857',
+    borderColor: '#6EE7B7',
+    borderWidth: 3,
+  },
+  nodeCircleSelected: {
+    borderWidth: 3,
+    borderColor: '#047857',
+  },
+  nodeNumberText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  nodeNumberTextActive: {
+    color: '#FFFFFF',
+  },
+  nodeLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  nodeLabelSelected: {
+    color: '#0F172A',
+    fontWeight: '700',
+  },
+  nodeLabelCompleted: {
+    color: '#065F46',
+  },
+  nodeMiniPill: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  nodeMiniPillCompleted: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+  },
+  nodeMiniPillInProgress: {
+    backgroundColor: '#D1FAE5',
+    borderColor: '#6EE7B7',
+  },
+  nodeMiniPillText: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  nodeMiniPillTextCompleted: {
+    color: '#047857',
+    fontWeight: '700',
+  },
+  nodeMiniPillTextInProgress: {
+    color: '#065F46',
+    fontWeight: '700',
+  },
+  stageDetailBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 14,
+    marginTop: 10,
+  },
+  stageDetailTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    paddingBottom: 12,
+  },
+  stageNumberCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stageNumberCircleDone: {
+    backgroundColor: '#059669',
+  },
+  stageNumberCircleActive: {
+    backgroundColor: '#047857',
+  },
+  stageNumberCircleText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  stageNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  stageNameTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  stageStatusBadge: {
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  stageStatusBadgeDone: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+  },
+  stageStatusBadgeActive: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FDE68A',
+  },
+  stageStatusBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+  },
+  stageStatusBadgeTextDone: {
+    color: '#047857',
+  },
+  stageStatusBadgeTextActive: {
+    color: '#B45309',
+  },
+  stageDesc: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 4,
+    lineHeight: 17,
+  },
+  stageMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    flexWrap: 'wrap',
+  },
+  stageMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  stageMetaText: {
+    fontSize: 11,
+    color: '#64748B',
+  },
+  stageMetaBold: {
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  checklistSection: {
+    marginTop: 12,
+  },
+  checklistHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  checklistHeaderText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  markAllBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#047857',
+  },
+  checklistItemsList: {
+    gap: 8,
+  },
+  checklistItemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 10,
+    borderRadius: 10,
+  },
+  checklistItemCardDone: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  checkboxBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  checkboxBoxDone: {
+    backgroundColor: '#059669',
+    borderColor: '#059669',
+  },
+  checklistItemLabel: {
+    flex: 1,
+    fontSize: 12,
+    color: '#1E293B',
+    fontWeight: '500',
+  },
+  checklistItemLabelDone: {
+    color: '#065F46',
+    fontWeight: '600',
+  },
+  checklistMiniBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  checklistMiniBadgeDone: {
+    backgroundColor: '#D1FAE5',
+  },
+  checklistMiniBadgeText: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  checklistMiniBadgeTextDone: {
+    color: '#047857',
+    fontWeight: '700',
+  },
+  stageActionRow: {
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    gap: 10,
+  },
+  stageCompletedNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#ECFDF5',
+    padding: 8,
+    borderRadius: 8,
+  },
+  stageCompletedNoticeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#047857',
+    flex: 1,
+  },
+  stageActionPrompt: {
+    fontSize: 11,
+    color: '#64748B',
+    lineHeight: 16,
+  },
+  actionButtonsWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  reviewChecklistBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    paddingVertical: 10,
+  },
+  reviewChecklistBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  submitAuditBtn: {
+    flex: 1.4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#059669',
+    borderRadius: 10,
+    paddingVertical: 10,
+  },
+  submitAuditBtnDone: {
+    backgroundColor: '#10B981',
+  },
+  submitAuditBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
 });

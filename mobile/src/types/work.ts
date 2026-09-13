@@ -19,6 +19,33 @@ export interface DocumentsResponse {
   total_required: number;
 }
 
+export interface WorkflowStageNode {
+  id: string;
+  number: number;
+  name: string;
+  status: 'COMPLETED' | 'IN_PROGRESS' | 'PENDING' | 'BLOCKED';
+  description: string;
+  assignedTo: string;
+  updatedAt?: string;
+  estimatedCompletion?: string;
+  actionCta?: string;
+  checklist?: { label: string; done: boolean }[];
+}
+
+export interface StatutoryWorkflow {
+  id: string;
+  title: string;
+  standardCode: string;
+  authority: string;
+  status: 'IN_PROGRESS' | 'WAITING_FOR_USER' | 'SUBMITTED' | 'COMPLETED';
+  currentStageIndex: number;
+  totalStages: number;
+  lastUpdated: string;
+  dueDate: string;
+  blocker?: string | null;
+  stages: WorkflowStageNode[];
+}
+
 export interface WorkflowStep {
   step_number: number;
   title: string;

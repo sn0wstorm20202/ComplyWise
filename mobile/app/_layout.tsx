@@ -21,7 +21,7 @@ import { theme } from '../src/theme';
 
 function NavigationGate() {
   const { status, isAuthenticated } = useAuth();
-  const { isLoading: businessLoading, isLoaded: businessLoaded } = useBusiness();
+  const { businesses, isLoading: businessLoading, isLoaded: businessLoaded } = useBusiness();
   const segments = useSegments();
   const router = useRouter();
 
@@ -32,20 +32,24 @@ function NavigationGate() {
     }
 
     const inAuthGroup = segments[0] === '(auth)';
-    const inOnboardingGroup = segments[0] === '(onboarding)';
-    const subRoute = (segments as readonly string[])[1];
 
     if (!isAuthenticated && !inAuthGroup) {
       // Redirect unauthenticated user to sign in
       router.replace('/(auth)/signin');
     } else if (isAuthenticated && inAuthGroup) {
-      // Authenticated user in auth flow ALWAYS routes directly to dashboard
-      router.replace('/(app)');
-    } else if (isAuthenticated && inOnboardingGroup && (!subRoute || subRoute === 'setup')) {
-      // If user lands on root setup route while authenticated, take them directly to their active profile dashboard
-      router.replace('/(app)');
+      // Authenticated user in auth flow:
+      // If user has zero businesses, redirect them to onboarding setup!
+      // If user already has businesses, route directly to dashboard!
+      if (businesses.length === 0) {
+        router.replace('/(onboarding)/setup');
+      } else {
+        router.replace('/(app)');
+      }
+    } else if (isAuthenticated && segments[0] === '(app)' && businesses.length === 0) {
+      // User has authenticated session but no registered business profile yet
+      router.replace('/(onboarding)/setup');
     }
-  }, [status, isAuthenticated, businessLoading, businessLoaded, segments, router]);
+  }, [status, isAuthenticated, businesses, businessLoading, businessLoaded, segments, router]);
 
   // Render branded light splash while hydrating session or loading business profile
   if (status === 'INITIALIZING' || (isAuthenticated && (!businessLoaded || businessLoading))) {

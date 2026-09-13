@@ -80,7 +80,7 @@ export default function ProfileScreen() {
 
             <TouchableOpacity
               style={styles.newBizBtn}
-              onPress={() => router.push('/(onboarding)/setup')}
+              onPress={() => router.push('/(onboarding)/setup?mode=new')}
               activeOpacity={0.7}
             >
               <Ionicons name="add" size={16} color={theme.colors.teal} />

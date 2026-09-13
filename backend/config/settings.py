@@ -400,6 +400,15 @@ EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "compliance-alerts@complywise.in")
 
 # ---------------------------------------------------------------------------
+# BIS Intelligence Agent Integration
+# ---------------------------------------------------------------------------
+ENABLE_BIS_INTEGRATION = env_bool("ENABLE_BIS_INTEGRATION", default=True)
+BIS_AGENT_BASE_URL = os.getenv("BIS_AGENT_BASE_URL", "http://127.0.0.1:8001")
+BIS_AGENT_INTERNAL_KEY = os.getenv("BIS_AGENT_INTERNAL_KEY", "complywise-internal-bis-key-default")
+BIS_AGENT_TIMEOUT_SECONDS = float(os.getenv("BIS_AGENT_TIMEOUT_SECONDS", "12.0"))
+BIS_AGENT_MAX_RETRIES = int(os.getenv("BIS_AGENT_MAX_RETRIES", "1"))
+
+# ---------------------------------------------------------------------------
 # Security hardening (active whenever DEBUG is off)
 # ---------------------------------------------------------------------------
 

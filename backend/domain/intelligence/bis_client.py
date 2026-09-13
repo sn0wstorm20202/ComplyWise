@@ -78,12 +78,13 @@ class BisSystemFailure(BisClientError):
 
 def get_bis_config() -> dict[str, Any]:
     """Resolve BIS integration settings with safe defaults."""
+    import os
     return {
         "enabled": getattr(settings, "ENABLE_BIS_INTEGRATION", True),
-        "base_url": getattr(settings, "BIS_AGENT_BASE_URL", "http://127.0.0.1:8001").rstrip("/"),
-        "internal_key": getattr(settings, "BIS_AGENT_INTERNAL_KEY", "complywise-internal-bis-key-default"),
-        "timeout": float(getattr(settings, "BIS_AGENT_TIMEOUT_SECONDS", 12.0)),
-        "max_retries": int(getattr(settings, "BIS_AGENT_MAX_RETRIES", 1)),
+        "base_url": os.getenv("BIS_AGENT_BASE_URL", getattr(settings, "BIS_AGENT_BASE_URL", "http://127.0.0.1:8001")).rstrip("/"),
+        "internal_key": os.getenv("BIS_AGENT_INTERNAL_KEY", getattr(settings, "BIS_AGENT_INTERNAL_KEY", "complywise-internal-bis-key-default")),
+        "timeout": float(os.getenv("BIS_AGENT_TIMEOUT_SECONDS", getattr(settings, "BIS_AGENT_TIMEOUT_SECONDS", 12.0))),
+        "max_retries": int(os.getenv("BIS_AGENT_MAX_RETRIES", getattr(settings, "BIS_AGENT_MAX_RETRIES", 1))),
     }
 
 

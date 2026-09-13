@@ -107,21 +107,34 @@ const STATUTORY_STANDARDS: Record<string, {
       "List of Processing Equipment and Machinery",
       "Medical Fitness Certificates of Food Handlers",
       "Form B Application for Central / State License",
+      "FSSAI Registration / License Certificate",
     ],
-    keywords: ["food", "fssai", "fsms", "water", "potability", "hygiene", "fbo", "kitchen", "haccp", "is 10500"],
+    keywords: [
+      "food", "fssai", "fsms", "water", "potability", "hygiene", "fbo", "kitchen", "haccp",
+      "is 10500", "safety", "license", "licence", "registration", "food safety", "premises",
+      "form a", "form b", "schedule 4", "central licensing", "state licensing"
+    ],
   },
   LABOR: {
     domain: "LABOR",
     authority: "DISH",
     prescribed_format: "Factories Act 1948 Form 1 / Form 2 Notice & Chartered Structural Stability Format",
     expected_documents: [
+      "Factory License / Registration Certificate (Form 4)",
       "Approved Factory Building Plan Approval",
       "Structural Stability Certificate from Chartered Engineer",
       "Machinery Layout Plan with Electric Motor Ratings (HP)",
       "On-Site Emergency Response & Fire Safety Plan",
       "Notice of Occupation of Factory (Form 1 / Form 2)",
+      "Renewal of Factory License",
     ],
-    keywords: ["factory", "dish", "factories act", "structural", "stability", "machinery", "horsepower", "safety", "fire", "emergency", "form 1", "form 2"],
+    keywords: [
+      "factory", "factories", "dish", "factories act", "structural", "stability",
+      "machinery", "horsepower", "hp", "safety", "fire", "emergency",
+      "form 1", "form 2", "form 3", "form 4", "form 5", "licence", "license",
+      "occupier", "manager", "worker", "workers", "manufacturing", "industrial",
+      "directorate", "labour", "labor", "inspector", "boiler", "employment"
+    ],
   },
   ENVIRONMENT: {
     domain: "ENVIRONMENT",
@@ -135,7 +148,10 @@ const STATUTORY_STANDARDS: Record<string, {
       "Detailed Project Report (DPR) with Process Flow Chart",
       "Water Balance Diagram and Source Authorization",
     ],
-    keywords: ["pollution", "spcb", "cpcb", "consent", "cto", "cte", "effluent", "etp", "stp", "air act", "water act", "emission", "waste"],
+    keywords: [
+      "pollution", "spcb", "cpcb", "consent", "cto", "cte", "effluent", "etp", "stp",
+      "air act", "water act", "emission", "waste", "discharge", "hazardous", "board"
+    ],
   },
   STANDARDS: {
     domain: "STANDARDS",
@@ -147,7 +163,10 @@ const STATUTORY_STANDARDS: Record<string, {
       "In-House Testing & Calibration Certificates",
       "Factory Manufacturing Facility Profile",
     ],
-    keywords: ["bis", "nabl", "test report", "is ", "qap", "calibration", "conformity", "crs", "standard"],
+    keywords: [
+      "bis", "nabl", "test report", "is ", "qap", "calibration", "conformity", "crs",
+      "standard", "standards", "iso", "laboratory", "certificate"
+    ],
   },
   TRADE: {
     domain: "TRADE",
@@ -159,7 +178,7 @@ const STATUTORY_STANDARDS: Record<string, {
       "Canceled Cheque with Account Number and IFSC Code",
       "Proof of Business Premises (Lease Deed / Utility Bill)",
     ],
-    keywords: ["dgft", "iec", "pan", "cheque", "bank", "incorporation", "customs", "export", "import"],
+    keywords: ["dgft", "iec", "pan", "cheque", "bank", "incorporation", "customs", "export", "import", "foreign trade"],
   },
   DEFAULT: {
     domain: "STATUTORY",
@@ -171,7 +190,7 @@ const STATUTORY_STANDARDS: Record<string, {
       "Premises Proof of Ownership or Lease Agreement",
       "Statutory Compliance Undertaking",
     ],
-    keywords: ["compliance", "license", "certificate", "statutory", "registration", "proof"],
+    keywords: ["compliance", "license", "licence", "certificate", "statutory", "registration", "proof"],
   },
 };
 
@@ -191,9 +210,8 @@ export function performClientOCR(input: DocumentVerificationInput) {
   const referenceNumber = (input.reference_number || "").trim();
   const authority = (input.authority || "").trim();
 
-  // If explicitly flagged as having no readable text or if no text was extracted
-  const extracted = (input.extracted_text || "").trim();
-  if (input.has_readable_text === false || (!extracted && fileName && !fileName.endsWith(".txt") && !fileName.endsWith(".html"))) {
+  // If explicitly flagged as having no readable text
+  if (input.has_readable_text === false) {
     return {
       status: "NO_READABLE_TEXT",
       file_name: fileName,
@@ -206,6 +224,7 @@ export function performClientOCR(input: DocumentVerificationInput) {
     };
   }
 
+  const extracted = (input.extracted_text || "").trim();
   const rawText = extracted || `${docName} ${referenceNumber} ${authority}`;
   const tokens = rawText
     .toLowerCase()
@@ -214,7 +233,7 @@ export function performClientOCR(input: DocumentVerificationInput) {
     .filter((t) => t.length > 1);
 
   return {
-    status: tokens.length >= 3 ? "COMPLETED" : "NO_READABLE_TEXT",
+    status: tokens.length >= 2 ? "COMPLETED" : "NO_READABLE_TEXT",
     file_name: fileName,
     detected_headers: [docName],
     detected_reference_id: referenceNumber || "UNSPECIFIED",
@@ -253,21 +272,19 @@ export function checkFileTypeForCompliance(
   const dotIdx = fileName.lastIndexOf(".");
   const ext = dotIdx !== -1 ? fileName.substring(dotIdx).toLowerCase() : "";
 
+  const permitted = [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".docx", ".html", ".htm", ".txt"];
+
   if (PROHIBITED_EXTENSIONS.includes(ext)) {
     issues.push(`Forbidden executable/script extension '${ext}'. Strictly banned on statutory portals for security.`);
-  } else if (![".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".docx", ".html", ".htm", ".txt"].includes(ext)) {
-    issues.push(`File extension '${ext}' is not supported. Permitted statutory formats: PDF, PNG, JPG, JPEG, TIFF, DOCX, HTML, TXT.`);
+  } else if (!permitted.includes(ext)) {
+    issues.push(`File extension '${ext}' is not supported. Permitted statutory formats: PDF, PNG, JPG, JPEG, WEBP, TIFF, DOCX, HTML, TXT.`);
   }
 
-  // Strict compliance format verification
-  const requiresPdfStrictly = [
-    "BLUEPRINT", "LAYOUT", "STRUCTURAL", "TEST", "LAB", "QAP", "PLAN", "AUDIT", "ETP", "CTO", "CTE", "SAFETY", "SCHEME", "POLLUTION"
-  ].some((kw) => docCategory.includes(kw) || reqName.toUpperCase().includes(kw));
-
-  if (requiresPdfStrictly && ![".pdf", ".html", ".htm", ".docx"].includes(ext)) {
-    issues.push(
-      `File type non-compliant: '${reqName}' strictly mandates vector PDF format or official electronic doc (PDF, HTML, DOCX). Uploaded format '${ext}' will be rejected by official regulatory bodies.`
-    );
+  // If uploading image scan for multi-page architectural CAD layouts, add advisory note
+  const isImage = [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"].includes(ext);
+  const requiresPdfStrictly = docCategory.includes("BLUEPRINT CAD") || reqName.toUpperCase().includes("BLUEPRINT CAD");
+  if (isImage && requiresPdfStrictly) {
+    warnings.push("Advisory: Regulatory portals recommend vector PDF in addition to image scans for complex multi-page architectural CAD drawings.");
   }
 
   if (fileSize !== undefined) {

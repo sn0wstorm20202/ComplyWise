@@ -260,11 +260,12 @@ function DocumentsContent() {
     // Run systematic software verification engine (Client-side with hybrid API sync)
     let verification = verifyDocument(verificationInput);
 
+    let backendResp: any = null;
     const targetBizId = businessId || "30ce1ab5-2347-46a9-b82b-b5e846a08e0b";
 
     // Attempt backend verification API with real file attachment
     try {
-      const backendResp = await api.documents.upload(
+      backendResp = await api.documents.upload(
         targetBizId,
         {
           name: docName,
@@ -291,16 +292,16 @@ function DocumentsContent() {
     setVerificationProgressStep(0);
 
     const docPayload = {
-      id: selectedDocForUpload ? selectedDocForUpload.id : `doc-${Date.now()}`,
-      name: docName,
-      category: docCategory,
-      authority: docAuthority,
+      id: selectedDocForUpload ? selectedDocForUpload.id : (backendResp?.document?.id || `doc-${Date.now()}`),
+      name: backendResp?.document?.name || docName,
+      category: backendResp?.document?.category || docCategory,
+      authority: backendResp?.document?.authority || docAuthority,
       requirement_id: docRequirementId,
       requirement_name: docRequirementId,
       file_name: verificationInput.file_name,
       file_size_bytes: verificationInput.file_size_bytes,
-      valid_until: docValidUntil,
-      code: docReferenceNumber || `REG-${Date.now().toString().slice(-4)}`,
+      valid_until: backendResp?.document?.valid_until || docValidUntil,
+      code: backendResp?.document?.code || docReferenceNumber || `REG-${Date.now().toString().slice(-4)}`,
       status: verification.status,
       verification,
     };

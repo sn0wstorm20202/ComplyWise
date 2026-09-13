@@ -41,8 +41,8 @@ STATUTORY_COMPLIANCE_STANDARDS: dict[str, dict[str, Any]] = {
     "FOOD": {
         "domain": "FOOD",
         "authority": "FSSAI",
-        "required_file_types": [".pdf"],  # Blueprints, FSMS, water reports require vector PDF
-        "flexible_file_types": [".pdf", ".png", ".jpg", ".jpeg"],  # For photo IDs or premises lease
+        "required_file_types": [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".docx", ".html"],
+        "flexible_file_types": [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".docx", ".html"],
         "prescribed_format": "FSSAI Form B / Schedule 4 FSMS Annexure (IS 10500 Potability Format)",
         "expected_documents": [
             "Food Safety Management System (FSMS) Plan",
@@ -51,27 +51,42 @@ STATUTORY_COMPLIANCE_STANDARDS: dict[str, dict[str, Any]] = {
             "List of Processing Equipment and Machinery",
             "Medical Fitness Certificates of Food Handlers",
             "Form B Application for Central / State License",
+            "FSSAI Registration / License Certificate",
         ],
-        "keywords": ["food", "fssai", "fsms", "water", "potability", "hygiene", "fbo", "kitchen", "haccp", "is 10500"],
+        "keywords": [
+            "food", "fssai", "fsms", "water", "potability", "hygiene", "fbo", "kitchen", "haccp",
+            "is 10500", "safety", "license", "licence", "registration", "food safety", "premises",
+            "form a", "form b", "schedule 4", "central licensing", "state licensing"
+        ],
     },
     "LABOR": {
         "domain": "LABOR",
         "authority": "DISH",
-        "required_file_types": [".pdf"],  # Building layout, structural stability must be vector PDF
+        "required_file_types": [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".docx", ".html"],
+        "flexible_file_types": [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".docx", ".html"],
         "prescribed_format": "Factories Act 1948 Form 1 / Form 2 Notice & Chartered Structural Stability Format",
         "expected_documents": [
+            "Factory License / Registration Certificate (Form 4)",
             "Approved Factory Building Plan Approval",
             "Structural Stability Certificate from Chartered Engineer",
             "Machinery Layout Plan with Electric Motor Ratings (HP)",
             "On-Site Emergency Response & Fire Safety Plan",
             "Notice of Occupation of Factory (Form 1 / Form 2)",
+            "Renewal of Factory License",
         ],
-        "keywords": ["factory", "dish", "factories act", "structural", "stability", "machinery", "horsepower", "safety", "fire", "emergency", "form 1", "form 2"],
+        "keywords": [
+            "factory", "factories", "dish", "factories act", "structural", "stability",
+            "machinery", "horsepower", "hp", "safety", "fire", "emergency",
+            "form 1", "form 2", "form 3", "form 4", "form 5", "licence", "license",
+            "occupier", "manager", "worker", "workers", "manufacturing", "industrial",
+            "directorate", "labour", "labor", "inspector", "boiler", "employment"
+        ],
     },
     "ENVIRONMENT": {
         "domain": "ENVIRONMENT",
         "authority": "SPCB / CPCB",
-        "required_file_types": [".pdf"],  # ETP layout, CTO schedules require PDF
+        "required_file_types": [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".docx", ".html"],
+        "flexible_file_types": [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".docx", ".html"],
         "prescribed_format": "State PCB Consent to Operate (CTO) Schedule / Form I Water & Air Act",
         "expected_documents": [
             "Consent to Establish (CTE) / Consent to Operate (CTO)",
@@ -81,12 +96,16 @@ STATUTORY_COMPLIANCE_STANDARDS: dict[str, dict[str, Any]] = {
             "Detailed Project Report (DPR) with Process Flow Chart",
             "Water Balance Diagram and Source Authorization",
         ],
-        "keywords": ["pollution", "spcb", "cpcb", "consent", "cto", "cte", "effluent", "etp", "stp", "air act", "water act", "emission", "waste"],
+        "keywords": [
+            "pollution", "spcb", "cpcb", "consent", "cto", "cte", "effluent", "etp", "stp",
+            "air act", "water act", "emission", "waste", "discharge", "hazardous", "board"
+        ],
     },
     "STANDARDS": {
         "domain": "STANDARDS",
         "authority": "BIS / NABL",
-        "required_file_types": [".pdf"],  # Lab test reports and QAP must be official signed PDF
+        "required_file_types": [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".docx", ".html"],
+        "flexible_file_types": [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".docx", ".html"],
         "prescribed_format": "BIS Compulsory Registration (CRS) / NABL Accredited Laboratory Test Report Format",
         "expected_documents": [
             "Complete Type-Test Report from BIS/NABL-Recognized Laboratory",
@@ -94,12 +113,16 @@ STATUTORY_COMPLIANCE_STANDARDS: dict[str, dict[str, Any]] = {
             "In-House Testing & Calibration Certificates",
             "Factory Manufacturing Facility Profile",
         ],
-        "keywords": ["bis", "nabl", "test report", "is ", "qap", "calibration", "conformity", "crs", "standard"],
+        "keywords": [
+            "bis", "nabl", "test report", "is ", "qap", "calibration", "conformity", "crs",
+            "standard", "standards", "iso", "laboratory", "certificate"
+        ],
     },
     "TRADE": {
         "domain": "TRADE",
         "authority": "DGFT",
-        "required_file_types": [".pdf", ".jpg", ".jpeg", ".png"],
+        "required_file_types": [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".tiff", ".bmp", ".docx"],
+        "flexible_file_types": [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".tiff", ".bmp", ".docx"],
         "prescribed_format": "DGFT IEC Statutory Format / Entity Identification Document",
         "expected_documents": [
             "Permanent Account Number (PAN) Card of the Entity",
@@ -107,12 +130,13 @@ STATUTORY_COMPLIANCE_STANDARDS: dict[str, dict[str, Any]] = {
             "Canceled Cheque with Account Number and IFSC Code",
             "Proof of Business Premises (Lease Deed / Utility Bill)",
         ],
-        "keywords": ["dgft", "iec", "pan", "cheque", "bank", "incorporation", "customs", "export", "import"],
+        "keywords": ["dgft", "iec", "pan", "cheque", "bank", "incorporation", "customs", "export", "import", "foreign trade"],
     },
     "DEFAULT": {
         "domain": "STATUTORY",
         "authority": "Statutory Authority",
-        "required_file_types": [".pdf", ".png", ".jpg", ".jpeg", ".docx"],
+        "required_file_types": [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".docx", ".html"],
+        "flexible_file_types": [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".docx", ".html"],
         "prescribed_format": "Standard Statutory Compliance Schedule",
         "expected_documents": [
             "Statutory License / Registration Certificate",
@@ -120,7 +144,7 @@ STATUTORY_COMPLIANCE_STANDARDS: dict[str, dict[str, Any]] = {
             "Premises Proof of Ownership or Lease Agreement",
             "Statutory Compliance Undertaking",
         ],
-        "keywords": ["compliance", "license", "certificate", "statutory", "registration", "proof"],
+        "keywords": ["compliance", "license", "licence", "certificate", "statutory", "registration", "proof"],
     },
 }
 
@@ -225,22 +249,34 @@ def _auto_enrich_metadata_from_extracted_text(data: dict[str, Any], extracted_te
     # 5. Reference number detection
     if not enriched.get("reference_number") and not enriched.get("code"):
         ref_match = re.search(
-            r"(?:Registration|License|Ref|Reference|Certificate)[^:\n\rA-Za-z0-9]*[:\s]+([A-Za-z0-9\-\/]{4,35})",
+            r"(?:Registration|License|Licence|Certificate|Ref|Reference|Reg\s*No|Lic\s*No|Form\s*4|Form\s*2|No)[^:\n\r0-9A-Za-z]*[:\s\.\-]+([A-Za-z0-9\-\/\.]{4,35})",
             text,
             re.IGNORECASE,
         )
         if ref_match:
             enriched["reference_number"] = ref_match.group(1).strip()
+        else:
+            standalone = re.search(
+                r"\b(DISH[A-Za-z0-9\-\/\.]+|FSSAI[0-9]{10,14}|[0-9]{14}|CTO\-[A-Za-z0-9\-]+|GPCB\-[A-Za-z0-9\-]+|GJ\/[A-Za-z0-9\-\/]+)\b",
+                text,
+                re.IGNORECASE,
+            )
+            if standalone:
+                enriched["reference_number"] = standalone.group(1).strip()
 
     # 6. Expiry Date detection
     if not enriched.get("valid_until") and not enriched.get("expiry_date"):
         expiry_match = re.search(
-            r"(?:Expiry|Valid\s*Until|Date\s*of\s*Expiry|Valid\s*Upto|Expiration|Valid\s*Through)[^:\n\r0-9]*[:\s]+([0-9]{1,2}[-\/\s][A-Za-z0-9]+[-\/\s][0-9]{2,4}|[0-9]{4}-[0-9]{2}-[0-9]{2})",
+            r"(?:Expiry|Valid\s*Until|Date\s*of\s*Expiry|Valid\s*Upto|Expiration|Valid\s*Through|Valid\s*To)[^:\n\r0-9]*[:\s\.\-]+([0-9]{1,2}[-\/\s][A-Za-z0-9]+[-\/\s][0-9]{2,4}|[0-9]{4}-[0-9]{2}-[0-9]{2})",
             text,
             re.IGNORECASE,
         )
         if expiry_match:
             enriched["valid_until"] = expiry_match.group(1).strip()
+        else:
+            year_match = re.search(r"(?:Valid|Expiry|Through)[^\n\r0-9]*(202[5-9]|203[0-9])", text, re.IGNORECASE)
+            if year_match:
+                enriched["valid_until"] = f"{year_match.group(1)}-12-31"
 
     return enriched
 
@@ -361,18 +397,15 @@ def check_file_type_for_compliance(data: dict[str, Any], std: dict[str, Any]) ->
 
     ext = _extract_extension(file_name)
 
+    permitted_extensions = {".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".docx", ".html", ".htm", ".txt"}
+
     if ext in PROHIBITED_EXTENSIONS:
         issues.append(f"Forbidden executable or script extension '{ext}'. Strictly banned on statutory portals for security.")
-    elif ext not in {".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".docx", ".html", ".htm", ".txt"}:
-        issues.append(f"File extension '{ext}' is not supported. Permitted statutory formats: PDF, PNG, JPG, JPEG, TIFF, DOCX, HTML, TXT.")
+    elif ext not in permitted_extensions:
+        issues.append(f"File extension '{ext}' is not supported. Permitted statutory formats: PDF, PNG, JPG, JPEG, WEBP, TIFF, DOCX, HTML, TXT.")
 
-    # Specific compliance requirement check: blueprints, test reports, engineering layouts, formal certificates REQUIRE PDF or electronic doc
-    required_types = std.get("required_file_types", [".pdf"])
-    requires_pdf_strictly = any(
-        kw in doc_category or kw in req_name.upper()
-        for kw in ["BLUEPRINT", "STRUCTURAL", "LAB", "QAP", "ETP", "CTO", "CTE", "AUDIT", "PLAN", "SAFETY", "SCHEME", "POLLUTION", "CONSENT"]
-    ) or (std.get("domain") in {"FOOD", "LABOR", "ENVIRONMENT", "STANDARDS"} and ext not in std.get("flexible_file_types", []))
-
+    # Technical engineering blueprints and CAD layouts strictly mandate vector PDF
+    requires_pdf_strictly = any(kw in doc_category for kw in ["BLUEPRINT", "STRUCTURAL STABILITY CERTIFICATE", "ETP CAD"])
     if requires_pdf_strictly and ext not in {".pdf", ".html", ".htm", ".docx"}:
         issues.append(
             f"File type non-compliant: '{req_name}' ({doc_category}) strictly requires vector PDF format or official electronic document format (PDF, HTML, DOCX). Uploaded extension '{ext}' is rejected by official portal scrutiny."
@@ -394,7 +427,7 @@ def check_file_type_for_compliance(data: dict[str, Any], std: dict[str, Any]) ->
             if passed
             else issues[0]
         ),
-        "required_format": "STRICTLY_PDF" if requires_pdf_strictly else "PDF_OR_IMAGE",
+        "required_format": "PDF_OR_IMAGE",
         "detected_extension": ext,
         "issues": issues,
         "warnings": warnings,
@@ -694,7 +727,13 @@ def ai_prevalidate_and_relevance_check(
     }
 
     # Resolve OpenAI API key from request data, settings, or process environment
-    django_key = getattr(settings, "OPENAI_API_KEY", "") if settings else ""
+    django_key = ""
+    try:
+        if settings and getattr(settings, "configured", False):
+            django_key = getattr(settings, "OPENAI_API_KEY", "") or ""
+    except Exception:
+        django_key = ""
+
     active_key = (
         data.get("openai_api_key")
         or django_key

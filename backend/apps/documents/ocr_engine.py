@@ -53,6 +53,8 @@ except ImportError:
     PYTESSERACT_AVAILABLE = False
 
 
+import concurrent.futures
+
 async def _run_winsdk_ocr(image_path: str) -> str:
     """Run native Windows Media OCR on a local image path."""
     storage_file = await storage.StorageFile.get_file_from_path_async(os.path.abspath(image_path))
@@ -68,26 +70,131 @@ async def _run_winsdk_ocr(image_path: str) -> str:
     return ocr_result.text or ""
 
 
+def _run_winsdk_ocr_isolated(image_path: str) -> str:
+    """Run native Windows Media OCR in a dedicated thread with its own event loop."""
+    def _worker() -> str:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(_run_winsdk_ocr(image_path))
+        finally:
+            loop.close()
+
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+            return ex.submit(_worker).result(timeout=25)
+    except Exception as exc:
+        logger.warning("winsdk isolated worker error on %s: %s", image_path, exc)
+        return ""
+
+
+def _preprocess_image_for_ocr(input_path: str) -> list[str]:
+    """Generate high-readability preprocessed temporary images for OCR.
+
+    Handles:
+    - RGBA transparency conversion to crisp white background.
+    - Low-resolution upscaling (LANCZOS) so characters are large enough for OCR.
+    - Margin padding (40px white border) so border text isn't skipped.
+    - High-contrast variant for low-contrast smartphone photos.
+    """
+    if not PIL_AVAILABLE:
+        return [input_path]
+
+    from PIL import ImageOps, ImageEnhance
+
+    processed_paths: list[str] = []
+    try:
+        with Image.open(input_path) as raw_img:
+            # 1. Normalize color space to RGB on white background
+            if raw_img.mode in ("RGBA", "LA") or (raw_img.mode == "P" and "transparency" in raw_img.info):
+                bg = Image.new("RGB", raw_img.size, (255, 255, 255))
+                if raw_img.mode == "P":
+                    alpha = raw_img.convert("RGBA").split()[-1]
+                else:
+                    alpha = raw_img.split()[-1]
+                bg.paste(raw_img.convert("RGB"), mask=alpha)
+                base_img = bg
+            elif raw_img.mode != "RGB":
+                base_img = raw_img.convert("RGB")
+            else:
+                base_img = raw_img.copy()
+
+            # 2. Add padding so edge text is not clipped by Windows OCR engine
+            padded_img = ImageOps.expand(base_img, border=45, fill="white")
+
+            # 3. Upscale if resolution is low (Windows OCR recognizes best when characters are >= 35px tall)
+            w, h = padded_img.size
+            if max(w, h) < 1800 or min(w, h) < 800:
+                scale_factor = min(3.0, max(1.5, 1800.0 / max(w, h)))
+                new_w = int(w * scale_factor)
+                new_h = int(h * scale_factor)
+                scaled_img = padded_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+            else:
+                scaled_img = padded_img
+
+            # Save primary enhanced image
+            tmp1 = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+            scaled_img.save(tmp1.name, format="PNG")
+            tmp1.close()
+            processed_paths.append(tmp1.name)
+
+            # 4. Secondary pass: contrast enhancement for noisy or faded mobile snapshots
+            enhancer = ImageEnhance.Contrast(scaled_img)
+            contrast_img = enhancer.enhance(1.7)
+            tmp2 = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+            contrast_img.save(tmp2.name, format="PNG")
+            tmp2.close()
+            processed_paths.append(tmp2.name)
+
+    except Exception as exc:
+        logger.warning("Image preprocessing for OCR failed on %s: %s", input_path, exc)
+        return [input_path]
+
+    return processed_paths
+
+
 def _ocr_image_file(file_path: str) -> str:
-    """OCR an image file using winsdk or pytesseract."""
-    # 1. Native Windows OCR via winsdk
-    if WINSDK_OCR_AVAILABLE:
-        try:
-            text = asyncio.run(_run_winsdk_ocr(file_path))
-            return text.strip()
-        except Exception as exc:
-            logger.warning("winsdk OCR error on %s: %s", file_path, exc)
+    """OCR an image file using multi-stage winsdk (Windows Media OCR) or pytesseract."""
+    preprocessed_paths = _preprocess_image_for_ocr(file_path)
+    extracted_candidates: list[str] = []
 
-    # 2. Pytesseract fallback
-    if PYTESSERACT_AVAILABLE and PIL_AVAILABLE:
-        try:
-            img = Image.open(file_path)
-            text = pytesseract.image_to_string(img)
-            return text.strip()
-        except Exception as exc:
-            logger.warning("pytesseract error on %s: %s", file_path, exc)
+    try:
+        for candidate_path in preprocessed_paths:
+            # 1. Native Windows OCR via winsdk (highest accuracy on Windows 10/11)
+            if WINSDK_OCR_AVAILABLE:
+                text = _run_winsdk_ocr_isolated(candidate_path)
+                if text and len(text.strip()) > 0:
+                    extracted_candidates.append(text.strip())
+                    # If we got substantial legible text (> 40 chars), we can stop early
+                    if len(text.strip()) >= 40:
+                        break
 
-    return ""
+            # 2. Pytesseract fallback
+            if PYTESSERACT_AVAILABLE and PIL_AVAILABLE:
+                try:
+                    img = Image.open(candidate_path)
+                    text = pytesseract.image_to_string(img)
+                    if text and len(text.strip()) > 0:
+                        extracted_candidates.append(text.strip())
+                        if len(text.strip()) >= 40:
+                            break
+                except Exception as exc:
+                    logger.debug("pytesseract error on %s: %s", candidate_path, exc)
+
+        # Pick candidate with the highest word count
+        if extracted_candidates:
+            best = max(extracted_candidates, key=lambda t: len(t.split()))
+            return best.strip()
+
+        return ""
+    finally:
+        # Clean up temporary preprocessed files (skip original input file)
+        for p in preprocessed_paths:
+            if p != file_path and os.path.exists(p):
+                try:
+                    os.unlink(p)
+                except OSError:
+                    pass
 
 
 def extract_text_from_file_bytes(file_bytes: bytes, file_name: str) -> dict[str, Any]:

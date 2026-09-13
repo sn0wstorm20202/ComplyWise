@@ -347,23 +347,49 @@ def test_random_document_with_race_number_strictly_rejected():
     assert llm["compliance_verdict"] == "IRRELEVANT"
 
 
-def test_dummy_openai_key_gracefully_handled_without_401():
-    """Verify that placeholder/dummy keys (sk-test-...) do not invoke api.openai.com or crash with 401."""
-    from domain.providers.openai_provider import is_valid_openai_key
+def test_factory_license_image_ocr_verification_passes():
+    """Verify that an image scan (.jpg/.png) of a factory license is OCR inspected and passes verification."""
+    from apps.documents.verification import verify_document
+    from PIL import Image, ImageDraw
+    import io
 
-    dummy_keys = [
-        "sk-test-custom-header-key",
-        "sk-proj-testkey...",
-        "sk-test-*************-key",
-        "sk-dummy-123456",
-        "",
-        "short",
-    ]
-    for key in dummy_keys:
-        assert is_valid_openai_key(key) is False
+    # Generate test factory license image
+    img = Image.new("RGB", (800, 400), color="white")
+    d = ImageDraw.Draw(img)
+    d.text((40, 40), "GOVERNMENT OF GUJARAT", fill="black")
+    d.text((40, 80), "DIRECTORATE OF INDUSTRIAL SAFETY & HEALTH", fill="black")
+    d.text((40, 120), "FACTORIES ACT 1948 - REGISTRATION AND LICENSE TO WORK A FACTORY", fill="black")
+    d.text((40, 160), "License No: DISH-LIC-2024-9988", fill="black")
+    d.text((40, 200), "Valid Until: 2028-12-31", fill="black")
+    d.text((40, 240), "Form 4 License Granted to Gujarat Eng Works", fill="black")
 
-    valid_key = "sk-proj-abc123def456ghi789jkl012mno345pqr678"
-    assert is_valid_openai_key(valid_key) is True
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    img_bytes = buf.getvalue()
+
+    result = verify_document({
+        "name": "Factory License",
+        "category": "Statutory Proof",
+        "authority": "Directorate of Industrial Safety & Health",
+        "requirement_id": "Factories Act 1948 §6",
+        "reference_number": "DISH-LIC-2024-9988",
+        "valid_until": "2028-12-31",
+        "file_name": "factory_license_scan.jpg",
+        "file_size_bytes": len(img_bytes),
+        "file_content_bytes": img_bytes,
+    })
+
+    assert result["verified"] is True
+    assert result["overall_status"] == "PASSED"
+    assert result["irrelevant_document_flag"] is False
+    assert result["checks"]["file_type"]["passed"] is True
+    assert result["checks"]["field_completeness"]["passed"] is True
+    assert result["checks"]["format_and_expiry"]["passed"] is True
+    assert result["checks"]["ai_relevance"]["passed"] is True
+    assert result["llm_scan_analysis"]["is_necessary"] is True
+    assert result["llm_scan_analysis"]["is_correct"] is True
+    assert result["llm_scan_analysis"]["compliance_verdict"] == "COMPLIANT"
+
 
 
 

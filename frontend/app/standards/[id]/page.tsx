@@ -9,12 +9,14 @@ import {
   ChevronRight,
   ArrowLeft,
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default function StandardDetailPage({ params }: PageProps) {
+  const { t } = useLanguage();
   const resolvedParams = use(params);
   const stdId = resolvedParams.id;
 
@@ -34,7 +36,7 @@ export default function StandardDetailPage({ params }: PageProps) {
           <div className="flex items-center gap-2 text-xs text-[#64748B]">
             <Folder className="h-3.5 w-3.5 text-[#64748B]" />
             <Link href="/standards" className="hover:text-[#0F172A] transition-colors">
-              Standards
+              {t("navigation.standards")}
             </Link>
             <ChevronRight className="h-3 w-3 text-[#CBD5E1]" />
             <span className="text-[#0F172A] font-mono font-medium">{standard.code}</span>
@@ -45,7 +47,7 @@ export default function StandardDetailPage({ params }: PageProps) {
             className="inline-flex items-center gap-1.5 text-xs font-medium text-[#64748B] hover:text-[#0F172A] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Standards</span>
+            <span>{t("common.back")}</span>
           </Link>
         </div>
 

@@ -36,3 +36,37 @@ class BusinessCalendarListView(APIView):
         assessment_id = request.query_params.get("assessment_id")
         payload = derive_business_calendar(business, assessment_id=assessment_id)
         return Response(envelope(payload), status=status.HTTP_200_OK)
+
+
+class BusinessCalendarNotificationsListView(APIView):
+    """List sent and pending deadline notification audit records for a business."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, business_id) -> Response:  # noqa: ANN001
+        business = Business.accessible_to(request.user).filter(pk=business_id).first()
+        if business is None:
+            return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
+
+        from apps.calendar.models import DeadlineNotificationDelivery
+
+        records = DeadlineNotificationDelivery.objects.filter(business=business).order_by("-created_at")[:50]
+        data = [
+            {
+                "id": str(r.id),
+                "requirement_id": r.requirement_id,
+                "deadline_date": r.deadline_date.isoformat(),
+                "offset_days": r.offset_days,
+                "channel": r.channel,
+                "status": r.status,
+                "language": r.language,
+                "subject_or_title": r.subject_or_title,
+                "recipient": r.recipient,
+                "created_at": r.created_at.isoformat(),
+                "details": r.details,
+            }
+            for r in records
+        ]
+        return Response(envelope({"count": len(data), "notifications": data}), status=status.HTTP_200_OK)
+
+

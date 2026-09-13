@@ -81,12 +81,22 @@ class AssistantChatView(APIView):
             except (ValueError, TypeError, ValidationError):
                 assessment_id = None
 
+        language = str(request.data.get("language", "en") or "en").strip().lower()
+        if language not in ("en", "hi", "bn"):
+            language = "en"
+
         try:
             # Resolve the provider up front: constructing it is side-effect free,
             # but an unrecognised LLM_PROVIDER must fail loudly here rather than
             # only on the (conditional) code path that reaches the network.
             llm = get_llm_provider()
-            payload = answer_question(prompt, provider=llm, business=business, assessment_id=assessment_id)
+            payload = answer_question(
+                prompt,
+                provider=llm,
+                business=business,
+                assessment_id=assessment_id,
+                language=language,
+            )
         except UnknownProvider as exc:
             # A misconfigured LLM_PROVIDER is an operator error, not a user error,
             # and is reported as such rather than silently using a default.
@@ -97,3 +107,4 @@ class AssistantChatView(APIView):
             )
 
         return Response(envelope(payload), status=status.HTTP_200_OK)
+

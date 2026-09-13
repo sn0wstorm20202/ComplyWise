@@ -14,12 +14,14 @@ import {
   CheckCircle2,
   Check,
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default function DocumentDetailPage({ params }: PageProps) {
+  const { t } = useLanguage();
   const resolvedParams = use(params);
   const docId = resolvedParams.id;
 
@@ -69,7 +71,7 @@ export default function DocumentDetailPage({ params }: PageProps) {
           <div className="flex items-center gap-2 text-xs text-[#64748B]">
             <Folder className="h-3.5 w-3.5 text-[#64748B]" />
             <Link href="/documents" className="hover:text-[#0F172A] transition-colors">
-              Documents
+              {t("navigation.documents")}
             </Link>
             <ChevronRight className="h-3 w-3 text-[#CBD5E1]" />
             <span className="text-[#0F172A] font-mono font-medium">{doc.code}</span>
@@ -80,7 +82,7 @@ export default function DocumentDetailPage({ params }: PageProps) {
             className="inline-flex items-center gap-1.5 text-xs font-medium text-[#64748B] hover:text-[#0F172A] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Checklist</span>
+            <span>{t("common.back")}</span>
           </Link>
         </div>
 

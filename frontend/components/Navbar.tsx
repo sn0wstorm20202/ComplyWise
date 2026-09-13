@@ -6,8 +6,11 @@ import { useRouter } from "next/navigation";
 import { healthApi } from "@/lib/api/health";
 import { getAuthToken, setAuthToken } from "@/lib/api/client";
 import { HealthData } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
 
 export function Navbar() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [health, setHealth] = useState<HealthData | null>(null);
   const [checking, setChecking] = useState<boolean>(true);
@@ -57,15 +60,15 @@ export function Navbar() {
   }
 
   const navItems = [
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "New Assessment", href: "/onboarding" },
-    { label: "Compliance", href: "/compliance" },
-    { label: "Documents", href: "/documents" },
-    { label: "Workflows", href: "/workflows" },
-    { label: "Calendar", href: "/calendar" },
-    { label: "Standards", href: "/standards" },
-    { label: "Schemes", href: "/schemes" },
-    { label: "AI Assistant", href: "/assistant" },
+    { label: t("navigation.dashboard"), href: "/dashboard" },
+    { label: t("navigation.onboarding"), href: "/onboarding" },
+    { label: t("navigation.compliance"), href: "/compliance" },
+    { label: t("navigation.documents"), href: "/documents" },
+    { label: t("navigation.workflows"), href: "/workflows" },
+    { label: t("navigation.calendar"), href: "/calendar" },
+    { label: t("navigation.standards"), href: "/standards" },
+    { label: t("navigation.schemes"), href: "/schemes" },
+    { label: t("navigation.assistant"), href: "/assistant" },
   ];
 
   return (
@@ -80,14 +83,14 @@ export function Navbar() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-base font-bold tracking-tight text-[#0F172A]">
-                  ComplyWise
+                  {t("common.appName")}
                 </span>
                 <span className="hidden sm:inline-flex items-center rounded-full bg-[#F1F5F9] px-2.5 py-0.5 text-[11px] font-semibold text-[#0F172A] border border-[#E2E8F0]">
                   PS 26130
                 </span>
               </div>
               <p className="text-[11px] text-[#64748B] hidden md:block">
-                Industrial Compliance &amp; Standards Intelligence
+                {t("common.brandSubtitle")}
               </p>
             </div>
           </Link>
@@ -97,7 +100,7 @@ export function Navbar() {
         <nav className="hidden lg:flex items-center gap-1">
           {navItems.map((item) => (
             <Link
-              key={item.label}
+              key={item.href}
               href={item.href}
               className="rounded-full px-3 py-1.5 text-xs font-medium text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-colors"
             >
@@ -106,8 +109,9 @@ export function Navbar() {
           ))}
         </nav>
 
-        {/* Auth / User Action & Backend Connectivity Status */}
+        {/* Right side: Language Selector, Auth / User Action & Backend Connectivity Status */}
         <div className="flex items-center gap-3">
+          <LanguageSelector />
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
               <Link
@@ -133,7 +137,6 @@ export function Navbar() {
               Sign In
             </Link>
           )}
-
           <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1">
             <span
               className={`h-2 w-2 rounded-full ${
@@ -146,7 +149,7 @@ export function Navbar() {
             />
             <span className="text-xs font-medium text-[#0F172A]">
               {checking
-                ? "Connecting..."
+                ? t("common.loading")
                 : isOnline
                 ? `API Online ${health?.api_version ? `(${health.api_version})` : ""}`
                 : "API Offline"}

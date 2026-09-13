@@ -23,6 +23,7 @@ import {
   ComplianceRequirementItem,
 } from "@/types";
 import { useBusinessContext } from "@/context/BusinessContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { DEMO_REQUIREMENTS } from "@/data/demo/compliance";
 
 const STEPS = [
@@ -414,11 +415,20 @@ export function generateAdaptiveFallbackQuestions(
 function OnboardingContent() {
   const router = useRouter();
   const { updateProfile } = useBusinessContext();
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams?.get("business_id") || null;
   const paramAssessmentId = searchParams?.get("assessment_id") || null;
   const isExplicitNew = searchParams?.get("new") === "true";
   const isNewAssessment = searchParams?.get("new_assessment") === "true" || searchParams?.get("new_assessment") === "1";
+
+  const steps = useMemo(() => [
+    { num: 1, id: "profile", label: t("onboarding.step1") },
+    { num: 2, id: "products", label: t("onboarding.step2") },
+    { num: 3, id: "questions", label: t("onboarding.step3") },
+    { num: 4, id: "analysis", label: t("onboarding.step4") },
+    { num: 5, id: "results", label: t("onboarding.step5") },
+  ], [t]);
 
   const [step, setStep] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
@@ -475,8 +485,13 @@ function OnboardingContent() {
   const [tradeIntent, setTradeIntent] = useState<string>("");
   const [detectedActivities, setDetectedActivities] = useState<string[]>([]);
 
-  // Step 3: Smart Questions State
-  const [smartQuestions, setSmartQuestions] = useState<SmartQuestion[]>([]);
+  // Step 3: Sequential Adaptive Smart Questions State
+  const [currentQuestion, setCurrentQuestion] = useState<SmartQuestion | null>(null);
+  const [currentAnswer, setCurrentAnswer] = useState<any>(null);
+  const [questionLoading, setQuestionLoading] = useState<boolean>(false);
+  const [questionError, setQuestionError] = useState<string | null>(null);
+  const [isQuestionsComplete, setIsQuestionsComplete] = useState<boolean>(false);
+  const [answeredCount, setAnsweredCount] = useState<number>(0);
   const [questionAnswers, setQuestionAnswers] = useState<
     Record<string, string | number | boolean | string[]>
   >({});
@@ -534,7 +549,11 @@ function OnboardingContent() {
     setProductDescription("");
     setTradeIntent("");
     setDetectedActivities([]);
-    setSmartQuestions([]);
+    setCurrentQuestion(null);
+    setCurrentAnswer(null);
+    setAnsweredCount(0);
+    setIsQuestionsComplete(false);
+    setQuestionError(null);
     setQuestionAnswers({});
     setDecisionRun(null);
     setStep(1);
@@ -611,16 +630,23 @@ function OnboardingContent() {
 
         if (resolvedBizId && resumeStep >= 3) {
           try {
-            const qResp = await api.onboarding.getQuestions(resolvedBizId, targetAss.id);
-            setSmartQuestions(qResp.questions);
-            if (ss.questions?.answers) {
-              setQuestionAnswers((prev) => ({ ...qResp.questions.reduce((acc: any, q: any) => {
-                const k = q.variable_key || q.key;
-                if (k && q.current_value !== null && q.current_value !== undefined) acc[k] = q.current_value;
-                return acc;
-              }, {}), ...ss.questions.answers, ...prev }));
+            setQuestionLoading(true);
+            const qResp = await api.onboarding.getNextQuestion(resolvedBizId, targetAss.id);
+            const nextQ = qResp.question || qResp.next_question;
+            if (qResp.is_complete || !nextQ) {
+              setIsQuestionsComplete(true);
+              setCurrentQuestion(null);
+              setCurrentAnswer(null);
+            } else {
+              setIsQuestionsComplete(false);
+              setCurrentQuestion(nextQ);
+              setCurrentAnswer(nextQ.current_value !== null && nextQ.current_value !== undefined ? nextQ.current_value : null);
             }
-          } catch {}
+          } catch (err) {
+            console.warn("Could not fetch sequential question on resume:", err);
+          } finally {
+            setQuestionLoading(false);
+          }
         }
 
         if (resolvedBizId && resumeStep === 5) {
@@ -675,7 +701,32 @@ function OnboardingContent() {
                 setAssessment(latest);
                 localStorage.setItem("complywise_active_assessment_id", latest.id);
                 if (latest.current_step && latest.current_step > 1) {
-                  setStep(Math.min(latest.current_step, 5));
+                  const resumeStep = Math.min(latest.current_step, 5);
+                  setStep(resumeStep);
+                  if (resumeStep >= 3) {
+                    try {
+                      setQuestionLoading(true);
+                      const qResp = await api.onboarding.getNextQuestion(b.id, latest.id);
+                      const nextQ = qResp.question || qResp.next_question;
+                      if (qResp.is_complete || !nextQ) {
+                        setIsQuestionsComplete(true);
+                        setCurrentQuestion(null);
+                        setCurrentAnswer(null);
+                      } else {
+                        setIsQuestionsComplete(false);
+                        setCurrentQuestion(nextQ);
+                        setCurrentAnswer(
+                          nextQ.current_value !== null && nextQ.current_value !== undefined
+                            ? nextQ.current_value
+                            : null
+                        );
+                      }
+                    } catch (err) {
+                      console.warn("Could not fetch sequential question on resume:", err);
+                    } finally {
+                      setQuestionLoading(false);
+                    }
+                  }
                 }
               }
             }
@@ -863,23 +914,32 @@ function OnboardingContent() {
         );
         setDetectedActivities(resp.detected_activities);
 
-        // Load Smart Questions for Step 3 scoped to assessment
-        const questionsResp = await api.onboarding.getQuestions(activeBiz.id, assessment?.id);
-        const serverQuestions = questionsResp.questions || [];
-        if (serverQuestions.length > 0) {
-          setSmartQuestions(serverQuestions);
-          const initialAnswers: Record<string, string | number | boolean | string[]> = {};
-          for (const q of serverQuestions) {
-            const qKey = q.variable_key || q.key || "";
-            if (!qKey) continue;
-            if (q.current_value !== null && q.current_value !== undefined) {
-              initialAnswers[qKey] = q.current_value as string | number | boolean | string[];
-            }
+        // Fetch first sequential adaptive question for Step 3
+        setQuestionLoading(true);
+        setQuestionError(null);
+        try {
+          const qResp = await api.onboarding.getNextQuestion(activeBiz.id, assessment?.id);
+          const nextQ = qResp.question || qResp.next_question;
+          if (qResp.is_complete || !nextQ) {
+            setIsQuestionsComplete(true);
+            setCurrentQuestion(null);
+            setCurrentAnswer(null);
+          } else {
+            setIsQuestionsComplete(false);
+            setCurrentQuestion(nextQ);
+            setCurrentAnswer(
+              nextQ.current_value !== null && nextQ.current_value !== undefined
+                ? nextQ.current_value
+                : nextQ.data_type === "BOOLEAN"
+                ? null
+                : ""
+            );
           }
-          setQuestionAnswers((prev) => ({ ...initialAnswers, ...prev }));
-        } else {
-          const fallbackQs = generateAdaptiveFallbackQuestions(answeredKeys, businessName, productDescription);
-          setSmartQuestions(fallbackQs);
+        } catch (qErr: any) {
+          console.warn("Could not fetch sequential question:", qErr);
+          setIsQuestionsComplete(true);
+        } finally {
+          setQuestionLoading(false);
         }
 
         if (assessment) {
@@ -898,104 +958,125 @@ function OnboardingContent() {
           setAssessment(updatedAss);
         }
       } else {
-        const fallbackQs = generateAdaptiveFallbackQuestions(answeredKeys, businessName, productDescription);
-        setSmartQuestions(fallbackQs);
+        setIsQuestionsComplete(true);
       }
       setStep(3);
     } catch {
-      const fallbackQs = generateAdaptiveFallbackQuestions(answeredKeys, businessName, productDescription);
-      setSmartQuestions(fallbackQs);
+      setIsQuestionsComplete(true);
       setStep(3);
     } finally {
       setLoading(false);
     }
   }
 
-  // STEP 3 SUBMIT: Save Smart Question Answers
-  async function handleQuestionsSubmit(e: React.FormEvent) {
+  // STEP 3: Submit single question answer, trigger AST re-evaluation, and receive next question
+  async function handleSequentialAnswerSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!business) return;
-    setLoading(true);
-    setError(null);
+    if (!business || !currentQuestion) return;
+
+    const qKey = currentQuestion.variable_key || currentQuestion.key || "";
+    if (!qKey) return;
+
+    if (currentAnswer === null || currentAnswer === undefined || currentAnswer === "") {
+      setQuestionError("Please select or enter an answer before submitting.");
+      return;
+    }
+
+    setQuestionLoading(true);
+    setQuestionError(null);
+
+    let formattedAnswer: any = currentAnswer;
+    if (isBooleanType(currentQuestion.data_type)) {
+      formattedAnswer = Boolean(currentAnswer);
+    } else if (isNumericType(currentQuestion.data_type)) {
+      const num = Number(currentAnswer);
+      if (Number.isFinite(num)) {
+        formattedAnswer = num;
+      } else {
+        setQuestionError("Please enter a valid numeric value.");
+        setQuestionLoading(false);
+        return;
+      }
+    } else if (isMultiChoiceType(currentQuestion.data_type)) {
+      if (Array.isArray(currentAnswer)) {
+        formattedAnswer = currentAnswer;
+      } else if (typeof currentAnswer === "string") {
+        formattedAnswer = currentAnswer
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      } else {
+        formattedAnswer = [String(currentAnswer).trim()];
+      }
+    } else {
+      formattedAnswer = String(currentAnswer).trim();
+    }
 
     try {
-      // Clean answers according to question data_type.
-      // Only values the user actually provided are submitted: an omitted key
-      // stays UNKNOWN in the engine, which yields NEEDS_INFORMATION rather
-      // than a fabricated FALSE (PRD.md §P4).
-      const formattedAnswers: Record<string, string | number | boolean | string[]> = {};
-      for (const q of smartQuestions) {
-        const qKey = q.variable_key || q.key || "";
-        if (!qKey) continue;
-        const val = questionAnswers[qKey];
-        if (val === undefined || val === null || val === "") continue;
-        if (isBooleanType(q.data_type)) {
-          formattedAnswers[qKey] = Boolean(val);
-        } else if (isNumericType(q.data_type)) {
-          const num = Number(val);
-          if (Number.isFinite(num)) formattedAnswers[qKey] = num;
-        } else if (isMultiChoiceType(q.data_type)) {
-          if (Array.isArray(val)) {
-            formattedAnswers[qKey] = val;
-          } else if (typeof val === "string") {
-            const items = val
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
-            if (items.length > 0) formattedAnswers[qKey] = items;
-          } else {
-            formattedAnswers[qKey] = [String(val).trim()];
-          }
-        } else {
-          const text = String(val).trim();
-          if (text !== "") formattedAnswers[qKey] = text;
-        }
-      }
+      setQuestionAnswers((prev) => ({ ...prev, [qKey]: formattedAnswer }));
+      setAnsweredCount((prev) => prev + 1);
 
-      if (business && Object.keys(formattedAnswers).length > 0) {
-        try {
-          await api.onboarding.submitAnswers(business.id, {
-            answers: formattedAnswers,
-            assessment_id: assessment?.id,
-          });
-        } catch {
-          // ignore
-        }
-      }
+      const resp = await api.onboarding.submitSequentialAnswer(business.id, {
+        variable_key: qKey,
+        value: formattedAnswer,
+        answer_value: formattedAnswer,
+        ...(assessment?.id ? { assessment_id: assessment.id } : {}),
+      });
 
-      if (assessment && business) {
+      if (assessment) {
         try {
           const updatedStepState = {
             ...(assessment.step_state || {}),
             questions: {
-              answers: formattedAnswers,
+              answers: {
+                ...((assessment.step_state as any)?.questions?.answers || {}),
+                [qKey]: formattedAnswer,
+              },
             },
           };
           await api.businesses.updateAssessment(business.id, assessment.id, {
-            current_step: 4,
+            current_step: 3,
             step_state: updatedStepState,
           });
-        } catch {
-          // ignore
-        }
+        } catch {}
       }
 
-      setStep(4);
-      runRegulatoryAnalysis(business?.id || "demo-biz", assessment?.id);
-    } catch {
-      setStep(4);
-      runRegulatoryAnalysis(business?.id || "demo-biz", assessment?.id);
+      const nextQ = resp.question || resp.next_question;
+      if (resp.is_complete || !nextQ) {
+        setIsQuestionsComplete(true);
+        setCurrentQuestion(null);
+        setCurrentAnswer(null);
+      } else {
+        setIsQuestionsComplete(false);
+        setCurrentQuestion(nextQ);
+        setCurrentAnswer(
+          nextQ.current_value !== null && nextQ.current_value !== undefined
+            ? nextQ.current_value
+            : nextQ.data_type === "BOOLEAN"
+            ? null
+            : ""
+        );
+      }
+    } catch (err: any) {
+      console.error("Error submitting sequential question answer:", err);
+      setQuestionError(err?.message || "Failed to submit answer. Please try again.");
+    } finally {
+      setQuestionLoading(false);
     }
   }
 
-  // Count answered smart questions
-  const answeredCount = useMemo(() => {
-    return smartQuestions.filter((q) => {
-      const qKey = q.variable_key || q.key || "";
-      const val = questionAnswers[qKey];
-      return val !== undefined && val !== null && val !== "";
-    }).length;
-  }, [smartQuestions, questionAnswers]);
+  // STEP 3: Complete questions and transition to statutory evaluation
+  async function handleProceedToAnalysis() {
+    if (assessment && business) {
+      try {
+        await api.businesses.updateAssessment(business.id, assessment.id, {
+          current_step: 4,
+        });
+      } catch {}
+    }
+    setStep(4);
+    runRegulatoryAnalysis(business?.id || "demo-biz", assessment?.id);
+  }
 
   // Open "Why do I need this?" modal
   function openWhyModal(r: any) {
@@ -1154,10 +1235,10 @@ function OnboardingContent() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
             <div>
               <span className="text-xs font-semibold text-amber-800 tracking-wide uppercase">
-                Problem Statement 26130 · Compliance Onboarding
+                {t("onboarding.problemStatement")}
               </span>
               <h1 className="text-xl sm:text-2xl font-sans font-bold tracking-tight text-[#0F172A] mt-0.5">
-                {STEPS.find((s) => s.num === step)?.label}
+                {steps.find((s) => s.num === step)?.label}
               </h1>
             </div>
             {business ? (
@@ -1179,12 +1260,12 @@ function OnboardingContent() {
                   onClick={handleStartFresh}
                   className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
                 >
-                  + New Entity
+                  {t("onboarding.newEntity")}
                 </button>
               </div>
             ) : (
               <div className="flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs text-amber-800 font-semibold">
-                <span>New Entity Assessment</span>
+                <span>{t("onboarding.newEntityAssessment")}</span>
               </div>
             )}
           </div>
@@ -1192,7 +1273,7 @@ function OnboardingContent() {
           {/* Stepper Dots & Links */}
           <nav aria-label="Progress" className="mt-6">
             <ol className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4">
-              {STEPS.map((s) => {
+              {steps.map((s) => {
                 const isCurrent = s.num === step;
                 const isCompleted = s.num < step;
                 return (
@@ -1424,7 +1505,7 @@ function OnboardingContent() {
                 disabled={loading}
                 className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
               >
-                {loading ? "Saving Profile..." : "Continue to Products & Activities →"}
+                {loading ? t("onboarding.savingProfile") : t("onboarding.continueToProducts")}
               </button>
             </div>
           </form>
@@ -1508,7 +1589,7 @@ function OnboardingContent() {
                 onClick={() => setStep(1)}
                 className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
               >
-                ← Back to Profile
+                {t("onboarding.backToProfile")}
               </button>
 
               <button
@@ -1516,256 +1597,286 @@ function OnboardingContent() {
                 disabled={loading}
                 className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
               >
-                {loading ? "Analyzing Operations..." : "Generate Smart Questions →"}
+                {loading ? t("onboarding.analyzingOperations") : t("onboarding.generateQuestions")}
               </button>
             </div>
           </form>
         )}
 
         {/* ------------------------------------------------------------- */}
-        {/* STEP 3: SMART QUESTIONS (CONVERSATIONAL FOUNDER EXPERIENCE)     */}
+        {/* STEP 3: SEQUENTIAL ADAPTIVE STATUTORY QUESTIONING             */}
         {/* ------------------------------------------------------------- */}
         {step === 3 && (
-          <form
-            onSubmit={handleQuestionsSubmit}
-            className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6"
-          >
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6">
             <div className="border-b border-[#E2E8F0] pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-900 px-2.5 py-0.5 text-[11px] font-bold tracking-wide uppercase">
+                      Adaptive Rule Engine
+                    </span>
+                    <span className="text-xs text-[#64748B]">
+                      Sequential AST-Driven Discovery
+                    </span>
+                  </div>
                   <h2 className="text-base sm:text-lg font-sans font-bold text-[#0F172A]">
-                    Questions formulated specifically for {business?.name || "your enterprise"}
+                    Statutory Variable Determination for {business?.name || "your enterprise"}
                   </h2>
-                  <p className="text-xs text-[#64748B] mt-1">
-                    Tailored smart questions targeting missing statutory variables to identify your exact permits, clearances, and compliance mandates.
+                  <p className="text-xs text-[#64748B] mt-0.5">
+                    Targeting only unresolved variables that alter candidate regulatory requirements. Each answer refines the compliance boundary.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-800">
-                    {answeredCount} of {smartQuestions.length} answered
+                  <span className="inline-flex items-center rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700">
+                    {answeredCount} statutory variable{answeredCount === 1 ? "" : "s"} resolved
                   </span>
                 </div>
               </div>
-
-              {smartQuestions.length > 0 && (
-                <div className="w-full bg-slate-100 border border-slate-200 h-2 rounded-full mt-4 overflow-hidden">
-                  <div
-                    className="bg-amber-600 h-2 rounded-full transition-all duration-300"
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        Math.round((answeredCount / (smartQuestions.length || 1)) * 100)
-                      )}%`,
-                    }}
-                  />
-                </div>
-              )}
             </div>
 
-            {smartQuestions.length === 0 ? (
-              <div className="py-8 text-center text-[#64748B] text-sm">
-                All decision-critical profile variables are already satisfied! You can proceed to statutory evaluation.
+            {/* State A: Loading next question */}
+            {questionLoading && !currentQuestion ? (
+              <div className="py-16 text-center space-y-4">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 font-bold text-xl animate-pulse">
+                  ⚡
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-[#0F172A]">
+                    Re-evaluating Candidate Rules...
+                  </h3>
+                  <p className="text-xs text-[#64748B] max-w-sm mx-auto">
+                    Computing Three-Valued Kleene AST logic over published regulations to determine the next decision-relevant variable.
+                  </p>
+                </div>
+              </div>
+            ) : isQuestionsComplete || !currentQuestion ? (
+              /* State B: All variables resolved / Complete */
+              <div className="py-10 px-6 rounded-xl border border-emerald-200 bg-emerald-50/40 text-center space-y-5">
+                <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 text-2xl font-bold shadow-2xs">
+                  ✓
+                </div>
+                <div className="space-y-1.5 max-w-md mx-auto">
+                  <h3 className="text-base font-bold text-[#0F172A]">
+                    Statutory Variables Resolved
+                  </h3>
+                  <p className="text-xs text-[#64748B] leading-relaxed">
+                    All candidate statutory rules for your enterprise profile have been fully evaluated against known parameters. No further clarification variables are required.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs w-full sm:w-auto"
+                  >
+                    ← Back to Products
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleProceedToAnalysis}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer w-full sm:w-auto"
+                  >
+                    Build My Compliance Plan →
+                  </button>
+                </div>
               </div>
             ) : (
-              <div className="space-y-6">
-                {smartQuestions.map((q: any, qIdx: number) => {
-                  const qKey = q.variable_key || q.variable_id || q.key || `q-${qIdx}`;
-                  const val = questionAnswers[qKey];
-                  const ruleCount = q.candidate_rules_count ?? q.rule_dependency_count ?? 0;
-                  const questionText = q.question || q.question_text || q.label || `Question regarding ${qKey}`;
-                  const questionReason = q.reason || q.why_it_matters;
-                  const discoveryImpact = q.expected_discovery_impact;
-                  const domains: string[] = Array.isArray(q.domains) ? q.domains : [];
+              /* State C: Active Single Question */
+              <form onSubmit={handleSequentialAnswerSubmit} className="space-y-6">
+                <div className="p-5 sm:p-6 rounded-xl border border-amber-200/80 bg-[#FFFDF7] space-y-4 shadow-2xs">
+                  {/* Question Metadata strip */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-200">
+                      Question #{answeredCount + 1}
+                    </span>
+                    <span className="font-mono text-[11px] font-bold text-[#0F172A] bg-white px-2.5 py-0.5 rounded-full border border-[#E2E8F0]">
+                      {currentQuestion.variable_key || currentQuestion.key}
+                    </span>
+                    {(currentQuestion.candidate_rules_count ?? currentQuestion.rule_dependency_count ?? 0) > 0 && (
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-medium text-slate-700 border border-slate-200">
+                        {(currentQuestion.candidate_rules_count ?? currentQuestion.rule_dependency_count)} candidate rule{((currentQuestion.candidate_rules_count ?? currentQuestion.rule_dependency_count) > 1 ? "s" : "")} depend on this
+                      </span>
+                    )}
+                  </div>
 
-                  return (
-                    <div
-                      key={qKey || `sq-${qIdx}`}
-                      className="p-4 sm:p-5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-white hover:border-slate-300 hover:shadow-2xs transition-all space-y-3"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                        <div className="space-y-1.5 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-800 border border-amber-200">
-                              Question {qIdx + 1} of {smartQuestions.length}
-                            </span>
-                            <span className="font-mono text-[11px] font-bold text-[#0F172A] bg-white px-2.5 py-0.5 rounded-full border border-[#E2E8F0]">
-                              {qKey}
-                            </span>
-                            {domains.map((dom, dIdx) => (
-                              <span
-                                key={`${dom}-${dIdx}`}
-                                className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200"
-                              >
-                                {dom}
-                              </span>
-                            ))}
-                            {q.priority && (
-                              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200">
-                                Priority {q.priority}
-                              </span>
-                            )}
-                            {ruleCount > 0 && (
-                              <span className="text-[11px] text-[#64748B]">
-                                ({ruleCount} rule{ruleCount > 1 ? "s" : ""} depend on this)
-                              </span>
-                            )}
-                          </div>
-                          <h3 className="text-sm font-sans font-bold text-[#0F172A] leading-snug">
-                            {questionText}
-                          </h3>
-                        </div>
+                  {/* Main Question Text */}
+                  <div className="space-y-1">
+                    <h3 className="text-base sm:text-lg font-sans font-bold text-[#0F172A] leading-snug">
+                      {currentQuestion.question || currentQuestion.question_text || currentQuestion.label}
+                    </h3>
+                  </div>
 
-                        {(questionReason || discoveryImpact) && (
-                          <div className="sm:max-w-xs text-[11px] text-[#64748B] bg-white border border-[#E2E8F0] rounded-lg p-2.5 leading-relaxed shrink-0 shadow-2xs space-y-1">
-                            {questionReason && (
-                              <p>
-                                <span className="font-bold text-[#0F172A] block mb-0.5">Statutory Rationale:</span> {questionReason}
-                              </p>
-                            )}
-                            {discoveryImpact && discoveryImpact !== questionReason && (
-                              <p className="pt-1 border-t border-[#F1F5F9] text-indigo-700">
-                                <span className="font-bold block mb-0.5">Search Impact:</span> {discoveryImpact}
-                              </p>
-                            )}
-                          </div>
+                  {/* Statutory Rationale Callout */}
+                  {(currentQuestion.why_it_matters || currentQuestion.reason) && (
+                    <div className="text-xs text-[#475569] bg-white border border-[#E2E8F0] rounded-xl p-3.5 space-y-1 leading-relaxed">
+                      <p>
+                        <strong className="text-[#0F172A]">Statutory Rationale:</strong>{" "}
+                        {currentQuestion.why_it_matters || currentQuestion.reason}
+                      </p>
+                      {currentQuestion.expected_discovery_impact &&
+                        currentQuestion.expected_discovery_impact !== (currentQuestion.why_it_matters || currentQuestion.reason) && (
+                          <p className="text-indigo-800 pt-1 border-t border-slate-100">
+                            <strong>Regulatory Focus:</strong> {currentQuestion.expected_discovery_impact}
+                          </p>
                         )}
-                      </div>
-
-                      {/* Control based on data_type */}
-                      <div className="pt-2">
-                        {isBooleanType(q.data_type) ? (
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setQuestionAnswers((prev) => ({
-                                  ...prev,
-                                  [qKey]: true,
-                                }))
-                              }
-                              className={`px-5 py-2 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow-2xs ${
-                                val === true
-                                  ? "bg-[#0F172A] text-white border-[#0F172A]"
-                                  : "bg-white text-[#64748B] border-[#E2E8F0] hover:border-slate-300 hover:text-[#0F172A]"
-                              }`}
-                            >
-                              Yes
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setQuestionAnswers((prev) => ({
-                                  ...prev,
-                                  [qKey]: false,
-                                }))
-                              }
-                              className={`px-5 py-2 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow-2xs ${
-                                val === false
-                                  ? "bg-[#0F172A] text-white border-[#0F172A]"
-                                  : "bg-white text-[#64748B] border-[#E2E8F0] hover:border-slate-300 hover:text-[#0F172A]"
-                              }`}
-                            >
-                              No
-                            </button>
-                          </div>
-                        ) : q.options && q.options.length > 0 ? (
-                          <select
-                            value={String(val ?? "")}
-                            onChange={(e) =>
-                              setQuestionAnswers((prev) => ({
-                                  ...prev,
-                                  [qKey]: e.target.value,
-                              }))
-                            }
-                            className="w-full sm:max-w-md rounded-lg border border-[#E2E8F0] px-3 py-2 text-xs focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white text-[#0F172A] shadow-2xs"
-                          >
-                            <option value="" className="bg-white text-[#64748B]">Select an answer…</option>
-                            {q.options.map((opt: any, optIdx: number) => (
-                              <option key={`${opt.value}-${optIdx}`} value={opt.value} className="bg-white text-[#0F172A]">
-                                {opt.label}
-                              </option>
-                            ))}
-                          </select>
-                        ) : isNumericType(q.data_type) ? (
-                          <div className="flex items-center gap-2 max-w-xs">
-                            <input
-                              type="number"
-                              min="0"
-                              value={val === undefined || val === null ? "" : Number(val)}
-                              onChange={(e) =>
-                                setQuestionAnswers((prev) => ({
-                                  ...prev,
-                                  [qKey]: e.target.value === "" ? "" : Number(e.target.value),
-                                }))
-                              }
-                              className="w-full rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-xs focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white text-[#0F172A] shadow-2xs"
-                            />
-                            {q.unit && (
-                              <span className="text-xs font-semibold text-[#64748B]">
-                                {q.unit}
-                              </span>
-                            )}
-                          </div>
-                        ) : isMultiChoiceType(q.data_type) ? (
-                          <div className="space-y-1.5 w-full sm:max-w-md">
-                            <input
-                              type="text"
-                              placeholder={
-                                qKey === "export_destination"
-                                  ? "e.g. United States, European Union, UAE (comma-separated)"
-                                  : "Enter options separated by commas"
-                              }
-                              value={Array.isArray(val) ? val.join(", ") : String(val ?? "")}
-                              onChange={(e) =>
-                                setQuestionAnswers((prev) => ({
-                                  ...prev,
-                                  [qKey]: e.target.value,
-                                }))
-                              }
-                              className="w-full rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-xs focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white text-[#0F172A] placeholder-[#94A3B8] shadow-2xs"
-                            />
-                            <p className="text-[11px] text-[#64748B]">
-                              Separate multiple destinations or choices with commas.
-                            </p>
-                          </div>
-                        ) : (
-                          <input
-                            type="text"
-                            value={String(val ?? "")}
-                            onChange={(e) =>
-                              setQuestionAnswers((prev) => ({
-                                ...prev,
-                                [qKey]: e.target.value,
-                              }))
-                            }
-                            className="w-full sm:max-w-md rounded-lg border border-[#E2E8F0] px-3 py-1.5 text-xs focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white text-[#0F172A] shadow-2xs"
-                          />
-                        )}
-                      </div>
                     </div>
-                  );
-                })}
-              </div>
+                  )}
+
+                  {/* Dynamic Control according to data_type */}
+                  <div className="pt-2">
+                    {isBooleanType(currentQuestion.data_type) ? (
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCurrentAnswer(true);
+                            setQuestionError(null);
+                          }}
+                          className={`px-6 py-2.5 rounded-xl text-sm font-semibold border transition-all cursor-pointer shadow-2xs flex items-center gap-2 ${
+                            currentAnswer === true
+                              ? "bg-[#0F172A] text-white border-[#0F172A] ring-2 ring-slate-900/20"
+                              : "bg-white text-[#475569] border-[#E2E8F0] hover:border-slate-300 hover:text-[#0F172A]"
+                          }`}
+                        >
+                          <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${currentAnswer === true ? "border-white bg-white" : "border-slate-400"}`}>
+                            {currentAnswer === true && <span className="w-1.5 h-1.5 rounded-full bg-[#0F172A]" />}
+                          </span>
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCurrentAnswer(false);
+                            setQuestionError(null);
+                          }}
+                          className={`px-6 py-2.5 rounded-xl text-sm font-semibold border transition-all cursor-pointer shadow-2xs flex items-center gap-2 ${
+                            currentAnswer === false
+                              ? "bg-[#0F172A] text-white border-[#0F172A] ring-2 ring-slate-900/20"
+                              : "bg-white text-[#475569] border-[#E2E8F0] hover:border-slate-300 hover:text-[#0F172A]"
+                          }`}
+                        >
+                          <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${currentAnswer === false ? "border-white bg-white" : "border-slate-400"}`}>
+                            {currentAnswer === false && <span className="w-1.5 h-1.5 rounded-full bg-[#0F172A]" />}
+                          </span>
+                          No
+                        </button>
+                      </div>
+                    ) : currentQuestion.options && currentQuestion.options.length > 0 ? (
+                      <div className="space-y-2 max-w-lg">
+                        <select
+                          value={String(currentAnswer ?? "")}
+                          onChange={(e) => {
+                            setCurrentAnswer(e.target.value);
+                            setQuestionError(null);
+                          }}
+                          className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white text-[#0F172A] shadow-2xs"
+                        >
+                          <option value="" className="text-[#64748B]">Select an option...</option>
+                          {currentQuestion.options.map((opt: any, optIdx: number) => (
+                            <option key={`${opt.value}-${optIdx}`} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : isNumericType(currentQuestion.data_type) ? (
+                      <div className="flex items-center gap-2 max-w-xs">
+                        <input
+                          type="number"
+                          min="0"
+                          value={currentAnswer === null || currentAnswer === undefined ? "" : currentAnswer}
+                          onChange={(e) => {
+                            setCurrentAnswer(e.target.value === "" ? "" : Number(e.target.value));
+                            setQuestionError(null);
+                          }}
+                          placeholder="Enter value"
+                          className="w-full rounded-xl border border-[#E2E8F0] px-3.5 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white text-[#0F172A] shadow-2xs"
+                        />
+                        {currentQuestion.unit && (
+                          <span className="text-xs font-semibold text-[#64748B] bg-white border border-[#E2E8F0] px-2.5 py-2 rounded-xl">
+                            {currentQuestion.unit}
+                          </span>
+                        )}
+                      </div>
+                    ) : isMultiChoiceType(currentQuestion.data_type) ? (
+                      <div className="space-y-1.5 max-w-lg">
+                        <input
+                          type="text"
+                          placeholder="Separate multiple values with commas"
+                          value={Array.isArray(currentAnswer) ? currentAnswer.join(", ") : String(currentAnswer ?? "")}
+                          onChange={(e) => {
+                            setCurrentAnswer(e.target.value);
+                            setQuestionError(null);
+                          }}
+                          className="w-full rounded-xl border border-[#E2E8F0] px-3.5 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white text-[#0F172A] placeholder-[#94A3B8] shadow-2xs"
+                        />
+                        <p className="text-[11px] text-[#64748B]">
+                          Enter multiple values separated by commas.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="max-w-lg">
+                        <input
+                          type="text"
+                          value={String(currentAnswer ?? "")}
+                          onChange={(e) => {
+                            setCurrentAnswer(e.target.value);
+                            setQuestionError(null);
+                          }}
+                          placeholder="Enter your response"
+                          className="w-full rounded-xl border border-[#E2E8F0] px-3.5 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white text-[#0F172A] shadow-2xs"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Error display */}
+                  {questionError && (
+                    <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
+                      {questionError}
+                    </div>
+                  )}
+                </div>
+
+                {/* Question Navigation Controls */}
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-[#E2E8F0]">
+                  <button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs w-full sm:w-auto"
+                  >
+                    {t("onboarding.backToProducts")}
+                  </button>
+
+                  <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <button
+                      type="button"
+                      onClick={handleProceedToAnalysis}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      Finish & Analyze Now →
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={questionLoading}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer min-w-[140px]"
+                    >
+                      {questionLoading ? (
+                        <>
+                          <span className="inline-block h-3.5 w-3.5 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+                          <span>Evaluating...</span>
+                        </>
+                      ) : (
+                        "Next Question →"
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
             )}
-
-            <div className="flex justify-between items-center pt-4 border-t border-[#E2E8F0]">
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
-              >
-                ← Back to Products
-              </button>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
-              >
-                {loading ? "Recording Responses..." : "Build My Compliance Plan →"}
-              </button>
-            </div>
-          </form>
+          </div>
         )}
 
         {/* ------------------------------------------------------------- */}
@@ -2031,7 +2142,7 @@ function OnboardingContent() {
                   href={`/dashboard?business_id=${business?.id}`}
                   className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-5 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs"
                 >
-                  Enter Overview Dashboard →
+                  {t("onboarding.enterDashboard")}
                 </Link>
               </div>
 
@@ -2210,14 +2321,14 @@ function OnboardingContent() {
                     href={`/compliance?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
                     className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors shadow-2xs"
                   >
-                    View All Compliance Mandates
+                    {t("onboarding.viewAllMandates")}
                   </Link>
 
                   <Link
                     href={`/dashboard?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
                     className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-6 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors shadow-2xs"
                   >
-                    Enter Overview Dashboard →
+                    {t("onboarding.enterDashboard")}
                   </Link>
                 </div>
               </div>

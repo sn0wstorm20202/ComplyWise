@@ -366,6 +366,32 @@ KNOWLEDGE_PACKS_DIR = Path(os.getenv("KNOWLEDGE_PACKS_DIR", BASE_DIR / "knowledg
 UPCOMING_DEADLINE_WINDOW_DAYS = int(os.getenv("UPCOMING_DEADLINE_WINDOW_DAYS", "30"))
 
 # ---------------------------------------------------------------------------
+# Compliance Deadline Notifications (Google Calendar & Email)
+# ---------------------------------------------------------------------------
+GOOGLE_CALENDAR_CLIENT_ID = os.getenv("GOOGLE_CALENDAR_CLIENT_ID", "").strip()
+GOOGLE_CALENDAR_CLIENT_SECRET = os.getenv("GOOGLE_CALENDAR_CLIENT_SECRET", "").strip()
+GOOGLE_CALENDAR_REFRESH_TOKEN = os.getenv("GOOGLE_CALENDAR_REFRESH_TOKEN", "").strip()
+GOOGLE_CALENDAR_ACCESS_TOKEN = os.getenv("GOOGLE_CALENDAR_ACCESS_TOKEN", "").strip()
+
+_email_backend_env = os.getenv("DJANGO_EMAIL_BACKEND", "").strip()
+if _email_backend_env:
+    # Always respect an explicitly configured backend (e.g. SMTP even in dev/debug).
+    EMAIL_BACKEND = _email_backend_env
+elif DEBUG or RUNNING_TESTS:
+    # No explicit override: default to console in dev so emails don't silently vanish.
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", default=True)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "compliance-alerts@complywise.in")
+
+
+# ---------------------------------------------------------------------------
 # Security hardening (active whenever DEBUG is off)
 # ---------------------------------------------------------------------------
 

@@ -31,8 +31,10 @@ import {
   type DocumentVerificationResult,
   type DocumentVerificationInput,
 } from "@/lib/verification/documentVerifier";
+import { useLanguage } from "@/context/LanguageContext";
 
 function DocumentsContent() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
 
@@ -374,13 +376,17 @@ function DocumentsContent() {
         <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
           <div>
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#E2E8F0] bg-[#F1F5F9] text-[#0F172A] text-[11px] font-semibold tracking-wider uppercase mb-2">
-              Screen 10 · Statutory Repository
+              {t("common.appName")} · {t("documents.title")}
             </div>
             <h1 className="font-sans text-2xl sm:text-3xl text-[#0F172A] font-bold tracking-tight">
-              Statutory Document Checklist
+              {t("documents.title")}
             </h1>
             <p className="text-xs text-[#64748B] mt-1.5 max-w-2xl leading-relaxed">
+<<<<<<< HEAD
               Documents catalogued for the regulatory requirements identified for this enterprise. Upload certificates and proofs for automated software verification and track official portal filings.
+=======
+              {t("documents.subtitle")}
+>>>>>>> main
             </p>
           </div>
 
@@ -389,7 +395,7 @@ function DocumentsContent() {
               href={`/dashboard?business_id=${businessId}`}
               className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
             >
-              ← Dashboard
+              ← {t("navigation.dashboard")}
             </Link>
             <button
               type="button"
@@ -428,8 +434,12 @@ function DocumentsContent() {
                 }}
                 className="inline-flex items-center gap-2 rounded-full bg-[#18181B] px-4 py-2 text-xs font-semibold text-white hover:bg-[#27272A] transition-all shadow-2xs cursor-pointer"
               >
+<<<<<<< HEAD
                 <Upload className="h-3.5 w-3.5" />
                 <span>Upload & Verify Document</span>
+=======
+                <span>+</span> {t("documents.uploadDocument")}
+>>>>>>> main
               </button>
             )}
           </div>
@@ -529,6 +539,7 @@ function DocumentsContent() {
             className="bg-white rounded-[16px] border border-[#CBD5E1] p-6 shadow-xs space-y-5 animate-in fade-in duration-200"
           >
             <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
+<<<<<<< HEAD
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <h2 className="font-sans font-bold text-lg text-[#0F172A]">
@@ -541,6 +552,14 @@ function DocumentsContent() {
                 </div>
                 <p className="text-xs text-[#64748B]">
                   Performs OCR extraction, verifies the compliance-mandated file extension, checks mandatory statutory fields, and flags irrelevant uploads.
+=======
+              <div>
+                <h2 className="font-sans font-bold text-lg text-[#0F172A]">
+                  {t("documents.uploadDocument")}
+                </h2>
+                <p className="text-xs text-[#64748B] mt-0.5">
+                  {t("documents.dropzoneText")}
+>>>>>>> main
                 </p>
               </div>
               <button
@@ -700,15 +719,19 @@ function DocumentsContent() {
                 onClick={() => setShowUpload(false)}
                 className="rounded-full border border-[#E2E8F0] px-4 py-2 text-xs font-medium text-[#64748B] hover:bg-[#F8FAFC]"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 disabled={uploading}
                 className="inline-flex items-center gap-2 rounded-full bg-[#18181B] px-5 py-2 text-xs font-semibold text-white hover:bg-[#27272A] disabled:opacity-50 transition-all shadow-2xs cursor-pointer"
               >
+<<<<<<< HEAD
                 <ShieldCheck className="h-4 w-4" />
                 <span>{uploading ? "Verifying Document..." : "Submit & Run Software Verification"}</span>
+=======
+                {uploading ? t("common.submitting") : t("common.submit")}
+>>>>>>> main
               </button>
             </div>
           </form>
@@ -1227,11 +1250,20 @@ function DocumentsContent() {
                 ? "All catalogued documents have been marked as uploaded!"
                 : "No documents recorded for current requirements"}
             </h3>
-            <p className="text-xs text-[#64748B] mt-2 max-w-md mx-auto leading-relaxed">
               {portalFilter === "UPLOADED"
-                ? "Click the checkbox on any document card to track it as uploaded to the official portal."
-                : "Adjust your filter or upload statutory evidence to populate this checklist."}
+                ? "No documents marked as uploaded on official portals yet"
+                : portalFilter === "NOT_UPLOADED"
+                ? "All catalogued documents have been marked as uploaded!"
+                : "The required document checklist is generated directly from applicable compliance requirements. Run an analysis pass first to populate this registry."}
             </p>
+            {documents.length === 0 && (
+              <Link
+                href={`/onboarding?business_id=${businessId}`}
+                className="inline-flex items-center mt-5 rounded-full bg-[#18181B] text-white px-5 py-2 text-xs font-semibold hover:bg-[#27272A] transition-colors shadow-2xs"
+              >
+                Run Regulatory Analysis →
+              </Link>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1334,7 +1366,7 @@ function DocumentsContent() {
                         href={`/documents/${doc.id}`}
                         className="inline-flex items-center gap-1 text-xs text-[#0F172A] hover:underline font-semibold transition-colors"
                       >
-                        <span>Dossier</span>
+                        <span>{t("common.viewDetails")}</span>
                         <span className="text-sm">→</span>
                       </Link>
                     </div>

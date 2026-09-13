@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import ErrorState from "@/components/ErrorState";
-import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { api } from "@/lib/api";
 import { AssistantCitation, Business } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface Message {
   id: string;
@@ -106,6 +106,7 @@ function renderMessageContent(content: string) {
 }
 
 function AssistantContent() {
+  const { t, language } = useLanguage();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
   const initialQuery = searchParams.get("q");
@@ -116,14 +117,31 @@ function AssistantContent() {
     {
       id: "m0",
       sender: "copilot",
-      content:
-        "Greetings! I am your source-grounded Regulatory Copilot for Problem Statement 26130. Every answer I provide is backed strictly by verified statutory citations and gazette references. How can I assist your compliance requirements today?",
+      content: t("assistant.welcome"),
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
   const [inputPrompt, setInputPrompt] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length <= 1) {
+        return [
+          {
+            id: "m0",
+            sender: "copilot",
+            content: business
+              ? t("assistant.welcomeWithBusiness", { businessName: business.name })
+              : t("assistant.welcome"),
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          },
+        ];
+      }
+      return prev;
+    });
+  }, [language, business, t]);
 
   useEffect(() => {
     async function loadBiz() {
@@ -133,14 +151,6 @@ function AssistantContent() {
           const b = await api.businesses.get(bid);
           setBusiness(b);
           setBusinessId(b.id);
-          setMessages([
-            {
-              id: "m-welcome",
-              sender: "copilot",
-              content: `Hello! I have loaded the full compliance context for ${b.name}. I am ready to advise you on your applicable permits, mandatory documents, clearance workflows, and matched schemes.`,
-              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            },
-          ]);
           return;
         }
       } catch {
@@ -154,14 +164,6 @@ function AssistantContent() {
           setBusiness(b);
           setBusinessId(b.id);
           localStorage.setItem("complywise_active_business_id", b.id);
-          setMessages([
-            {
-              id: "m-welcome",
-              sender: "copilot",
-              content: `Hello! I have loaded the full compliance context for ${b.name}. I am ready to advise you on your applicable permits, mandatory documents, clearance workflows, and matched schemes.`,
-              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            },
-          ]);
         }
       } catch {
         // ignore
@@ -193,7 +195,7 @@ function AssistantContent() {
     setError(null);
 
     try {
-      const resp = await api.assistant.chat(text, businessId || null);
+      const resp = await api.assistant.chat(text, businessId || null, null, language);
       const botMsg: Message = {
         id: `c-${Date.now()}`,
         sender: "copilot",
@@ -249,22 +251,22 @@ function AssistantContent() {
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-2">
               <span className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-amber-200 bg-amber-50 text-amber-800 text-[11px] font-semibold tracking-wider uppercase">
-                Screen 15 · AI Regulatory Copilot
+                {t("assistant.title")}
               </span>
               <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-mono text-slate-600 border border-slate-200">
-                Source Grounded
+                {t("common.verified")}
               </span>
               {business && (
                 <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-mono text-emerald-700 border border-emerald-200 font-medium">
-                  {business.name} Active
+                  {business.name} · {t("common.active")}
                 </span>
               )}
             </div>
             <h1 className="font-sans font-bold text-2xl sm:text-3xl text-[#0F172A] tracking-tight">
-              Statutory Evidence Copilot
+              {t("assistant.title")}
             </h1>
             <p className="text-xs text-[#64748B] mt-1.5 max-w-2xl leading-relaxed">
-              In-depth conversational advisory grounded exclusively in verified central and state gazette citations, BIS standards, and industrial rulebooks.
+              {t("assistant.subtitle")}
             </p>
           </div>
 
@@ -273,7 +275,7 @@ function AssistantContent() {
               href={businessId ? `/dashboard?business_id=${businessId}` : "/dashboard"}
               className="rounded-full border border-[#E2E8F0] bg-white px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors shadow-2xs"
             >
-              ← Dashboard
+              ← {t("navigation.dashboard")}
             </Link>
           </div>
         </div>
@@ -312,7 +314,7 @@ function AssistantContent() {
                 {m.sender === "copilot" && m.citations && m.citations.length > 0 && (
                   <div className="pt-3 border-t border-[#E2E8F0] space-y-2 text-xs">
                     <div className="flex items-center justify-between font-semibold text-[#0F172A]">
-                      <span className="text-[11px] uppercase tracking-wider text-[#64748B]">Statutory Citations ({m.citations.length}):</span>
+                      <span className="text-[11px] uppercase tracking-wider text-[#64748B]">{t("assistant.statutorySources")} ({m.citations.length}):</span>
                       {m.groundingLevel && (
                         <span className="text-[10px] uppercase font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                           {m.groundingLevel}
@@ -339,7 +341,7 @@ function AssistantContent() {
                               rel="noopener noreferrer"
                               className="text-[10px] text-amber-700 hover:text-amber-800 font-medium inline-flex items-center gap-1 pt-0.5"
                             >
-                              <span>Official Gazette Source</span>
+                              <span>{t("assistant.officialGazetteSource")}</span>
                               <span>↗</span>
                             </a>
                           )}
@@ -355,7 +357,7 @@ function AssistantContent() {
           {loading && (
             <div className="flex items-center gap-3 text-xs text-[#64748B] p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
               <span className="animate-spin text-amber-600">⚙️</span>
-              <span>Consulting statutory corpus and verifying legal gazette citations...</span>
+              <span>{t("assistant.thinking")}</span>
             </div>
           )}
         </div>
@@ -363,10 +365,10 @@ function AssistantContent() {
         {/* Suggested Prompt Chips */}
         <div className="space-y-2">
           <span className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
-            Suggested Statutory Queries:
+            {t("assistant.suggestedQueries")}
           </span>
           <div className="flex flex-wrap gap-2">
-            {SAMPLE_PROMPTS.map((p) => (
+            {[t("assistant.askPreset1"), t("assistant.askPreset2"), t("assistant.askPreset3")].map((p) => (
               <button
                 key={p}
                 type="button"
@@ -392,7 +394,7 @@ function AssistantContent() {
             type="text"
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
-            placeholder="Ask about factory licensing, IS standards, environmental consents, or subsidy schemes..."
+            placeholder={t("assistant.promptPlaceholder")}
             disabled={loading}
             className="flex-1 px-5 py-2 text-xs sm:text-sm text-[#0F172A] placeholder-[#94A3B8] focus:outline-none bg-transparent"
           />
@@ -401,7 +403,7 @@ function AssistantContent() {
             disabled={loading || !inputPrompt.trim()}
             className="rounded-full bg-[#0F172A] px-6 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-40 transition-all shadow-xs shrink-0 cursor-pointer"
           >
-            Send Query
+            {t("assistant.send")}
           </button>
         </form>
       </div>
@@ -410,11 +412,12 @@ function AssistantContent() {
 }
 
 export default function AssistantPage() {
+  const { t } = useLanguage();
   return (
     <Suspense
       fallback={
         <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center text-xs text-[#64748B]">
-          Loading AI Copilot...
+          {t("common.loading")}
         </div>
       }
     >

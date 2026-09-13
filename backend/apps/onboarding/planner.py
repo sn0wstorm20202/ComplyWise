@@ -44,6 +44,12 @@ from domain.providers import get_llm_provider
 from domain.providers.base import ChatMessage
 from apps.businesses.models import Business
 from apps.knowledge.models import RequirementDefinition, RuleVersion
+from apps.onboarding.adaptive import (
+    KnowledgeBaseAnalysis,
+    analyze_candidate_rules,
+    analyze_rule,
+    extract_ast_variables,
+)
 from apps.onboarding.models import SmartQuestionInstance, SmartQuestionPlan
 
 logger = logging.getLogger(__name__)
@@ -178,16 +184,7 @@ def _build_canonical_catalog() -> list[dict[str, Any]]:
 
 def _extract_ast_variables(node: Any) -> set[str]:
     """Recursively collect variable keys referenced in an AST condition."""
-    found: set[str] = set()
-    if isinstance(node, dict):
-        if "var" in node and isinstance(node["var"], str):
-            found.add(node["var"].strip())
-        for v in node.values():
-            found.update(_extract_ast_variables(v))
-    elif isinstance(node, list):
-        for item in node:
-            found.update(_extract_ast_variables(item))
-    return found
+    return extract_ast_variables(node)
 
 
 def _build_context_driven_fallback_questions(
@@ -997,6 +994,7 @@ def plan_adaptive_smart_questions(
     business: Business,
     round_number: int = 1,
     assessment_id: str | None = None,
+    batch_size: int | None = None,
 ) -> dict[str, Any]:
     """Dynamically plan adaptive smart questions for a business as a Pre-Discovery Interview.
 
@@ -1004,11 +1002,10 @@ def plan_adaptive_smart_questions(
     1. Business Understanding: Understand what the company actually manufactures, formulates,
        processes, stores, provides, sells, imports, exports, or operates.
     2. Conflict Detection: Identify divergences between business name and operational description.
-    3. Regulatory Discovery Intent & Information Gaps: Identify material operational ambiguities.
-    4. Smart Question Generation: Convert information gaps into founder-friendly questions.
-       - Maps to canonical variable (V01-V43) when aligned.
-       - Generates descriptive dynamic fields when no canonical variable exists.
-       - Never constrained by a hardcoded universal variable questionnaire.
+    3. Deterministic AST-Aware Rules Analysis: Evaluate published rules using three-valued Kleene
+       logic; identify which missing variables are decision-relevant for UNKNOWN rules.
+    4. Smart Question Generation: Convert high-value gaps and decision-relevant variables into
+       founder-friendly questions.
     """
     context = build_business_context(business)
 
@@ -1022,19 +1019,25 @@ def plan_adaptive_smart_questions(
     # If exceeding MAX_ROUNDS, terminate with COMPLETED
     if round_number > MAX_ROUNDS:
         reason = "ROUNDS_EXHAUSTED"
-        plan, _ = SmartQuestionPlan.objects.get_or_create(
-            business=business,
-            round_number=round_number,
-            defaults={
-                "status": "COMPLETED",
-                "stopping_reason": reason,
-                "assessment": assessment,
-                "business_summary": f"Intake complete for {business.name} after {MAX_ROUNDS} rounds.",
-                "regulatory_search_intent": {},
-                "information_gaps": [],
-                "reasoning_summary": "Maximum adaptive interview rounds reached.",
-            },
-        )
+        plan = SmartQuestionPlan.objects.filter(business=business, round_number=round_number).order_by("-created_at").first()
+        if plan:
+            plan.status = "COMPLETED"
+            plan.stopping_reason = reason
+            plan.business_summary = f"Intake complete for {business.name} after {MAX_ROUNDS} rounds."
+            plan.reasoning_summary = "Maximum adaptive interview rounds reached."
+            plan.save(update_fields=["status", "stopping_reason", "business_summary", "reasoning_summary"])
+        else:
+            plan = SmartQuestionPlan.objects.create(
+                business=business,
+                round_number=round_number,
+                status="COMPLETED",
+                stopping_reason=reason,
+                assessment=assessment,
+                business_summary=f"Intake complete for {business.name} after {MAX_ROUNDS} rounds.",
+                regulatory_search_intent={},
+                information_gaps=[],
+                reasoning_summary="Maximum adaptive interview rounds reached.",
+            )
         if assessment and not assessment.question_plan:
             assessment.question_plan = plan
             assessment.save(update_fields=["question_plan"])
@@ -1085,6 +1088,22 @@ def plan_adaptive_smart_questions(
             for q in p.questions.filter(is_answered=True):
                 previous_rounds_answers[q.variable_key] = q.answer_value
 
+    # --------------------------------------------------------------------------
+    # Deterministic AST-Aware Analysis of Published Statutory Rules (AUTHORITY)
+    # --------------------------------------------------------------------------
+    candidate_rules_qs = RuleVersion.objects.filter(
+        status=KnowledgeStatus.PUBLISHED,
+        requirement__status=KnowledgeStatus.PUBLISHED,
+    ).select_related("requirement")
+
+    candidate_jurisdictions = {"CENTRAL"}
+    if context.state:
+        candidate_jurisdictions.add(context.state)
+        candidate_jurisdictions.add(context.state.upper())
+    candidate_rules = list(candidate_rules_qs.filter(jurisdiction__in=list(candidate_jurisdictions)))
+
+    kb_analysis = analyze_candidate_rules(candidate_rules, context)
+
     business_summary = f"{business.name} operations located in {context.state_name}."
     reasoning_summary = "Formulated discovery information gaps to refine upcoming regulatory searches."
     discovery_intent = RegulatoryDiscoveryIntent(
@@ -1108,7 +1127,11 @@ def plan_adaptive_smart_questions(
     provider = get_llm_provider()
     llm_succeeded = False
 
-    if provider.is_configured:
+    # In sequential adaptive mode (batch_size is not None), questioning is driven
+    # deterministically by AST rule evaluation and Kleene logic without LLM latency.
+    should_call_llm = provider.is_configured and (batch_size is None)
+
+    if should_call_llm:
         prompt = f"""BUSINESS PROFILE:
 Business Legal / Operating Name: {business.name}
 Legal Constitution: {context.legal_constitution or 'Not specified'}
@@ -1237,7 +1260,7 @@ Conduct the pre-discovery interview. Understand this specific business, detect a
     # --------------------------------------------------------------------------
     # Fallback to Deterministic Context-Driven Extraction if LLM Failed
     # --------------------------------------------------------------------------
-    if not llm_succeeded:
+    if not llm_succeeded and (batch_size is None or not candidate_rules):
         fb_intent, fb_gaps, fb_questions = _build_context_driven_fallback_questions(
             context,
             business.name,
@@ -1295,138 +1318,188 @@ Conduct the pre-discovery interview. Understand this specific business, detect a
         ]
 
     # --------------------------------------------------------------------------
-    # Published Rules Alignment: State and Central Statutory Rules in Knowledge Base
+    # Published Rules Alignment: AST-Aware Adaptive Decision Variables
     # --------------------------------------------------------------------------
-    # 1. State-specific published rules in the database for the business's jurisdiction
-    if context.state:
-        state_rules = RuleVersion.objects.filter(
-            jurisdiction=context.state,
-            status=KnowledgeStatus.PUBLISHED,
-        )
-        existing_keys = {item["variable_key"] for item in planned_items}
-        for rule in state_rules:
-            for rv in sorted(_extract_ast_variables(rule.condition_ast)):
-                if rv not in known_keys and rv not in existing_keys:
-                    var_def = get_variable(rv)
-                    if var_def:
-                        existing_keys.add(rv)
-                        planned_items.insert(0, {
-                            "question_id": f"Q_{rv}",
-                            "target_variable_id": rv,
-                            "variable_key": rv,
-                            "is_canonical": True,
-                            "question_text": f"What is your enterprise's {var_def.label.lower()}?",
-                            "reason": f"Required by state-specific published rule for {context.state_name}.",
-                            "why_it_matters": f"Required by state-specific published rule for {context.state_name}.",
-                            "expected_discovery_impact": f"Directs regulatory discovery to {context.state_name} state portal schedules.",
-                            "domains": ["STATE_REGULATION"],
-                            "domain": "STATE_REGULATION",
-                            "answer_type": str(var_def.data_type),
-                            "data_type": str(var_def.data_type),
-                            "options": [opt.value for opt in var_def.options] if var_def.options else [],
-                            "priority": "1",
-                            "information_gain": 0.95,
-                        })
+    rule_driven_items: list[dict[str, Any]] = []
+    seen_rule_vars: set[str] = set()
 
-    # 2. Central published rules in the database
-    central_rules = RuleVersion.objects.filter(
-        jurisdiction="CENTRAL",
-        status=KnowledgeStatus.PUBLISHED,
-    )
-    existing_keys = {item["variable_key"] for item in planned_items}
-    food_vars = {
-        "daily_processing_capacity", "boiler_installed", "food_contact_packaging", "organic_claim", "cold_chain_storage"
-    }
-    med_vars = {
-        "cdsco_device_risk_class", "is_sterile_at_supply", "cleanroom_iso_class", "biocompatibility_tested", "active_or_implantable"
-    }
-    saas_vars = {
-        "processes_personal_data", "cloud_hosting_location", "critical_cyber_services", "cross_border_data_transfer", "export_of_software_services"
-    }
-    factory_vars = {
-        "connected_power_load", "effluent_emission_generation", "hazardous_waste_generation", "boiler_installed",
-        "daily_processing_capacity", "food_contact_packaging", "cold_chain_storage", "cleanroom_iso_class",
-        "cdsco_device_risk_class", "is_sterile_at_supply", "epr_target_obligation", "organic_claim",
-        "biocompatibility_tested", "active_or_implantable"
+    CANONICAL_VARIABLE_QUESTIONS: dict[str, str] = {
+        "annual_turnover": "What is your enterprise's approximate annual turnover (in INR)?",
+        "plant_machinery_investment": "What is your enterprise's total investment in plant, machinery, and equipment (in INR)?",
+        "total_worker_count": "What is the peak total number of workers and employees engaged at your facility?",
+        "contract_worker_count": "How many contract or temporary workers are engaged through third-party contractors?",
+        "connected_power_load": "What is the sanctioned electrical connected load (in HP or kW) for your facility?",
+        "effluent_emission_generation": "Does your facility generate trade effluent, air emissions, or toxic industrial discharges?",
+        "hazardous_waste_generation": "Does your unit generate, handle, or store any hazardous wastes specified under CPCB schedules?",
+        "import_export_intent": "Does your enterprise plan to import raw materials or export finished goods across borders?",
+        "boiler_installed": "Is an industrial boiler or steam-generating pressure vessel installed and operated on your premises?",
+        "daily_processing_capacity": "What is your facility's peak daily food processing or production capacity (in metric tonnes)?",
+        "food_contact_packaging": "Do you manufacture, pack, or store materials that come into direct contact with food products?",
+        "cold_chain_storage": "Does your operation include refrigerated storage, cold rooms, or temperature-controlled transit?",
+        "organic_claim": "Do you label or market products with organic claims requiring Jaivik Bharat certification?",
+        "cdsco_device_risk_class": "What is the CDSCO Medical Device classification for your manufactured products?",
+        "is_sterile_at_supply": "Are your manufactured medical products supplied in a sterile state to healthcare providers?",
+        "cleanroom_iso_class": "What ISO classification standard does your cleanroom manufacturing area meet?",
+        "biocompatibility_tested": "Have your medical materials undergone ISO 10993 biocompatibility testing?",
+        "active_or_implantable": "Are your medical devices surgically implantable or powered active devices?",
+        "processes_personal_data": "Does your software platform collect, store, or process personal data of Indian citizens?",
+        "cloud_hosting_location": "Where are your production cloud servers and user databases physically hosted?",
+        "critical_cyber_services": "Does your application provide critical services to government or regulated financial institutions?",
+        "cross_border_data_transfer": "Does your organization transfer personal or customer data outside India?",
+        "export_of_software_services": "Do you export software or IT-enabled services to clients outside India?",
+        "epr_target_obligation": "Do you introduce packaged plastic into the market requiring Extended Producer Responsibility (EPR)?",
+        "wireless_rf_features": "Does your hardware product incorporate Wi-Fi, Bluetooth, or wireless RF transmitter modules?",
     }
 
-    for rule in central_rules:
-        for rv in sorted(_extract_ast_variables(rule.condition_ast)):
-            if rv not in known_keys and rv not in existing_keys:
-                if not is_food and rv in food_vars:
-                    continue
-                if not is_med and rv in med_vars:
-                    continue
-                if is_saas and rv in factory_vars:
-                    continue
-                if not is_saas and rv in saas_vars:
-                    continue
-                var_def = get_variable(rv)
-                if var_def:
-                    existing_keys.add(rv)
-                    planned_items.insert(0, {
-                        "question_id": f"Q_{rv}",
-                        "target_variable_id": rv,
-                        "variable_key": rv,
-                        "is_canonical": True,
-                        "question_text": f"What is your enterprise's {var_def.label.lower()}?",
-                        "reason": "Evaluated by statutory rules under central regulations.",
-                        "why_it_matters": "Evaluated by statutory rules under central regulations.",
-                        "expected_discovery_impact": "Directs regulatory applicability determination.",
-                        "domains": ["CENTRAL_REGULATION"],
-                        "domain": "CENTRAL_REGULATION",
-                        "answer_type": str(var_def.data_type),
-                        "data_type": str(var_def.data_type),
-                        "options": [opt.value for opt in var_def.options] if var_def.options else [],
-                        "priority": "1",
-                        "information_gain": 0.95,
-                    })
+    for rv in kb_analysis.ranked_variables:
+        if rv in known_keys or rv in seen_rule_vars:
+            continue
+        seen_rule_vars.add(rv)
+        var_def = get_variable(rv)
+        dep_count = kb_analysis.variable_impact.get(rv, 0)
+        info_gain = round(dep_count / max(kb_analysis.unresolved_count, 1), 4) if kb_analysis.unresolved_count > 0 else 1.0
+        info_gain = max(0.1, min(1.0, info_gain))
 
-    # Final strict post-processing sector isolation filter
-    if not is_food:
-        planned_items = [q for q in planned_items if q["variable_key"] not in food_vars]
-    if not is_med:
-        planned_items = [q for q in planned_items if q["variable_key"] not in med_vars]
-    if is_saas:
-        planned_items = [q for q in planned_items if q["variable_key"] not in factory_vars]
-    elif not is_saas:
-        planned_items = [q for q in planned_items if q["variable_key"] not in saas_vars]
+        q_text = CANONICAL_VARIABLE_QUESTIONS.get(rv)
+        if not q_text:
+            q_text = f"What is your enterprise's {var_def.label.lower()}?" if var_def else f"Please specify {rv.replace('_', ' ')}."
 
-    # Ensure standardized TARGET_QUESTIONS_COUNT (15 questions)
-    if len(planned_items) < TARGET_QUESTIONS_COUNT:
-        _, _, fb_questions = _build_context_driven_fallback_questions(
-            context,
-            business.name,
-            known_keys,
-        )
-        existing_keys = {item["variable_key"] for item in planned_items}
-        for q in fb_questions:
-            k = q.get("variable_key") or q.get("target_variable_id")
-            if k and k not in existing_keys and k not in known_keys:
-                existing_keys.add(k)
-                planned_items.append(q)
-                if len(planned_items) >= TARGET_QUESTIONS_COUNT:
-                    break
+        domains_list = ["STATUTORY_COMPLIANCE"]
+        rule_driven_items.append({
+            "question_id": f"Q_{rv}",
+            "target_variable_id": rv,
+            "variable_key": rv,
+            "is_canonical": bool(var_def is not None),
+            "question_text": q_text,
+            "reason": f"Evaluated by {dep_count} unresolved statutory compliance rule(s).",
+            "why_it_matters": (var_def.why_it_matters if var_def else "") or f"Required to resolve {dep_count} applicable statutory rules.",
+            "expected_discovery_impact": f"Directly resolves legal uncertainty for {dep_count} compliance rule(s).",
+            "domains": domains_list,
+            "domain": domains_list[0],
+            "answer_type": str(var_def.data_type) if var_def else "TEXT",
+            "data_type": str(var_def.data_type) if var_def else "TEXT",
+            "options": [opt.value for opt in var_def.options] if var_def and var_def.options else [],
+            "priority": "1",
+            "information_gain": info_gain,
+            "rule_dependency_count": dep_count,
+            "candidate_rules_count": dep_count,
+        })
 
-    # Limit questions to TARGET_QUESTIONS_COUNT (standard 15 questions)
-    planned_items = planned_items[:TARGET_QUESTIONS_COUNT]
+    # Merge rule_driven_items (highest priority) with planned_items (pre-discovery)
+    combined_items: list[dict[str, Any]] = []
+    seen_combined: set[str] = set()
+
+    for item in rule_driven_items:
+        k = item["variable_key"]
+        if k not in seen_combined and k not in known_keys:
+            seen_combined.add(k)
+            combined_items.append(item)
+
+    for item in planned_items:
+        k = item["variable_key"]
+        if k not in seen_combined and k not in known_keys:
+            seen_combined.add(k)
+            combined_items.append(item)
+
+    # Sector Isolation Filtering (Invariant: Zero cross-contamination)
+    food_forbidden = {
+        "cdsco_device_risk_class", "is_sterile_at_supply", "cleanroom_iso_class",
+        "biocompatibility_tested", "active_or_implantable",
+        "processes_personal_data", "cloud_hosting_location", "critical_cyber_services",
+        "cross_border_data_transfer", "export_of_software_services",
+        "epr_target_obligation", "wireless_rf_features",
+    }
+    saas_forbidden = {
+        "connected_power_load", "effluent_emission_generation", "hazardous_waste_generation",
+        "boiler_installed", "daily_processing_capacity", "food_contact_packaging", "cold_chain_storage",
+        "cleanroom_iso_class", "cdsco_device_risk_class", "is_sterile_at_supply", "epr_target_obligation",
+        "organic_claim", "biocompatibility_tested", "active_or_implantable",
+    }
+    med_forbidden = {
+        "daily_processing_capacity", "boiler_installed", "food_contact_packaging", "organic_claim",
+        "processes_personal_data", "cloud_hosting_location", "critical_cyber_services",
+        "cross_border_data_transfer", "export_of_software_services",
+        "cold_chain_storage", "epr_target_obligation", "wireless_rf_features",
+    }
+
+    if is_food and not is_pesticide:
+        combined_items = [q for q in combined_items if q["variable_key"] not in food_forbidden]
+    elif is_saas:
+        combined_items = [q for q in combined_items if q["variable_key"] not in saas_forbidden]
+    elif is_med and not is_pesticide:
+        combined_items = [q for q in combined_items if q["variable_key"] not in med_forbidden]
+
+    if batch_size is not None:
+        # Pure sequential adaptive mode: driven strictly by unresolved rules
+        if candidate_rules and kb_analysis.unresolved_count == 0:
+            planned_items = []
+        elif candidate_rules and not kb_analysis.ranked_variables:
+            planned_items = []
+        else:
+            # Only ask decision-relevant variables for candidate rules (or discovery if no rules)
+            rule_vars = set(kb_analysis.ranked_variables)
+            relevant_items = [q for q in combined_items if not candidate_rules or q["variable_key"] in rule_vars]
+            planned_items = relevant_items[:max(1, batch_size)]
+    else:
+        # Standard batch mode:
+        if round_number > 1 and candidate_rules and kb_analysis.unresolved_count == 0:
+            planned_items = []
+        elif round_number > 1 and not kb_analysis.ranked_variables:
+            planned_items = []
+        else:
+            # If intake questionnaire needs more items for fresh business pre-discovery, pad with context fallback
+            if len(combined_items) < TARGET_QUESTIONS_COUNT and round_number == 1:
+                _, _, fb_questions = _build_context_driven_fallback_questions(
+                    context,
+                    business.name,
+                    known_keys,
+                )
+                if is_food and not is_pesticide:
+                    fb_questions = [q for q in fb_questions if q["target_variable_id"] not in food_forbidden]
+                elif is_saas:
+                    fb_questions = [q for q in fb_questions if q["target_variable_id"] not in saas_forbidden]
+                elif is_med and not is_pesticide:
+                    fb_questions = [q for q in fb_questions if q["target_variable_id"] not in med_forbidden]
+
+                existing_keys = {item["variable_key"] for item in combined_items}
+                for q in fb_questions:
+                    k = q.get("variable_key") or q.get("target_variable_id")
+                    if k and k not in existing_keys and k not in known_keys:
+                        existing_keys.add(k)
+                        combined_items.append(q)
+                        if len(combined_items) >= TARGET_QUESTIONS_COUNT:
+                            break
+
+            planned_items = combined_items[:TARGET_QUESTIONS_COUNT]
 
     # Stopping condition: If no questions remain
     if not planned_items:
-        reason = "SUFFICIENT_INFORMATION_GATHERED" if round_number > 1 else "ALL_CRITICAL_VARIABLES_SATISFIED"
-        plan, _ = SmartQuestionPlan.objects.get_or_create(
-            business=business,
-            round_number=round_number,
-            defaults={
-                "status": "COMPLETED",
-                "stopping_reason": reason,
-                "assessment": assessment,
-                "business_summary": business_summary,
-                "regulatory_search_intent": discovery_intent.as_dict(),
-                "information_gaps": information_gaps_list,
-                "reasoning_summary": reasoning_summary,
-            },
+        reason = (
+            "ALL_RULES_RESOLVED"
+            if candidate_rules and kb_analysis.unresolved_count == 0
+            else ("SUFFICIENT_INFORMATION_GATHERED" if round_number > 1 else "ALL_CRITICAL_VARIABLES_SATISFIED")
         )
+        plan = SmartQuestionPlan.objects.filter(business=business, round_number=round_number).order_by("-created_at").first()
+        if plan:
+            plan.status = "COMPLETED"
+            plan.stopping_reason = reason
+            plan.business_summary = business_summary
+            plan.regulatory_search_intent = discovery_intent.as_dict()
+            plan.information_gaps = information_gaps_list
+            plan.reasoning_summary = reasoning_summary
+            plan.save(update_fields=["status", "stopping_reason", "business_summary", "regulatory_search_intent", "information_gaps", "reasoning_summary"])
+        else:
+            plan = SmartQuestionPlan.objects.create(
+                business=business,
+                round_number=round_number,
+                status="COMPLETED",
+                stopping_reason=reason,
+                assessment=assessment,
+                business_summary=business_summary,
+                regulatory_search_intent=discovery_intent.as_dict(),
+                information_gaps=information_gaps_list,
+                reasoning_summary=reasoning_summary,
+            )
         if assessment and not assessment.question_plan:
             assessment.question_plan = plan
             assessment.save(update_fields=["question_plan"])
@@ -1465,30 +1538,6 @@ Conduct the pre-discovery interview. Understand this specific business, detect a
         assessment.question_plan = plan
         assessment.save(update_fields=["question_plan"])
 
-    # Candidate requirements for business jurisdiction to calculate rule dependency frequency
-    reqs_query = RequirementDefinition.objects.filter(status=KnowledgeStatus.PUBLISHED)
-    jurisdictions = {"CENTRAL"}
-    if context.state:
-        jurisdictions.add(context.state)
-    if context.state_name:
-        jurisdictions.add(context.state_name)
-        jurisdictions.add(context.state_name.upper())
-    raw_st = str(context.raw_variables.get("state") or "").strip()
-    if raw_st:
-        jurisdictions.add(raw_st)
-        jurisdictions.add(raw_st.upper())
-    reqs_query = reqs_query.filter(jurisdiction__in=list(jurisdictions))
-
-    candidate_req_ids = set(reqs_query.values_list("requirement_id", flat=True))
-    candidate_rules = RuleVersion.objects.filter(
-        requirement__requirement_id__in=candidate_req_ids,
-        status=KnowledgeStatus.PUBLISHED,
-    )
-    var_frequency: Counter[str] = Counter()
-    for rule in candidate_rules:
-        for rv in _extract_ast_variables(rule.condition_ast):
-            var_frequency[rv] += 1
-
     output_questions: list[dict[str, Any]] = []
 
     for item in planned_items:
@@ -1507,7 +1556,13 @@ Conduct the pre-discovery interview. Understand this specific business, detect a
         else:
             resolved_options = []
 
-        dep_count = var_frequency.get(k, 0)
+        dep_count = kb_analysis.variable_impact.get(k, 0)
+        info_gain = (
+            round(dep_count / max(kb_analysis.unresolved_count, 1), 4)
+            if kb_analysis.unresolved_count > 0 and dep_count > 0
+            else float(item.get("information_gain", 0.85))
+        )
+        info_gain = max(0.05, min(1.0, info_gain))
         q_inst = SmartQuestionInstance.objects.create(
             plan=plan,
             business=business,
@@ -1583,3 +1638,19 @@ Conduct the pre-discovery interview. Understand this specific business, detect a
         "known_variables_count": len(context.known_variable_keys),
         "context_summary": context.as_dict(),
     }
+
+
+def get_next_adaptive_question(
+    business: Business,
+    assessment_id: str | None = None,
+) -> dict[str, Any] | None:
+    """Sequential adaptive questioning: returns the single highest-impact unresolved question."""
+    plan_result = plan_adaptive_smart_questions(
+        business,
+        round_number=1,
+        assessment_id=assessment_id,
+        batch_size=1,
+    )
+    questions = plan_result.get("questions", [])
+    return questions[0] if questions else None
+

@@ -90,15 +90,36 @@ export async function request<T>(endpoint: string, options: RequestOptions = {})
     }
   }
 
+  const isFormData = typeof FormData !== "undefined" && init.body instanceof FormData;
   const headers: Record<string, string> = {
     "Accept": "application/json",
-    ...(init.body ? { "Content-Type": "application/json" } : {}),
+    ...(init.body && !isFormData ? { "Content-Type": "application/json" } : {}),
     ...(customHeaders as Record<string, string>),
   };
 
   const token = getAuthToken();
   if (token && !headers["Authorization"]) {
     headers["Authorization"] = `Token ${token}`;
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      const openaiKey = localStorage.getItem("complywise_openai_api_key")?.trim();
+      const isDummy =
+        !openaiKey ||
+        !openaiKey.startsWith("sk-") ||
+        openaiKey.length < 20 ||
+        openaiKey.includes("*") ||
+        openaiKey.toLowerCase().startsWith("sk-test") ||
+        ["testkey", "test-key", "custom-header", "dummy", "placeholder", "fake", "your_openai_api_key", "change-this"].some((d) =>
+          openaiKey.toLowerCase().includes(d)
+        );
+      if (openaiKey && !isDummy && !headers["X-OpenAI-API-Key"]) {
+        headers["X-OpenAI-API-Key"] = openaiKey;
+      }
+    } catch {
+      // Ignore storage errors
+    }
   }
 
   const controller = new AbortController();

@@ -370,6 +370,32 @@ def _build_context_driven_fallback_questions(
                 "expected_discovery_impact": "Refines discovery to STPI SOFTEX certification guidelines.",
                 "domain": "TRADE_COMPLIANCE",
             })
+        if "dynamic_data_retention_policy" not in known_keys:
+            questions.append({
+                "question_id": "Q_dynamic_data_retention_policy",
+                "target_variable_id": "dynamic_data_retention_policy",
+                "is_canonical": False,
+                "question_text": "What is your defined data retention and deletion schedule for user personal data and system logs?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": ["180_DAYS_CERT_IN", "1_TO_3_YEARS", "INDEFINITE", "PURGED_ON_ACCOUNT_CLOSURE"],
+                "priority": 2,
+                "reason": "Determines compliance with CERT-In 180-day log mandate and DPDP Act purpose limitation.",
+                "expected_discovery_impact": "Focuses discovery on CERT-In directions and DPDP compliance schedules.",
+                "domain": "DIGITAL_SAAS",
+            })
+        if "dynamic_cloud_multi_tenancy" not in known_keys:
+            questions.append({
+                "question_id": "Q_dynamic_cloud_multi_tenancy",
+                "target_variable_id": "dynamic_cloud_multi_tenancy",
+                "is_canonical": False,
+                "question_text": "Does your cloud infrastructure deploy multi-tenant databases with logical customer data segregation?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines data boundary segregation standards and SOC 2 / ISO 27001 regulatory audit requirements.",
+                "expected_discovery_impact": "Refines discovery to MeitY cloud service provider empanelment requirements.",
+                "domain": "DIGITAL_SAAS",
+            })
 
     elif name_has_med or any(w in desc for w in ["medical", "device", "surgical", "diagnostic", "implant"]):
         search_topics.extend([

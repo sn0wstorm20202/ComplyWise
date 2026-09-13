@@ -382,11 +382,7 @@ function DocumentsContent() {
               {t("documents.title")}
             </h1>
             <p className="text-xs text-[#64748B] mt-1.5 max-w-2xl leading-relaxed">
-<<<<<<< HEAD
-              Documents catalogued for the regulatory requirements identified for this enterprise. Upload certificates and proofs for automated software verification and track official portal filings.
-=======
               {t("documents.subtitle")}
->>>>>>> main
             </p>
           </div>
 
@@ -403,19 +399,15 @@ function DocumentsContent() {
               className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold border transition-all cursor-pointer ${
                 llmConfig?.is_configured
                   ? "bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
-                  : "bg-slate-100 border-slate-300 text-[#475569] hover:bg-slate-200"
+                  : "bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100"
               }`}
-              title="Configure OpenAI LLM Provider"
             >
-              <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+              <Key className="h-3.5 w-3.5" />
               <span>
                 {llmConfig?.is_configured
-                  ? `OpenAI (${llmConfig.model}) Active`
-                  : "Configure OpenAI API"}
+                  ? `AI Provider (${llmConfig.key_preview})`
+                  : "Configure OpenAI Key"}
               </span>
-              {llmConfig?.is_configured && (
-                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-              )}
             </button>
             {uploadAvailable && (
               <button
@@ -434,12 +426,8 @@ function DocumentsContent() {
                 }}
                 className="inline-flex items-center gap-2 rounded-full bg-[#18181B] px-4 py-2 text-xs font-semibold text-white hover:bg-[#27272A] transition-all shadow-2xs cursor-pointer"
               >
-<<<<<<< HEAD
                 <Upload className="h-3.5 w-3.5" />
-                <span>Upload & Verify Document</span>
-=======
-                <span>+</span> {t("documents.uploadDocument")}
->>>>>>> main
+                <span>{t("documents.uploadDocument")}</span>
               </button>
             )}
           </div>
@@ -539,11 +527,10 @@ function DocumentsContent() {
             className="bg-white rounded-[16px] border border-[#CBD5E1] p-6 shadow-xs space-y-5 animate-in fade-in duration-200"
           >
             <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
-<<<<<<< HEAD
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <h2 className="font-sans font-bold text-lg text-[#0F172A]">
-                    {selectedDocForUpload ? `Upload & Verify: ${selectedDocForUpload.name}` : "Upload & Software Verify Document"}
+                    {selectedDocForUpload ? `Upload & Verify: ${selectedDocForUpload.name}` : t("documents.uploadDocument")}
                   </h2>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
                     <Sparkles className="h-3 w-3" />
@@ -552,14 +539,6 @@ function DocumentsContent() {
                 </div>
                 <p className="text-xs text-[#64748B]">
                   Performs OCR extraction, verifies the compliance-mandated file extension, checks mandatory statutory fields, and flags irrelevant uploads.
-=======
-              <div>
-                <h2 className="font-sans font-bold text-lg text-[#0F172A]">
-                  {t("documents.uploadDocument")}
-                </h2>
-                <p className="text-xs text-[#64748B] mt-0.5">
-                  {t("documents.dropzoneText")}
->>>>>>> main
                 </p>
               </div>
               <button
@@ -726,12 +705,8 @@ function DocumentsContent() {
                 disabled={uploading}
                 className="inline-flex items-center gap-2 rounded-full bg-[#18181B] px-5 py-2 text-xs font-semibold text-white hover:bg-[#27272A] disabled:opacity-50 transition-all shadow-2xs cursor-pointer"
               >
-<<<<<<< HEAD
                 <ShieldCheck className="h-4 w-4" />
-                <span>{uploading ? "Verifying Document..." : "Submit & Run Software Verification"}</span>
-=======
-                {uploading ? t("common.submitting") : t("common.submit")}
->>>>>>> main
+                <span>{uploading ? (t("common.submitting") || "Verifying Document...") : "Submit & Run Software Verification"}</span>
               </button>
             </div>
           </form>
@@ -1250,13 +1225,14 @@ function DocumentsContent() {
                 ? "All catalogued documents have been marked as uploaded!"
                 : "No documents recorded for current requirements"}
             </h3>
+            <p className="font-sans text-xs text-[#64748B] mt-1 max-w-md mx-auto">
               {portalFilter === "UPLOADED"
                 ? "No documents marked as uploaded on official portals yet"
                 : portalFilter === "NOT_UPLOADED"
                 ? "All catalogued documents have been marked as uploaded!"
                 : "The required document checklist is generated directly from applicable compliance requirements. Run an analysis pass first to populate this registry."}
             </p>
-            {documents.length === 0 && (
+            {rawDocuments.length === 0 && (
               <Link
                 href={`/onboarding?business_id=${businessId}`}
                 className="inline-flex items-center mt-5 rounded-full bg-[#18181B] text-white px-5 py-2 text-xs font-semibold hover:bg-[#27272A] transition-colors shadow-2xs"

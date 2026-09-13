@@ -26,86 +26,103 @@ from common.enums import KnowledgeStatus, VariableOrigin
 @pytest.fixture
 def gujarat_rules(db):
     """Setup canonical Gujarat rules for testing adaptive pruning."""
+    # Isolate published rules so rules leaked from previous tests do not alter sequential flow
+    RuleVersion.objects.filter(status=KnowledgeStatus.PUBLISHED).exclude(
+        rule_id__in=["RULE-FSSAI-01", "RULE-GPCB-01", "RULE-GUJ-FACT-01"]
+    ).update(status=KnowledgeStatus.DRAFT)
+
     # 1. FSSAI State License
-    req_fssai = RequirementDefinition.objects.create(
+    req_fssai, _ = RequirementDefinition.objects.update_or_create(
         requirement_id="REQ-FSSAI-STATE",
-        name="FSSAI State Food License",
-        authority="FSSAI",
-        jurisdiction="CENTRAL",
-        domain="FOOD",
-        status=KnowledgeStatus.PUBLISHED,
+        defaults={
+            "name": "FSSAI State Food License",
+            "authority": "FSSAI",
+            "jurisdiction": "CENTRAL",
+            "domain": "FOOD",
+            "status": KnowledgeStatus.PUBLISHED,
+        },
     )
-    rule_fssai = RuleVersion.objects.create(
+    rule_fssai, _ = RuleVersion.objects.update_or_create(
         rule_id="RULE-FSSAI-01",
-        requirement=req_fssai,
         version=1,
-        domain="FOOD",
-        jurisdiction="CENTRAL",
-        status=KnowledgeStatus.PUBLISHED,
-        condition_ast={
-            "op": "AND",
-            "args": [
-                {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "FOOD"},
-                {"op": "GTE", "left": {"var": "annual_turnover"}, "right": 1200000},
-                {"op": "LTE", "left": {"var": "annual_turnover"}, "right": 200000000},
-            ],
+        defaults={
+            "requirement": req_fssai,
+            "domain": "FOOD",
+            "jurisdiction": "CENTRAL",
+            "status": KnowledgeStatus.PUBLISHED,
+            "condition_ast": {
+                "op": "AND",
+                "args": [
+                    {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "FOOD"},
+                    {"op": "GTE", "left": {"var": "annual_turnover"}, "right": 1200000},
+                    {"op": "LTE", "left": {"var": "annual_turnover"}, "right": 200000000},
+                ],
+            },
         },
     )
 
     # 2. GPCB Consent to Establish
-    req_gpcb = RequirementDefinition.objects.create(
+    req_gpcb, _ = RequirementDefinition.objects.update_or_create(
         requirement_id="REQ-GPCB-CTE",
-        name="GPCB Consent to Establish",
-        authority="GPCB",
-        jurisdiction="GUJARAT",
-        domain="ENVIRONMENT",
-        status=KnowledgeStatus.PUBLISHED,
+        defaults={
+            "name": "GPCB Consent to Establish",
+            "authority": "GPCB",
+            "jurisdiction": "GUJARAT",
+            "domain": "ENVIRONMENT",
+            "status": KnowledgeStatus.PUBLISHED,
+        },
     )
-    rule_gpcb = RuleVersion.objects.create(
+    rule_gpcb, _ = RuleVersion.objects.update_or_create(
         rule_id="RULE-GPCB-01",
-        requirement=req_gpcb,
         version=1,
-        domain="ENVIRONMENT",
-        jurisdiction="GUJARAT",
-        status=KnowledgeStatus.PUBLISHED,
-        condition_ast={
-            "op": "AND",
-            "args": [
-                {"op": "EQ", "left": {"var": "state"}, "right": "GUJARAT"},
-                {
-                    "op": "OR",
-                    "args": [
-                        {"op": "EQ", "left": {"var": "effluent_emission_generation"}, "right": True},
-                        {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "FOOD"},
-                    ],
-                },
-            ],
+        defaults={
+            "requirement": req_gpcb,
+            "domain": "ENVIRONMENT",
+            "jurisdiction": "GUJARAT",
+            "status": KnowledgeStatus.PUBLISHED,
+            "condition_ast": {
+                "op": "AND",
+                "args": [
+                    {"op": "EQ", "left": {"var": "state"}, "right": "GUJARAT"},
+                    {
+                        "op": "OR",
+                        "args": [
+                            {"op": "EQ", "left": {"var": "effluent_emission_generation"}, "right": True},
+                            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "FOOD"},
+                        ],
+                    },
+                ],
+            },
         },
     )
 
     # 3. Gujarat Factory License
-    req_fact = RequirementDefinition.objects.create(
+    req_fact, _ = RequirementDefinition.objects.update_or_create(
         requirement_id="REQ-GUJ-FACTORY",
-        name="Gujarat Factory License",
-        authority="DISH",
-        jurisdiction="GUJARAT",
-        domain="LABOR",
-        status=KnowledgeStatus.PUBLISHED,
+        defaults={
+            "name": "Gujarat Factory License",
+            "authority": "DISH",
+            "jurisdiction": "GUJARAT",
+            "domain": "LABOR",
+            "status": KnowledgeStatus.PUBLISHED,
+        },
     )
-    rule_fact = RuleVersion.objects.create(
+    rule_fact, _ = RuleVersion.objects.update_or_create(
         rule_id="RULE-GUJ-FACT-01",
-        requirement=req_fact,
         version=1,
-        domain="LABOR",
-        jurisdiction="GUJARAT",
-        status=KnowledgeStatus.PUBLISHED,
-        condition_ast={
-            "op": "AND",
-            "args": [
-                {"op": "EQ", "left": {"var": "state"}, "right": "GUJARAT"},
-                {"op": "GTE", "left": {"var": "total_worker_count"}, "right": 10},
-                {"op": "GT", "left": {"var": "connected_power_load"}, "right": 0},
-            ],
+        defaults={
+            "requirement": req_fact,
+            "domain": "LABOR",
+            "jurisdiction": "GUJARAT",
+            "status": KnowledgeStatus.PUBLISHED,
+            "condition_ast": {
+                "op": "AND",
+                "args": [
+                    {"op": "EQ", "left": {"var": "state"}, "right": "GUJARAT"},
+                    {"op": "GTE", "left": {"var": "total_worker_count"}, "right": 10},
+                    {"op": "GT", "left": {"var": "connected_power_load"}, "right": 0},
+                ],
+            },
         },
     )
 

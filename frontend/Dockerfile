@@ -26,10 +26,14 @@ RUN npm run build
 FROM node:22-alpine AS runner
 WORKDIR /app
 
+ARG BACKEND_INTERNAL_URL=""
+ARG NEXT_PUBLIC_API_BASE_URL=""
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
-    HOSTNAME="0.0.0.0"
+    HOSTNAME="0.0.0.0" \
+    BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL \
+    NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs

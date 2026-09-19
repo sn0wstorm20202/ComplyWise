@@ -13,17 +13,12 @@
 import { ApiEnvelope, ApiErrorEnvelope, ApiErrorDetail } from "@/types";
 
 export function getApiBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/+$/, "");
-  }
+  // In the browser for deployed non-localhost environments, route through Next.js /api/v1 rewrites
   if (
     typeof window !== "undefined" &&
     window.location &&
     window.location.origin
   ) {
-    if (window.location.hostname === "frontend-woad-eight-18.vercel.app") {
-      return "https://backend-delta-inky-91.vercel.app/api/v1";
-    }
     if (
       !window.location.origin.includes("localhost") &&
       !window.location.origin.includes("127.0.0.1")
@@ -31,6 +26,18 @@ export function getApiBaseUrl(): string {
       return `${window.location.origin}/api/v1`;
     }
   }
+
+  // Use explicit public API base URL if provided
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/+$/, "");
+  }
+
+  // In server-side environments (SSR), route directly to backend internal URL if configured
+  if (process.env.BACKEND_INTERNAL_URL) {
+    return `${process.env.BACKEND_INTERNAL_URL.replace(/\/+$/, "")}/api/v1`;
+  }
+
+  // Local development fallback
   return "http://127.0.0.1:8000/api/v1";
 }
 

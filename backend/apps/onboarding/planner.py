@@ -1153,36 +1153,91 @@ def plan_adaptive_smart_questions(
     provider = get_llm_provider()
     llm_succeeded = False
 
-    # In sequential adaptive mode (batch_size is not None), questioning is driven
-    # deterministically by AST rule evaluation and Kleene logic without LLM latency.
-    should_call_llm = provider.is_configured and (batch_size is None)
+    # Phase 1 & 2: First check if an existing active question plan with questions exists
+    existing_plan = SmartQuestionPlan.objects.filter(
+        business=business,
+        round_number=round_number,
+        status="ACTIVE",
+    ).order_by("-created_at").first()
+
+    if existing_plan and existing_plan.questions.exists():
+        cached_qs = []
+        for q in existing_plan.questions.all():
+            if q.is_answered or q.variable_key in known_keys or q.variable_key in context.known_variable_keys:
+                continue
+            cached_qs.append({
+                "question_id": q.question_id or f"Q_{q.variable_key}",
+                "target_variable_id": q.target_variable_id or q.variable_key,
+                "variable_key": q.variable_key,
+                "question_text": q.question_text,
+                "why_it_matters": q.why_it_matters,
+                "reason": q.reason,
+                "domains": q.domains or ["STATUTORY_COMPLIANCE"],
+                "data_type": q.data_type,
+                "options": q.options or [],
+                "priority": q.priority,
+                "is_canonical": bool(q.variable_key in VARIABLES_BY_KEY),
+            })
+        if cached_qs:
+            if batch_size is not None:
+                cached_qs = cached_qs[:batch_size]
+            return {
+                "business_id": str(business.id),
+                "business_name": business.name,
+                "assessment_id": str(assessment.id) if assessment else None,
+                "plan_id": str(existing_plan.id),
+                "round": round_number,
+                "status": existing_plan.status,
+                "stopping_reason": existing_plan.stopping_reason,
+                "business_summary": existing_plan.business_summary,
+                "regulatory_search_intent": existing_plan.regulatory_search_intent,
+                "information_gaps": existing_plan.information_gaps,
+                "reasoning_summary": existing_plan.reasoning_summary,
+                "questions": cached_qs,
+                "total_questions": len(cached_qs),
+                "total_missing": len(context.missing_variable_keys),
+                "known_variables_count": len(context.known_variable_keys),
+                "context_summary": context.as_dict(),
+            }
+
+    # Deterministic-first policy: only call LLM when deterministic candidate rules
+    # cannot provide enough questions for intake (len(ranked_variables) < 3) and batch_size is None
+    should_call_llm = (
+        provider.is_configured
+        and (batch_size is None)
+        and (round_number == 1)
+        and (len(kb_analysis.ranked_variables) < 3)
+    )
 
     if should_call_llm:
-        prompt = f"""BUSINESS PROFILE:
-Business Legal / Operating Name: {business.name}
-Legal Constitution: {context.legal_constitution or 'Not specified'}
-Registered State / Jurisdiction: {context.state_name} ({context.state})
-District / City: {context.district or 'Not specified'}
-Industrial Zone Siting: {context.industrial_zone_status or 'Not specified'}
-Lifecycle Stage: {context.lifecycle_stage or 'Operational'}
-Enterprise Scale (MSME): {context.msme_scale}
+        # Phase 3: Send only relevant unresolved variable keys, NOT the 43-variable catalog
+        compact_vars = {
+            rv: (get_variable(rv).label if get_variable(rv) else rv)
+            for rv in kb_analysis.ranked_variables[:6]
+        }
+        if not compact_vars:
+            compact_vars = {
+                k: (get_variable(k).label if get_variable(k) else k)
+                for k in ("total_worker_count", "annual_turnover", "connected_power_load", "effluent_emission_generation", "hazardous_waste_generation", "import_export_intent")
+                if k not in known_keys
+            }
 
-PRODUCT & ACTIVITY DESCRIPTION:
-{context.product_description}
+        # Phase 4: Static prompt instructions first, dynamic business profile last for cache prefix stability
+        prompt = f"""Conduct an intake pre-discovery interview. Understand this specific business, detect information gaps, and generate 3 to 5 targeted discovery questions.
 
-IMPORT / EXPORT TRADE INTENT:
-{context.trade_intent or 'Domestic operations'}
+RELEVANT TARGET VARIABLES FOR THIS INTERVIEW:
+{json.dumps(compact_vars, indent=2)}
 
 ALREADY KNOWN FACTS (DO NOT ASK ABOUT THESE):
 {json.dumps(known_facts, indent=2)}
 
-PREVIOUS ROUND INTERVIEW ANSWERS:
-{json.dumps(previous_rounds_answers, indent=2) if previous_rounds_answers else "None (Round 1 Intake)"}
-
-CANONICAL VARIABLE CATALOG (REFERENCE ONLY FOR MAPPING):
-{json.dumps(canonical_catalog, indent=2)}
-
-Conduct the pre-discovery interview. Understand this specific business, detect any name-vs-activity conflicts, determine information gaps, and generate EXACTLY 15 high-value discovery questions."""
+BUSINESS PROFILE:
+Business Name: {business.name}
+Legal Constitution: {context.legal_constitution or 'Not specified'}
+State: {context.state_name} ({context.state})
+Activity / Products: {context.product_description}
+Trade Intent: {context.trade_intent or 'Domestic operations'}
+MSME Scale: {context.msme_scale}"""
 
         try:
             res = provider.complete(
@@ -1191,7 +1246,11 @@ Conduct the pre-discovery interview. Understand this specific business, detect a
                     ChatMessage(role="user", content=prompt),
                 ],
                 temperature=0.1,
-                max_output_tokens=4000,
+                max_output_tokens=1000,
+                reasoning_effort="none",
+                workflow="smart_questions_planner",
+                assessment_id=str(assessment.id) if assessment else None,
+                business_id=str(business.id),
             )
             content = res.text.strip()
             if content.startswith("```"):
@@ -1671,6 +1730,27 @@ def get_next_adaptive_question(
     assessment_id: str | None = None,
 ) -> dict[str, Any] | None:
     """Sequential adaptive questioning: returns the single highest-impact unresolved question."""
+    active_plan = SmartQuestionPlan.objects.filter(
+        business=business,
+        status="ACTIVE",
+    ).order_by("-created_at").first()
+
+    if active_plan:
+        unanswered_instance = active_plan.questions.filter(is_answered=False).first()
+        if unanswered_instance:
+            return {
+                "question_id": unanswered_instance.question_id or f"Q_{unanswered_instance.variable_key}",
+                "target_variable_id": unanswered_instance.target_variable_id or unanswered_instance.variable_key,
+                "variable_key": unanswered_instance.variable_key,
+                "question_text": unanswered_instance.question_text,
+                "why_it_matters": unanswered_instance.why_it_matters,
+                "data_type": unanswered_instance.data_type,
+                "options": unanswered_instance.options or [],
+                "domains": unanswered_instance.domains or ["STATUTORY_COMPLIANCE"],
+                "is_canonical": bool(unanswered_instance.variable_key in VARIABLES_BY_KEY),
+                "reason": unanswered_instance.reason,
+            }
+
     plan_result = plan_adaptive_smart_questions(
         business,
         round_number=1,

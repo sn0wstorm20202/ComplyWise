@@ -52,8 +52,8 @@ def post_json(
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
-            if exc.code == 429 and attempt < max_retries:
-                time.sleep(1.5 * (2**attempt))
+            if exc.code in {429, 502, 503, 504} and attempt < max_retries:
+                time.sleep(0.5 * (2**attempt))
                 continue
             err_detail = ""
             try:

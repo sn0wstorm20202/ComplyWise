@@ -635,7 +635,10 @@ Return strict JSON with key "requirements" as instructed in system prompt."""
                     ChatMessage(role="user", content=user_prompt),
                 ],
                 temperature=0.1,
-                max_output_tokens=3500,
+                max_output_tokens=1500,
+                reasoning_effort="none",
+                workflow="auto_ingest",
+                business_id=str(business.id),
             )
             content = res.text.strip()
             if content.startswith("```"):

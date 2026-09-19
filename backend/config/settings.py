@@ -340,6 +340,14 @@ GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-0
 GROK_API_KEY = os.getenv("GROK_API_KEY", "")
 GROK_MODEL = os.getenv("GROK_MODEL", "grok-4")
 
+# ---------------------------------------------------------------------------
+# LLM Cost Guardrails & Production Controls
+# ---------------------------------------------------------------------------
+ENABLE_USER_PATH_AUTO_INGEST = os.getenv("ENABLE_USER_PATH_AUTO_INGEST", "false").lower() in {"1", "true", "yes"}
+MAX_LLM_CALLS_PER_ASSESSMENT = int(os.getenv("MAX_LLM_CALLS_PER_ASSESSMENT", "5"))
+MAX_TOTAL_TOKENS_PER_ASSESSMENT = int(os.getenv("MAX_TOTAL_TOKENS_PER_ASSESSMENT", "20000"))
+MAX_ESTIMATED_COST_PER_ASSESSMENT = float(os.getenv("MAX_ESTIMATED_COST_PER_ASSESSMENT", "0.05"))
+
 # Server-side only. Never sent to the frontend and never included in an API
 # response: this key is billable and grants crawling on our account (§13).
 FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY", "")

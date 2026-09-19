@@ -10,6 +10,9 @@ Verifies:
 from __future__ import annotations
 
 import datetime
+import pytest
+from django.test import override_settings
+
 from apps.documents.verification import (
     STATUTORY_COMPLIANCE_STANDARDS,
     ai_prevalidate_and_relevance_check,
@@ -130,6 +133,7 @@ def test_verify_document_end_to_end_pass():
 
 def test_blank_image_fails_ai_prevalidation_with_user_flag():
     """Verify that uploading a real image with NO text whatsoever is rejected by genuine OCR."""
+    pytest.importorskip("PIL")
     from PIL import Image
     import io
 
@@ -164,6 +168,7 @@ def test_blank_image_fails_ai_prevalidation_with_user_flag():
 
 def test_image_with_statutory_text_passes_ocr_and_ai_prevalidation():
     """Verify that uploading an image with genuine statutory text is recognized by OCR."""
+    pytest.importorskip("PIL")
     from PIL import Image, ImageDraw
     import io
 
@@ -204,6 +209,7 @@ def test_image_with_statutory_text_passes_ocr_and_ai_prevalidation():
     assert res["llm_scan_analysis"]["compliance_verdict"] == "COMPLIANT"
 
 
+@override_settings(OPENAI_API_KEY="")
 def test_html_document_llm_scan_necessity_and_correctness():
     """Verify that uploading an HTML document is parsed, scanned by LLM, and evaluated for necessity & correctness."""
     import io
@@ -349,6 +355,7 @@ def test_random_document_with_race_number_strictly_rejected():
 
 def test_factory_license_image_ocr_verification_passes():
     """Verify that an image scan (.jpg/.png) of a factory license is OCR inspected and passes verification."""
+    pytest.importorskip("PIL")
     from apps.documents.verification import verify_document
     from PIL import Image, ImageDraw
     import io
@@ -393,6 +400,7 @@ def test_factory_license_image_ocr_verification_passes():
 
 def test_factory_license_photo_with_photo_keyword_passes():
     """Verify that a photo of a factory license named 'factory_photo.jpg' with 'photo' in text passes."""
+    pytest.importorskip("PIL")
     from apps.documents.verification import verify_document
     from PIL import Image, ImageDraw
     import io
@@ -432,6 +440,7 @@ def test_factory_license_photo_with_photo_keyword_passes():
 
 def test_factory_license_sideways_orientation_recovery():
     """Verify that a sideways smartphone photo (rotated 90 degrees) is orientation-recovered by OCR."""
+    pytest.importorskip("PIL")
     from apps.documents.verification import verify_document
     from PIL import Image, ImageDraw
     import io
@@ -472,6 +481,7 @@ def test_factory_license_sideways_orientation_recovery():
 
 def test_factory_license_auto_derives_reference_and_expiry_from_image():
     """Verify that uploading a factory license without pre-filled reference number or expiry auto-derives them from OCR."""
+    pytest.importorskip("PIL")
     from apps.documents.verification import verify_document
     from PIL import Image, ImageDraw
     import io

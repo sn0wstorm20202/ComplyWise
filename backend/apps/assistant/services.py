@@ -361,7 +361,13 @@ def answer_question(
             ChatMessage(role="user", content=_build_user_message(prompt, citations)),
         ]
         try:
-            result = llm.complete(messages, temperature=0.0, max_output_tokens=900)
+            result = llm.complete(
+                messages,
+                temperature=0.0,
+                max_output_tokens=600,
+                reasoning_effort="none",
+                workflow="assistant_general",
+            )
         except ProviderNotConfigured as exc:
             return {
                 **base,
@@ -491,7 +497,14 @@ INSTRUCTIONS:
     # Try calling LLM, and gracefully fall back to deterministic structured engine
     try:
         llm = provider or get_llm_provider()
-        result = llm.complete(messages, temperature=0.0, max_output_tokens=500)
+        result = llm.complete(
+            messages,
+            temperature=0.0,
+            max_output_tokens=500,
+            reasoning_effort="none",
+            workflow="assistant_business",
+            business_id=str(business.id) if business else None,
+        )
         answer_text = result.text.strip()
         if len(answer_text) < 40 or "could not" in answer_text.lower():
             answer_text = _generate_structured_compact_answer(

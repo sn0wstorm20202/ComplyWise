@@ -791,17 +791,15 @@ def ai_prevalidate_and_relevance_check(
     # Resolve OpenAI API key from request data, settings, or process environment
     django_key = ""
     try:
-        if settings and getattr(settings, "configured", False):
-            django_key = getattr(settings, "OPENAI_API_KEY", "") or ""
+        from django.conf import settings
+        if hasattr(settings, "OPENAI_API_KEY"):
+            django_key = (settings.OPENAI_API_KEY or "").strip()
+        else:
+            django_key = os.getenv("OPENAI_API_KEY", "").strip()
     except Exception:
-        django_key = ""
+        django_key = os.getenv("OPENAI_API_KEY", "").strip()
 
-    active_key = (
-        data.get("openai_api_key")
-        or django_key
-        or os.getenv("OPENAI_API_KEY", "")
-        or ""
-    ).strip()
+    active_key = (data.get("openai_api_key") or django_key).strip()
 
     llm_called_successfully = False
     openai_error_msg = None
@@ -845,8 +843,10 @@ def ai_prevalidate_and_relevance_check(
             )
             resp = provider.complete(
                 [ChatMessage(role="user", content=prompt)],
-                max_output_tokens=600,
+                max_output_tokens=500,
                 response_format={"type": "json_object"},
+                reasoning_effort="none",
+                workflow="document_verification",
             )
             if resp and resp.text:
                 match = re.search(r"\{.*\}", resp.text.strip(), re.DOTALL)

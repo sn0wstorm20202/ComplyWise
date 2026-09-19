@@ -19,6 +19,7 @@ Pipeline contract:
 
 from __future__ import annotations
 
+import datetime
 import hashlib
 import logging
 from typing import Any
@@ -275,6 +276,44 @@ def run_discovery(
             "candidate_requirements_count": 0,
             "candidate_requirements": [],
             "errors": [],
+        }
+
+    # Phase 8: Check for a recent completed discovery run within 24 hours
+    recent_cutoff = timezone.now() - datetime.timedelta(hours=24)
+    existing_run = DiscoveryRun.objects.filter(
+        business=business,
+        status="COMPLETED",
+        created_at__gte=recent_cutoff,
+    ).order_by("-created_at").first()
+
+    if existing_run and existing_run.candidate_requirements.exists():
+        logger.info("Discovery cache hit: reusing completed run %s for business %s", existing_run.id, business.name)
+        return {
+            "ran": True,
+            "run_id": str(existing_run.id),
+            "queries": existing_run.queries,
+            "candidate_urls_count": existing_run.candidate_count,
+            "sources_scraped": existing_run.sources_scraped_count,
+            "official_sources_count": existing_run.official_source_count,
+            "verified_count": 0,
+            "candidate_requirements_count": existing_run.candidate_requirements.count(),
+            "candidate_requirements": [
+                {
+                    "id": str(cr.id),
+                    "requirement_name": cr.requirement_name,
+                    "category": cr.category,
+                    "authority": cr.authority,
+                    "jurisdiction": cr.jurisdiction,
+                    "applicability_statement": cr.applicability_statement,
+                    "prerequisite": cr.prerequisite,
+                    "fee_info": cr.fee_info,
+                    "deadline_info": cr.deadline_info,
+                    "validity_info": cr.validity_info,
+                }
+                for cr in existing_run.candidate_requirements.all()
+            ],
+            "errors": [],
+            "cached": True,
         }
 
     run = DiscoveryRun.objects.create(

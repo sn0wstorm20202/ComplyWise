@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any
 
 from domain.context.business_context import DerivedBusinessContext
@@ -63,8 +64,12 @@ def extract_claims_from_text(
     if not text or len(text.strip()) < 100:
         return []
 
-    # Truncate text to avoid blowing token limits while retaining header context
-    truncated_text = text[:8000]
+    # Clean and compress web content to remove navigation/cookie boilerplate and cap at 2500 chars
+    cleaned = re.sub(r"!\[.*?\]\(.*?\)", "", text)  # remove images
+    cleaned = re.sub(r"\[(.*?)\]\(.*?\)", r"\1", cleaned)  # simplify links
+    cleaned = re.sub(r"<(script|style|nav|footer)[^>]*>.*?</\1>", "", cleaned, flags=re.DOTALL | re.IGNORECASE)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    truncated_text = cleaned[:2500]
 
     user_prompt = (
         f"BUSINESS CONTEXT:\n"
@@ -88,7 +93,9 @@ def extract_claims_from_text(
                 ChatMessage(role="user", content=user_prompt),
             ],
             temperature=0.0,
-            max_output_tokens=1500,
+            max_output_tokens=800,
+            reasoning_effort="none",
+            workflow="claim_extraction",
         )
         content = res.text.strip()
         # Strip markdown json block if present

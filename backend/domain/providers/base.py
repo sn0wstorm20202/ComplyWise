@@ -103,6 +103,7 @@ class LLMProvider(abc.ABC):
         *,
         temperature: float = 0.0,
         max_output_tokens: int | None = None,
+        **kwargs: Any,
     ) -> CompletionResult:
         """Generate a completion.
 

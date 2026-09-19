@@ -34,7 +34,11 @@ def _create_profile(business: Business, version: int, **variables) -> BusinessPr
     )
 
 
+from django.test import override_settings
+
+
 @pytest.mark.django_db
+@override_settings(OPENAI_API_KEY="")
 def test_auto_ingest_when_no_rules_exist(make_business, user):
     """When a business has 0 applicable rules, auto_ingest dynamically generates statutory requirements."""
     biz = make_business(owner=user, name="Aarohan Agro Processing Ltd")
@@ -74,6 +78,7 @@ def test_auto_ingest_when_no_rules_exist(make_business, user):
 
 
 @pytest.mark.django_db
+@override_settings(OPENAI_API_KEY="", ENABLE_USER_PATH_AUTO_INGEST=True)
 def test_orchestration_triggers_auto_ingest_seamlessly(make_business, user):
     """Full orchestration pipeline automatically ingests requirements if coverage is initially 0."""
     biz = make_business(owner=user, name="Sundarban BioHarvest Pvt Ltd")

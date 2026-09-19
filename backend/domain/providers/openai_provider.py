@@ -51,9 +51,16 @@ def is_valid_openai_key(key: str | None) -> bool:
     return True
 
 
+import time
+from typing import Any
+
+from .telemetry import telemetry_tracker
+
+
 def _api_key() -> str:
-    key = getattr(settings, "OPENAI_API_KEY", "") or os.getenv("OPENAI_API_KEY", "") or ""
-    return key.strip()
+    if hasattr(settings, "OPENAI_API_KEY"):
+        return (settings.OPENAI_API_KEY or "").strip()
+    return os.getenv("OPENAI_API_KEY", "").strip()
 
 
 def _auth_headers(provider: str, custom_key: str | None = None) -> dict[str, str]:
@@ -95,10 +102,20 @@ class OpenAIProvider(LLMProvider):
         temperature: float = 0.0,
         max_output_tokens: int | None = None,
         response_format: dict[str, str] | None = None,
+        reasoning_effort: str | None = None,
+        workflow: str = "general",
+        assessment_id: str | None = None,
+        business_id: str | None = None,
+        **kwargs: Any,
     ) -> CompletionResult:
         headers = _auth_headers(self.name, self.get_api_key())
         if not self.model:
             raise ProviderNotConfigured(self.name, "OPENAI_MODEL")
+
+        # Guardrail check against cost / call limits per assessment
+        allowed, reason = telemetry_tracker.check_guardrails(assessment_id)
+        if not allowed:
+            raise ProviderError(f"Cost Guardrail Exceeded: {reason}")
 
         payload: dict[str, object] = {
             "model": self.model,
@@ -112,17 +129,33 @@ class OpenAIProvider(LLMProvider):
             for frag in ("o1", "o3", "o4")
         )
         if is_reasoning_model:
-            payload["reasoning_effort"] = "low"
+            if reasoning_effort:
+                payload["reasoning_effort"] = reasoning_effort
+            else:
+                payload["reasoning_effort"] = "low"
             if max_output_tokens is not None:
-                payload["max_completion_tokens"] = max(max_output_tokens, 8000)
+                payload["max_completion_tokens"] = max_output_tokens
         else:
             payload["temperature"] = temperature
             if max_output_tokens is not None:
                 payload["max_tokens"] = max_output_tokens
 
+        t0 = time.perf_counter()
         try:
             data = post_json(CHAT_URL, payload, headers=headers, provider=self.name)
         except ProviderError as exc:
+            latency_ms = (time.perf_counter() - t0) * 1000
+            telemetry_tracker.record_call(
+                provider=self.name,
+                model=self.model,
+                workflow=workflow,
+                call_type="chat_completion",
+                latency_ms=latency_ms,
+                status="ERROR",
+                error_message=str(exc),
+                assessment_id=assessment_id,
+                business_id=business_id,
+            )
             gemini_key = getattr(settings, "GEMINI_API_KEY", "") or ""
             if gemini_key and not getattr(self, "_is_fallback", False):
                 try:
@@ -135,11 +168,16 @@ class OpenAIProvider(LLMProvider):
                             messages,
                             temperature=temperature,
                             max_output_tokens=max_output_tokens,
+                            workflow=workflow,
+                            assessment_id=assessment_id,
+                            business_id=business_id,
+                            **kwargs,
                         )
                 except Exception as fallback_exc:
                     logger.warning("Gemini fallback also failed: %s", fallback_exc)
             raise
 
+        latency_ms = (time.perf_counter() - t0) * 1000
         choices = data.get("choices") or []
         if not choices:
             raise ProviderError(f"{self.name} returned no completion choices.")
@@ -148,17 +186,37 @@ class OpenAIProvider(LLMProvider):
         if not isinstance(text, str):
             raise ProviderError(f"{self.name} returned a completion without text content.")
 
+        usage = data.get("usage") or {}
+        telemetry_tracker.record_call(
+            provider=self.name,
+            model=self.model,
+            workflow=workflow,
+            call_type="chat_completion",
+            usage=usage,
+            latency_ms=latency_ms,
+            status="SUCCESS",
+            assessment_id=assessment_id,
+            business_id=business_id,
+        )
+
         return CompletionResult(
             text=text,
             provider=self.name,
             model=self.model,
-            usage=data.get("usage") or {},
+            usage=usage,
             raw_finish_reason=choices[0].get("finish_reason"),
         )
 
 
 class OpenAIEmbeddingProvider(EmbeddingProvider):
     name = "openai"
+
+    def get_api_key(self) -> str:
+        return _api_key()
+
+    @property
+    def is_configured(self) -> bool:
+        return bool(is_valid_openai_key(self.get_api_key()) and self.model)
 
     @property
     def model(self) -> str:

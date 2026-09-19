@@ -972,7 +972,7 @@ function OnboardingContent() {
   // STEP 3: Submit single question answer, trigger AST re-evaluation, and receive next question
   async function handleSequentialAnswerSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!business || !currentQuestion) return;
+    if (!business || !currentQuestion || questionLoading) return;
 
     const qKey = currentQuestion.variable_key || currentQuestion.key || "";
     if (!qKey) return;

@@ -22,6 +22,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+from django.conf import settings
 from common.enums import ApplicabilityStatus
 from apps.applicability.engine import ApplicabilityEngine
 from apps.applicability.models import DecisionRun
@@ -187,12 +188,13 @@ def orchestrate_compliance_analysis(
     applicable_count = sum(1 for r in actionable_reqs if r.status == ApplicabilityStatus.APPLICABLE)
     needs_info_count = sum(1 for r in actionable_reqs if r.status == ApplicabilityStatus.NEEDS_INFORMATION)
 
-    # Autonomous Statutory Knowledge Ingestion:
-    # If the business has an operational profile but 0 requirements evaluated as APPLICABLE
-    # (indicating a knowledge gap for this state / turnover / sector combination),
-    # dynamically synthesize statutory requirements from discovery sources and profile,
-    # persist them into the knowledge base, and re-evaluate with the deterministic engine.
-    if profile_version and applicable_count == 0:
+    # Autonomous Statutory Knowledge Ingestion (Phase 7 Cost & Authority Guardrail):
+    # Do NOT automatically synthesize production statutory rules on normal user onboarding
+    # path simply because applicable_count == 0. Discovered requirements remain quarantined as
+    # CandidateRequirement in discovery results. Auto-ingest is only executed if explicitly
+    # configured via ENABLE_USER_PATH_AUTO_INGEST setting or in admin / async pipelines.
+    enable_user_auto_ingest = getattr(settings, "ENABLE_USER_PATH_AUTO_INGEST", False)
+    if profile_version and applicable_count == 0 and enable_user_auto_ingest:
         try:
             from apps.ingestion.auto_ingest import auto_ingest_regulatory_knowledge
             ingested = auto_ingest_regulatory_knowledge(

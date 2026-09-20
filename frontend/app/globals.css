@@ -51,6 +51,17 @@
 
   --accent: #18181b;
   --accent-soft: rgba(24, 24, 27, 0.06);
+
+  /* Landing Page Old Money Palette */
+  --color-cw-cream: #F4EFE3;
+  --color-cw-parchment: #E8DEC9;
+  --color-cw-sage: #A8B9A5;
+  --color-cw-sage-deep: #718873;
+  --color-cw-forest: #33483B;
+  --color-cw-charcoal: #1D211D;
+  --color-cw-terracotta: #D8794C;
+  --color-cw-clay: #C96945;
+  --color-cw-brass: #A88A58;
 }
 
 @theme inline {
@@ -86,6 +97,16 @@
 
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+
+  --color-cw-cream: var(--color-cw-cream);
+  --color-cw-parchment: var(--color-cw-parchment);
+  --color-cw-sage: var(--color-cw-sage);
+  --color-cw-sage-deep: var(--color-cw-sage-deep);
+  --color-cw-forest: var(--color-cw-forest);
+  --color-cw-charcoal: var(--color-cw-charcoal);
+  --color-cw-terracotta: var(--color-cw-terracotta);
+  --color-cw-clay: var(--color-cw-clay);
+  --color-cw-brass: var(--color-cw-brass);
 
   --color-success: var(--success);
   --color-warning: var(--warning);

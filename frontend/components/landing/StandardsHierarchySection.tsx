@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { ArrowDown, Layers, ShieldCheck, FileCheck, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface HierarchyExample {
   id: string;
@@ -47,68 +48,80 @@ export function StandardsHierarchySection() {
   ];
 
   return (
-    <section id="standards" className="py-20 md:py-28 bg-white border-b border-[#E2E8F0]">
+    <section id="standards" className="py-20 md:py-28 bg-cw-cream border-b border-cw-parchment">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col md:flex-row md:items-end justify-between gap-6"
+        >
           <div className="max-w-2xl space-y-2">
-            <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-widest font-mono">
+            <div className="text-[11px] font-bold text-cw-sage-deep uppercase tracking-widest font-mono">
               Regulatory Architecture
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#0F172A] font-sans">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium tracking-tight text-cw-charcoal font-serif">
               How ComplyWise understands BIS standards.
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed font-sans">
+            <p className="text-xs sm:text-sm text-cw-forest/80 leading-relaxed font-sans">
               Unlike conversational AI models that guess or hallucinate statutory obligations, ComplyWise resolves regulatory truth through a five-tier deterministic hierarchy.
             </p>
           </div>
 
           {/* Example Switcher */}
-          <div className="flex items-center gap-2 bg-[#F1F5F9] p-1 rounded-xl text-xs self-start shrink-0 border border-[#E2E8F0]">
+          <div className="flex items-center gap-2 bg-cw-parchment/60 p-1 rounded-xl text-xs self-start shrink-0 border border-cw-sage/30">
             {examples.map((ex) => (
               <button
                 key={ex.id}
                 onClick={() => setActiveId(ex.id)}
                 className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
                   activeId === ex.id
-                    ? "bg-white text-[#0F172A] font-semibold shadow-2xs"
-                    : "text-[#64748B] hover:text-[#0F172A]"
+                    ? "bg-cw-cream text-cw-charcoal font-semibold shadow-sm"
+                    : "text-cw-forest hover:text-cw-charcoal"
                 }`}
               >
                 {ex.standard}
               </button>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* Technical Flow Schematic */}
-        <div className="bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] p-6 sm:p-10 shadow-2xs">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-cw-parchment/30 rounded-2xl border border-cw-parchment p-6 sm:p-10 shadow-sm"
+        >
           <div className="max-w-3xl mx-auto space-y-3">
             {levels.map((lvl, index) => (
               <React.Fragment key={lvl.label}>
-                <div className="bg-white rounded-xl border border-[#E2E8F0] p-4 sm:p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 transition-colors">
+                <div className="bg-cw-cream rounded-xl border border-cw-parchment p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-cw-sage transition-colors">
                   <div className="space-y-0.5">
-                    <span className="font-mono text-[10px] font-bold tracking-wider text-blue-900 uppercase">
+                    <span className="font-mono text-[10px] font-bold tracking-wider text-cw-sage-deep uppercase">
                       {lvl.label}
                     </span>
-                    <div className="text-xs sm:text-sm font-bold text-[#0F172A] font-sans">
+                    <div className="text-xs sm:text-sm font-semibold text-cw-charcoal font-serif">
                       {lvl.value}
                     </div>
                   </div>
-                  <div className="text-[11px] text-[#64748B] max-w-xs sm:text-right font-normal font-sans">
+                  <div className="text-[11px] text-cw-forest/80 max-w-xs sm:text-right font-normal font-sans">
                     {lvl.desc}
                   </div>
                 </div>
 
                 {index < levels.length - 1 && (
                   <div className="flex justify-center py-0.5">
-                    <ArrowDown className="h-4 w-4 text-[#94A3B8]" />
+                    <ArrowDown className="h-4 w-4 text-cw-sage-deep" />
                   </div>
                 )}
               </React.Fragment>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

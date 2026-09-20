@@ -3,8 +3,8 @@
 Authority: PRD_v2.0 §20; TRD_v2.0 §30, §31.
 
 Deterministic timing rules verified:
-- T-7 (exactly 7 days remaining): Google Calendar ONLY.
-- T-1 (exactly 1 day remaining): Google Calendar AND Email.
+- T-7 (exactly 7 days remaining): Email ONLY.
+- T-1 (exactly 1 day remaining): Email AND Google Calendar.
 - Any other offset (0, 2, 3, 4, 5, 6, 8, 30, past): NO notification.
 
 Idempotency rules verified:
@@ -276,20 +276,22 @@ class TestNotificationTimingRules:
                 force=True,
             )
 
-    def test_t7_dispatches_calendar_only(self, business):
+    def test_t7_dispatches_email_only(self, business):
+        """T-7: only EMAIL channel, no GOOGLE_CALENDAR (per updated policy)."""
         result = self._run(business, offset=7)
         dispatched = result["dispatched"]
         channels = [d["channel"] for d in dispatched]
-        assert NotificationChannel.GOOGLE_CALENDAR in channels
-        assert NotificationChannel.EMAIL not in channels
+        assert NotificationChannel.EMAIL in channels
+        assert NotificationChannel.GOOGLE_CALENDAR not in channels
         assert len(dispatched) == 1
 
-    def test_t1_dispatches_calendar_and_email(self, business):
+    def test_t1_dispatches_email_and_calendar(self, business):
+        """T-1: both EMAIL and GOOGLE_CALENDAR channels (per updated policy)."""
         result = self._run(business, offset=1)
         dispatched = result["dispatched"]
         channels = [d["channel"] for d in dispatched]
-        assert NotificationChannel.GOOGLE_CALENDAR in channels
         assert NotificationChannel.EMAIL in channels
+        assert NotificationChannel.GOOGLE_CALENDAR in channels
         assert len(dispatched) == 2
 
     @pytest.mark.parametrize("offset", [0, 2, 3, 4, 5, 6, 8, 10, 14, 30])
@@ -390,12 +392,13 @@ class TestNotificationLanguageRendering:
         assert result["language"] == "bn"
 
     def test_hi_t7_subject_contains_devanagari(self, business):
+        """T-7 now dispatches EMAIL only. Verify Hindi email subject has Devanagari."""
         result = self._run_lang(business, "hi", offset=7)
         dispatched = result["dispatched"]
         assert dispatched, "Expected at least one dispatched notification"
-        cal_entry = next(d for d in dispatched if d["channel"] == NotificationChannel.GOOGLE_CALENDAR)
-        # The Hindi calendar template uses Devanagari for "days"
-        assert "दिनों" in cal_entry["subject_or_title"]
+        email_entry = next(d for d in dispatched if d["channel"] == NotificationChannel.EMAIL)
+        # The Hindi email template uses Devanagari script
+        assert "अनुपालन" in email_entry["subject_or_title"] or "दिनों" in email_entry["subject_or_title"]
 
     def test_bn_t1_email_subject_contains_bengali(self, business):
         result = self._run_lang(business, "bn", offset=1)
@@ -435,17 +438,17 @@ class TestNotificationIdempotency:
 
     def test_t7_creates_exactly_one_record_per_channel(self, business):
         result = self._run_live(business, offset=7)
-        assert result["total_dispatched"] == 1  # Calendar only
+        assert result["total_dispatched"] == 1  # Email only
         assert DeadlineNotificationDelivery.objects.filter(
             business=business,
             offset_days=7,
-            channel=NotificationChannel.GOOGLE_CALENDAR,
+            channel=NotificationChannel.EMAIL,
         ).count() == 1
 
-    def test_t1_creates_two_records_calendar_and_email(self, business, settings):
+    def test_t1_creates_two_records_email_and_calendar(self, business, settings):
         settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
         result = self._run_live(business, offset=1)
-        assert result["total_dispatched"] == 2  # Calendar + Email
+        assert result["total_dispatched"] == 2  # Email + Calendar
         assert DeadlineNotificationDelivery.objects.filter(
             business=business,
             offset_days=1,
@@ -461,7 +464,7 @@ class TestNotificationIdempotency:
         assert DeadlineNotificationDelivery.objects.filter(
             business=business,
             offset_days=7,
-            channel=NotificationChannel.GOOGLE_CALENDAR,
+            channel=NotificationChannel.EMAIL,
         ).count() == 1
 
     def test_force_true_bypasses_idempotency_check(self, business):

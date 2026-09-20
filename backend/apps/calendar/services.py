@@ -96,6 +96,58 @@ CALENDAR_TEMPLATES: dict[str, dict[str, str]] = {
     },
 }
 
+ADVANCE_EMAIL_TEMPLATES: dict[str, dict[str, str]] = {
+    "en": {
+        "subject": "[ComplyWise] Compliance Notice: {title} — Due in {days} Days",
+        "body": (
+            "Dear {recipient_name},\n\n"
+            "This is an advance statutory compliance notification from ComplyWise for {business_name}.\n\n"
+            "The following compliance requirement has a statutory filing or renewal deadline in {days} day(s) ({due_date}):\n\n"
+            "• Requirement: {title}\n"
+            "• Regulatory Authority: {authority}\n"
+            "• Legal Basis: {basis}\n"
+            "• Status: Action Required\n\n"
+            "Please review the required documentation and prepare the filing ahead of the deadline to ensure timely submission.\n\n"
+            "View comprehensive filing workflows and document checklists on your ComplyWise portal.\n\n"
+            "Warm regards,\n"
+            "ComplyWise Compliance Intelligence Team\n"
+            "https://complywise.in"
+        ),
+    },
+    "hi": {
+        "subject": "[ComplyWise] अनुपालन सूचना: {title} — {days} दिनों में देय",
+        "body": (
+            "प्रिय {recipient_name},\n\n"
+            "यह {business_name} के लिए ComplyWise की ओर से एक अग्रिम वैधानिक अनुपालन सूचना है।\n\n"
+            "निम्नलिखित अनुपालन आवश्यकता के लिए वैधानिक फाइलिंग या नवीनीकरण की समय सीमा {days} दिनों में ({due_date}) है:\n\n"
+            "• आवश्यकता: {title}\n"
+            "• विनियामक प्राधिकरण: {authority}\n"
+            "• कानूनी आधार: {basis}\n"
+            "• स्थिति: कार्रवाई आवश्यक\n\n"
+            "समय पर फाइलिंग सुनिश्चित करने के लिए कृपया आवश्यक दस्तावेजों की पहले से समीक्षा करें।\n\n"
+            "सादर,\n"
+            "ComplyWise अनुपालन इंटेलिजेंस टीम\n"
+            "https://complywise.in"
+        ),
+    },
+    "bn": {
+        "subject": "[ComplyWise] কমপ্লায়েন্স বিজ্ঞপ্তি: {title} — {days} দিনের মধ্যে প্রযোজ্য",
+        "body": (
+            "প্রিয় {recipient_name},\n\n"
+            "এটি {business_name}-এর জন্য ComplyWise-এর পক্ষ থেকে একটি অগ্রিম সংবিধিবদ্ধ কমপ্লায়েন্স বিজ্ঞপ্তি।\n\n"
+            "নিম্নলিখিত কমপ্লায়েন্স প্রয়োজনীয়তার সংবিধিবদ্ধ ফাইলিং বা পুনর্নবীকরণের সময়সীমা {days} দিনের মধ্যে ({due_date}):\n\n"
+            "• প্রয়োজনীয়তা: {title}\n"
+            "• নিয়ন্ত্রক কর্তৃপক্ষ: {authority}\n"
+            "• আইনি ভিত্তি: {basis}\n"
+            "• অবস্থা: পদক্ষেপ প্রয়োজন\n\n"
+            "নির্দিষ্ট সময়সীমার মধ্যে ফাইলিং নিশ্চিত করতে অনুগ্রহ করে প্রয়োজনীয় নথিপত্র প্রস্তুত রাখুন।\n\n"
+            "শুভেচ্ছান্তে,\n"
+            "ComplyWise কমপ্লায়েন্স ইন্টেলিজেন্স টিম\n"
+            "https://complywise.in"
+        ),
+    },
+}
+
 EMAIL_TEMPLATES: dict[str, dict[str, str]] = {
     "en": {
         "subject": "Urgent Compliance Deadline Tomorrow: {title}",
@@ -340,7 +392,18 @@ def dispatch_google_calendar_event(
         },
     }
 
-    access_token = get_google_calendar_access_token()
+    # Resolve user-specific Google Calendar connection
+    conn = getattr(user, "google_calendar_connection", None)
+    if conn is None:
+        try:
+            from apps.calendar.models import UserGoogleCalendarConnection
+            conn = UserGoogleCalendarConnection.objects.filter(user=user, is_active=True).first()
+        except Exception:
+            conn = None
+
+    access_token = conn.get_valid_access_token() if conn else ""
+    target_calendar = (conn.calendar_id if conn else "") or "primary"
+
     if access_token:
         last_error = ""
         for attempt in range(1, max_retries + 1):
@@ -350,7 +413,7 @@ def dispatch_google_calendar_event(
                 import urllib.request
 
                 req = urllib.request.Request(
-                    "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+                    f"https://www.googleapis.com/calendar/v3/calendars/{target_calendar}/events",
                     data=json.dumps(event_payload).encode("utf-8"),
                     headers={
                         "Authorization": f"Bearer {access_token}",
@@ -360,13 +423,16 @@ def dispatch_google_calendar_event(
                 )
                 with urllib.request.urlopen(req, timeout=10) as resp:
                     data = json.loads(resp.read().decode("utf-8"))
+                    if conn:
+                        conn.last_synced_at = timezone.now()
+                        conn.save(update_fields=["last_synced_at", "updated_at"])
                     return {
                         "provider": "google_calendar_live",
                         "status": "DELIVERED",
                         "event_id": data.get("id"),
                         "html_link": data.get("htmlLink"),
                         "title": title_formatted,
-                        "target_calendar": "primary",
+                        "target_calendar": target_calendar,
                         "attempts": attempt,
                     }
             except urllib.error.HTTPError as exc:
@@ -391,15 +457,28 @@ def dispatch_google_calendar_event(
             "attempts": max_retries,
         }
 
-    simulated_id = f"gcal_sim_{uuid.uuid4().hex[:12]}"
+    # If user has no connected Google Calendar, check if running in automated test simulation mode
+    is_testing = getattr(settings, "RUNNING_TESTS", False) or getattr(settings, "SIMULATE_GOOGLE_CALENDAR", False)
+    if is_testing:
+        simulated_id = f"gcal_sim_{uuid.uuid4().hex[:12]}"
+        return {
+            "provider": "google_calendar_simulator",
+            "status": "SIMULATED",
+            "event_id": simulated_id,
+            "title": title_formatted,
+            "due_date": due_date.isoformat(),
+            "summary": title_formatted,
+            "attempts": 1,
+        }
+
+    # In live execution: do NOT silently simulate. Record explicit FAILED status without falling back to any global/other user's account.
+    user_email = getattr(user, "email", str(user))
     return {
-        "provider": "google_calendar_simulator",
-        "status": "SIMULATED",
-        "event_id": simulated_id,
+        "provider": "google_calendar",
+        "status": "FAILED",
+        "error": f"User '{user_email}' has not connected or authorized Google Calendar.",
         "title": title_formatted,
-        "due_date": due_date.isoformat(),
-        "summary": title_formatted,
-        "attempts": 1,
+        "attempts": 0,
     }
 
 
@@ -415,7 +494,12 @@ def dispatch_email_notification(
 ) -> dict[str, Any]:
     """Send statutory compliance email notification using Django's email backend with bounded retries."""
     lang = get_notification_language(language)
-    template_collection = OVERDUE_EMAIL_TEMPLATES if is_overdue else EMAIL_TEMPLATES
+    if is_overdue:
+        template_collection = OVERDUE_EMAIL_TEMPLATES
+    elif offset_days > 1:
+        template_collection = ADVANCE_EMAIL_TEMPLATES
+    else:
+        template_collection = EMAIL_TEMPLATES
     tpl = template_collection.get(lang, template_collection["en"])
 
     recipient_email = getattr(user, "email", None) or ""
@@ -838,8 +922,9 @@ def evaluate_and_send_deadline_notifications(
                     cal_title = CALENDAR_TEMPLATES.get(user_lang, CALENDAR_TEMPLATES["en"])["title"].format(
                         title=ev.get("title", "Statutory Deadline"), days=effective_offset
                     )
-                    email_subj = EMAIL_TEMPLATES.get(user_lang, EMAIL_TEMPLATES["en"])["subject"].format(
-                        title=ev.get("title", "Statutory Deadline")
+                    email_tpl = ADVANCE_EMAIL_TEMPLATES if effective_offset > 1 else EMAIL_TEMPLATES
+                    email_subj = email_tpl.get(user_lang, email_tpl["en"])["subject"].format(
+                        title=ev.get("title", "Statutory Deadline"), days=effective_offset
                     )
                     in_app_title = IN_APP_TEMPLATES.get(user_lang, IN_APP_TEMPLATES["en"])["upcoming_title"].format(
                         title=ev.get("title", "Statutory Deadline"),

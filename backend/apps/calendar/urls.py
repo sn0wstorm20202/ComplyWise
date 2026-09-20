@@ -7,6 +7,10 @@ from django.urls import path
 from .views import (
     BusinessCalendarListView,
     BusinessCalendarNotificationsListView,
+    GoogleCalendarAuthUrlView,
+    GoogleCalendarCallbackView,
+    GoogleCalendarDisconnectView,
+    GoogleCalendarStatusView,
     NotificationMarkAllReadView,
     NotificationMarkReadView,
     NotificationPreferenceView,
@@ -25,4 +29,8 @@ urlpatterns = [
     path("calendar/notifications/read-all", NotificationMarkAllReadView.as_view(), name="calendar-notifications-read-all"),
     path("calendar/notifications/<uuid:notification_id>/read", NotificationMarkReadView.as_view(), name="calendar-notifications-mark-read"),
     path("calendar/preferences", NotificationPreferenceView.as_view(), name="calendar-preferences"),
+    path("calendar/google/auth-url", GoogleCalendarAuthUrlView.as_view(), name="calendar-google-auth-url"),
+    path("calendar/google/callback", GoogleCalendarCallbackView.as_view(), name="calendar-google-callback"),
+    path("calendar/google/status", GoogleCalendarStatusView.as_view(), name="calendar-google-status"),
+    path("calendar/google/disconnect", GoogleCalendarDisconnectView.as_view(), name="calendar-google-disconnect"),
 ]

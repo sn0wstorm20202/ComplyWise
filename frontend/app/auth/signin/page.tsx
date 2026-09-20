@@ -22,6 +22,7 @@ function SignInContent() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +55,7 @@ function SignInContent() {
         await login(email, password);
         await resolveWorkspaceAndRedirect(redirectTarget);
       } else {
-        await register(email, password, fullName);
+        await register(email, password, fullName, phoneNumber);
         await resolveWorkspaceAndRedirect("/onboarding");
       }
     } catch (err: unknown) {
@@ -145,19 +146,34 @@ function SignInContent() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "register" && (
-              <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
-                  {t("auth.fullNameLabel")}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. Ramesh Chandra"
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
-                />
-              </div>
+              <>
+                <div>
+                  <label className="block text-xs font-semibold text-[#475569] mb-1.5">
+                    {t("auth.fullNameLabel")}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="e.g. Ramesh Chandra"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#475569] mb-1.5">
+                    {t("auth.phoneNumberLabel") || "Phone Number / Mobile (for alerts)"}
+                  </label>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="+91 98765 43210"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+                  />
+                </div>
+              </>
             )}
 
             <div>

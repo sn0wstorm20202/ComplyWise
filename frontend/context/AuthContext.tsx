@@ -20,7 +20,8 @@ interface AuthContextValue {
   register: (
     email: string,
     password: string,
-    fullName: string
+    fullName: string,
+    phoneNumber?: string
   ) => Promise<AuthSession>;
   fastDemoLogin: () => Promise<AuthSession>;
   logout: () => Promise<void>;
@@ -82,11 +83,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (
     email: string,
     password: string,
-    fullName: string
+    fullName: string,
+    phoneNumber?: string
   ): Promise<AuthSession> => {
     setLoading(true);
     try {
-      const session = await authApi.register(email, password, fullName);
+      const session = await authApi.register(email, password, fullName, phoneNumber);
       setUser(session.user);
       setTokenState(session.token);
       setAuthToken(session.token);

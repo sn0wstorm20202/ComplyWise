@@ -171,4 +171,42 @@ export const calendarApi = {
         body: JSON.stringify(prefs),
       }
     ),
+
+  getGoogleAuthUrl: (redirectUri?: string): Promise<{ auth_url: string }> =>
+    request<{ auth_url: string }>(
+      redirectUri
+        ? `/calendar/google/auth-url?redirect_uri=${encodeURIComponent(redirectUri)}`
+        : "/calendar/google/auth-url"
+    ),
+
+  handleGoogleCallback: (
+    code: string,
+    redirectUri?: string
+  ): Promise<{ connected: boolean; google_email?: string; message?: string }> =>
+    request<{ connected: boolean; google_email?: string; message?: string }>(
+      "/calendar/google/callback",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, redirect_uri: redirectUri }),
+      }
+    ),
+
+  getGoogleStatus: (): Promise<{
+    connected: boolean;
+    google_email?: string;
+    last_synced_at?: string | null;
+    calendar_id?: string;
+  }> =>
+    request<{
+      connected: boolean;
+      google_email?: string;
+      last_synced_at?: string | null;
+      calendar_id?: string;
+    }>("/calendar/google/status"),
+
+  disconnectGoogle: (): Promise<{ connected: boolean; message: string }> =>
+    request<{ connected: boolean; message: string }>("/calendar/google/disconnect", {
+      method: "POST",
+    }),
 };

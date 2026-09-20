@@ -45,14 +45,14 @@ class NotificationPolicy:
         return days_overdue in self.overdue_cadence
 
 
-# The default policy reproduces today's behavior exactly
+# The default policy reproduces statutory requirement: T-7 Email only, T-1 Email + Google Calendar
 DEFAULT_NOTIFICATION_POLICY = NotificationPolicy(
     name="default",
     priority=NotificationPriority.MEDIUM,
     offsets=[7, 1],
     channels_by_offset={
-        7: [NotificationChannel.GOOGLE_CALENDAR],
-        1: [NotificationChannel.GOOGLE_CALENDAR, NotificationChannel.EMAIL],
+        7: [NotificationChannel.EMAIL],
+        1: [NotificationChannel.EMAIL, NotificationChannel.GOOGLE_CALENDAR],
     },
     overdue_cadence=[1, 7, 14, 30],
     overdue_channels=[NotificationChannel.EMAIL, NotificationChannel.IN_APP],
@@ -65,8 +65,8 @@ LOW_NOTIFICATION_POLICY = NotificationPolicy(
     priority=NotificationPriority.LOW,
     offsets=[7, 1],
     channels_by_offset={
-        7: [NotificationChannel.GOOGLE_CALENDAR],
-        1: [NotificationChannel.GOOGLE_CALENDAR, NotificationChannel.EMAIL],
+        7: [NotificationChannel.EMAIL],
+        1: [NotificationChannel.EMAIL, NotificationChannel.GOOGLE_CALENDAR],
     },
     overdue_cadence=[1, 7, 14, 30],
     overdue_channels=[NotificationChannel.EMAIL, NotificationChannel.IN_APP],
@@ -79,9 +79,9 @@ MEDIUM_NOTIFICATION_POLICY = NotificationPolicy(
     priority=NotificationPriority.MEDIUM,
     offsets=[14, 7, 1],
     channels_by_offset={
-        14: [NotificationChannel.GOOGLE_CALENDAR],
-        7: [NotificationChannel.GOOGLE_CALENDAR],
-        1: [NotificationChannel.GOOGLE_CALENDAR, NotificationChannel.EMAIL],
+        14: [NotificationChannel.IN_APP],
+        7: [NotificationChannel.EMAIL],
+        1: [NotificationChannel.EMAIL, NotificationChannel.GOOGLE_CALENDAR],
     },
     overdue_cadence=[1, 7, 14, 30],
     overdue_channels=[NotificationChannel.EMAIL, NotificationChannel.IN_APP],

@@ -7,6 +7,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
+import re
+
 User = get_user_model()
 
 
@@ -15,7 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "full_name", "date_joined"]
+        fields = ["id", "email", "full_name", "phone_number", "date_joined"]
         read_only_fields = fields
 
 
@@ -23,6 +25,7 @@ class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, trim_whitespace=False)
     full_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    phone_number = serializers.CharField(required=False, allow_blank=True, max_length=32, default="")
 
     def validate_email(self, value: str) -> str:
         normalised = value.strip().lower()
@@ -37,11 +40,21 @@ class RegisterSerializer(serializers.Serializer):
             raise serializers.ValidationError(list(exc.messages)) from exc
         return value
 
+    def validate_phone_number(self, value: str) -> str:
+        clean = (value or "").strip()
+        if not clean:
+            return ""
+        digits = re.sub(r"\D", "", clean)
+        if len(digits) < 7 or len(digits) > 15:
+            raise serializers.ValidationError("Enter a valid phone number (7 to 15 digits).")
+        return clean
+
     def create(self, validated_data: dict) -> User:
         return User.objects.create_user(
             email=validated_data["email"],
             password=validated_data["password"],
             full_name=validated_data.get("full_name", ""),
+            phone_number=validated_data.get("phone_number", ""),
         )
 
 

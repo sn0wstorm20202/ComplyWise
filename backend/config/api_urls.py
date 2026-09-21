@@ -30,6 +30,7 @@ urlpatterns = [
     path("", include("apps.documents.urls")),
     path("businesses/<uuid:business_id>/", include("apps.workflows.urls")),
     path("businesses/<uuid:business_id>/", include("apps.calendar.urls")),
+    path("", include("apps.calendar.urls")),
     path("businesses/<uuid:business_id>/", include("apps.schemes.urls")),
     path("businesses/<uuid:business_id>/", include("apps.ingestion.urls")),
     path("", include("apps.standards.urls")),

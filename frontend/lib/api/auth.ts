@@ -27,11 +27,20 @@ export const authApi = {
   register: async (
     email: string,
     password: string,
-    fullName: string
+    fullName: string,
+    phoneNumber?: string
   ): Promise<AuthSession> => {
+    const payload: Record<string, string> = {
+      email,
+      password,
+      full_name: fullName,
+    };
+    if (phoneNumber) {
+      payload.phone_number = phoneNumber;
+    }
     const session = await request<AuthSession>("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password, full_name: fullName }),
+      body: JSON.stringify(payload),
     });
     if (session?.token) {
       setAuthToken(session.token);

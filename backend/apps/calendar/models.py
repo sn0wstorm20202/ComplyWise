@@ -163,3 +163,82 @@ class NotificationPreference(BaseModel):
         biz_name = self.business.name if self.business else "All Businesses"
         return f"NotificationPreference({self.user.email} @ {biz_name})"
 
+
+class UserGoogleCalendarConnection(BaseModel):
+    """User-specific Google Calendar OAuth connection and tokens.
+
+    Authority: Multi-user compliance notification isolation.
+    Each ComplyWise user connects and authorizes their own Google Calendar account.
+    """
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="google_calendar_connection",
+        db_index=True,
+    )
+    google_email = models.EmailField(blank=True, default="")
+    access_token = models.TextField(blank=True, default="")
+    refresh_token = models.TextField(blank=True, default="")
+    token_uri = models.CharField(max_length=255, default="https://oauth2.googleapis.com/token")
+    expires_at = models.DateTimeField(null=True, blank=True)
+    scopes = models.TextField(blank=True, default="https://www.googleapis.com/auth/calendar.events")
+    calendar_id = models.CharField(max_length=255, default="primary")
+    is_active = models.BooleanField(default=True)
+    last_synced_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "calendar_user_google_connection"
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        status = "Active" if self.is_active else "Inactive"
+        return f"UserGoogleCalendarConnection({self.user.email} -> {self.google_email or 'Unlinked'} [{status}])"
+
+    def get_valid_access_token(self) -> str:
+        """Return valid access token, automatically refreshing if expired and refresh_token exists."""
+        from datetime import timedelta
+        import json
+        import logging
+        import urllib.parse
+        import urllib.request
+        from django.utils import timezone
+
+        now = timezone.now()
+        if self.access_token and self.expires_at and self.expires_at > now + timedelta(seconds=60):
+            return self.access_token
+
+        client_id = (getattr(settings, "GOOGLE_CALENDAR_CLIENT_ID", "") or "").strip()
+        client_secret = (getattr(settings, "GOOGLE_CALENDAR_CLIENT_SECRET", "") or "").strip()
+
+        if self.refresh_token and client_id and client_secret:
+            try:
+                data = urllib.parse.urlencode({
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "refresh_token": self.refresh_token,
+                    "grant_type": "refresh_token",
+                }).encode("utf-8")
+
+                req = urllib.request.Request(
+                    self.token_uri or "https://oauth2.googleapis.com/token",
+                    data=data,
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    res_data = json.loads(resp.read().decode("utf-8"))
+                    new_token = res_data.get("access_token")
+                    expires_in = res_data.get("expires_in", 3600)
+                    if new_token:
+                        self.access_token = new_token
+                        self.expires_at = now + timedelta(seconds=int(expires_in))
+                        self.save(update_fields=["access_token", "expires_at", "updated_at"])
+                        return new_token
+            except Exception as exc:
+                logging.getLogger(__name__).error(
+                    "Failed to refresh user %s Google OAuth token: %s", self.user_id, exc
+                )
+
+        return self.access_token or ""
+

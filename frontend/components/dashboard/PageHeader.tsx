@@ -33,16 +33,16 @@ export function PageHeader({
       {/* Left: Breadcrumb + Page Title */}
       <div className="space-y-1">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-1.5 text-xs text-[#71717A] font-normal">
-          <Folder className="h-3.5 w-3.5 text-[#71717A]" />
+        <div className="flex items-center gap-1.5 text-xs text-[#475569] dark:text-[#A8B2BE] font-medium">
+          <Folder className="h-3.5 w-3.5 text-[#475569] dark:text-[#A8B2BE]" />
           <span>{breadcrumb[0]?.label || "Home Page"}</span>
-          <ChevronRight className="h-3 w-3 text-[#71717A]/60" />
-          <Folder className="h-3.5 w-3.5 text-[#71717A]" />
-          <span className="text-[#A1A1AA] font-medium">{breadcrumb[1]?.label || "Dashboard"}</span>
+          <ChevronRight className="h-3 w-3 text-[#CBD5E1] dark:text-white/20" />
+          <Folder className="h-3.5 w-3.5 text-[#475569] dark:text-[#A8B2BE]" />
+          <span className="text-[#0B1220] dark:text-[#F7F9FC] font-semibold">{breadcrumb[1]?.label || "Dashboard"}</span>
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl sm:text-[26px] font-semibold tracking-tight text-[#F5F5F3]">
+        <h1 className="text-2xl sm:text-[28px] font-bold tracking-tight text-[#0B1220] dark:text-[#F7F9FC]">
           {title}
         </h1>
       </div>
@@ -59,7 +59,7 @@ export function PageHeader({
             aria-label="Sort and Filter"
             onClick={onToggleSort}
             title="Sort and filter active compliance items"
-            className="h-9 w-9 rounded-[8px] bg-[#17191C] hover:bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors cursor-pointer"
+            className="h-9 w-9 rounded-xl bg-white dark:bg-[#141A21] hover:bg-[#F8FAFD] dark:hover:bg-white/10 border border-[#E2E8F0] dark:border-white/15 flex items-center justify-center text-[#334155] dark:text-[#D4DBE4] hover:text-[#0B1220] dark:hover:text-white transition-colors cursor-pointer shadow-2xs"
           >
             <ArrowUpDown className="h-3.5 w-3.5" />
           </button>
@@ -71,22 +71,22 @@ export function PageHeader({
             type="button"
             onClick={onOpenDateRange}
             title="Select compliance audit period"
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#17191C] hover:bg-white/[0.06] border border-white/[0.08] text-xs font-medium text-[#F5F5F3] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-[#141A21] hover:bg-[#F8FAFD] dark:hover:bg-white/10 border border-[#E2E8F0] dark:border-white/15 text-xs font-semibold text-[#0B1220] dark:text-[#F7F9FC] transition-colors cursor-pointer shadow-2xs"
           >
-            <Calendar className="h-3.5 w-3.5 text-[#71717A]" />
+            <Calendar className="h-3.5 w-3.5 text-[#475569] dark:text-[#A8B2BE]" />
             <span>{selectedDateRange}</span>
-            <ChevronDown className="h-3 w-3 text-[#71717A]" />
+            <ChevronDown className="h-3 w-3 text-[#475569] dark:text-[#A8B2BE]" />
           </button>
         )}
 
-        {/* Add Widget Ghost Button */}
+        {/* Add Widget Button */}
         {onAddWidget && (
           <button
             type="button"
             onClick={onAddWidget}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-white/[0.10] hover:bg-white/[0.04] text-xs font-medium text-[#A1A1AA] hover:text-[#F5F5F3] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white dark:bg-[#141A21] hover:bg-[#F8FAFD] dark:hover:bg-white/10 border border-[#E2E8F0] dark:border-white/15 text-xs font-semibold text-[#334155] dark:text-[#D4DBE4] hover:text-[#0B1220] dark:hover:text-white transition-colors cursor-pointer shadow-2xs"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-3.5 w-3.5 text-[#475569] dark:text-[#A8B2BE]" />
             <span>Add Widget</span>
           </button>
         )}
@@ -96,7 +96,7 @@ export function PageHeader({
           <button
             type="button"
             onClick={onCreateReport}
-            className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.12] text-xs font-medium text-[#F5F5F3] transition-colors cursor-pointer border border-white/[0.10]"
+            className="inline-flex items-center px-4 py-1.5 rounded-full bg-[#0B1220] dark:bg-white text-white dark:text-[#070A0D] border border-transparent hover:bg-slate-800 dark:hover:bg-slate-100 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
           >
             <span>Create a Report</span>
           </button>

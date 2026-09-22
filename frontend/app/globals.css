@@ -1,7 +1,9 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  /* White Mode Color Palette matching reference DEmo.png */
+  /* Light Mode Color Palette */
   --color-obsidian: #0f172a;
   --color-onyx: #1e293b;
   --color-carbon: #334155;
@@ -11,8 +13,8 @@
   --color-ash: #cbd5e1;
   --color-steel: #e2e8f0;
   --color-fog: #f1f5f9;
-  --color-mist: #f8fafc;
-  --color-silver: #f4f6f8;
+  --color-mist: #f8fafd;
+  --color-silver: #f3f6fa;
   --color-bone: #ffffff;
   --color-paper-white: #ffffff;
   --color-copper: #2563eb;
@@ -27,30 +29,76 @@
   --danger: #ef4444;
   --info: #3b82f6;
 
-  /* Surfaces */
-  --surface-void: #edeff2;
+  /* Surfaces — 3 Visual Levels for Light Theme */
+  --surface-void: #f3f6fa;
   --surface-card: #ffffff;
   --surface-panel: #ffffff;
-  --surface-floating: #ffffff;
+  --surface-floating: #f8fafd;
 
   /* Semantic mappings */
-  --background: #edeff2;
-  --background-secondary: #f4f6f8;
+  --background: #f3f6fa;
+  --background-secondary: #f8fafd;
   --surface: #ffffff;
-  --surface-elevated: #ffffff;
-  --surface-hover: #f8fafc;
+  --surface-elevated: #f8fafd;
+  --surface-hover: #f1f5f9;
 
-  --border-subtle: #f1f5f9;
-  --border-default: #e2e8f0;
-  --border-strong: #cbd5e1;
+  --border-subtle: rgba(15, 23, 42, 0.05);
+  --border-default: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.11);
 
+  --text-heading: #0b1220;
   --text-primary: #0f172a;
-  --text-body: #334155;
-  --text-secondary: #64748b;
-  --text-tertiary: #94a3b8;
+  --text-body: #0f172a;
+  --text-secondary: #334155;
+  --text-tertiary: #475569;
+  --text-muted: #475569;
 
-  --accent: #18181b;
-  --accent-soft: rgba(24, 24, 27, 0.06);
+  --accent: #2563eb;
+  --accent-soft: rgba(37, 99, 235, 0.08);
+}
+
+.dark {
+  /* Dark Mode Coordinated Layers: Page #070A0D, Surface #0E1318, Elevated #141A21 */
+  --color-obsidian: #f7f9fc;
+  --color-onyx: #f1f5f9;
+  --color-carbon: #d4dbe4;
+  --color-graphite: #a8b2be;
+  --color-slate: #94a3b8;
+  --color-smoke: #64748b;
+  --color-ash: #475569;
+  --color-steel: #334155;
+  --color-fog: #1e293b;
+  --color-mist: #070a0d;
+  --color-silver: #0e1318;
+  --color-bone: #141a21;
+  --color-paper-white: #141a21;
+  --color-copper: #3b82f6;
+  --color-copper-soft: rgba(59, 130, 246, 0.15);
+
+  --surface-void: #070a0d;
+  --surface-card: #0e1318;
+  --surface-panel: #0e1318;
+  --surface-floating: #141a21;
+
+  --background: #070a0d;
+  --background-secondary: #0e1318;
+  --surface: #0e1318;
+  --surface-elevated: #141a21;
+  --surface-hover: rgba(255, 255, 255, 0.06);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --text-heading: #f7f9fc;
+  --text-primary: #f7f9fc;
+  --text-body: #f7f9fc;
+  --text-secondary: #d4dbe4;
+  --text-tertiary: #a8b2be;
+  --text-muted: #a8b2be;
+
+  --accent: #3b82f6;
+  --accent-soft: rgba(59, 130, 246, 0.15);
 }
 
 @theme inline {
@@ -63,8 +111,8 @@
   --color-ash: #cbd5e1;
   --color-steel: #e2e8f0;
   --color-fog: #f1f5f9;
-  --color-mist: #f8fafc;
-  --color-silver: #f4f6f8;
+  --color-mist: #f8fafd;
+  --color-silver: #f3f6fa;
   --color-bone: #ffffff;
   --color-paper-white: #ffffff;
   --color-copper: #2563eb;
@@ -97,24 +145,53 @@
 }
 
 body {
-  background-color: var(--background);
+  background-color: #f3f6fa;
+  background-image:
+    radial-gradient(ellipse 75% 55% at 15% 15%, rgba(70, 120, 255, 0.075) 0%, transparent 65%),
+    radial-gradient(ellipse 65% 50% at 85% 20%, rgba(110, 95, 210, 0.035) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 55% at 50% 85%, rgba(45, 180, 140, 0.02) 0%, transparent 65%);
+  background-attachment: fixed;
   color: var(--text-body);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Hairline borders & quiet cards */
+.dark body,
+html.dark body {
+  background-color: #070a0d;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 15% 15%, rgba(59, 130, 246, 0.035) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 45% at 85% 20%, rgba(99, 102, 241, 0.02) 0%, transparent 55%);
+  background-attachment: fixed;
+  color: #f7f9fc;
+}
+
+/* Hairline borders & surface layers */
 .slash-card {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  background-color: var(--surface-card);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.045), 0 1px 2px rgba(15, 23, 42, 0.02);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dark .slash-card {
+  background-color: #0e1318;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .slash-panel {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  background-color: var(--surface-panel);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.dark .slash-panel {
+  background-color: #0e1318;
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .slash-pill {
@@ -126,18 +203,314 @@ body {
   background: linear-gradient(103deg, rgb(174, 147, 87), rgb(255, 240, 204) 40%, rgb(174, 147, 87) 70%, rgba(189, 157, 79, 0));
 }
 
-/* Restrained subtle scrollbars for light mode */
+/* Restrained subtle scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.18);
   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+/* =========================================================================
+   HEADING COLOR HARMONY (TYPOGRAPHY SIZES PRESERVED)
+   ========================================================================= */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-heading);
+}
+
+/* =========================================================================
+   DARK THEME: SYSTEMATIC SURFACE & BORDER LAYER COORDINATION (UNTOUCHED)
+   ========================================================================= */
+.dark .bg-white:not([class*="dark:bg-"]) {
+  background-color: #0e1318 !important;
+}
+
+.dark .bg-\[\#F8FAFC\]:not([class*="dark:bg-"]),
+.dark .bg-\[\#f8fafc\]:not([class*="dark:bg-"]),
+.dark .bg-\[\#F1F5F9\]:not([class*="dark:bg-"]),
+.dark .bg-\[\#f1f5f9\]:not([class*="dark:bg-"]),
+.dark .bg-\[\#EDEFF2\]:not([class*="dark:bg-"]),
+.dark .bg-\[\#F4F6F8\]:not([class*="dark:bg-"]) {
+  background-color: #141a21 !important;
+}
+
+.dark .border-\[\#E2E8F0\]:not([class*="dark:border-"]),
+.dark .border-\[\#e2e8f0\]:not([class*="dark:border-"]),
+.dark .border-\[\#E5E7EB\]:not([class*="dark:border-"]),
+.dark .border-\[\#CBD5E1\]:not([class*="dark:border-"]),
+.dark .border-\[\#cbd5e1\]:not([class*="dark:border-"]) {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dark .divide-\[\#E2E8F0\],
+.dark .divide-\[\#e2e8f0\],
+.dark .divide-\[\#1c1d22\] {
+  border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+/* DARK THEME: Systematic protection against dark text on dark backgrounds */
+.dark .text-\[\#0F172A\]:not([class*="dark:text-"]),
+.dark .text-\[\#0f172a\]:not([class*="dark:text-"]),
+.dark .text-\[\#0B1220\]:not([class*="dark:text-"]),
+.dark .text-\[\#0b1220\]:not([class*="dark:text-"]),
+.dark .text-\[\#18181B\]:not([class*="dark:text-"]),
+.dark .text-\[\#111827\]:not([class*="dark:text-"]),
+.dark .text-\[\#1E293B\]:not([class*="dark:text-"]),
+.dark .text-\[\#1e293b\]:not([class*="dark:text-"]) {
+  color: #f7f9fc !important;
+}
+
+.dark .text-\[\#334155\]:not([class*="dark:text-"]),
+.dark .text-\[\#374151\]:not([class*="dark:text-"]),
+.dark .text-\[\#475569\]:not([class*="dark:text-"]),
+.dark .text-\[\#4B5563\]:not([class*="dark:text-"]) {
+  color: #d4dbe4 !important;
+}
+
+.dark .text-\[\#64748B\]:not([class*="dark:text-"]),
+.dark .text-\[\#71717A\]:not([class*="dark:text-"]),
+.dark .text-\[\#6B7280\]:not([class*="dark:text-"]),
+.dark .text-\[\#777a88\]:not([class*="dark:text-"]),
+.dark .text-\[\#5e616e\]:not([class*="dark:text-"]),
+.dark .text-\[\#94A3B8\]:not([class*="dark:text-"]),
+.dark .text-\[\#9CA3AF\]:not([class*="dark:text-"]),
+.dark .text-\[\#9194a1\]:not([class*="dark:text-"]) {
+  color: #a8b2be !important;
+}
+
+/* =========================================================================
+   LIGHT THEME: REFINED SURFACE BLENDING, SOFT BORDERS & GENTLE DEPTH
+   ========================================================================= */
+html:not(.dark) .border-\[\#E2E8F0\],
+html:not(.dark) .border-\[\#e2e8f0\],
+html:not(.dark) .border-\[\#E5E7EB\],
+html:not(.dark) .border-\[\#e5e7eb\],
+html:not(.dark) .border-slate-200,
+html:not(.dark) .border-gray-200 {
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+html:not(.dark) .border-\[\#CBD5E1\],
+html:not(.dark) .border-\[\#cbd5e1\],
+html:not(.dark) .border-slate-300,
+html:not(.dark) .border-gray-300 {
+  border-color: rgba(15, 23, 42, 0.11) !important;
+}
+
+html:not(.dark) .divide-\[\#E2E8F0\],
+html:not(.dark) .divide-\[\#e2e8f0\],
+html:not(.dark) .divide-slate-200,
+html:not(.dark) .divide-gray-200 {
+  border-color: rgba(15, 23, 42, 0.07) !important;
+}
+
+/* Light theme card surface depth: soft subtle depth (0 8px 28px rgba(15, 23, 42, 0.045)) */
+html:not(.dark) .slash-card,
+html:not(.dark) .bg-white.rounded-2xl,
+html:not(.dark) .bg-white.rounded-xl,
+html:not(.dark) .bg-white.rounded-lg {
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.045), 0 1px 2px rgba(15, 23, 42, 0.02);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+/* AppShell main content canvas gradient: Base #F3F6FA with diffuse radial glow */
+html:not(.dark) main.bg-\[\#F4F7FB\],
+html:not(.dark) main.bg-\[\#f4f7fb\],
+html:not(.dark) .bg-\[\#F4F7FB\],
+html:not(.dark) .bg-\[\#f4f7fb\] {
+  background-color: #f3f6fa !important;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 15% 15%, rgba(70, 120, 255, 0.075) 0%, transparent 65%),
+    radial-gradient(ellipse 70% 55% at 85% 20%, rgba(110, 95, 210, 0.035) 0%, transparent 60%),
+    radial-gradient(ellipse 75% 60% at 50% 85%, rgba(45, 180, 140, 0.02) 0%, transparent 65%) !important;
+  background-attachment: local !important;
+}
+
+/* =========================================================================
+   LIGHT THEME: ACTIVE / SELECTED CONTROLS REFINEMENT
+   ========================================================================= */
+html:not(.dark) .bg-blue-50 {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #1e40af !important;
+}
+
+html:not(.dark) [aria-selected="true"],
+html:not(.dark) .data-\[state\=active\] {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+/* =========================================================================
+   LIGHT THEME: TEXT CONTRAST ENHANCEMENTS (HEADINGS, BODY, SECONDARY, MUTED)
+   ========================================================================= */
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) h5,
+html:not(.dark) h6 {
+  color: #0b1220;
+}
+
+html:not(.dark) .text-slate-900,
+html:not(.dark) .text-gray-900,
+html:not(.dark) .text-zinc-900,
+html:not(.dark) .text-\[\#0F172A\],
+html:not(.dark) .text-\[\#0f172a\],
+html:not(.dark) .text-\[\#0B1220\],
+html:not(.dark) .text-\[\#0b1220\],
+html:not(.dark) .text-\[\#111827\],
+html:not(.dark) .text-\[\#18181B\],
+html:not(.dark) .text-\[\#1E293B\],
+html:not(.dark) .text-\[\#1e293b\] {
+  color: #0f172a;
+}
+
+/* Secondary text, metadata & descriptions: Crisp #334155 */
+html:not(.dark) .text-slate-700,
+html:not(.dark) .text-gray-700,
+html:not(.dark) .text-zinc-700,
+html:not(.dark) .text-slate-600,
+html:not(.dark) .text-gray-600,
+html:not(.dark) .text-zinc-600,
+html:not(.dark) .text-\[\#334155\],
+html:not(.dark) .text-\[\#374151\],
+html:not(.dark) .text-\[\#64748B\],
+html:not(.dark) .text-\[\#64748b\],
+html:not(.dark) .text-\[\#6B7280\],
+html:not(.dark) .text-\[\#6b7280\],
+html:not(.dark) .text-\[\#71717A\],
+html:not(.dark) .text-\[\#71717a\],
+html:not(.dark) .text-\[\#5e616e\],
+html:not(.dark) .text-\[\#777a88\] {
+  color: #334155;
+}
+
+/* Muted text & helper text: Readable #475569 */
+html:not(.dark) .text-slate-500,
+html:not(.dark) .text-gray-500,
+html:not(.dark) .text-zinc-500,
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-gray-400,
+html:not(.dark) .text-zinc-400,
+html:not(.dark) .text-\[\#475569\],
+html:not(.dark) .text-\[\#4b5563\],
+html:not(.dark) .text-\[\#94A3B8\],
+html:not(.dark) .text-\[\#94a3b8\],
+html:not(.dark) .text-\[\#9CA3AF\],
+html:not(.dark) .text-\[\#9ca3af\],
+html:not(.dark) .text-\[\#A1A1AA\],
+html:not(.dark) .text-\[\#a1a1aa\],
+html:not(.dark) .text-\[\#9194a1\] {
+  color: #475569;
+}
+
+/* LIGHT THEME: Convert legacy dark-only card backgrounds in light mode */
+html:not(.dark) .bg-\[\#121317\] {
+  background-color: #f8fafd !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .bg-\[\#17191C\] {
+  background-color: #f8fafd !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .bg-\[\#040406\] {
+  background-color: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+html:not(.dark) .border-\[\#1c1d22\] {
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+html:not(.dark) .border-\[\#2e3038\] {
+  border-color: rgba(15, 23, 42, 0.11) !important;
+}
+
+/* LIGHT THEME: Prevent white text on white cards/tables */
+html:not(.dark) .slash-card .text-\[\#ffffff\],
+html:not(.dark) .slash-card .text-\[\#F5F5F3\],
+html:not(.dark) .slash-card .text-\[\#e2e3e9\],
+html:not(.dark) .slash-card .text-white:not([class*="bg-"]):not(button):not(a) {
+  color: #0b1220 !important;
+}
+
+/* =========================================================================
+   FORM INPUTS & CONTROLS: SUBTLE VISIBLE BORDER, CLEAR CONTRAST & FOCUS
+   ========================================================================= */
+input,
+select,
+textarea {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) select,
+html:not(.dark) textarea {
+  background-color: #ffffff;
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+}
+
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #64748b;
+}
+
+html:not(.dark) input:focus,
+html:not(.dark) select:focus,
+html:not(.dark) textarea:focus {
+  border-color: #2563eb !important;
+  outline: 2px solid rgba(37, 99, 235, 0.2) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+  background-color: #141a21;
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #f7f9fc;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #a8b2be;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #3b82f6 !important;
+  outline: 2px solid rgba(59, 130, 246, 0.2) !important;
 }

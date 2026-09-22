@@ -35,18 +35,18 @@ export function ActivityTimelineDrawer({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-white border-l border-[#E2E8F0] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+      <div className="w-full max-w-md bg-white dark:bg-[#0D1117] border-l border-[#E2E8F0] dark:border-white/10 h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
+          <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-white/10 pb-4">
             <div>
-              <h2 className="text-base font-semibold text-[#0F172A]">Compliance Activity</h2>
-              <p className="text-xs text-[#64748B]">
+              <h2 className="text-base font-semibold text-[#0F172A] dark:text-[#F8FAFC]">Compliance Activity</h2>
+              <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
                 Weekly audit log: {data.activity.weeklyTasks} tasks tracked ({data.activity.growthPercentage} vs prev week)
               </p>
             </div>
             <button
               onClick={onClose}
-              className="h-7 w-7 rounded-[8px] bg-[#F1F5F9] hover:bg-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] transition-colors"
+              className="h-7 w-7 rounded-[8px] bg-[#F1F5F9] dark:bg-white/5 hover:bg-[#E2E8F0] dark:hover:bg-white/10 flex items-center justify-center text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-white transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -59,23 +59,23 @@ export function ActivityTimelineDrawer({
                 key={d.day}
                 className={`p-3.5 rounded-[12px] border transition-all ${
                   d.isHighlight
-                    ? "bg-[#E5F77D]/25 border-[#BEF264]"
-                    : "bg-[#F8FAFC] border-[#E2E8F0]"
+                    ? "bg-[#E5F77D]/15 dark:bg-yellow-500/10 border-[#BEF264] dark:border-yellow-500/30"
+                    : "bg-[#F8FAFC] dark:bg-white/5 border-[#E2E8F0] dark:border-white/10"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-xs text-[#0F172A]">{d.day}</span>
-                    <span className="text-[11px] text-[#64748B]">({d.dateStr})</span>
+                    <span className="font-semibold text-xs text-[#0F172A] dark:text-[#F8FAFC]">{d.day}</span>
+                    <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">({d.dateStr})</span>
                     {d.isHighlight && (
                       <span className="px-2 py-0.5 rounded-full bg-[#18181B] text-white font-semibold text-[10px]">
                         Peak Day
                       </span>
                     )}
                   </div>
-                  <span className="font-semibold text-[#0F172A] text-xs">{d.tasks} tasks</span>
+                  <span className="font-semibold text-[#0F172A] dark:text-[#F8FAFC] text-xs">{d.tasks} tasks</span>
                 </div>
-                <div className="mt-2 text-xs text-[#475569] leading-relaxed">
+                <div className="mt-2 text-xs text-[#475569] dark:text-[#94A3B8] leading-relaxed">
                   {d.day === "Fri"
                     ? "Batch testing certificates validated & laboratory calibration logs uploaded."
                     : d.day === "Thu"
@@ -87,7 +87,7 @@ export function ActivityTimelineDrawer({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-[#E2E8F0]">
+        <div className="pt-4 border-t border-[#E2E8F0] dark:border-white/10">
           <Link
             href="/compliance"
             onClick={onClose}
@@ -118,17 +118,17 @@ export function ActionsListDrawer({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-white border-l border-[#E2E8F0] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+      <div className="w-full max-w-lg bg-white dark:bg-[#0D1117] border-l border-[#E2E8F0] dark:border-white/10 h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
+          <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-white/10 pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-[#0F172A]">Open Compliance Actions</h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-600 font-semibold text-xs">
+                <h2 className="text-base font-semibold text-[#0F172A] dark:text-[#F8FAFC]">Open Compliance Actions</h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 font-semibold text-xs">
                   {data.actions.openCount} Active
                 </span>
               </div>
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
                 {data.actions.changeFromLastWeek} · {data.actions.highPriorityCount} High Priority items
               </p>
             </div>
@@ -144,29 +144,29 @@ export function ActionsListDrawer({
             {data.actions.items.map((act) => (
               <div
                 key={act.id}
-                className="p-4 rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#CBD5E1] transition-all space-y-2.5"
+                className="p-4 rounded-[12px] border border-[#E2E8F0] dark:border-white/10 bg-[#F8FAFC] dark:bg-white/5 hover:border-[#CBD5E1] dark:hover:border-white/20 transition-all space-y-2.5"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="font-mono text-[11px] font-medium text-[#18181B] bg-white border border-[#E2E8F0] px-2 py-0.5 rounded-[6px]">
+                    <span className="font-mono text-[11px] font-medium text-[#18181B] dark:text-[#CBD5E1] bg-white dark:bg-white/5 border border-[#E2E8F0] dark:border-white/10 px-2 py-0.5 rounded-[6px]">
                       {act.standardCode}
                     </span>
-                    <h3 className="font-semibold text-[#0F172A] text-sm mt-1">{act.title}</h3>
+                    <h3 className="font-semibold text-[#0F172A] dark:text-[#F8FAFC] text-sm mt-1">{act.title}</h3>
                   </div>
                   <span className="px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-600 font-medium text-[11px] shrink-0">
                     {act.daysRemaining}d remaining
                   </span>
                 </div>
 
-                <p className="text-xs text-[#475569] leading-relaxed">{act.summary}</p>
+                <p className="text-xs text-[#475569] dark:text-[#94A3B8] leading-relaxed">{act.summary}</p>
 
-                <div className="text-[11px] text-[#64748B] font-mono">
+                <div className="text-[11px] text-[#64748B] dark:text-[#94A3B8] font-mono">
                   Citation: {act.clauseRef}
                 </div>
 
-                <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between">
-                  <span className="text-[11px] text-[#64748B]">
-                    Deadline: <strong className="text-[#0F172A]">{act.deadline}</strong>
+                <div className="pt-2 border-t border-[#E2E8F0] dark:border-white/10 flex items-center justify-between">
+                  <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+                    Deadline: <strong className="text-[#0F172A] dark:text-[#F8FAFC]">{act.deadline}</strong>
                   </span>
                   <Link
                     href={`/${act.targetView}`}
@@ -182,10 +182,10 @@ export function ActionsListDrawer({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-[#E2E8F0]">
+          <div className="pt-4 border-t border-[#E2E8F0] dark:border-white/10">
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-[10px] border border-[#E2E8F0] text-xs font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
+            className="w-full py-2.5 rounded-[10px] border border-[#E2E8F0] dark:border-white/10 text-xs font-medium text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-white hover:bg-[#F1F5F9] dark:hover:bg-white/5 transition-colors"
           >
             Close Actions Panel
           </button>
@@ -216,18 +216,18 @@ export function RequirementsListDrawer({
           <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-[#0F172A]">Applicable Requirements</h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-xs">
+                <h2 className="text-base font-semibold text-[#0F172A] dark:text-[#F8FAFC]">Applicable Requirements</h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-semibold text-xs">
                   {data.requirements.applicableCount} Total
                 </span>
               </div>
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
                 Bureau of Indian Standards · {data.requirements.isStandardsRatio} active IS standards
               </p>
             </div>
             <button
               onClick={onClose}
-              className="h-7 w-7 rounded-[8px] bg-[#F1F5F9] hover:bg-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] transition-colors"
+              className="h-7 w-7 rounded-[8px] bg-[#F1F5F9] dark:bg-white/5 hover:bg-[#E2E8F0] dark:hover:bg-white/10 flex items-center justify-center text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-white transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -248,15 +248,15 @@ export function RequirementsListDrawer({
                   </div>
                   <StatusBadge status={req.status} size="sm" />
                 </div>
-                <p className="text-[11px] text-[#475569] line-clamp-2 leading-relaxed">{req.explanation}</p>
-                <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between text-xs">
-                  <span className="text-[11px] text-[#64748B]">
-                    Clauses: <strong className="text-[#0F172A]">{req.compliantClauses}/{req.totalClauses}</strong>
+                <p className="text-[11px] text-[#475569] dark:text-[#94A3B8] line-clamp-2 leading-relaxed">{req.explanation}</p>
+                <div className="pt-2 border-t border-[#E2E8F0] dark:border-white/10 flex items-center justify-between text-xs">
+                  <span className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+                    Clauses: <strong className="text-[#0F172A] dark:text-[#F8FAFC]">{req.compliantClauses}/{req.totalClauses}</strong>
                   </span>
                   <Link
                     href={`/compliance/${req.id}`}
                     onClick={onClose}
-                    className="font-medium text-[#0F172A] hover:underline text-xs"
+                    className="font-medium text-[#0F172A] dark:text-[#94A3B8] hover:text-blue-700 dark:hover:text-blue-400 hover:underline text-xs"
                   >
                     View Statutory Proof →
                   </Link>
@@ -266,7 +266,7 @@ export function RequirementsListDrawer({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-[#E2E8F0]">
+        <div className="pt-4 border-t border-[#E2E8F0] dark:border-white/10">
           <Link
             href="/compliance"
             onClick={onClose}
@@ -302,12 +302,12 @@ export function DocumentsPreviewDrawer({
           <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-[#0F172A]">Statutory Documents</h2>
+                <h2 className="text-base font-semibold text-[#0F172A] dark:text-[#F8FAFC]">Statutory Documents</h2>
                 <span className="px-2.5 py-0.5 rounded-full bg-[#18181B] text-white font-semibold text-xs">
                   {data.documents.totalCount} Total
                 </span>
               </div>
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
                 {data.documents.verifiedPercentage}% Verified · {data.documents.underReviewPercentage}% Under Review
               </p>
             </div>

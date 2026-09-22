@@ -25,6 +25,7 @@ export const metadata: Metadata = {
 import { AuthProvider } from "@/context/AuthContext";
 import { BusinessProvider } from "@/context/BusinessContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 export default function RootLayout({
   children,
@@ -32,13 +33,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans bg-[#EDEFF2] text-[#111827] selection:bg-black/10 selection:text-[#111827]">
-        <LanguageProvider>
-          <AuthProvider>
-            <BusinessProvider>{children}</BusinessProvider>
-          </AuthProvider>
-        </LanguageProvider>
+    <html lang="en" className={`${inter.variable} ${playfair.variable} h-full antialiased`} suppressHydrationWarning>
+      <body className="min-h-full flex flex-col font-sans selection:bg-blue-500/20 selection:text-blue-600 transition-colors duration-200">
+        <ThemeProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <BusinessProvider>{children}</BusinessProvider>
+            </AuthProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

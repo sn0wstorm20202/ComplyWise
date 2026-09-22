@@ -52,52 +52,52 @@ export function ComplianceActivityCard({
   }
 
   return (
-    <div className="bg-white rounded-[20px] p-5 sm:p-6 border border-[#E5E7EB] shadow-sm flex flex-col justify-between h-full min-h-[270px] relative select-none w-full">
+    <div className="bg-white dark:bg-[#0E1318] rounded-[20px] p-5 sm:p-6 border border-[#E2E8F0] dark:border-white/12 shadow-sm flex flex-col justify-between h-full min-h-[270px] relative select-none w-full transition-colors">
       {/* Header */}
       <div>
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-sm font-semibold text-[#111827] whitespace-nowrap">
+          <h3 className="text-base font-bold text-[#0B1220] dark:text-[#F7F9FC] whitespace-nowrap">
             Compliance Activity
           </h3>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={handleSortClick}
               title={`Sort: currently ${sortOrder === "standard" ? "Chronological" : "By Volume"}`}
               aria-label="Sort activity"
-              className={`h-6 w-6 rounded-[6px] flex items-center justify-center transition-colors cursor-pointer border ${
+              className={`h-7 w-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer border ${
                 sortOrder === "volume"
-                  ? "bg-[#18181B] border-[#18181B] text-white"
-                  : "bg-[#F8FAFC] hover:bg-[#F1F5F9] border-[#E2E8F0] text-[#64748B] hover:text-[#111827]"
+                  ? "bg-[#0B1220] dark:bg-blue-600 border-[#0B1220] dark:border-blue-600 text-white"
+                  : "bg-[#F8FAFD] dark:bg-[#141A21] hover:bg-[#F1F5F9] dark:hover:bg-white/10 border-[#E2E8F0] dark:border-white/15 text-[#475569] dark:text-[#D4DBE4] hover:text-[#0B1220] dark:hover:text-white"
               }`}
             >
-              <ArrowUpDown className="h-3 w-3" />
+              <ArrowUpDown className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
               onClick={onExpand}
               aria-label="Expand activity details"
-              className="h-6 w-6 rounded-[6px] bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#111827] transition-colors cursor-pointer"
+              className="h-7 w-7 rounded-lg bg-[#F8FAFD] dark:bg-[#141A21] hover:bg-[#F1F5F9] dark:hover:bg-white/10 border border-[#E2E8F0] dark:border-white/15 flex items-center justify-center text-[#475569] dark:text-[#D4DBE4] hover:text-[#0B1220] dark:hover:text-white transition-colors cursor-pointer"
             >
-              <ArrowUpRight className="h-3 w-3" />
+              <ArrowUpRight className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
 
         {/* Metric Summary */}
-        <div className="mt-2.5 flex items-baseline justify-between">
+        <div className="mt-3 flex items-baseline justify-between">
           <div>
-            <div className="text-xs font-normal text-[#9CA3AF]">This week</div>
+            <div className="text-xs font-semibold text-[#475569] dark:text-[#A8B2BE]">This week</div>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-3xl sm:text-4xl font-bold text-[#111827] tracking-tight leading-none">
+              <span className="text-3xl sm:text-4xl font-extrabold text-[#0B1220] dark:text-[#F7F9FC] tracking-tight leading-none">
                 {activityData.weeklyTasks}
               </span>
-              <span className="text-xs text-[#9CA3AF]">tasks</span>
+              <span className="text-xs font-medium text-[#475569] dark:text-[#A8B2BE]">tasks</span>
             </div>
           </div>
 
           {/* Growth Highlight Pill */}
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#E5F77D] text-[#3F6212] font-semibold text-xs shadow-2xs">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/35 text-emerald-900 dark:text-emerald-300 font-bold text-xs shadow-2xs">
             {activityData.growthPercentage}
           </span>
         </div>
@@ -107,7 +107,7 @@ export function ComplianceActivityCard({
       <div className="mt-2 relative">
         {/* Floating Tooltip */}
         {hoveredDay && (
-          <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 bg-[#18181B] text-white text-[10px] font-medium px-2.5 py-1 rounded-full shadow-lg pointer-events-none whitespace-nowrap">
+          <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 bg-[#0B1220] dark:bg-[#141A21] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-lg pointer-events-none whitespace-nowrap border border-white/10">
             {hoveredDay.day} ({hoveredDay.dateStr}): {hoveredDay.tasks} tasks verified
           </div>
         )}
@@ -128,14 +128,14 @@ export function ComplianceActivityCard({
                 <div
                   className={`w-full max-w-[24px] rounded-full transition-all duration-300 group-hover:scale-y-105 origin-bottom ${
                     isHighlighted
-                      ? "bg-[#D4F66C] group-hover:bg-[#C9EE5B] shadow-2xs"
-                      : "bg-[#EEF2F6] group-hover:bg-[#E2E8F0]"
+                      ? "bg-blue-600 dark:bg-blue-500 shadow-2xs"
+                      : "bg-[#EEF2F6] dark:bg-white/10 group-hover:bg-[#E2E8F0] dark:group-hover:bg-white/20"
                   }`}
                   style={{ height: `${heightPercent}%` }}
                 />
                 <span
-                  className={`text-[11px] transition-colors ${
-                    isHighlighted ? "text-[#111827] font-bold" : "text-[#9CA3AF] group-hover:text-[#4B5563]"
+                  className={`text-xs font-semibold transition-colors ${
+                    isHighlighted ? "text-[#0B1220] dark:text-[#F7F9FC] font-bold" : "text-[#475569] dark:text-[#A8B2BE] group-hover:text-[#0B1220] dark:group-hover:text-white"
                   }`}
                 >
                   {d.day}

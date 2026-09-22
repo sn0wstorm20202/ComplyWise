@@ -36,6 +36,8 @@ from domain.intelligence.orchestration import (
     ComplianceSynthesisResult,
     OrchestrationContext,
 )
+from apps.knowledge.models import KnowledgeStatus, RequirementDefinition, RuleVersion
+from domain.jurisdictions.resolver import normalize_jurisdiction
 from domain.providers import ChatMessage, get_llm_provider
 from domain.providers.base import ProviderError, ProviderNotConfigured
 from domain.providers.telemetry import telemetry_tracker
@@ -184,6 +186,90 @@ def _sanitize_and_prune_irrelevant_requirements(
     return cleaned_reqs
 
 
+def _validate_candidate_applicability_deterministically(
+    req: dict[str, Any],
+    context: OrchestrationContext | EnrichedBusinessContext,
+    evidence_candidates: list[dict[str, Any]] | None = None,
+) -> tuple[str, str | None]:
+    """Validates candidate requirements against business facts, statutory scope, and knowledge rules.
+
+    The LLM is strictly a candidate generator; this deterministic evaluator is the final authority
+    (PRD_v2.0 §P4: No LLM decides legal applicability).
+    """
+    ev_ids = req.get("evidence_ids") or []
+    # Invariant 1: Unbacked requirements cannot be APPLICABLE
+    if not ev_ids:
+        return "NEEDS_INFORMATION", "Pending official portal evidence attachment"
+
+    desc = ""
+    state_code = "MAHARASHTRA"
+    state_name = "Maharashtra"
+    is_mfg = True
+    is_cross_border = False
+    trade_intent = "DOMESTIC_ONLY"
+    worker_count = None
+
+    if isinstance(context, EnrichedBusinessContext):
+        desc = (context.product_description or "").lower()
+        state_code = (context.state or "MAHARASHTRA").upper()
+        state_name = context.state_name or context.state or "Maharashtra"
+        is_mfg = context.is_manufacturing
+        is_cross_border = context.is_cross_border
+        trade_intent = context.trade_intent
+        worker_count = context.total_worker_count
+    elif isinstance(context, OrchestrationContext):
+        desc = (context.product or context.raw_business_description or "").lower()
+        geo = context.geography or {}
+        state_code = (geo.get("state") or geo.get("state_name") or "MAHARASHTRA").upper()
+        state_name = geo.get("state_name") or geo.get("state") or "Maharashtra"
+        is_mfg = context.normalized_facts.get("is_manufacturing", True)
+        is_cross_border = context.normalized_facts.get("is_cross_border", False)
+        trade_intent = context.answers.get("trade_intent") or ("EXPORT_ONLY" if is_cross_border else "DOMESTIC_ONLY")
+        worker_count = context.operational_facts.get("total_worker_count")
+
+    title_and_desc = f"{req.get('title', '')} {req.get('description', '')}".lower()
+    req_jur = (req.get("jurisdiction") or "").strip().upper()
+
+    # Invariant 2: Jurisdiction Scope Check
+    if req_jur and req_jur not in {"CENTRAL", "ALL_INDIA", "NATIONAL", "STATE", "CENTRAL_AND_STATE"}:
+        norm_jur = normalize_jurisdiction(req_jur) or req_jur
+        norm_biz_state = normalize_jurisdiction(state_code) or state_code
+        if norm_jur != norm_biz_state and norm_jur != "CENTRAL":
+            return "NOT_APPLICABLE", f"State jurisdiction ({req_jur}) does not apply in {state_name}"
+
+    # Invariant 3: Manufacturing Scope Check
+    is_mfg_req = any(kw in title_and_desc for kw in [
+        "factory license", "factories act", "consent to establish", "consent to operate",
+        "cte", "cto", "spcb", "boiler", "etp", "effluent", "hazardous waste"
+    ])
+    if is_mfg_req and not is_mfg:
+        return "NOT_APPLICABLE", "Business activity is non-manufacturing/trading; factory premises rules do not apply"
+
+    # Invariant 4: Cross-Border Trade Scope Check
+    is_trade_req = any(kw in title_and_desc for kw in [
+        "importer-exporter", "iec", "dgft", "customs", "cross-border trade"
+    ])
+    if is_trade_req and not is_cross_border and trade_intent in {"DOMESTIC_ONLY", "NONE"}:
+        return "NOT_APPLICABLE", "Business operations are purely domestic; cross-border authorizations do not apply"
+
+    # Invariant 5: Worker Threshold Scope Check (Factories Act threshold)
+    if ("factories act" in title_and_desc or "factory license" in title_and_desc) and is_mfg:
+        if worker_count is not None:
+            try:
+                wc = int(worker_count)
+                if wc < 10:
+                    return "NOT_APPLICABLE", f"Worker count ({wc}) is below statutory threshold (10 workers with power) under Factories Act"
+            except (ValueError, TypeError):
+                pass
+
+    # Invariant 6: Respect explicit non-applicable or needs-information findings
+    stat = req.get("status", "APPLICABLE")
+    if stat in {"NOT_APPLICABLE", "NEEDS_INFORMATION", "NEEDS_VERIFICATION"}:
+        return stat, None
+
+    return "APPLICABLE", None
+
+
 class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
     """Authoritative compliance synthesis provider combining LLM synthesis with strict grounding."""
 
@@ -269,16 +355,16 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
         )
         pruned_requirements = _sanitize_and_prune_irrelevant_requirements(requirements, product_desc)
 
-        # Ensure evidence grounding invariant on all output requirements
+        # Step 4: Deterministic Scope & Applicability Validation (Final Authority)
+        # Guarantees that LLM is NEVER the final legal authority (PRD_v2.0 §P4)
         verified_requirements: list[dict[str, Any]] = []
         for req in pruned_requirements:
-            ev_ids = req.get("evidence_ids") or []
-            stat = req.get("status", "APPLICABLE")
-
-            # Evidence-grounded check: If marked APPLICABLE but has no evidence, downgrade to NEEDS_INFORMATION
-            if stat == "APPLICABLE" and not ev_ids:
-                req["status"] = "NEEDS_INFORMATION"
-                req["why_it_matters"] = f"{req.get('why_it_matters', '')} (Pending official portal evidence attachment)."
+            deterministic_status, reason = _validate_candidate_applicability_deterministically(
+                req, context, evidence_candidates
+            )
+            req["status"] = deterministic_status
+            if reason:
+                req["why_it_matters"] = f"{req.get('why_it_matters', '')} ({reason})".strip()
 
             # Ensure valid actions structure
             if "actions" not in req or not isinstance(req["actions"], list):

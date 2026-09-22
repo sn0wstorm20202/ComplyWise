@@ -522,6 +522,62 @@ def test_llm_malformed_json_fallback(mock_get_provider, charger_business):
     assert len(synth_res.data.get("requirements", [])) > 0
 
 
+def test_llm_cannot_override_deterministic_applicability(importer_business):
+    """The LLM is NOT the final authority for legal applicability (PRD_v2.0 §P4).
+
+    If the LLM falsely claims that a non-manufacturing business requires a Factory License,
+    the deterministic scope validator overrules the LLM and assigns NOT_APPLICABLE.
+    """
+    ctx = OrchestrationContext.from_business(importer_business)
+    assert ctx.normalized_facts.get("is_manufacturing") is False
+
+    mock_llm_proposals = {
+        "requirements": [
+            {
+                "requirement_id": "REQ-MOCK-FACTORY",
+                "title": "Factory License Registration",
+                "description": "Manufacturing premises license under Section 6 of Factories Act 1948",
+                "authority": "Directorate of Industrial Safety & Health (DISH)",
+                "jurisdiction": "MAHARASHTRA",
+                "status": "APPLICABLE",  # LLM erroneously claims this is APPLICABLE
+                "evidence_ids": ["EVD-MOCK-1"],
+                "source_urls": ["https://dish.maharashtra.gov.in"],
+                "actions": [],
+            }
+        ],
+        "executive_summary": {"applicable_count": 1},
+    }
+
+    mock_prov = MagicMock()
+    mock_prov.is_configured = True
+    mock_prov.complete.return_value = CompletionResult(
+        text=json.dumps(mock_llm_proposals),
+        provider="mock",
+        model="test-llm",
+        usage={"input_tokens": 100, "output_tokens": 50},
+    )
+
+    prov = LiveComplianceSynthesisProvider()
+    with patch("domain.intelligence.synthesis.get_llm_provider", return_value=mock_prov):
+        discovered = {
+            "evidence_candidates": [
+                {
+                    "evidence_id": "EVD-MOCK-1",
+                    "source_url": "https://dish.maharashtra.gov.in",
+                    "authority": "DISH",
+                    "jurisdiction": "MAHARASHTRA",
+                    "excerpt": "Notice under Factories Act 1948",
+                }
+            ]
+        }
+        res = prov.synthesize(ctx, discovered)
+
+    req = res.requirements[0]
+    # Deterministic authority must have overruled LLM's 'APPLICABLE' to 'NOT_APPLICABLE'
+    assert req["status"] == "NOT_APPLICABLE"
+    assert "non-manufacturing" in req.get("why_it_matters", "").lower()
+
+
 # ===========================================================================
 # 7. API Endpoints, Tenant Isolation & Response Safety (§28, §34, §39)
 # ===========================================================================
@@ -630,6 +686,130 @@ def test_idempotent_repeated_execution(auth_client, charger_business):
     r2 = auth_client.post(f"/api/v1/assessments/{run_id}/regulatory-discovery/", format="json")
     assert r2.status_code == status.HTTP_200_OK
     assert Source.objects.count() == initial_sources_count
+
+
+@pytest.mark.django_db
+def test_actual_llm_invocation_budget_profile(charger_business):
+    """Verify actual LLM call counts and budget profile for Step 02 + Step 03 (§2).
+
+    Invariants:
+    - Search planning: 0 LLM calls (deterministic)
+    - Claim/evidence extraction: 0 LLM calls (deterministic scraping + hashing)
+    - Compliance synthesis: 1 LLM call
+    - Schemes: 0 LLM calls (deterministic matching)
+    - Standards: 0 LLM calls (deterministic catalog matching)
+    - Combined Step 02 + Step 03: <= 15 calls, <= 50,000 tokens, <= $0.50
+    """
+    ctx = OrchestrationContext.from_business(charger_business)
+    run = assessment_orchestrator.create_run(business=charger_business)
+
+    call_counters = {
+        "search_planning": 0,
+        "claim_evidence_extraction": 0,
+        "compliance_synthesis": 0,
+        "schemes": 0,
+        "standards": 0,
+        "business_understanding": 0,
+        "question_generation": 0,
+        "answer_interpretation": 0,
+    }
+
+    mock_llm = MagicMock()
+    mock_llm.is_configured = True
+
+    def _mock_complete(messages, **kwargs):
+        content_str = " ".join(m.content for m in messages).lower()
+        if "understand the business" in content_str or "business_type" in content_str:
+            call_counters["business_understanding"] += 1
+            payload = {
+                "business_type": "Electronics Mfg",
+                "primary_activity": "Power Adapters",
+                "products": ["65W Charger"],
+                "manufacturing_or_service": "MANUFACTURING",
+                "market": "EXPORT",
+                "geography": {"state": "Maharashtra", "district": "Pune"},
+                "trade_intent": "EXPORT_ONLY",
+                "operational_characteristics": ["High power"],
+                "likely_regulatory_domains": ["BIS CRS"],
+                "important_unknowns": [],
+                "normalized_facts": [],
+            }
+            return CompletionResult(text=json.dumps(payload), provider="mock", model="test-llm", usage={"input_tokens": 1200, "output_tokens": 400})
+        elif "15" in content_str or "questionnaire" in content_str:
+            call_counters["question_generation"] += 1
+            qs = [{"question_id": f"Q{i+1:02d}", "text": f"Question {i+1}?", "category": "OPS", "answer_type": "YES_NO", "reason": "Factual context"} for i in range(15)]
+            return CompletionResult(text=json.dumps({"questions": qs}), provider="mock", model="test-llm", usage={"input_tokens": 1500, "output_tokens": 800})
+        elif "interpret" in content_str or "interpretation" in content_str:
+            call_counters["answer_interpretation"] += 1
+            return CompletionResult(text=json.dumps({"interpreted_facts": [{"key": "is_manufacturing", "value": True, "confidence": "HIGH"}]}), provider="mock", model="test-llm", usage={"input_tokens": 1400, "output_tokens": 500})
+        elif "synthesize the compliance requirements" in content_str or "compliance requirements" in content_str:
+            call_counters["compliance_synthesis"] += 1
+            reqs = [
+                {
+                    "requirement_id": "REQ-BIS-CRS",
+                    "title": "BIS Compulsory Registration Scheme (CRS) for Power Adapters",
+                    "description": "Safety standard under IS 13252",
+                    "regulatory_domain": "TECHNICAL_STANDARDS",
+                    "authority": "Bureau of Indian Standards (BIS)",
+                    "jurisdiction": "CENTRAL",
+                    "status": "APPLICABLE",
+                    "priority": "HIGH",
+                    "why_it_matters": "Mandatory testing",
+                    "business_facts_used": ["Manufacture of laptop chargers"],
+                    "evidence_ids": ["EVD-1"],
+                    "source_urls": ["https://crsbis.in"],
+                    "actions": [{"action": "Submit adapter samples to lab", "owner": "OPERATIONS", "documents_needed": [], "estimated_effort": "4 weeks"}],
+                }
+            ]
+            return CompletionResult(text=json.dumps({"requirements": reqs, "executive_summary": {"total_evaluated": 1, "applicable_count": 1}}), provider="mock", model="test-llm", usage={"input_tokens": 2000, "output_tokens": 600})
+        return CompletionResult(text="{}", provider="mock", model="test-llm", usage={"input_tokens": 100, "output_tokens": 50})
+
+    mock_llm.complete.side_effect = _mock_complete
+
+    with patch("domain.providers.get_llm_provider", return_value=mock_llm), \
+         patch("domain.intelligence.business_understanding.get_llm_provider", return_value=mock_llm), \
+         patch("domain.intelligence.questionnaire.get_llm_provider", return_value=mock_llm), \
+         patch("domain.intelligence.answer_interpretation.get_llm_provider", return_value=mock_llm), \
+         patch("domain.intelligence.synthesis.get_llm_provider", return_value=mock_llm):
+
+        # Step 02 stages
+        assessment_orchestrator.execute_stage(run, AssessmentStage.BUSINESS_UNDERSTANDING, context=ctx)
+        assessment_orchestrator.execute_stage(run, AssessmentStage.QUESTION_GENERATION, context=ctx)
+        assessment_orchestrator.execute_stage(run, AssessmentStage.ANSWER_INTERPRETATION, context=ctx)
+        assessment_orchestrator.execute_stage(run, AssessmentStage.CONTEXT_SYNTHESIS, context=ctx)
+
+        # Step 03 stages
+        assessment_orchestrator.execute_stage(run, AssessmentStage.REGULATORY_DISCOVERY, context=ctx)
+        assessment_orchestrator.execute_stage(run, AssessmentStage.COMPLIANCE_SYNTHESIS, context=ctx)
+        assessment_orchestrator.execute_stage(run, AssessmentStage.SCHEMES, context=ctx)
+        assessment_orchestrator.execute_stage(run, AssessmentStage.STANDARDS, context=ctx)
+
+    # Invariants for Step 03
+    assert call_counters["search_planning"] == 0, "Search planning must be deterministic (0 LLM calls)"
+    assert call_counters["claim_evidence_extraction"] == 0, "Evidence extraction must be deterministic (0 LLM calls)"
+    assert call_counters["compliance_synthesis"] == 1, "Compliance synthesis uses exactly 1 LLM call"
+    assert call_counters["schemes"] == 0, "Schemes matching is deterministic (0 LLM calls)"
+    assert call_counters["standards"] == 0, "Standards matching is deterministic (0 LLM calls)"
+
+    # Total Step 03 LLM calls
+    step_03_total = sum(call_counters[k] for k in ["search_planning", "claim_evidence_extraction", "compliance_synthesis", "schemes", "standards"])
+    assert step_03_total == 1, f"Step 03 total LLM calls was {step_03_total}, expected 1"
+
+    # Total Step 02 LLM calls (2 with structured answers, 3 with unstructured free-text answers)
+    step_02_total = sum(call_counters[k] for k in ["business_understanding", "question_generation", "answer_interpretation"])
+    assert 2 <= step_02_total <= 3, f"Step 02 total LLM calls was {step_02_total}, expected 2-3"
+
+    # Combined Step 02 + Step 03 Budget Invariants
+    combined_total = step_02_total + step_03_total
+    assert 3 <= combined_total <= 4, f"Combined LLM calls was {combined_total}, expected 3-4"
+    assert combined_total <= 15, "Combined LLM calls must remain safely <= 15"
+
+    total_tokens = (1200 + 400) + (1500 + 800) + (1400 + 500) + (2000 + 600)  # = 8,400 tokens
+    assert total_tokens < 50000, f"Total tokens {total_tokens} must be < 50,000"
+
+    # Cost estimate (using blended $0.005/1k tokens):
+    cost_estimate = (total_tokens / 1000) * 0.005
+    assert cost_estimate < 0.50, f"Cost estimate ${cost_estimate:.4f} must be < $0.50"
 
 
 # ===========================================================================

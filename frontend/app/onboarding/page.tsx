@@ -2318,6 +2318,13 @@ function OnboardingContent() {
 
                 <div className="flex items-center gap-3">
                   <Link
+                    href={`/schemes?business_id=${business?.id}`}
+                    className="rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-xs font-semibold text-indigo-800 hover:bg-indigo-100 transition-colors shadow-2xs"
+                  >
+                    View Matched Schemes
+                  </Link>
+
+                  <Link
                     href={`/compliance?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
                     className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors shadow-2xs"
                   >

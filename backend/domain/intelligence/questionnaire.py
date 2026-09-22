@@ -111,7 +111,11 @@ RULES:
    - Import / export activities, foreign currency receipts, customs bonded warehousing
    - Sector-specific statutory standards (e.g. BIS CRS / QCO for electronics, FSSAI for food, PESO for flammable materials, Textile effluent / ZLD)
    - Packaging materials / Extended Producer Responsibility (EPR for plastic packaging)
-5. STRICT RULE: DO NOT declare final legal conclusions in questions. Only ask for facts.
+5. STRICT RULE ON REASONS & LEGAL CONCLUSIONS:
+   The "reason" field must NOT contain final legal applicability conclusions.
+   Avoid phrases such as "triggers mandatory license", "is legally required", "is applicable", "the company must obtain...", or "the business is exempt from...".
+   Always provide factual/contextual explanations, for example:
+   "This helps determine which electrical and factory safety requirements may be relevant to your facility."
 6. Allowed `answer_type` values: "TEXT", "NUMBER", "BOOLEAN", "SINGLE_SELECT", "MULTI_SELECT", "DATE", "CURRENCY", "PERCENTAGE".
 7. If answer_type is SINGLE_SELECT or MULTI_SELECT, provide at least 2 clear options with {"value": "...", "label": "..."}.
 8. If answer_type is BOOLEAN, options should be empty.
@@ -128,7 +132,7 @@ Output a valid JSON object matching this schema:
       "options": [],
       "unit": "HP",
       "help_text": "Include the total sanctioned load from the electricity distribution company (MSEDCL/TNEB/etc.).",
-      "reason": "Connected load above 10 HP with electric machinery triggers mandatory Factory License under Factories Act Section 2(m)(i).",
+      "reason": "This helps determine which electrical infrastructure and factory safety requirements may be relevant to your facility.",
       "order": 1
     }
     // ... exactly 15 questions Q01 through Q15
@@ -146,6 +150,34 @@ def _clean_json_text(text: str) -> str:
     if cleaned.endswith("```"):
         cleaned = cleaned[:-3]
     return cleaned.strip()
+
+
+LEGAL_CONCLUSION_TERMS = [
+    "triggers mandatory",
+    "is legally required",
+    "is applicable",
+    "must obtain",
+    "the company must",
+    "the business must",
+    "is exempt from",
+    "is exempt",
+    "mandatory license",
+    "mandatory statutory",
+    "is illegal",
+    "mandates",
+    "requires mandatory",
+    "triggers",
+]
+
+
+def sanitize_question_reason(reason: str, category: str) -> str:
+    """Ensure question reason contains factual/contextual explanation rather than legal conclusions."""
+    r_lower = reason.lower()
+    for term in LEGAL_CONCLUSION_TERMS:
+        if term in r_lower:
+            clean_cat = category.strip().lower() if category else "operational"
+            return f"This helps determine which {clean_cat} requirements may be relevant to your facility."
+    return reason
 
 
 def validate_and_normalize_questions(raw_questions: list[dict[str, Any]]) -> list[SmartQuestion]:
@@ -208,7 +240,8 @@ def validate_and_normalize_questions(raw_questions: list[dict[str, Any]]) -> lis
         unit_str = str(unit).strip() if unit and str(unit).strip() else None
         help_text = item.get("help_text")
         help_str = str(help_text).strip() if help_text and str(help_text).strip() else None
-        reason = str(item.get("reason") or "Required to evaluate statutory applicability.").strip()
+        raw_reason = str(item.get("reason") or "This helps determine which requirements may be relevant to your facility.").strip()
+        reason = sanitize_question_reason(raw_reason, category)
 
         validated.append(
             SmartQuestion(
@@ -251,7 +284,7 @@ def generate_emergency_15_questions(
         "options": [],
         "unit": "HP",
         "help_text": "Enter the total connected electrical load sanctioned by the electricity utility.",
-        "reason": "Exceeding 10 HP with electric machinery triggers mandatory Factory License under Factories Act 1948.",
+        "reason": "This helps determine which electrical infrastructure and factory safety requirements may be relevant to your facility.",
         "order": 1,
     })
 
@@ -265,7 +298,7 @@ def generate_emergency_15_questions(
         "options": [],
         "unit": "workers",
         "help_text": "Include all administrative, technical, and operational on-roll personnel.",
-        "reason": "Workforce thresholds determine applicability for EPF (20+ workers), ESI (10+ workers), and Gratuity (10+ workers).",
+        "reason": "This helps determine which workforce scale and social security frameworks may be relevant to your enterprise.",
         "order": 2,
     })
 
@@ -279,7 +312,7 @@ def generate_emergency_15_questions(
         "options": [],
         "unit": None,
         "help_text": "Applies if you hire security, housekeeping, packing, or casual labor through contractors.",
-        "reason": "Engaging 20 or more contract workers requires Principal Employer Registration under Contract Labour (R&A) Act 1970.",
+        "reason": "This helps determine which contractor engagement and workforce guidelines may be relevant to your operations.",
         "order": 3,
     })
 
@@ -293,7 +326,7 @@ def generate_emergency_15_questions(
         "options": [],
         "unit": "INR",
         "help_text": "Gross original value of plant and machinery excluding land and buildings.",
-        "reason": "Classifies the enterprise as Micro (<1 Cr), Small (<10 Cr), or Medium (<50 Cr) under the MSMED Act 2020.",
+        "reason": "This helps determine which MSME investment tier and capital incentive frameworks may be relevant to your enterprise.",
         "order": 4,
     })
 
@@ -307,7 +340,7 @@ def generate_emergency_15_questions(
         "options": [],
         "unit": "INR",
         "help_text": "Total annual revenue from sales of goods or services.",
-        "reason": "Cross-referenced with capital investment for MSME classification and GST audit/invoicing mandates.",
+        "reason": "This helps determine which enterprise revenue thresholds and statutory filing schedules may be relevant to your business.",
         "order": 5,
     })
 
@@ -326,7 +359,7 @@ def generate_emergency_15_questions(
         ],
         "unit": None,
         "help_text": "Indicate whether the facility is in a government-notified industrial zone.",
-        "reason": "Determines siting guidelines, municipal trade licenses, and fast-track environmental consents from SPCB.",
+        "reason": "This helps determine which industrial estate siting guidelines and municipal norms may be relevant to your facility.",
         "order": 6,
     })
 
@@ -340,7 +373,7 @@ def generate_emergency_15_questions(
         "options": [],
         "unit": None,
         "help_text": "Select yes if you have an acoustic enclosed diesel generator.",
-        "reason": "Requires electrical inspectorate approval, acoustic enclosure certification, and air emission consent under Air Act 1981.",
+        "reason": "This helps determine which backup power emission guidelines and acoustic standards may be relevant to your facility.",
         "order": 7,
     })
 
@@ -354,7 +387,7 @@ def generate_emergency_15_questions(
         "options": [],
         "unit": None,
         "help_text": "Includes used machine oil, solvent residues, e-waste, or chemical containers.",
-        "reason": "Mandates Hazardous Waste Authorization and membership in a Common Hazardous Waste Treatment Facility (CHWTSDF).",
+        "reason": "This helps determine which waste stream management protocols and environmental safeguards may be relevant to your facility.",
         "order": 8,
     })
 
@@ -373,7 +406,7 @@ def generate_emergency_15_questions(
         ],
         "unit": None,
         "help_text": "Specify if cross-border goods movement or foreign currency transactions are planned.",
-        "reason": "Governs DGFT Import Export Code (IEC), Authorized Economic Operator (AEO) status, and customs bonded clearance.",
+        "reason": "This helps determine which cross-border trade documentation and customs procedures may be relevant to your operations.",
         "order": 9,
     })
 
@@ -391,8 +424,8 @@ def generate_emergency_15_questions(
                 {"value": "READY_MIX_CONCRETE", "label": "Ready Mix Concrete (RMC) batching plant"},
             ],
             "unit": None,
-            "help_text": "Integrated plants require Environmental Clearance (EC) from MoEFCC, whereas grinding units apply at state level.",
-            "reason": "Crucial distinction determining whether Central MoEFCC EIA Clearance is mandatory (Red Category - Cement).",
+            "help_text": "Integrated plants involve rotary kilns, whereas grinding units process pre-manufactured clinker.",
+            "reason": "This helps determine which clinker processing guidelines and environmental frameworks may be relevant to your facility.",
             "order": 10,
         })
         questions_data.append({
@@ -404,7 +437,7 @@ def generate_emergency_15_questions(
             "options": [],
             "unit": "MT/annum",
             "help_text": "Nominal design capacity in metric tonnes per year.",
-            "reason": "Determines air pollution control requirements (bag filters / ESP) and continuous emission monitoring (CEMS).",
+            "reason": "This helps determine which production capacity and emission monitoring standards may be relevant to your facility.",
             "order": 11,
         })
         questions_data.append({
@@ -418,8 +451,8 @@ def generate_emergency_15_questions(
                 {"value": "EXTERNAL_PROCUREMENT", "label": "Procured from domestic/imported merchant suppliers"},
             ],
             "unit": None,
-            "help_text": "Mining activities require Directorate General of Mines Safety (DGMS) approvals.",
-            "reason": "Captive mining introduces Mines Act 1952, DGMS permissions, and Mineral Concession Rules.",
+            "help_text": "Mining activities involve lease permissions and mineral dispatch guidelines.",
+            "reason": "This helps determine which raw material sourcing guidelines and mineral transportation frameworks may be relevant to your facility.",
             "order": 12,
         })
         questions_data.append({
@@ -430,8 +463,8 @@ def generate_emergency_15_questions(
             "required": True,
             "options": [],
             "unit": None,
-            "help_text": "Waste Heat Recovery Systems (WHRS) attract carbon credit schemes and green energy incentives.",
-            "reason": "Thermal power units require separate Boiler Inspectorate registration and fly ash disposal compliance.",
+            "help_text": "Waste Heat Recovery Systems (WHRS) assist energy efficiency and thermal optimization.",
+            "reason": "This helps determine which waste heat recovery programs and energy efficiency frameworks may be relevant to your facility.",
             "order": 13,
         })
     elif is_food:
@@ -444,7 +477,7 @@ def generate_emergency_15_questions(
             "options": [],
             "unit": "MT/day",
             "help_text": "Metric tonnes of finished food items produced per operational day.",
-            "reason": "Above 2 MT/day requires a Central FSSAI License; below 2 MT/day requires a State FSSAI License.",
+            "reason": "This helps determine which food processing scale and hygiene standards may be relevant to your facility.",
             "order": 10,
         })
         questions_data.append({
@@ -456,7 +489,7 @@ def generate_emergency_15_questions(
             "options": [],
             "unit": None,
             "help_text": "Temperature-controlled warehousing or refrigerated delivery vans.",
-            "reason": "Governed by National Cold Chain guidelines and eligible for MoFPI PMKSY capital subsidies.",
+            "reason": "This helps determine which cold chain standards and temperature monitoring guidelines may be relevant to your facility.",
             "order": 11,
         })
         questions_data.append({
@@ -471,8 +504,8 @@ def generate_emergency_15_questions(
                 {"value": "PRIVATE_TANKER", "label": "Private Water Tanker supply"},
             ],
             "unit": None,
-            "help_text": "Groundwater extraction requires mandatory CGWA NOC in critical/over-exploited blocks.",
-            "reason": "Mandatory CGWA groundwater extraction NOC and IS 10500 potable water quality testing under FSSAI.",
+            "help_text": "Specifies utility water sourcing vs private or groundwater extraction.",
+            "reason": "This helps determine which process water quality standards and testing schedules may be relevant to your facility.",
             "order": 12,
         })
         questions_data.append({
@@ -483,8 +516,8 @@ def generate_emergency_15_questions(
             "required": True,
             "options": [],
             "unit": None,
-            "help_text": "Proprietary foods require FSSAI product authorization prior to commercial packaging.",
-            "reason": "Requires Non-Specified Food Approval under FSSAI Regulations 2017.",
+            "help_text": "Proprietary formulations, novel ingredients, or enriched nutrients.",
+            "reason": "This helps determine which food product labeling and formulation standards may be relevant to your facility.",
             "order": 13,
         })
     elif is_electronics:
@@ -496,8 +529,8 @@ def generate_emergency_15_questions(
             "required": True,
             "options": [],
             "unit": None,
-            "help_text": "Power adapters, chargers, laptops, and IT equipment are notified under BIS CRS (IS 13252).",
-            "reason": "Commercial sale, import, or distribution without valid BIS Standard Mark is illegal under BIS Act 2016.",
+            "help_text": "Power adapters, chargers, laptops, and IT equipment notified under standard product safety codes.",
+            "reason": "This helps determine which equipment safety standards and technical certification frameworks may be relevant to your facility.",
             "order": 10,
         })
         questions_data.append({
@@ -509,7 +542,7 @@ def generate_emergency_15_questions(
             "options": [],
             "unit": "units/month",
             "help_text": "Total number of finished power adapters, chargers, or assemblies.",
-            "reason": "Determines E-Waste Extended Producer Responsibility (EPR) recycling targets and SPECS incentive tier.",
+            "reason": "This helps determine which production volume and electronic lifecycle frameworks may be relevant to your facility.",
             "order": 11,
         })
         questions_data.append({
@@ -520,8 +553,8 @@ def generate_emergency_15_questions(
             "required": True,
             "options": [],
             "unit": None,
-            "help_text": "Importing components from China, Taiwan, Vietnam, or other origins.",
-            "reason": "Requires Customs Bill of Entry filings, CRO registration certificate endorsement, and RoDTEP/EPCG scheme mapping.",
+            "help_text": "Importing components from overseas component suppliers.",
+            "reason": "This helps determine which component sourcing procedures and import documentation frameworks may be relevant to your facility.",
             "order": 12,
         })
         questions_data.append({
@@ -532,8 +565,8 @@ def generate_emergency_15_questions(
             "required": True,
             "options": [],
             "unit": None,
-            "help_text": "Soldering processes release lead/rosin fumes requiring local exhaust ventilation (LEV).",
-            "reason": "Triggers Orange category classification from SPCB for electronic assembly operations and VOC scrubbers.",
+            "help_text": "Soldering processes release fumes that require local exhaust ventilation.",
+            "reason": "This helps determine which electronic assembly ventilation and workplace environment standards may be relevant to your facility.",
             "order": 13,
         })
     elif is_textile:
@@ -545,8 +578,8 @@ def generate_emergency_15_questions(
             "required": True,
             "options": [],
             "unit": None,
-            "help_text": "Wet processing produces high-COD effluent classified as Red Category under CPCB rules.",
-            "reason": "Mandatory Zero Liquid Discharge (ZLD) plant and Red Category SPCB consent for textile wet processing.",
+            "help_text": "Wet processing operations involving water, colorants, or chemical treatments.",
+            "reason": "This helps determine which wet processing guidelines and effluent treatment frameworks may be relevant to your facility.",
             "order": 10,
         })
         questions_data.append({
@@ -558,7 +591,7 @@ def generate_emergency_15_questions(
             "options": [],
             "unit": "kilo-litres/day",
             "help_text": "Combined water usage for processing, steam generation, and cleaning.",
-            "reason": "Determines water cess liability and sizing requirements for primary/secondary/tertiary ETP systems.",
+            "reason": "This helps determine which water consumption thresholds and recycling standards may be relevant to your facility.",
             "order": 11,
         })
         questions_data.append({
@@ -570,7 +603,7 @@ def generate_emergency_15_questions(
             "options": [],
             "unit": "pieces/month",
             "help_text": "Finished garments or meters of woven/knitted fabric produced.",
-            "reason": "Determines eligibility for Amended Technology Upgradation Fund Scheme (ATUFS) and RoSCTL export rebates.",
+            "reason": "This helps determine which garment manufacturing volume and export promotion frameworks may be relevant to your facility.",
             "order": 12,
         })
         questions_data.append({
@@ -581,8 +614,8 @@ def generate_emergency_15_questions(
             "required": True,
             "options": [],
             "unit": None,
-            "help_text": "Steam boilers used for iron pressing, curing, or dye vessels.",
-            "reason": "Mandatory registration with State Boiler Inspectorate under Indian Boilers Act 1923.",
+            "help_text": "Steam boilers used for pressing, curing, or dye vessels.",
+            "reason": "This helps determine which thermal equipment standards and steam safety guidelines may be relevant to your facility.",
             "order": 13,
         })
     else:
@@ -595,8 +628,8 @@ def generate_emergency_15_questions(
             "required": True,
             "options": [],
             "unit": None,
-            "help_text": "Storage of flammable chemicals above threshold limits.",
-            "reason": "Governed by Manufacture, Storage and Import of Hazardous Chemical Rules 1989.",
+            "help_text": "Storage of industrial chemicals or solvents in production areas.",
+            "reason": "This helps determine which chemical storage and workplace handling guidelines may be relevant to your facility.",
             "order": 10,
         })
         questions_data.append({
@@ -608,7 +641,7 @@ def generate_emergency_15_questions(
             "options": [],
             "unit": "sq ft",
             "help_text": "Enclosed operational area across all floors.",
-            "reason": "Determines municipal fire NOC requirements and approved factory building plan sanction.",
+            "reason": "This helps determine which built-up area and facility layout guidelines may be relevant to your facility.",
             "order": 11,
         })
         questions_data.append({
@@ -619,8 +652,8 @@ def generate_emergency_15_questions(
             "required": True,
             "options": [],
             "unit": None,
-            "help_text": "Selling via Amazon, Flipkart, or company web portal.",
-            "reason": "Triggers Consumer Protection (E-Commerce) Rules 2020 and Legal Metrology Packaged Commodities declarations.",
+            "help_text": "Selling via online marketplaces or direct consumer digital channels.",
+            "reason": "This helps determine which digital commerce standards and consumer disclosure frameworks may be relevant to your facility.",
             "order": 12,
         })
         questions_data.append({
@@ -631,8 +664,8 @@ def generate_emergency_15_questions(
             "required": True,
             "options": [],
             "unit": None,
-            "help_text": "Retail packages requiring MRP, net quantity, manufacturing date, and customer care info.",
-            "reason": "Mandatory manufacturer/packer registration under Legal Metrology (Packaged Commodities) Rules 2011.",
+            "help_text": "Retail packages with printed net quantity, manufacturing dates, and consumer details.",
+            "reason": "This helps determine which packaged commodity guidelines and declaration standards may be relevant to your facility.",
             "order": 13,
         })
 
@@ -646,7 +679,7 @@ def generate_emergency_15_questions(
         "options": [],
         "unit": None,
         "help_text": "Applies to brand owners and producers who package products in plastics.",
-        "reason": "Mandatory Producer, Importer and Brand Owner (PIBO) EPR registration on CPCB centralized portal.",
+        "reason": "This helps determine which packaging waste management and recycling frameworks may be relevant to your facility.",
         "order": 14,
     })
 
@@ -660,7 +693,7 @@ def generate_emergency_15_questions(
         "options": [],
         "unit": None,
         "help_text": "Fire department clearance certificate for industrial buildings.",
-        "reason": "Mandatory statutory prerequisite under National Building Code (NBC) Part 4 and State Fire Prevention Acts.",
+        "reason": "This helps determine which building life safety standards and emergency preparedness guidelines may be relevant to your facility.",
         "order": 15,
     })
 

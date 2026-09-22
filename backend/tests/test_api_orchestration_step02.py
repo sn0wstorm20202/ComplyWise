@@ -547,3 +547,55 @@ def test_tenant_isolation_step02(auth_client, other_business, other_user):
 
     ctx_res = auth_client.get(f"/api/v1/assessments/{run.run_id}/context/")
     assert ctx_res.status_code == status.HTTP_404_NOT_FOUND
+
+
+# ===========================================================================
+# 6. Question Reason Safety Regression Tests
+# ===========================================================================
+
+def test_question_reasons_contain_no_final_legal_conclusions():
+    """Verify that question 'reason' fields contain factual/contextual explanations, not legal conclusions."""
+    ctx = OrchestrationContext(
+        business_id=str(uuid.uuid4()),
+        business_name="Universal Industrial Systems",
+        raw_business_description="Precision metal fabrication and electrical assemblies",
+    )
+    questions = generate_emergency_15_questions(ctx)
+    assert len(questions) == 15
+
+    forbidden_phrases = [
+        "triggers mandatory license",
+        "is legally required",
+        "is applicable",
+        "the company must obtain",
+        "the business must obtain",
+        "is exempt from",
+        "mandatory statutory prerequisite",
+        "is illegal",
+    ]
+
+    for q in questions:
+        reason_lower = q.reason.lower()
+        for phrase in forbidden_phrases:
+            assert phrase not in reason_lower, (
+                f"Question {q.question_id} reason contains legal conclusion '{phrase}': '{q.reason}'"
+            )
+        # Ensure it contains factual/contextual explanation language
+        assert "helps determine which" in reason_lower or "may be relevant" in reason_lower, (
+            f"Question {q.question_id} reason should be a contextual explanation: '{q.reason}'"
+        )
+
+
+def test_sanitize_question_reason_replaces_legal_conclusions():
+    """validate_and_normalize_questions sanitizes any model-generated legal conclusion phrases in reasons."""
+    from domain.intelligence.questionnaire import sanitize_question_reason
+
+    test_cases = [
+        ("Exceeding 10 HP triggers mandatory license under Factories Act.", "Power", "This helps determine which power requirements may be relevant to your facility."),
+        ("This is legally required under SPCB guidelines.", "Environmental", "This helps determine which environmental requirements may be relevant to your facility."),
+        ("The business is exempt from EPF registration.", "Labor", "This helps determine which labor requirements may be relevant to your facility."),
+    ]
+    for raw, cat, expected in test_cases:
+        sanitized = sanitize_question_reason(raw, cat)
+        assert sanitized == expected
+

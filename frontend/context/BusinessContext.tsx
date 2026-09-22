@@ -126,7 +126,12 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfileState] = useState<BusinessProfile>(DEFAULT_BUSINESS_PROFILE);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [liveDashboardSummary, setLiveDashboardSummary] = useState<DashboardSummary | null>(null);
-  const [activeBusinessId, setActiveBusinessId] = useState<string | null>(null);
+  const [activeBusinessId, setActiveBusinessId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("complywise_active_business_id");
+    }
+    return null;
+  });
   const [activeAssessmentId, setActiveAssessmentIdState] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("complywise_active_assessment_id");
@@ -204,6 +209,31 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (homeBusinesses.length === 0) {
+        try {
+          const list = await api.businesses.list().catch(() => []);
+          if (Array.isArray(list) && list.length > 0) {
+            homeBusinesses = list.map((b: any) => ({
+              id: b.id,
+              name: b.name,
+              is_active: b.is_active ?? true,
+              profile_version: b.profile_version ?? 1,
+              state: b.state || "",
+              district: b.district || "",
+              industry: b.industry || null,
+              product_description: b.product_description || "",
+              assessment_count: b.assessment_count ?? 1,
+              created_at: b.created_at || new Date().toISOString(),
+              updated_at: b.updated_at || new Date().toISOString(),
+            }));
+            setUserBusinesses(homeBusinesses);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("complywise_cached_businesses", JSON.stringify(homeBusinesses));
+            }
+          }
+        } catch {}
+      }
+
+      if (homeBusinesses.length === 0) {
         homeBusinesses = userBusinesses.length > 0 ? userBusinesses : INITIAL_DATABASE_BUSINESSES;
       }
 
@@ -220,8 +250,8 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
 
       let bizId =
         preferredBizId ||
-        (serverWs?.active_business_id && isValidUuid(serverWs.active_business_id) ? serverWs.active_business_id : null) ||
-        (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
+        (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null) ||
+        (serverWs?.active_business_id && isValidUuid(serverWs.active_business_id) ? serverWs.active_business_id : null);
       if (!isValidUuid(bizId)) {
         bizId = null;
       }

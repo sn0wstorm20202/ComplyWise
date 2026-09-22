@@ -7,6 +7,7 @@ import SearchModal from "./SearchModal";
 import NewQueryModal from "./NewQueryModal";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useBusinessContext } from "@/context/BusinessContext";
 
 interface AppShellProps {
   children?: React.ReactNode;
@@ -26,6 +27,7 @@ export function AppShell({
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, loading } = useAuth();
+  const { activeBusinessId } = useBusinessContext();
   const { t } = useLanguage();
   const [internalActiveView, setInternalActiveView] = useState<NavView>("dashboard");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -45,18 +47,22 @@ export function AppShell({
       controlledOnSelectView(view);
     } else {
       setInternalActiveView(view);
+      const storedBizId =
+        activeBusinessId ||
+        (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
+      const queryString = storedBizId ? `?business_id=${storedBizId}` : "";
       const targetPath =
         view === "dashboard"
-          ? "/dashboard"
+          ? `/dashboard${queryString}`
           : view === "updates"
-          ? "/regulatory-updates"
+          ? `/regulatory-updates${queryString}`
           : view === "assistant"
-          ? "/ai-assistant"
+          ? `/ai-assistant${queryString}`
           : view === "profile"
-          ? "/business-profile"
+          ? `/business-profile${queryString}`
           : view === "settings"
           ? "/settings"
-          : `/${view}`;
+          : `/${view}${queryString}`;
       router.push(targetPath);
     }
   }

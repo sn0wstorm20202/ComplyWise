@@ -21,18 +21,23 @@ function DashboardContent() {
   }, [businessIdFromUrl, activeBusinessId, switchProfile]);
 
   function handleNavigate(target: string) {
+    const currentBizId =
+      businessIdFromUrl ||
+      activeBusinessId ||
+      (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
+    const queryString = currentBizId ? `?business_id=${currentBizId}` : "";
     const targetPath =
       target === "dashboard"
-        ? "/dashboard"
+        ? `/dashboard${queryString}`
         : target === "updates"
-        ? "/regulatory-updates"
+        ? `/regulatory-updates${queryString}`
         : target === "assistant"
-        ? "/ai-assistant"
+        ? `/ai-assistant${queryString}`
         : target === "profile"
-        ? "/business-profile"
+        ? `/business-profile${queryString}`
         : target === "settings"
         ? "/settings"
-        : `/${target}`;
+        : `/${target}${queryString}`;
     router.push(targetPath);
   }
 

@@ -437,3 +437,9 @@ class AssessmentDetailDirectView(APIView):
             return error_response("NOT_FOUND", "Assessment not found.", http_status=status.HTTP_404_NOT_FOUND)
 
         return Response(envelope(AssessmentSerializer(assessment).data))
+
+
+from .orchestration_views import (
+    AssessmentOrchestrationCreateView,
+    AssessmentOrchestrationStatusView,
+)

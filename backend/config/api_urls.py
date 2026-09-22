@@ -20,6 +20,8 @@ urlpatterns = [
     path("health", HealthView.as_view(), name="health"),
     path("health/ready", ReadinessView.as_view(), name="health-ready"),
     path("auth/", include("apps.accounts.urls")),
+    path("assessments/", include("apps.businesses.orchestration_urls")),
+    path("assessments", include("apps.businesses.orchestration_urls")),
     path("", include("apps.businesses.urls")),
     path("", include("apps.applicability.urls")),
     path("businesses/<uuid:business_id>/onboarding/", include("apps.onboarding.urls")),

@@ -40,6 +40,16 @@ urlpatterns = [
         name="assessment-complete",
     ),
     path(
+        "businesses/<uuid:business_id>/assessments/orchestrate",
+        views.AssessmentOrchestrationCreateView.as_view(),
+        name="business-orchestrate-create",
+    ),
+    path(
+        "businesses/<uuid:business_id>/assessments/<uuid:run_id>/orchestrate",
+        views.AssessmentOrchestrationStatusView.as_view(),
+        name="business-orchestrate-status",
+    ),
+    path(
         "assessments/<uuid:assessment_id>",
         views.AssessmentDetailDirectView.as_view(),
         name="assessment-detail-direct",

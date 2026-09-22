@@ -348,6 +348,13 @@ MAX_LLM_CALLS_PER_ASSESSMENT = int(os.getenv("MAX_LLM_CALLS_PER_ASSESSMENT", "5"
 MAX_TOTAL_TOKENS_PER_ASSESSMENT = int(os.getenv("MAX_TOTAL_TOKENS_PER_ASSESSMENT", "20000"))
 MAX_ESTIMATED_COST_PER_ASSESSMENT = float(os.getenv("MAX_ESTIMATED_COST_PER_ASSESSMENT", "0.05"))
 
+# ---------------------------------------------------------------------------
+# Assessment Orchestration Engine (Milestone Step 01)
+# ---------------------------------------------------------------------------
+ENABLE_API_ORCHESTRATION = env_bool("ENABLE_API_ORCHESTRATION", default=True)
+#: Strategy options: LLM_FIRST | KNOWLEDGE_FIRST | HYBRID
+ASSESSMENT_STRATEGY = os.getenv("ASSESSMENT_STRATEGY", "LLM_FIRST").strip().upper()
+
 # Server-side only. Never sent to the frontend and never included in an API
 # response: this key is billable and grants crawling on our account (§13).
 FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY", "")

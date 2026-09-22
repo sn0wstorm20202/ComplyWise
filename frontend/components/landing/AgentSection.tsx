@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Search, ShieldCheck, BookOpen, CheckCircle2 } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { BookOpen, CheckCircle2 } from "lucide-react";
 
 interface AgentQuery {
   id: string;
@@ -51,51 +51,113 @@ export function AgentSection() {
   ];
 
   const [activeQueryIndex, setActiveQueryIndex] = useState(0);
+  const [responseVisible, setResponseVisible] = useState(false);
+  const [clausesVisible, setClausesVisible] = useState(false);
+  const [takeawayVisible, setTakeawayVisible] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
   const current = queries[activeQueryIndex];
 
+  // Section entrance
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHeaderVisible(true);
+          io.unobserve(section);
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+    );
+    io.observe(section);
+    return () => io.disconnect();
+  }, []);
+
+  // Sequential response reveal when query changes
+  const triggerReveal = () => {
+    setResponseVisible(false);
+    setClausesVisible(false);
+    setTakeawayVisible(false);
+    setTimeout(() => setResponseVisible(true), 120);
+    setTimeout(() => setClausesVisible(true), 500);
+    setTimeout(() => setTakeawayVisible(true), 780);
+  };
+
+  useEffect(() => { triggerReveal(); }, [activeQueryIndex]);
+
+  const handleQueryChange = (idx: number) => {
+    setActiveQueryIndex(idx);
+  };
+
   return (
-    <section id="intelligence" className="py-20 md:py-28 bg-[#F8FAFC] border-b border-[#E2E8F0]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+    <section ref={sectionRef} id="intelligence" className="py-24 md:py-32 bg-[#06080A] relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      <div className="absolute bottom-0 right-0 w-[600px] h-[400px] rounded-full bg-blue-900/10 blur-[120px] pointer-events-none" />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
         {/* Section Header */}
-        <div className="max-w-2xl space-y-2">
-          <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-widest font-mono">
+        <div
+          className="max-w-2xl space-y-4"
+          style={{
+            opacity: headerVisible ? 1 : 0,
+            transform: headerVisible ? "translateY(0)" : "translateY(24px)",
+            filter: headerVisible ? "blur(0px)" : "blur(4px)",
+            transition: "opacity 0.75s ease, transform 0.75s cubic-bezier(0.16,1,0.3,1), filter 0.75s ease",
+          }}
+        >
+          <div className="text-[11px] font-bold text-[#3B82F6] uppercase tracking-widest font-mono">
             Intelligent Assistance
           </div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#0F172A] font-sans">
+          <h2 className="text-4xl sm:text-5xl font-bold tracking-tight text-[#F4F6F5] leading-[1.1] font-sans">
             BIS Agent
           </h2>
-          <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed font-sans">
-            Ask about standards, clauses, documents or requirements.
+          <p className="text-base sm:text-lg text-[#B1B8BD] leading-relaxed font-sans">
+            Ask about standards, clauses, documents or requirements. Every answer is grounded in authoritative statutory sources.
           </p>
         </div>
 
         {/* Product Interface Showcase */}
-        <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6">
+        <div
+          className="bg-[#0A0D10] rounded-2xl border border-white/[0.08] p-6 sm:p-8 space-y-6 shadow-[0_40px_80px_rgba(0,0,0,0.6)]"
+          style={{
+            opacity: headerVisible ? 1 : 0,
+            transform: headerVisible ? "translateY(0) scale(1)" : "translateY(20px) scale(0.98)",
+            transition: "opacity 0.85s 0.2s ease, transform 0.85s 0.2s cubic-bezier(0.16,1,0.3,1)",
+          }}
+        >
           {/* Query Bar */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="relative flex items-center">
-              <Search className="absolute left-3.5 h-4 w-4 text-[#94A3B8]" />
-              <div className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] pl-10 pr-4 py-3 text-xs sm:text-sm text-[#0F172A] font-medium font-sans">
+              <div className="absolute left-4 h-4 w-4 text-[#7E878E]">
+                <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="7" cy="7" r="5" />
+                  <path d="m13 13-2.5-2.5" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div className="w-full rounded-xl border border-white/[0.08] bg-[#06080A] pl-11 pr-4 py-3.5 text-sm text-[#E5E9E8] font-medium font-sans transition-all duration-300">
                 {current.question}
               </div>
             </div>
 
             {/* Prompt Chips */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider font-mono">
-                Suggested Inquiries:
+              <span className="text-[10px] font-semibold text-[#7E878E] uppercase tracking-wider font-mono">
+                Suggested:
               </span>
               {queries.map((q, idx) => (
                 <button
                   key={q.id}
-                  onClick={() => setActiveQueryIndex(idx)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                  onClick={() => handleQueryChange(idx)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-200 cursor-pointer hover:scale-[1.02] ${
                     activeQueryIndex === idx
-                      ? "bg-[#0F172A] text-white border-[#0F172A] shadow-2xs font-semibold"
-                      : "bg-white text-[#475569] border-[#E2E8F0] hover:bg-[#F8FAFC] hover:border-slate-300"
+                      ? "bg-blue-500/15 text-blue-300 border-blue-500/30"
+                      : "bg-transparent text-[#7E878E] border-white/[0.08] hover:bg-white/[0.04] hover:text-[#B1B8BD]"
                   }`}
                 >
-                  <BookOpen className="h-3 w-3 text-[#94A3B8]" />
+                  <BookOpen className="h-3 w-3" />
                   <span>&ldquo;{q.question}&rdquo;</span>
                 </button>
               ))}
@@ -103,46 +165,66 @@ export function AgentSection() {
           </div>
 
           {/* Grounded Response Card */}
-          <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-5 space-y-4 animate-in fade-in">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E2E8F0] pb-3">
+          <div className="rounded-xl border border-white/[0.07] bg-[#06080A] p-5 space-y-5">
+            {/* Header — always visible */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/[0.06] pb-4">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-[#0F172A] text-xs font-sans">
+                <span className="font-bold text-[#E5E9E8] text-sm font-sans">
                   Deterministic Clause Extraction
                 </span>
-                <span className="text-[10px] font-mono bg-white text-[#0F172A] font-semibold px-2 py-0.5 rounded border border-[#E2E8F0]">
+                <span className="text-[10px] font-mono bg-white/[0.06] text-[#B1B8BD] font-semibold px-2 py-0.5 rounded border border-white/[0.08]">
                   Verified
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 font-medium">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+              <div className="flex items-center gap-1.5 text-[12px] text-emerald-400 font-medium">
+                <CheckCircle2 className="h-3.5 w-3.5" />
                 <span>Statutory Authority Grounded</span>
               </div>
             </div>
 
-            {/* Response Body */}
-            <div className="text-xs sm:text-sm text-[#334155] leading-relaxed whitespace-pre-line font-sans">
+            {/* Response Body — reveals first */}
+            <div
+              className="text-sm text-[#C2C9CD] leading-relaxed whitespace-pre-line font-sans"
+              style={{
+                opacity: responseVisible ? 1 : 0,
+                transform: responseVisible ? "translateY(0)" : "translateY(8px)",
+                filter: responseVisible ? "blur(0px)" : "blur(3px)",
+                transition: "opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1), filter 0.55s ease",
+              }}
+            >
               {current.answer}
             </div>
 
-            {/* Cited Clauses */}
-            <div className="space-y-1.5 pt-1">
-              <div className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wider font-mono">
+            {/* Cited Clauses — reveals second */}
+            <div
+              className="space-y-2"
+              style={{
+                opacity: clausesVisible ? 1 : 0,
+                transform: clausesVisible ? "translateY(0)" : "translateY(10px)",
+                transition: "opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1)",
+              }}
+            >
+              <div className="text-[10px] font-semibold text-[#7E878E] uppercase tracking-wider font-mono">
                 Authoritative Clause Citations
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {current.citedClauses.map((c, i) => (
                   <div
                     key={i}
-                    className="p-2.5 rounded-lg bg-white border border-[#E2E8F0] text-xs space-y-0.5 shadow-2xs"
+                    className="p-3 rounded-lg bg-[#0A0D10] border border-white/[0.08] text-xs space-y-1 hover:border-blue-500/30 transition-colors duration-200 card-lift"
+                    style={{
+                      opacity: clausesVisible ? 1 : 0,
+                      transitionDelay: clausesVisible ? `${i * 80}ms` : "0ms",
+                      transition: "opacity 0.4s ease, border-color 0.2s ease, transform 0.3s ease, box-shadow 0.3s ease",
+                    }}
                   >
-                    <div className="font-bold text-blue-900 font-mono text-[11px]">
+                    <div className="font-bold text-blue-400 font-mono text-[11px]">
                       {c.standard}
                     </div>
-                    <div className="font-semibold text-[#0F172A] text-xs font-sans">
+                    <div className="font-semibold text-[#E5E9E8] text-xs font-sans">
                       {c.clause}
                     </div>
-                    <div className="text-[11px] text-[#64748B] truncate">
+                    <div className="text-[11px] text-[#7E878E] truncate">
                       {c.title}
                     </div>
                   </div>
@@ -150,14 +232,27 @@ export function AgentSection() {
               </div>
             </div>
 
-            {/* Operational Takeaway */}
-            <div className="p-3.5 rounded-lg bg-white border border-[#E2E8F0] text-xs flex items-start gap-2.5 shadow-2xs">
-              <span className="font-bold text-[#0F172A] shrink-0 font-sans">Actionable Rule:</span>
-              <span className="text-[#334155] font-medium font-sans">{current.takeaway}</span>
+            {/* Takeaway — reveals last */}
+            <div
+              className="p-3.5 rounded-lg bg-amber-500/5 border border-amber-500/20 text-sm flex items-start gap-2.5"
+              style={{
+                opacity: takeawayVisible ? 1 : 0,
+                transform: takeawayVisible ? "translateY(0)" : "translateY(8px)",
+                transition: "opacity 0.5s ease, transform 0.5s cubic-bezier(0.16,1,0.3,1)",
+              }}
+            >
+              <span className="font-bold text-amber-400 shrink-0 font-sans text-xs">Actionable Rule:</span>
+              <span className="text-[#C2C9CD] font-normal font-sans text-xs">{current.takeaway}</span>
             </div>
 
             {/* Source Reference */}
-            <div className="text-[10px] text-[#94A3B8] flex items-center justify-between border-t border-[#E2E8F0] pt-2 font-mono">
+            <div
+              className="text-[10px] text-[#7E878E] flex items-center justify-between border-t border-white/[0.05] pt-3 font-mono"
+              style={{
+                opacity: takeawayVisible ? 1 : 0,
+                transition: "opacity 0.4s 0.1s ease",
+              }}
+            >
               <span>Grounding: {current.statutorySource}</span>
               <span>Deterministic Logic Evaluation</span>
             </div>

@@ -17,30 +17,30 @@ import {
 
 export function HeroProductPreview() {
   return (
-    <div className="relative mx-auto max-w-5xl rounded-2xl border border-[#E2E8F0] bg-white shadow-xl overflow-hidden transition-all group">
+    <div className="relative mx-auto max-w-5xl rounded-2xl border border-white/12 bg-[#0A0D10] shadow-[0_25px_60px_rgba(0,0,0,0.8)] overflow-hidden transition-all group">
       {/* Browser Window Chrome */}
-      <div className="flex items-center justify-between border-b border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2.5">
+      <div className="flex items-center justify-between border-b border-white/[0.08] bg-[#101419]/90 backdrop-blur-md px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-          <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-          <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+          <div className="h-2.5 w-2.5 rounded-full bg-white/20" />
+          <div className="h-2.5 w-2.5 rounded-full bg-white/20" />
+          <div className="h-2.5 w-2.5 rounded-full bg-white/20" />
         </div>
 
         {/* Browser URL Bar */}
-        <div className="flex items-center gap-1.5 rounded-md border border-[#E2E8F0] bg-white px-3 py-1 text-[11px] font-mono text-[#64748B] max-w-md w-full mx-4 shadow-2xs">
-          <Lock className="h-3 w-3 text-[#94A3B8] shrink-0" />
-          <span className="text-[#94A3B8]">https://</span>
-          <span className="text-[#0F172A] font-medium">app.complywise.in</span>
-          <span className="text-[#94A3B8]">/dashboard</span>
+        <div className="flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-[#06080A] px-3 py-1 text-[11px] font-mono text-slate-400 max-w-md w-full mx-4 shadow-2xs">
+          <Lock className="h-3 w-3 text-slate-500 shrink-0" />
+          <span className="text-slate-500">https://</span>
+          <span className="text-white font-medium">app.complywise.in</span>
+          <span className="text-slate-500">/dashboard</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="hidden sm:inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-[#64748B] border border-[#E2E8F0]">
+          <span className="hidden sm:inline-flex items-center gap-1 rounded bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-slate-400 border border-white/[0.08]">
             Platform Artifact · Active Build
           </span>
           <Link
             href="/dashboard"
-            className="text-[11px] font-semibold text-[#0F172A] hover:underline inline-flex items-center gap-1"
+            className="text-[11px] font-semibold text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-1"
           >
             <span>Open Workspace</span>
             <ExternalLink className="h-3 w-3" />
@@ -163,10 +163,10 @@ export function HeroProductPreview() {
       </div>
 
       {/* Floating Hover CTA Badge */}
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/80 to-transparent py-4 text-center pointer-events-none">
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0A0D10] via-[#0A0D10]/60 to-transparent py-5 text-center pointer-events-none">
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1.5 rounded-full bg-[#0F172A] text-white px-4 py-1.5 text-xs font-semibold shadow-md pointer-events-auto hover:bg-slate-800 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-full bg-white text-[#06080A] px-4 py-1.5 text-xs font-semibold shadow-md pointer-events-auto hover:bg-slate-100 transition-colors"
         >
           <span>Launch Interactive Platform Demo</span>
           <ChevronRight className="h-3.5 w-3.5" />

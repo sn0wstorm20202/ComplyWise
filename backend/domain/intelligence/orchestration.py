@@ -456,7 +456,18 @@ class DefaultSchemeProvider(SchemeProvider):
         biz = Business.objects.filter(pk=context.business_id).first()
         if not biz:
             return []
-        res = discover_business_schemes(biz)
+        derived_ctx = build_business_context(biz)
+        replacements: dict[str, Any] = {}
+        desc = getattr(context, "raw_business_description", None) or getattr(context, "product", None)
+        if desc and desc != derived_ctx.product_description:
+            replacements["product_description"] = desc
+        if hasattr(context, "answers") and isinstance(context.answers, dict):
+            if "trade_intent" in context.answers:
+                replacements["is_cross_border"] = context.answers["trade_intent"] in {"EXPORT_ONLY", "IMPORT_ONLY", "IMPORT_AND_EXPORT"}
+        if replacements:
+            import dataclasses
+            derived_ctx = dataclasses.replace(derived_ctx, **replacements)
+        res = discover_business_schemes(biz, context=derived_ctx)
         results: list[SchemeResult] = []
         for item in res.get("schemes", []):
             results.append(
@@ -468,7 +479,7 @@ class DefaultSchemeProvider(SchemeProvider):
                     benefit_type=item.get("benefit_type", "INCENTIVE_SCHEME"),
                     benefit_summary=item.get("benefit_summary", ""),
                     eligibility_statement=item.get("eligibility_statement", ""),
-                    source_url=item.get("source_url", ""),
+                    source_url=item.get("source_url", "") or item.get("portal_url", ""),
                     is_applicable=item.get("is_applicable", True),
                     match_score=item.get("match_score", 1.0),
                     extra=item,
@@ -483,9 +494,30 @@ class RegulatoryDiscoveryResult:
     sources_count: int
     candidate_count: int
     queries: list[str] = field(default_factory=list)
+    sources: list[dict[str, Any]] = field(default_factory=list)
+    evidence_candidates: list[dict[str, Any]] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    search_metadata: dict[str, Any] = field(default_factory=dict)
     candidate_requirements: list[dict[str, Any]] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        sm = dict(self.search_metadata or self.metadata.get("search_metadata", {}))
+        if "fallback_used" not in sm:
+            sm["fallback_used"] = self.metadata.get("fallback_used", False)
+        return {
+            "status": self.status,
+            "queries": self.queries,
+            "sources": self.sources or self.metadata.get("sources", []),
+            "evidence_candidates": self.evidence_candidates or self.metadata.get("evidence_candidates", []),
+            "warnings": self.warnings or self.metadata.get("warnings", []),
+            "search_metadata": sm,
+            "sources_count": self.sources_count,
+            "candidate_count": self.candidate_count,
+            "candidate_requirements": self.candidate_requirements,
+            "metadata": self.metadata,
+        }
 
 
 class RegulatoryDiscoveryProvider(abc.ABC):
@@ -504,14 +536,14 @@ class DefaultRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
         context: OrchestrationContext,
         query_plan: dict[str, Any] | None = None,
     ) -> RegulatoryDiscoveryResult:
-        # Step 01 prepares boundary contract; full live discovery wired in Step 02
+        # Step 01 prepares boundary contract; full live discovery wired in Step 03
         return RegulatoryDiscoveryResult(
             status="READY",
             sources_count=0,
             candidate_count=0,
             queries=[],
             candidate_requirements=[],
-            metadata={"note": "Discovery interface ready for Step 02."},
+            metadata={"note": "Discovery interface ready for Step 03."},
         )
 
 
@@ -538,7 +570,12 @@ class DefaultStandardsProvider(StandardsProvider):
         biz = Business.objects.filter(pk=context.business_id).first()
         if not biz:
             return []
-        res = discover_business_standards(biz)
+        derived_ctx = build_business_context(biz)
+        desc = getattr(context, "raw_business_description", None) or getattr(context, "product", None)
+        if desc and desc != derived_ctx.product_description:
+            import dataclasses
+            derived_ctx = dataclasses.replace(derived_ctx, product_description=desc)
+        res = discover_business_standards(biz, context=derived_ctx)
         results: list[StandardResult] = []
         for item in res.get("standards", []):
             results.append(
@@ -563,6 +600,15 @@ class ComplianceSynthesisResult:
     requirements: list[dict[str, Any]] = field(default_factory=list)
     executive_summary: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "status": self.status,
+            "applicable_count": self.applicable_count,
+            "requirements": self.requirements,
+            "executive_summary": self.executive_summary,
+            "metadata": self.metadata,
+        }
 
 
 class ComplianceSynthesisProvider(abc.ABC):
@@ -729,7 +775,176 @@ class LLMFirstStrategy(AssessmentStrategy):
                 data=clean_ctx,
             )
 
-        # Later stages return clean initialized contracts for Step 01 / Steps 03-05
+        if stage == AssessmentStage.REGULATORY_DISCOVERY:
+            from domain.intelligence.discovery import LiveRegulatoryDiscoveryProvider
+            # Check idempotency: if already discovered in this run, return cached
+            cached = run.stage_metadata.get("regulatory_discovery")
+            if cached and isinstance(cached, dict) and cached.get("evidence_candidates"):
+                return StageResult(
+                    stage=stage,
+                    status=StageStatus.COMPLETED,
+                    data=cached,
+                    metadata={"cached": True},
+                )
+
+            # Resolve enriched canonical context if available
+            ctx_to_use: Any = context
+            if "context_synthesis" in run.stage_metadata:
+                from domain.intelligence.business_understanding import validate_business_understanding_schema
+                from domain.intelligence.context_merge import build_canonical_enriched_context
+                under_raw = run.stage_metadata.get("business_understanding")
+                under_res = validate_business_understanding_schema(under_raw) if under_raw else None
+                interpreted_facts = run.stage_metadata.get("answer_interpretation") or []
+                ctx_to_use = build_canonical_enriched_context(context, under_res, interpreted_facts)
+
+            disc_provider = LiveRegulatoryDiscoveryProvider()
+            disc_res = disc_provider.discover(ctx_to_use)
+            clean_disc = disc_res.to_dict()
+            state = dict(run.stage_metadata)
+            state["regulatory_discovery"] = clean_disc
+            run.stage_metadata = state
+            run.save()
+            return StageResult(
+                stage=stage,
+                status=StageStatus.COMPLETED,
+                data=clean_disc,
+                metadata={
+                    "sources_count": disc_res.sources_count,
+                    "candidate_count": disc_res.candidate_count,
+                    "provider": provider_name,
+                },
+            )
+
+        if stage == AssessmentStage.COMPLIANCE_SYNTHESIS:
+            from domain.intelligence.synthesis import LiveComplianceSynthesisProvider
+            # Ensure regulatory discovery has executed
+            if "regulatory_discovery" not in run.stage_metadata:
+                self.execute_stage(AssessmentStage.REGULATORY_DISCOVERY, context, run)
+
+            cached = run.stage_metadata.get("compliance_synthesis")
+            if cached and isinstance(cached, dict) and cached.get("requirements"):
+                return StageResult(
+                    stage=stage,
+                    status=StageStatus.COMPLETED,
+                    data=cached,
+                    metadata={"cached": True},
+                )
+
+            ctx_to_use = context
+            if "context_synthesis" in run.stage_metadata:
+                from domain.intelligence.business_understanding import validate_business_understanding_schema
+                from domain.intelligence.context_merge import build_canonical_enriched_context
+                under_raw = run.stage_metadata.get("business_understanding")
+                under_res = validate_business_understanding_schema(under_raw) if under_raw else None
+                interpreted_facts = run.stage_metadata.get("answer_interpretation") or []
+                ctx_to_use = build_canonical_enriched_context(context, under_res, interpreted_facts)
+
+            discovered_material = run.stage_metadata.get("regulatory_discovery") or {}
+            synth_provider = LiveComplianceSynthesisProvider()
+            synth_res = synth_provider.synthesize(ctx_to_use, discovered_material)
+            clean_synth = synth_res.to_dict()
+            state = dict(run.stage_metadata)
+            state["compliance_synthesis"] = clean_synth
+            run.stage_metadata = state
+            run.save()
+            return StageResult(
+                stage=stage,
+                status=StageStatus.COMPLETED,
+                data=clean_synth,
+                metadata={
+                    "applicable_count": synth_res.applicable_count,
+                    "provider": provider_name,
+                },
+            )
+
+        if stage == AssessmentStage.SCHEMES:
+            cached = run.stage_metadata.get("schemes")
+            if cached and isinstance(cached, dict) and cached.get("schemes"):
+                return StageResult(
+                    stage=stage,
+                    status=StageStatus.COMPLETED,
+                    data=cached,
+                    metadata={"cached": True},
+                )
+
+            scheme_prov = DefaultSchemeProvider()
+            raw_schemes = scheme_prov.discover_schemes(context)
+            normalized_schemes = [
+                {
+                    "scheme_id": s.scheme_code,
+                    "name": s.title,
+                    "authority": s.authority,
+                    "jurisdiction": s.jurisdiction,
+                    "eligibility": s.eligibility_statement,
+                    "benefit": s.benefit_summary,
+                    "status": "ACTIVE" if s.is_applicable else "UNKNOWN",
+                    "application_url": s.source_url or (s.extra.get("portal_url") if isinstance(s.extra, dict) else ""),
+                    "why_relevant": s.extra.get("relevance_rationale", s.eligibility_statement) if isinstance(s.extra, dict) else s.eligibility_statement,
+                    "scheme_code": s.scheme_code,
+                    "title": s.title,
+                    "benefit_type": s.benefit_type,
+                }
+                for s in raw_schemes
+            ]
+            clean_schemes = {
+                "schemes": normalized_schemes,
+                "total_schemes": len(normalized_schemes),
+            }
+            state = dict(run.stage_metadata)
+            state["schemes"] = clean_schemes
+            run.stage_metadata = state
+            run.save()
+            return StageResult(
+                stage=stage,
+                status=StageStatus.COMPLETED,
+                data=clean_schemes,
+                metadata={"total_schemes": len(normalized_schemes)},
+            )
+
+        if stage == AssessmentStage.STANDARDS:
+            cached = run.stage_metadata.get("standards")
+            if cached and isinstance(cached, dict) and cached.get("standards"):
+                return StageResult(
+                    stage=stage,
+                    status=StageStatus.COMPLETED,
+                    data=cached,
+                    metadata={"cached": True},
+                )
+
+            std_prov = DefaultStandardsProvider()
+            raw_stds = std_prov.discover_standards(context)
+            normalized_stds = [
+                {
+                    "standard_id": s.standard_code,
+                    "name": s.title,
+                    "authority": s.authority,
+                    "type": "STATUTORY" if s.is_mandatory else "VOLUNTARY",
+                    "reason": s.description,
+                    "evidence_ids": [f"STD-{s.standard_code}"],
+                    "source_urls": [s.source_url] if s.source_url else [],
+                    "standard_code": s.standard_code,
+                    "title": s.title,
+                    "is_mandatory": s.is_mandatory,
+                    "nature": s.category,
+                }
+                for s in raw_stds
+            ]
+            clean_stds = {
+                "standards": normalized_stds,
+                "total_standards": len(normalized_stds),
+            }
+            state = dict(run.stage_metadata)
+            state["standards"] = clean_stds
+            run.stage_metadata = state
+            run.save()
+            return StageResult(
+                stage=stage,
+                status=StageStatus.COMPLETED,
+                data=clean_stds,
+                metadata={"total_standards": len(normalized_stds)},
+            )
+
+        # Later stages return clean initialized contracts for Step 01 / Steps 04-05
         latency_ms = (time.perf_counter() - t0) * 1000
         return StageResult(
             stage=stage,

@@ -397,3 +397,217 @@ class AssessmentContextView(APIView):
             status=status.HTTP_200_OK,
         )
 
+
+class AssessmentRegulatoryDiscoveryView(APIView):
+    """Execute live regulatory discovery across official portals."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, run_id: uuid.UUID) -> Response:
+        run = assessment_orchestrator.get_run(run_id, user=request.user)
+        if run is None:
+            return error_response(
+                "NOT_FOUND",
+                "Assessment run not found or access denied.",
+                http_status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            from domain.intelligence.orchestration import AssessmentStage
+            force_refresh = request.data.get("force_refresh", False)
+            if force_refresh and "regulatory_discovery" in run.stage_metadata:
+                state = dict(run.stage_metadata)
+                del state["regulatory_discovery"]
+                run.stage_metadata = state
+                run.save()
+
+            res = assessment_orchestrator.execute_stage(run, AssessmentStage.REGULATORY_DISCOVERY)
+            return Response(
+                envelope(res.data, meta={"correlation_id": run.correlation_id}),
+                status=status.HTTP_200_OK,
+            )
+        except OrchestrationError as o_exc:
+            return error_response(o_exc.code, o_exc.message_safe, http_status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            logger.exception("Error in regulatory discovery endpoint: %s", exc)
+            return error_response("INTERNAL_ERROR", "Failed to execute regulatory discovery.", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AssessmentComplianceSynthesisView(APIView):
+    """Execute structured compliance synthesis grounded in official evidence."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, run_id: uuid.UUID) -> Response:
+        run = assessment_orchestrator.get_run(run_id, user=request.user)
+        if run is None:
+            return error_response(
+                "NOT_FOUND",
+                "Assessment run not found or access denied.",
+                http_status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            from domain.intelligence.orchestration import AssessmentStage
+            force_refresh = request.data.get("force_refresh", False)
+            if force_refresh and "compliance_synthesis" in run.stage_metadata:
+                state = dict(run.stage_metadata)
+                del state["compliance_synthesis"]
+                run.stage_metadata = state
+                run.save()
+
+            res = assessment_orchestrator.execute_stage(run, AssessmentStage.COMPLIANCE_SYNTHESIS)
+            return Response(
+                envelope(res.data, meta={"correlation_id": run.correlation_id}),
+                status=status.HTTP_200_OK,
+            )
+        except OrchestrationError as o_exc:
+            return error_response(o_exc.code, o_exc.message_safe, http_status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            logger.exception("Error in compliance synthesis endpoint: %s", exc)
+            return error_response("INTERNAL_ERROR", "Failed to synthesize compliance requirements.", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AssessmentComplianceView(APIView):
+    """Retrieve structured compliance requirements and executive summary."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, run_id: uuid.UUID) -> Response:
+        run = assessment_orchestrator.get_run(run_id, user=request.user)
+        if run is None:
+            return error_response(
+                "NOT_FOUND",
+                "Assessment run not found or access denied.",
+                http_status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            from domain.intelligence.orchestration import AssessmentStage
+            if "compliance_synthesis" not in run.stage_metadata:
+                if "regulatory_discovery" not in run.stage_metadata:
+                    assessment_orchestrator.execute_stage(run, AssessmentStage.REGULATORY_DISCOVERY)
+                res = assessment_orchestrator.execute_stage(run, AssessmentStage.COMPLIANCE_SYNTHESIS)
+                comp_data = res.data
+            else:
+                comp_data = run.stage_metadata["compliance_synthesis"]
+
+            return Response(
+                envelope(comp_data, meta={"correlation_id": run.correlation_id}),
+                status=status.HTTP_200_OK,
+            )
+        except OrchestrationError as o_exc:
+            return error_response(o_exc.code, o_exc.message_safe, http_status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            logger.exception("Error retrieving compliance requirements: %s", exc)
+            return error_response("INTERNAL_ERROR", "Failed to retrieve compliance requirements.", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AssessmentEvidenceView(APIView):
+    """Retrieve discovered official evidence records with provenance metadata."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, run_id: uuid.UUID) -> Response:
+        run = assessment_orchestrator.get_run(run_id, user=request.user)
+        if run is None:
+            return error_response(
+                "NOT_FOUND",
+                "Assessment run not found or access denied.",
+                http_status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            from domain.intelligence.orchestration import AssessmentStage
+            if "regulatory_discovery" not in run.stage_metadata:
+                res = assessment_orchestrator.execute_stage(run, AssessmentStage.REGULATORY_DISCOVERY)
+                disc_data = res.data
+            else:
+                disc_data = run.stage_metadata["regulatory_discovery"]
+
+            evidence_list = disc_data.get("evidence_candidates") or []
+            sources_list = disc_data.get("sources") or []
+
+            response_data = {
+                "evidence": evidence_list,
+                "total_evidence": len(evidence_list),
+                "sources": sources_list,
+                "total_sources": len(sources_list),
+            }
+            return Response(
+                envelope(response_data, meta={"correlation_id": run.correlation_id}),
+                status=status.HTTP_200_OK,
+            )
+        except OrchestrationError as o_exc:
+            return error_response(o_exc.code, o_exc.message_safe, http_status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            logger.exception("Error retrieving evidence: %s", exc)
+            return error_response("INTERNAL_ERROR", "Failed to retrieve evidence records.", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AssessmentSchemesView(APIView):
+    """Retrieve matched government schemes and incentives for the assessment."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, run_id: uuid.UUID) -> Response:
+        run = assessment_orchestrator.get_run(run_id, user=request.user)
+        if run is None:
+            return error_response(
+                "NOT_FOUND",
+                "Assessment run not found or access denied.",
+                http_status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            from domain.intelligence.orchestration import AssessmentStage
+            if "schemes" not in run.stage_metadata:
+                res = assessment_orchestrator.execute_stage(run, AssessmentStage.SCHEMES)
+                schemes_data = res.data
+            else:
+                schemes_data = run.stage_metadata["schemes"]
+
+            return Response(
+                envelope(schemes_data, meta={"correlation_id": run.correlation_id}),
+                status=status.HTTP_200_OK,
+            )
+        except OrchestrationError as o_exc:
+            return error_response(o_exc.code, o_exc.message_safe, http_status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            logger.exception("Error retrieving schemes: %s", exc)
+            return error_response("INTERNAL_ERROR", "Failed to retrieve schemes.", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AssessmentStandardsView(APIView):
+    """Retrieve matched statutory and voluntary industrial standards."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, run_id: uuid.UUID) -> Response:
+        run = assessment_orchestrator.get_run(run_id, user=request.user)
+        if run is None:
+            return error_response(
+                "NOT_FOUND",
+                "Assessment run not found or access denied.",
+                http_status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            from domain.intelligence.orchestration import AssessmentStage
+            if "standards" not in run.stage_metadata:
+                res = assessment_orchestrator.execute_stage(run, AssessmentStage.STANDARDS)
+                stds_data = res.data
+            else:
+                stds_data = run.stage_metadata["standards"]
+
+            return Response(
+                envelope(stds_data, meta={"correlation_id": run.correlation_id}),
+                status=status.HTTP_200_OK,
+            )
+        except OrchestrationError as o_exc:
+            return error_response(o_exc.code, o_exc.message_safe, http_status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            logger.exception("Error retrieving standards: %s", exc)
+            return error_response("INTERNAL_ERROR", "Failed to retrieve standards.", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+

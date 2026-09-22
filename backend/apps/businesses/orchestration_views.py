@@ -90,7 +90,18 @@ class AssessmentOrchestrationCreateView(APIView):
             or uuid.uuid4()
         )
         idempotency_key = request.data.get("idempotency_key") or request.headers.get("Idempotency-Key")
-        strategy = request.data.get("strategy")
+        
+        # Server-controlled strategy for public users; override only allowed for staff/admin/tests
+        server_strategy = getattr(settings, "ASSESSMENT_STRATEGY", "LLM_FIRST").strip().upper()
+        requested_strategy = request.data.get("strategy")
+        if requested_strategy and (
+            getattr(request.user, "is_staff", False)
+            or getattr(request.user, "is_superuser", False)
+            or getattr(settings, "ALLOW_CLIENT_STRATEGY_OVERRIDE", False)
+        ):
+            strategy = requested_strategy
+        else:
+            strategy = server_strategy
 
         try:
             run = assessment_orchestrator.create_run(
@@ -185,3 +196,204 @@ class AssessmentOrchestrationStatusView(APIView):
             envelope(payload, meta={"correlation_id": run.correlation_id}),
             status=status.HTTP_200_OK,
         )
+
+
+class AssessmentBusinessUnderstandingView(APIView):
+    """Execute AI business understanding for an assessment run."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, run_id: uuid.UUID) -> Response:
+        run = assessment_orchestrator.get_run(run_id, user=request.user)
+        if run is None:
+            return error_response(
+                "NOT_FOUND",
+                "Assessment run not found or access denied.",
+                http_status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            from domain.intelligence.orchestration import AssessmentStage
+            res = assessment_orchestrator.execute_stage(run, AssessmentStage.BUSINESS_UNDERSTANDING)
+            return Response(
+                envelope(res.data, meta={"correlation_id": run.correlation_id}),
+                status=status.HTTP_200_OK,
+            )
+        except OrchestrationError as o_exc:
+            return error_response(o_exc.code, o_exc.message_safe, http_status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            logger.exception("Error in business understanding: %s", exc)
+            return error_response("INTERNAL_ERROR", "Failed to analyze business operations.", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AssessmentQuestionGenerateView(APIView):
+    """Generate exactly 15 intelligent compliance questions in a single LLM call."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, run_id: uuid.UUID) -> Response:
+        run = assessment_orchestrator.get_run(run_id, user=request.user)
+        if run is None:
+            return error_response(
+                "NOT_FOUND",
+                "Assessment run not found or access denied.",
+                http_status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            from domain.intelligence.orchestration import AssessmentStage
+            res = assessment_orchestrator.execute_stage(run, AssessmentStage.QUESTION_GENERATION)
+            return Response(
+                envelope(res.data, meta={"correlation_id": run.correlation_id}),
+                status=status.HTTP_200_OK,
+            )
+        except OrchestrationError as o_exc:
+            return error_response(o_exc.code, o_exc.message_safe, http_status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            logger.exception("Error in question generation: %s", exc)
+            return error_response("INTERNAL_ERROR", "Failed to generate compliance questions.", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AssessmentQuestionsListView(APIView):
+    """List the 15 questions and user completion status for an assessment."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, run_id: uuid.UUID) -> Response:
+        run = assessment_orchestrator.get_run(run_id, user=request.user)
+        if run is None:
+            return error_response(
+                "NOT_FOUND",
+                "Assessment run not found or access denied.",
+                http_status=status.HTTP_404_NOT_FOUND,
+            )
+
+        q_meta = run.stage_metadata.get("question_generation", {}).get("questions", [])
+        answers = run.stage_metadata.get("answers", {})
+
+        # If questions not yet generated, attempt to generate or load them
+        if not q_meta:
+            from domain.intelligence.orchestration import AssessmentStage
+            res = assessment_orchestrator.execute_stage(run, AssessmentStage.QUESTION_GENERATION)
+            q_meta = run.stage_metadata.get("question_generation", {}).get("questions", [])
+
+        # Enrich questions with answer state
+        enriched_questions = []
+        for q in q_meta:
+            qid = q.get("question_id")
+            clean_q = {
+                "question_id": qid,
+                "question": q.get("question"),
+                "category": q.get("category"),
+                "answer_type": q.get("answer_type"),
+                "required": q.get("required", True),
+                "options": q.get("options", []),
+                "unit": q.get("unit"),
+                "help_text": q.get("help_text"),
+                "reason": q.get("reason"),
+                "order": q.get("order"),
+                "is_answered": qid in answers,
+                "current_value": answers.get(qid),
+            }
+            enriched_questions.append(clean_q)
+
+        next_q = next((q for q in enriched_questions if not q["is_answered"]), None)
+
+        response_data = {
+            "questions": enriched_questions,
+            "total_questions": len(enriched_questions),
+            "answered_count": len(answers),
+            "is_complete": len(answers) >= len(enriched_questions) and len(enriched_questions) == 15,
+            "next_question": next_q,
+        }
+        return Response(
+            envelope(response_data, meta={"correlation_id": run.correlation_id}),
+            status=status.HTTP_200_OK,
+        )
+
+
+class AssessmentAnswersSubmitView(APIView):
+    """Submit answer(s) to one or more questions without triggering LLM calls."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, run_id: uuid.UUID) -> Response:
+        run = assessment_orchestrator.get_run(run_id, user=request.user)
+        if run is None:
+            return error_response(
+                "NOT_FOUND",
+                "Assessment run not found or access denied.",
+                http_status=status.HTTP_404_NOT_FOUND,
+            )
+
+        from domain.intelligence.answer_interpretation import AnswerInterpreter
+        interpreter = AnswerInterpreter()
+
+        # Support single question submission {"question_id": "Q01", "value": ...}
+        # Or dictionary submission {"answers": {"Q01": ..., "Q02": ...}}
+        # Or array submission {"answers": [{"question_id": "Q01", "value": ...}]}
+        answers_dict: dict[str, Any] = {}
+        if "question_id" in request.data:
+            answers_dict[str(request.data["question_id"])] = request.data.get("value")
+        elif "answers" in request.data:
+            raw = request.data["answers"]
+            if isinstance(raw, dict):
+                answers_dict = raw
+            elif isinstance(raw, list):
+                for item in raw:
+                    if isinstance(item, dict) and "question_id" in item:
+                        answers_dict[str(item["question_id"])] = item.get("value")
+
+        if not answers_dict:
+            return error_response(
+                "VALIDATION_ERROR",
+                "No answers provided. Include 'question_id' and 'value', or 'answers' map.",
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        last_result = None
+        try:
+            for qid, val in answers_dict.items():
+                last_result = interpreter.record_answer(run, qid, val)
+
+            return Response(
+                envelope(last_result, meta={"correlation_id": run.correlation_id}),
+                status=status.HTTP_200_OK,
+            )
+        except OrchestrationError as o_exc:
+            return error_response(o_exc.code, o_exc.message_safe, http_status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            logger.exception("Error saving answers: %s", exc)
+            return error_response("INTERNAL_ERROR", "Failed to save answer.", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AssessmentContextView(APIView):
+    """Retrieve canonical enriched BusinessContext combining profile, understanding, and answers."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, run_id: uuid.UUID) -> Response:
+        run = assessment_orchestrator.get_run(run_id, user=request.user)
+        if run is None:
+            return error_response(
+                "NOT_FOUND",
+                "Assessment run not found or access denied.",
+                http_status=status.HTTP_404_NOT_FOUND,
+            )
+
+        from domain.intelligence.orchestration import AssessmentStage
+
+        # Execute answer interpretation and context synthesis if needed
+        if "context_synthesis" not in run.stage_metadata:
+            if "answer_interpretation" not in run.stage_metadata:
+                assessment_orchestrator.execute_stage(run, AssessmentStage.ANSWER_INTERPRETATION)
+            res = assessment_orchestrator.execute_stage(run, AssessmentStage.CONTEXT_SYNTHESIS)
+            context_data = res.data
+        else:
+            context_data = run.stage_metadata["context_synthesis"]
+
+        return Response(
+            envelope(context_data, meta={"correlation_id": run.correlation_id}),
+            status=status.HTTP_200_OK,
+        )
+

@@ -321,3 +321,72 @@ For End-to-End browser verification in Step 05, Playwright must be installed in 
    - Assert that no internal architecture details leak into UI elements.
    - Verify dynamic question rendering and questionnaire submission.
    - Assert compliance summary and scheme cards render accurately.
+
+---
+
+## 12. Step 02 — AI Business Understanding & 15-Question Intelligence
+
+### 12.1 Business Understanding Architecture
+The `BusinessUnderstandingEngine` (`backend/domain/intelligence/business_understanding.py`) analyzes raw business profiles, constitutions, locations, and plain-text activity descriptions to determine the real-world operational reality:
+- **Strict Output Schema**:
+  ```json
+  {
+    "business_type": "Manufacturing Enterprise",
+    "primary_activity": "Design and assembly of 65W GaN fast chargers",
+    "products": ["65W Fast Charger", "USB-PD Adapters"],
+    "manufacturing_or_service": "MANUFACTURING",
+    "market": "EXPORT",
+    "geography": {
+      "state": "Maharashtra",
+      "district": "Pune",
+      "industrial_zone_status": "APPROVED_ESTATE"
+    },
+    "trade_intent": "EXPORT_ONLY",
+    "operational_characteristics": [
+      "SMT assembly lines",
+      "Wave soldering and VOC ventilation",
+      "Electronic component testing"
+    ],
+    "likely_regulatory_domains": [
+      "BIS Compulsory Registration Scheme (CRS)",
+      "State Pollution Control Board (Consent to Establish/Operate)",
+      "E-Waste Management Rules (EPR Authorization)"
+    ],
+    "important_unknowns": [
+      "Sanctioned electrical load in HP",
+      "Total and contract workforce count",
+      "Capital investment in plant and machinery"
+    ],
+    "normalized_facts": []
+  }
+  ```
+- **Strict Guardrail**: Strictly does NOT declare legal applicability, statutory approvals, or exemptions.
+
+### 12.2 15-Question Generation Engine
+The `QuestionnaireEngine` (`backend/domain/intelligence/questionnaire.py`) generates **EXACTLY 15 contextual compliance questions** in a **single LLM call**:
+- **Dynamic Formulation**: Questions dynamically target the critical unknowns identified during business understanding.
+- **Structured Question Contract**: Every question includes `question_id` (Q01–Q15), `question`, `category`, `answer_type` (TEXT, NUMBER, BOOLEAN, SINGLE_SELECT, MULTI_SELECT, DATE, CURRENCY, PERCENTAGE), `required`, `options`, `unit`, `help_text`, `reason`, and `order`.
+- **Quality & Diversity**: Different industries receive sector-tailored questions (e.g. Cement receives clinker/quarrying/emission questions and NEVER drinking-water or dairy questions; Electronics receives BIS CRS/SMT/E-waste questions; Food receives FSSAI/cold-chain questions).
+- **Emergency Fallback**: If LLM provider fails (503, 429, timeout) or output is malformed, a deterministic emergency fallback generates 15 sector-tailored questions, ensuring the live demo never crashes.
+- **Idempotency & Persistence**: Persisted in `SmartQuestionPlan` and 15 `SmartQuestionInstance` rows. Subsequent calls return the cached 15 questions with 0 LLM calls.
+
+### 12.3 Answer Collection & Structured Interpretation
+The `AnswerInterpreter` (`backend/domain/intelligence/answer_interpretation.py`):
+- **Zero LLM Calls on Answer Entry**: Answers are validated, type-coerced, and saved into DB and assessment state without invoking an LLM.
+- **Structured Interpretation**: Translates answers into structured compliance facts (`connected_power_load`, `total_worker_count`, `has_contract_workers`, `plant_machinery_investment`, `annual_turnover`, `trade_intent`, `export_intent`, `hazardous_waste_generation`, `plastic_packaging_used`, `effluent_generation`).
+
+### 12.4 Multi-Layer Precedence Merge & Provenance
+The Context Merge Engine (`backend/domain/intelligence/context_merge.py`) synthesizes a canonical `EnrichedBusinessContext`:
+- **Precedence Hierarchy**:
+  $$\text{EXPLICIT USER ANSWER (100)} > \text{INTERPRETED ANSWER (90)} > \text{BUSINESS PROFILE (80)} > \text{DERIVED FACT (70)} > \text{LLM INFERENCE (50)}$$
+- **Guarantee**: LLM inference CANNOT overwrite an explicit user answer or confirmed database profile attribute.
+- **Provenance Tracking**: Every fact tracks its source (`USER_ANSWER`, `BUSINESS_PROFILE`, `DERIVED_FACT`, `LLM_BUSINESS_UNDERSTANDING`) and confidence level (`EXPLICIT`, `HIGH`, `INFERRED`).
+
+### 12.5 Step 02 API Endpoints
+All endpoints enforce JWT authentication, tenant isolation, and clean user-safe envelopes:
+- `POST /api/v1/assessments/<id>/understand/` — Executes Business Understanding stage.
+- `POST /api/v1/assessments/<id>/questions/generate/` — Generates & persists exactly 15 questions in 1 LLM call (idempotent).
+- `GET /api/v1/assessments/<id>/questions/` — Retrieves the 15 questions, answer states, progress, and next question.
+- `POST /api/v1/assessments/<id>/answers/` — Submits single or batch answers (0 LLM calls).
+- `GET /api/v1/assessments/<id>/context/` — Returns the canonical enriched business context with provenance summary.
+

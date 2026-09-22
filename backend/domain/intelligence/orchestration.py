@@ -398,24 +398,30 @@ class AssessmentRun:
         total_stages = len(STAGE_ORDER)
         percent = int(min(100, max(0, (len(completed_stages) / total_stages) * 100)))
 
+        safe_msg = "Assessment in progress."
+        if self.status == AssessmentStatus.COMPLETED:
+            safe_msg = "Assessment completed successfully."
+        elif self.status == AssessmentStatus.FAILED:
+            safe_msg = "Assessment encountered an issue. Please try again."
+
         return {
             "run_id": self.run_id,
             "assessment_id": self.run_id,
             "business_id": self.business_id,
             "status": self.status,
+            "current_stage": str(self.current_stage),
             "stage": str(self.current_stage),
             "progress": {
                 "current_stage": str(self.current_stage),
                 "completed_stages": completed_stages,
                 "percent": percent,
             },
+            "safe_message": safe_msg,
+            "safe_error": self.error_message_safe if self.error_code else None,
             "error": {
                 "code": self.error_code,
                 "message": self.error_message_safe,
             } if self.error_code else None,
-            "started_at": self.started_at,
-            "completed_at": self.completed_at,
-            "created_at": self.created_at,
         }
 
 
@@ -641,7 +647,89 @@ class LLMFirstStrategy(AssessmentStrategy):
                 },
             )
 
-        # Later stages return clean initialized contracts for Step 01
+        if stage == AssessmentStage.BUSINESS_UNDERSTANDING:
+            from domain.intelligence.business_understanding import BusinessUnderstandingEngine
+            engine = BusinessUnderstandingEngine()
+            result = engine.analyze_business(context, assessment_id=run.run_id)
+            clean_data = result.to_clean_dict()
+            state = dict(run.stage_metadata)
+            state["business_understanding"] = clean_data
+            run.stage_metadata = state
+            run.save()
+            return StageResult(
+                stage=stage,
+                status=StageStatus.COMPLETED,
+                data=clean_data,
+                metadata={"duration_ms": result.duration_ms},
+            )
+
+        if stage == AssessmentStage.QUESTION_GENERATION:
+            from domain.intelligence.business_understanding import validate_business_understanding_schema
+            from domain.intelligence.questionnaire import QuestionnaireEngine
+            under_raw = run.stage_metadata.get("business_understanding")
+            under_res = validate_business_understanding_schema(under_raw) if under_raw else None
+            engine = QuestionnaireEngine()
+            questions = engine.generate_questionnaire(context, run, understanding=under_res)
+            return StageResult(
+                stage=stage,
+                status=StageStatus.COMPLETED,
+                data={
+                    "questions": [q.to_frontend_dict() for q in questions],
+                    "total_questions": len(questions),
+                },
+                metadata={"total_questions": len(questions)},
+            )
+
+        if stage == AssessmentStage.ANSWER_COLLECTION:
+            answers = run.stage_metadata.get("answers", {})
+            q_meta = run.stage_metadata.get("question_generation", {}).get("questions", [])
+            next_q = next((q for q in q_meta if q.get("question_id") not in answers), None)
+            return StageResult(
+                stage=stage,
+                status=StageStatus.COMPLETED,
+                data={
+                    "answered_count": len(answers),
+                    "total_questions": len(q_meta) or 15,
+                    "is_complete": len(answers) >= (len(q_meta) or 15),
+                    "next_question": next_q,
+                },
+            )
+
+        if stage == AssessmentStage.ANSWER_INTERPRETATION:
+            from domain.intelligence.answer_interpretation import AnswerInterpreter
+            interpreter = AnswerInterpreter()
+            q_meta = run.stage_metadata.get("question_generation", {}).get("questions", [])
+            answers = run.stage_metadata.get("answers", {})
+            interpreted_facts = interpreter.interpret_answers_to_facts(q_meta, answers)
+            state = dict(run.stage_metadata)
+            state["answer_interpretation"] = interpreted_facts
+            run.stage_metadata = state
+            run.save()
+            return StageResult(
+                stage=stage,
+                status=StageStatus.COMPLETED,
+                data={"extracted_facts_count": len(interpreted_facts), "facts": interpreted_facts},
+            )
+
+        if stage == AssessmentStage.CONTEXT_SYNTHESIS:
+            from domain.intelligence.business_understanding import validate_business_understanding_schema
+            from domain.intelligence.context_merge import build_canonical_enriched_context
+            under_raw = run.stage_metadata.get("business_understanding")
+            under_res = validate_business_understanding_schema(under_raw) if under_raw else None
+            interpreted_facts = run.stage_metadata.get("answer_interpretation") or []
+            enriched_ctx = build_canonical_enriched_context(context, under_res, interpreted_facts)
+            clean_ctx = enriched_ctx.to_clean_dict()
+            state = dict(run.stage_metadata)
+            state["context_synthesis"] = clean_ctx
+            run.stage_metadata = state
+            run.save()
+            return StageResult(
+                stage=stage,
+                status=StageStatus.COMPLETED,
+                data=clean_ctx,
+            )
+
+        # Later stages return clean initialized contracts for Step 01 / Steps 03-05
         latency_ms = (time.perf_counter() - t0) * 1000
         return StageResult(
             stage=stage,

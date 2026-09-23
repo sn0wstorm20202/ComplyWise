@@ -22,6 +22,7 @@ import { standardsApi } from "./standards";
 import { regulatoryUpdatesApi } from "./regulatoryUpdates";
 import { assistantApi } from "./assistant";
 import { discoveryApi } from "./discovery";
+import { orchestrationApi } from "./orchestration";
 
 export const api = {
   health: healthApi,
@@ -39,6 +40,7 @@ export const api = {
   regulatoryUpdates: regulatoryUpdatesApi,
   assistant: assistantApi,
   discovery: discoveryApi,
+  orchestration: orchestrationApi,
 };
 
 export default api;
@@ -58,3 +60,4 @@ export * from "./standards";
 export * from "./regulatoryUpdates";
 export * from "./assistant";
 export * from "./discovery";
+export * from "./orchestration";

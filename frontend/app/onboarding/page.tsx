@@ -25,6 +25,16 @@ import {
 import { useBusinessContext } from "@/context/BusinessContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { DEMO_REQUIREMENTS } from "@/data/demo/compliance";
+import { CONTROLLED_DEMO_PROFILES, DemoPresetDefinition } from "@/data/demo/controlledPresets";
+import {
+  OrchestrationQuestion,
+  BusinessUnderstandingResponse,
+  ComplianceResponse,
+} from "@/lib/api/orchestration";
+import DemoPresetSelector from "@/components/onboarding/DemoPresetSelector";
+import BusinessUnderstandingCard from "@/components/onboarding/BusinessUnderstandingCard";
+import FifteenQuestionsWizard from "@/components/onboarding/FifteenQuestionsWizard";
+import AssessmentResultsSummary from "@/components/onboarding/AssessmentResultsSummary";
 
 const STEPS = [
   { num: 1, id: "profile", label: "Business Profile" },
@@ -518,6 +528,51 @@ function OnboardingContent() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [activeQueryText, setActiveQueryText] = useState<string>("Analyzing regulatory parameters...");
 
+  // Step 04: Assessment Orchestration & Controlled Demo Presets
+  const [selectedPresetKey, setSelectedPresetKey] = useState<string | null>(null);
+  const [activeRunId, setActiveRunId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("complywise_active_assessment_id");
+    }
+    return null;
+  });
+  const [businessUnderstanding, setBusinessUnderstanding] = useState<BusinessUnderstandingResponse | null>(null);
+  const [understandingLoading, setUnderstandingLoading] = useState<boolean>(false);
+  const [orchestrationQuestions, setOrchestrationQuestions] = useState<OrchestrationQuestion[]>([]);
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState<number>(0);
+  const [synthesizedCompliance, setSynthesizedCompliance] = useState<ComplianceResponse | null>(null);
+  const [matchedSchemesCount, setMatchedSchemesCount] = useState<number>(0);
+  const [matchedStandardsCount, setMatchedStandardsCount] = useState<number>(0);
+
+  const handleSelectPreset = React.useCallback((preset: DemoPresetDefinition) => {
+    setSelectedPresetKey(preset.presetKey);
+    setBusinessName(preset.businessName);
+    setLegalConstitution(
+      preset.businessType.includes("Private Limited")
+        ? "PVT_LTD"
+        : preset.businessType.includes("Public Limited")
+        ? "PUBLIC_LTD"
+        : preset.businessType.includes("Partnership")
+        ? "PARTNERSHIP"
+        : "PVT_LTD"
+    );
+    setRegisteredState(preset.state);
+    setDistrict(preset.district);
+    setIndustrialZone("APPROVED_ESTATE");
+    setLifecycleStage("OPERATIONAL");
+    setPlantInvestmentLakhs(String(preset.plantInvestmentLakhs));
+    setTurnoverLakhs(String(preset.annualTurnoverLakhs));
+    setEmployeeCount(String(preset.employeeCount));
+    setProductDescription(preset.productDescription || "");
+    setTradeIntent(
+      preset.exports
+        ? "EXPORTER"
+        : preset.activities.some((a) => a.toLowerCase().includes("import"))
+        ? "IMPORT_AND_DOMESTIC"
+        : "DOMESTIC_ONLY"
+    );
+  }, []);
+
   const loadVariableDefinitions = React.useCallback(async () => {
     setVarDefsError(null);
     try {
@@ -914,7 +969,47 @@ function OnboardingContent() {
         );
         setDetectedActivities(resp.detected_activities);
 
-        // Fetch first sequential adaptive question for Step 3
+        // Step 04: Initialize Assessment Orchestration Run & AI Business Understanding
+        let currRunId = activeRunId;
+        try {
+          const orchRun = await api.orchestration.createRun({ business_id: activeBiz.id });
+          if (orchRun && orchRun.run_id) {
+            currRunId = orchRun.run_id;
+            setActiveRunId(currRunId);
+            localStorage.setItem("complywise_active_assessment_id", currRunId);
+          }
+        } catch (rErr) {
+          console.warn("Could not create orchestration run:", rErr);
+        }
+
+        let gotUnderstanding = false;
+        if (currRunId) {
+          try {
+            setUnderstandingLoading(true);
+            const under = await api.orchestration.understand(currRunId);
+            if (under && (under.business_summary || under.operational_activities)) {
+              setBusinessUnderstanding(under);
+              gotUnderstanding = true;
+            }
+          } catch (uErr) {
+            console.warn("AI understanding error:", uErr);
+          } finally {
+            setUnderstandingLoading(false);
+          }
+
+          try {
+            const qList = await api.orchestration.listQuestions(currRunId);
+            if (qList && qList.questions && qList.questions.length > 0) {
+              setOrchestrationQuestions(qList.questions);
+              const nextIdx = qList.questions.findIndex((q) => !q.is_answered);
+              setActiveQuestionIndex(nextIdx !== -1 ? nextIdx : 0);
+            }
+          } catch (qErr) {
+            console.warn("Orchestration question list error:", qErr);
+          }
+        }
+
+        // Fetch fallback sequential adaptive question for Step 3 if orchestration unavailable
         setQuestionLoading(true);
         setQuestionError(null);
         try {
@@ -952,15 +1047,20 @@ function OnboardingContent() {
             },
           };
           const updatedAss = await api.businesses.updateAssessment(activeBiz.id, assessment.id, {
-            current_step: 3,
+            current_step: gotUnderstanding ? 2 : 3,
             step_state: updatedStepState,
           });
           setAssessment(updatedAss);
         }
+
+        // If AI understanding briefing is available, stay on Step 2 to show briefing, otherwise advance to 3
+        if (!gotUnderstanding) {
+          setStep(3);
+        }
       } else {
         setIsQuestionsComplete(true);
+        setStep(3);
       }
-      setStep(3);
     } catch {
       setIsQuestionsComplete(true);
       setStep(3);
@@ -1105,19 +1205,34 @@ function OnboardingContent() {
 
     const reqItem: ComplianceRequirementItem = {
       requirement_id: String(r.requirement_id || ""),
-      name: String(r.requirement_name || "Statutory Requirement"),
+      name: String(r.name || r.requirement_name || "Statutory Requirement"),
       authority: String(r.authority || "Regulatory Authority"),
       domain: String(r.domain || "Statutory Mandate"),
-      category: String(r.category || "STATUTORY"),
+      category: String(r.category || r.domain || "STATUTORY"),
       jurisdiction: String(r.jurisdiction || registeredState || "CENTRAL"),
       status: r.status,
-      evidence_count: citations.length,
+      evidence_count: citations.length || (r.evidence_ids?.length ?? 1),
       description: typeof r.explanation_trace?.reason === "string" 
         ? r.explanation_trace.reason 
-        : (typeof r.applicability_statement === "string" ? r.applicability_statement : "Statutory compliance mandate evaluated under Indian law."),
-      citations: citations,
-      citation_count: citations.length,
-    };
+        : (typeof r.description === "string" && r.description ? r.description : (typeof r.applicability_statement === "string" ? r.applicability_statement : "Statutory compliance mandate evaluated under Indian law.")),
+      citations: (r.citations && r.citations.length > 0)
+        ? r.citations.map((c: any) => ({
+            evidence_id: String(c.evidence_id || ""),
+            authority: String(c.authority || r.authority || "Regulatory Authority"),
+            locator: String(c.locator || r.statutory_act || "Statutory Schedule"),
+            verification_status: (c.verification_status || "VERIFIED") as any,
+            excerpt: String(c.excerpt || r.description || "Official statutory evidence."),
+            source_title: String(c.source_title || "Official Government Gazette / Portal"),
+            canonical_url: c.canonical_url,
+          }))
+        : citations,
+      citation_count: (r.citations && r.citations.length > 0) ? r.citations.length : citations.length,
+      applicable_facts: r.applicable_facts,
+      missing_facts: r.missing_facts,
+      action_summary: r.action_summary,
+      portal_url: r.portal_url,
+      portal_name: r.portal_name,
+    } as any;
     setModalRequirement(reqItem);
     setIsModalOpen(true);
   }
@@ -1145,7 +1260,32 @@ function OnboardingContent() {
 
     try {
       const effectiveAssId = assId || assessment?.id;
-      const orchResult = await api.discovery.orchestrate(bizId, effectiveAssId);
+
+      // Step 04: Execute Assessment Orchestration Live Regulatory Intelligence
+      const targetRunId = activeRunId || effectiveAssId;
+      if (targetRunId) {
+        try {
+          await api.orchestration.runDiscovery(targetRunId).catch(() => null);
+          const compRes = await api.orchestration.runSynthesis(targetRunId).catch(() => null);
+          if (compRes && compRes.requirements) {
+            setSynthesizedCompliance(compRes);
+          }
+          const [schRes, stdRes] = await Promise.allSettled([
+            api.orchestration.getSchemes(targetRunId),
+            api.orchestration.getStandards(targetRunId),
+          ]);
+          if (schRes.status === "fulfilled" && schRes.value?.schemes) {
+            setMatchedSchemesCount(schRes.value.schemes.length);
+          }
+          if (stdRes.status === "fulfilled" && stdRes.value?.standards) {
+            setMatchedStandardsCount(stdRes.value.standards.length);
+          }
+        } catch (orchPipelineErr) {
+          console.warn("Could not execute orchestration pipeline:", orchPipelineErr);
+        }
+      }
+
+      const orchResult = await api.discovery.orchestrate(bizId, effectiveAssId).catch(() => null);
       clearInterval(queryTimer);
 
       if (orchResult?.stages && Array.isArray(orchResult.stages)) {
@@ -1336,10 +1476,16 @@ function OnboardingContent() {
         )}
 
         {step === 1 && varDefs.length > 0 && (
-          <form
-            onSubmit={handleProfileSubmit}
-            className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6"
-          >
+          <div className="space-y-6">
+            <DemoPresetSelector
+              selectedKey={selectedPresetKey}
+              onSelectPreset={handleSelectPreset}
+            />
+
+            <form
+              onSubmit={handleProfileSubmit}
+              className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6"
+            >
             <div className="border-b border-[#E2E8F0] pb-4">
               <h2 className="text-base font-sans font-bold text-[#0F172A]">
                 Establish Entity Identity &amp; Jurisdiction Scope
@@ -1509,12 +1655,23 @@ function OnboardingContent() {
               </button>
             </div>
           </form>
+          </div>
         )}
 
         {/* ------------------------------------------------------------- */}
         {/* STEP 2: PRODUCTS & ACTIVITIES                                 */}
         {/* ------------------------------------------------------------- */}
-        {step === 2 && (
+        {step === 2 && businessUnderstanding && (
+          <BusinessUnderstandingCard
+            businessName={businessName || business?.name || "Your Enterprise"}
+            understanding={businessUnderstanding}
+            loading={understandingLoading}
+            onProceed={() => setStep(3)}
+            onEditProducts={() => setBusinessUnderstanding(null)}
+          />
+        )}
+
+        {step === 2 && !businessUnderstanding && (
           <form
             onSubmit={handleProductsSubmit}
             className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6"
@@ -1606,7 +1763,49 @@ function OnboardingContent() {
         {/* ------------------------------------------------------------- */}
         {/* STEP 3: SEQUENTIAL ADAPTIVE STATUTORY QUESTIONING             */}
         {/* ------------------------------------------------------------- */}
-        {step === 3 && (
+        {step === 3 && orchestrationQuestions.length > 0 && (
+          <FifteenQuestionsWizard
+            questions={orchestrationQuestions}
+            activeQuestionIndex={activeQuestionIndex}
+            onSelectQuestionIndex={(idx) => {
+              setActiveQuestionIndex(idx);
+            }}
+            onAnswerSubmitted={async (qId, val) => {
+              const runId = activeRunId || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
+              if (runId) {
+                await api.orchestration.submitAnswer(runId, { question_id: qId, value: val });
+                setOrchestrationQuestions((prev) =>
+                  prev.map((q) => (q.question_id === qId ? { ...q, is_answered: true, current_value: val } : q))
+                );
+              }
+            }}
+            hasPresetAnswers={Boolean(
+              selectedPresetKey && CONTROLLED_DEMO_PROFILES.find((p) => p.presetKey === selectedPresetKey)
+            )}
+            presetName={
+              CONTROLLED_DEMO_PROFILES.find((p) => p.presetKey === selectedPresetKey)?.businessName
+            }
+            onPrefillAllAnswers={async () => {
+              const preset = CONTROLLED_DEMO_PROFILES.find((p) => p.presetKey === selectedPresetKey);
+              const runId = activeRunId || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
+              if (runId && preset) {
+                await api.orchestration.submitAnswer(runId, { answers: preset.presetAnswers });
+                setOrchestrationQuestions((prev) =>
+                  prev.map((q) => ({
+                    ...q,
+                    is_answered: true,
+                    current_value: preset.presetAnswers[q.question_id] ?? q.current_value,
+                  }))
+                );
+              }
+            }}
+            onCompleteQuestions={handleProceedToAnalysis}
+            onBackToProducts={() => setStep(2)}
+            loading={questionLoading}
+          />
+        )}
+
+        {step === 3 && orchestrationQuestions.length === 0 && (
           <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6">
             <div className="border-b border-[#E2E8F0] pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1946,9 +2145,21 @@ function OnboardingContent() {
         {/* STEP 5: INITIAL RESULTS                                       */}
         {/* ------------------------------------------------------------- */}
         {step === 5 && (
-          <div className="space-y-6">
-            {/* Executive Summary Hero Card */}
-            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 sm:p-8 text-[#0F172A] shadow-2xs space-y-6">
+          synthesizedCompliance ? (
+            <AssessmentResultsSummary
+              businessName={businessName || business?.name || "Your Enterprise"}
+              compliance={synthesizedCompliance}
+              schemesCount={matchedSchemesCount}
+              standardsCount={matchedStandardsCount}
+              onOpenDashboard={() => router.push(`/dashboard?business_id=${business?.id || ""}`)}
+              onOpenCompliance={() => router.push(`/compliance?business_id=${business?.id || ""}`)}
+              onOpenSchemes={() => router.push(`/schemes?business_id=${business?.id || ""}`)}
+              onOpenWhyModal={(req) => openWhyModal(req)}
+            />
+          ) : (
+            <div className="space-y-6">
+              {/* Executive Summary Hero Card */}
+              <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 sm:p-8 text-[#0F172A] shadow-2xs space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-6">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200 mb-2">
@@ -2340,7 +2551,8 @@ function OnboardingContent() {
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+          )
         )}
               <WhyThisAppliesModal
           isOpen={isModalOpen}

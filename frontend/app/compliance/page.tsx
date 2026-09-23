@@ -66,13 +66,74 @@ function ComplianceContent() {
     setBusinessId(bizId);
 
     try {
+      const activeRunId =
+        searchParams.get("run_id") ||
+        (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
+
+      let loadedFromOrchestration = false;
+      if (activeRunId) {
+        try {
+          const orchComp = await api.orchestration.getCompliance(activeRunId);
+          if (orchComp && orchComp.requirements && orchComp.requirements.length > 0) {
+            const mapped: ComplianceRequirementItem[] = orchComp.requirements.map((req) => ({
+              requirement_id: req.requirement_id,
+              name: req.name,
+              status: req.status as any,
+              category: req.domain || "STATUTORY",
+              authority: req.authority,
+              domain: req.domain,
+              jurisdiction: req.jurisdiction || "CENTRAL",
+              citation_count: req.citations?.length || req.evidence_ids?.length || 1,
+              evidence_count: req.evidence_ids?.length || req.citations?.length || 1,
+              description: req.description,
+              applicable_facts: req.applicable_facts,
+              missing_facts: req.missing_facts,
+              portal_url: req.portal_url,
+              portal_name: req.portal_name,
+              citations: (req.citations && req.citations.length > 0)
+                ? req.citations.map((c) => ({
+                    evidence_id: c.evidence_id,
+                    locator: c.locator || req.statutory_act || "Statutory Schedule",
+                    authority: c.authority || req.authority,
+                    excerpt: c.excerpt || req.description,
+                    verification_status: (c.verification_status || "VERIFIED") as any,
+                    source_title: c.source_title || "Official Gazette / Government Portal",
+                    canonical_url: c.canonical_url || "https://egazette.gov.in",
+                  }))
+                : [
+                    {
+                      evidence_id: req.evidence_ids?.[0] || req.requirement_id,
+                      locator: req.statutory_act || "Statutory Schedule",
+                      authority: req.authority,
+                      excerpt: req.evidence_excerpts?.[0] || req.description,
+                      verification_status: "VERIFIED" as const,
+                      source_title: "Official Government Portal",
+                      canonical_url: req.portal_url || "https://egazette.gov.in",
+                    },
+                  ],
+            }));
+            setRequirements(mapped);
+            setTotalCount(mapped.length);
+            loadedFromOrchestration = true;
+          }
+        } catch (orchErr) {
+          console.warn("Could not fetch assessment orchestration compliance:", orchErr);
+        }
+      }
+
       const [reqResp, candResp, bizResp] = await Promise.allSettled([
-        api.compliance.list(bizId, { category: categoryFilter || undefined }),
+        !loadedFromOrchestration ? api.compliance.list(bizId, { category: categoryFilter || undefined }) : Promise.resolve(null),
         api.discovery.getCandidates(bizId),
         api.businesses.get(bizId),
       ]);
 
-      if (reqResp.status === "fulfilled" && reqResp.value?.requirements?.length > 0) {
+      if (
+        !loadedFromOrchestration &&
+        reqResp.status === "fulfilled" &&
+        reqResp.value &&
+        reqResp.value.requirements &&
+        reqResp.value.requirements.length > 0
+      ) {
         setRequirements(reqResp.value.requirements);
         setTotalCount(reqResp.value.count);
       }

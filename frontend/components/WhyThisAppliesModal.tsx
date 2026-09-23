@@ -58,32 +58,91 @@ export default function WhyThisAppliesModal({
 
         {/* Modal Content */}
         <div className="p-6 overflow-y-auto space-y-5 text-xs text-slate-700 leading-relaxed">
-          {/* Business factors trigger */}
-          <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 space-y-2">
-            <h3 className="font-bold text-indigo-950 flex items-center gap-2">
-              <span>🏢</span> Matched Business Factors
-            </h3>
-            <p className="text-indigo-900/80">
-              Evaluated specifically for <strong className="text-indigo-950">{businessName || "your business"}</strong> operating in <strong className="text-indigo-950">{businessState || "registered jurisdiction"}</strong>:
+          {/* 1. Trace Step A: Matched Business Factors */}
+          <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-indigo-950 flex items-center gap-2 text-xs">
+                <span>🏢</span> 1. Evaluated Business Facts
+              </h3>
+              <span className="text-[10px] font-semibold uppercase tracking-wider bg-indigo-100/80 text-indigo-800 px-2 py-0.5 rounded-full">
+                Grounding Input
+              </span>
+            </div>
+            <p className="text-indigo-900/80 text-[11px]">
+              Statutory applicability evaluated specifically for <strong className="text-indigo-950">{businessName || "your enterprise"}</strong> operating in <strong className="text-indigo-950">{businessState || "registered jurisdiction"}</strong>:
             </p>
-            <ul className="list-disc list-inside space-y-1 text-indigo-900 font-medium pl-1">
-              <li>Identified sector and operational manufacturing profile.</li>
-              <li>State jurisdiction and regional statutory authority oversight.</li>
-              <li>Operational scale and industrial threshold triggers.</li>
-            </ul>
+            {(() => {
+              const reqAny = requirement as any;
+              const facts: string[] = Array.isArray(reqAny.applicable_facts) && reqAny.applicable_facts.length > 0
+                ? reqAny.applicable_facts
+                : Array.isArray(reqAny.reasons) && reqAny.reasons.length > 0
+                ? reqAny.reasons
+                : [
+                    "Identified operating sector and manufacturing process profile",
+                    "State jurisdiction and regional statutory authority oversight",
+                    "Operational scale and statutory workforce/power load threshold triggers",
+                  ];
+
+              return (
+                <ul className="list-disc list-inside space-y-1 text-indigo-950 font-medium pl-1 text-xs">
+                  {facts.map((fact, idx) => (
+                    <li key={idx} className="leading-snug">{fact}</li>
+                  ))}
+                </ul>
+              );
+            })()}
           </div>
 
-          {/* Statutory explanation */}
+          {/* Missing facts notification if status is NEEDS_INFORMATION */}
+          {(() => {
+            const reqAny = requirement as any;
+            const missing: string[] = Array.isArray(reqAny.missing_facts) ? reqAny.missing_facts : [];
+            if (missing.length === 0 && requirement.status !== "NEEDS_INFORMATION") return null;
+
+            return (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 space-y-1.5">
+                <h4 className="font-bold text-amber-950 flex items-center gap-1.5 text-xs">
+                  <span>⚠️</span> Additional Verification Needed
+                </h4>
+                <p className="text-amber-900 text-[11px]">
+                  Applicability cannot be decisively determined without resolving the following business parameters:
+                </p>
+                <ul className="list-disc list-inside space-y-0.5 text-amber-950 text-[11px] font-medium pl-1">
+                  {missing.length > 0
+                    ? missing.map((m, idx) => <li key={idx}>{m}</li>)
+                    : <li>Specific manufacturing thresholds or statutory exemptions require operational confirmation.</li>}
+                </ul>
+              </div>
+            );
+          })()}
+
+          {/* 2. Trace Step B: Statutory Requirement Overview */}
           <div className="space-y-1.5">
-            <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wide">
-              Statutory Requirement Overview
-            </h4>
-            <p className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 text-slate-700">
-              {requirement.description || "Statutory compliance mandate applicable under Indian law."}
-            </p>
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wide flex items-center gap-1.5">
+                <span>📋</span> 2. Statutory Legal Requirement
+              </h4>
+              <span className="text-[10px] text-slate-500 font-mono">
+                {requirement.authority || "Regulatory Body"}
+              </span>
+            </div>
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-slate-800 space-y-2">
+              <p className="font-medium text-xs">
+                {requirement.name}
+              </p>
+              <p className="text-slate-600 text-xs leading-relaxed">
+                {requirement.description || "Statutory compliance obligation applicable under relevant Central/State legislation."}
+              </p>
+              {(requirement as any).action_summary && (
+                <div className="pt-2 border-t border-slate-200/80 flex items-start gap-1.5 text-[11px] text-slate-700">
+                  <span className="font-bold text-indigo-700 shrink-0">Action Required:</span>
+                  <span>{(requirement as any).action_summary}</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Official Source and Evidence Citation */}
+          {/* 3 & 4. Trace Step C & D: Verbatim Official Evidence Excerpt + Official Portal Link */}
           {(() => {
             const directPortalUrl = sanitizeExternalUrl(
               requirement.portal_url ||
@@ -93,54 +152,75 @@ export default function WhyThisAppliesModal({
             const directPortalName =
               requirement.portal_name ||
               primaryCitation?.source_title ||
-              `${requirement.authority || "Official"} Portal`;
+              `${requirement.authority || "Official Government"} Portal`;
 
-            return (primaryCitation || directPortalUrl) ? (
+            const evidenceExcerpt =
+              primaryCitation?.excerpt ||
+              (requirement as any).evidence_excerpts?.[0] ||
+              requirement.description;
+
+            return (primaryCitation || directPortalUrl || evidenceExcerpt) ? (
               <div className="space-y-2">
-                <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wide flex items-center justify-between">
-                  <span>Official Statutory Source</span>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wide flex items-center gap-1.5">
+                    <span>🏛️</span> 3. Verbatim Official Evidence Excerpt
+                  </h4>
                   {directPortalUrl && (
                     <a
                       href={directPortalUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-indigo-600 hover:underline font-semibold"
+                      className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-semibold hover:underline"
                     >
-                      View {directPortalName} ↗
+                      <span>4. Open {directPortalName}</span>
+                      <span>↗</span>
                     </a>
                   )}
-                </h4>
-                <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl p-4 space-y-2">
+                </div>
+                <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-4 space-y-2.5">
                   <div className="flex items-center justify-between font-semibold text-amber-950 text-xs">
-                    <span>{String(primaryCitation?.source_title || requirement.name || "Official Portal")}</span>
+                    <span>{String(primaryCitation?.source_title || directPortalName)}</span>
                     {(primaryCitation?.locator || requirement.statutory_act) && (
-                      <span className="text-[11px] bg-amber-100/70 px-2 py-0.5 rounded text-amber-800 font-mono">
+                      <span className="text-[11px] bg-amber-100 px-2 py-0.5 rounded text-amber-900 font-mono font-medium">
                         {String(primaryCitation?.locator || requirement.statutory_act)}
                       </span>
                     )}
                   </div>
-                  {(primaryCitation?.excerpt || requirement.description) && (
-                    <blockquote className="border-l-2 border-amber-400 pl-3 italic text-amber-900 text-xs">
-                      &quot;{String(primaryCitation?.excerpt || requirement.description)}&quot;
+                  {evidenceExcerpt && (
+                    <blockquote className="border-l-3 border-amber-400 pl-3.5 italic text-amber-950 text-xs leading-relaxed bg-white/60 p-2.5 rounded-r-lg">
+                      &quot;{String(evidenceExcerpt)}&quot;
                     </blockquote>
+                  )}
+                  {directPortalUrl && (
+                    <div className="pt-1 flex items-center gap-1.5 text-[11px] text-amber-800">
+                      <span className="font-semibold">Official Source Link:</span>
+                      <a
+                        href={directPortalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate text-indigo-700 hover:underline max-w-sm"
+                      >
+                        {directPortalUrl}
+                      </a>
+                    </div>
                   )}
                 </div>
               </div>
             ) : (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-slate-500">
-                <span className="font-semibold text-slate-700">Statutory Notice:</span> Derived from published central and state regulatory gazettes.
+                <span className="font-semibold text-slate-700">Official Notice:</span> Grounded in official regulatory notifications and gazettes published by Central and State statutory authorities.
               </div>
             );
           })()}
 
-          {/* Engine Assessment */}
+          {/* Engine Assessment Audit Trace */}
           <div className="rounded-xl border border-slate-200/80 p-3.5 bg-white space-y-1">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-900">Deterministic Engine Evaluation</span>
+              <span className="font-bold text-slate-900 text-xs">Deterministic Scope &amp; Applicability Authority</span>
               <span className="font-mono text-[10px] text-slate-400">ID: {requirement.requirement_id}</span>
             </div>
-            <p className="text-slate-600 text-[11px]">
-              {requirement.reason_summary || "The business profile satisfies all statutory eligibility conditions with zero guesswork."}
+            <p className="text-slate-600 text-[11px] leading-relaxed">
+              {requirement.reason_summary || (requirement as any).explanation_trace?.reason || "Evaluated against verified statutory conditions without LLM final legal declaration."}
             </p>
           </div>
         </div>

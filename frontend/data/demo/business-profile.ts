@@ -32,7 +32,10 @@ export interface BusinessProfile {
   productDescription?: string;
 }
 
+import { CONTROLLED_DEMO_PROFILES } from "./controlledPresets";
+
 export const DEMO_PROFILES: BusinessProfile[] = [
+  ...CONTROLLED_DEMO_PROFILES,
   {
     id: "biz-food-processing-01",
     businessName: "Gujarat Agro & Food Processing Unit",

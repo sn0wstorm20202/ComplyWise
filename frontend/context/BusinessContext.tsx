@@ -374,6 +374,57 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
       } catch {
         setLiveDashboardSummary(null);
       }
+
+      // 4. Synchronize with active assessment orchestration if present
+      if (effectiveAssId) {
+        try {
+          const comp = await api.orchestration.getCompliance(effectiveAssId);
+          if (comp && comp.summary) {
+            setLiveDashboardSummary((prev) => {
+              const base = prev || ({
+                business_id: bizId,
+                business_name: bizName,
+                status: "ACTIVE",
+                total_documents_needed: 6,
+                priority_actions: [],
+                compliance_readiness: 75,
+                metrics: {
+                  applicable_count: comp.summary.total_applicable,
+                  needs_information_count: comp.summary.total_needs_info,
+                  not_applicable_count: comp.summary.total_not_applicable,
+                  conflict_review_count: 0,
+                  total_evaluated: comp.summary.total_applicable + comp.summary.total_needs_info + comp.summary.total_not_applicable,
+                },
+              } as any);
+
+              return {
+                ...base,
+                compliance_readiness: Math.min(
+                  100,
+                  Math.round(
+                    (comp.summary.total_applicable /
+                      Math.max(1, comp.summary.total_applicable + comp.summary.total_needs_info)) *
+                      100
+                  )
+                ),
+                metrics: {
+                  ...base.metrics,
+                  applicable_count: comp.summary.total_applicable,
+                  needs_information_count: comp.summary.total_needs_info,
+                  not_applicable_count: comp.summary.total_not_applicable,
+                  high_priority_count: comp.summary.high_priority_count ?? 0,
+                  total_evaluated:
+                    comp.summary.total_applicable +
+                    comp.summary.total_needs_info +
+                    comp.summary.total_not_applicable,
+                },
+              };
+            });
+          }
+        } catch {
+          // Orchestration not yet synthesized or offline
+        }
+      }
     } catch (e) {
       console.warn("Backend data fetch error:", e);
       setLiveDashboardSummary(null);

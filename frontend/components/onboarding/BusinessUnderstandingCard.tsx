@@ -37,18 +37,31 @@ export default function BusinessUnderstandingCard({
     );
   }
 
-  const summary = understanding?.business_summary || "Operational manufacturing and commercial trade facility.";
-  const activities = understanding?.operational_activities || [
-    "Manufacturing Operations",
-    "Statutory Quality Assembly",
-    "Commercial Warehousing & Distribution",
-  ];
-  const sector = understanding?.identified_sector || "Industrial Manufacturing & Statutory Compliance";
-  const risks = understanding?.risk_categories || [
-    "Industrial Environmental Compliance",
-    "Workplace & Factory Labour Welfare",
-    "Statutory Quality & BIS Product Standards",
-  ];
+  const summary =
+    understanding?.business_summary ||
+    understanding?.primary_activity ||
+    "Operational manufacturing and commercial trade facility.";
+  const activities: string[] = (
+    understanding?.operational_activities ||
+    understanding?.operational_characteristics ||
+    understanding?.products || [
+      "Manufacturing Operations",
+      "Statutory Quality Assembly",
+      "Commercial Warehousing & Distribution",
+    ]
+  ) as string[];
+  const sector =
+    understanding?.identified_sector ||
+    understanding?.business_type ||
+    "Industrial Manufacturing & Statutory Compliance";
+  const risks: string[] = (
+    understanding?.risk_categories ||
+    understanding?.likely_regulatory_domains || [
+      "Industrial Environmental Compliance",
+      "Workplace & Factory Labour Welfare",
+      "Statutory Quality & BIS Product Standards",
+    ]
+  ) as string[];
 
   return (
     <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6">

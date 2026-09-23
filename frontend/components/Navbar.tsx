@@ -110,8 +110,10 @@ export function Navbar() {
         </nav>
 
         {/* Right side: Language Selector, Auth / User Action & Backend Connectivity Status */}
-        <div className="flex items-center gap-3">
-          <LanguageSelector />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden sm:block">
+            <LanguageSelector />
+          </div>
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
               <Link
@@ -137,7 +139,7 @@ export function Navbar() {
               Sign In
             </Link>
           )}
-          <div className="flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1">
+          <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1">
             <span
               className={`h-2 w-2 rounded-full ${
                 checking

@@ -102,6 +102,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     const demoEmail = "compliance.officer@example.com";
     const demoPassword = "CompliancePass123!";
+    const fallbackEmail = "demo@complywise.test";
+    const fallbackPassword = "DemoPassword123!";
     const demoName = "Lead Compliance Officer";
 
     try {
@@ -112,16 +114,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuthToken(session.token);
         return session;
       } catch {
-        // If not registered yet, register demo account
-        const session = await authApi.register(
-          demoEmail,
-          demoPassword,
-          demoName
-        );
-        setUser(session.user);
-        setTokenState(session.token);
-        setAuthToken(session.token);
-        return session;
+        try {
+          const session = await authApi.login(fallbackEmail, fallbackPassword);
+          setUser(session.user);
+          setTokenState(session.token);
+          setAuthToken(session.token);
+          return session;
+        } catch {
+          // If not registered yet, register demo account
+          const session = await authApi.register(
+            demoEmail,
+            demoPassword,
+            demoName
+          );
+          setUser(session.user);
+          setTokenState(session.token);
+          setAuthToken(session.token);
+          return session;
+        }
       }
     } finally {
       setLoading(false);

@@ -62,8 +62,8 @@ const FALLBACK_VAR_DEFS: ProfileVariableDefinition[] = [
     unit: null,
     default_relevance: "CORE",
     options: [
-      { value: "PVT_LTD", label: "Private Limited Company (Pvt Ltd)" },
-      { value: "PUBLIC_LTD", label: "Public Limited Company" },
+      { value: "PRIVATE_LIMITED", label: "Private Limited Company (Pvt Ltd)" },
+      { value: "PUBLIC_LIMITED", label: "Public Limited Company" },
       { value: "LLP", label: "Limited Liability Partnership (LLP)" },
       { value: "PROPRIETORSHIP", label: "Sole Proprietorship" },
       { value: "PARTNERSHIP", label: "Partnership Firm" },
@@ -96,7 +96,7 @@ const FALLBACK_VAR_DEFS: ProfileVariableDefinition[] = [
     unit: null,
     default_relevance: "CORE",
     options: [
-      { value: "APPROVED_ESTATE", label: "Approved Industrial Estate (GIDC / HSIIDC / KIADB / MIDC)" },
+      { value: "INSIDE_NOTIFIED_INDUSTRIAL_AREA", label: "Approved Industrial Estate (GIDC / HSIIDC / KIADB / MIDC)" },
       { value: "NON_CONFORMING", label: "Non-conforming Industrial Area" },
       { value: "SPECIAL_ECONOMIC_ZONE", label: "Special Economic Zone (SEZ)" },
     ],
@@ -549,16 +549,16 @@ function OnboardingContent() {
     setBusinessName(preset.businessName);
     setLegalConstitution(
       preset.businessType.includes("Private Limited")
-        ? "PVT_LTD"
+        ? "PRIVATE_LIMITED"
         : preset.businessType.includes("Public Limited")
-        ? "PUBLIC_LTD"
+        ? "PUBLIC_LIMITED"
         : preset.businessType.includes("Partnership")
         ? "PARTNERSHIP"
-        : "PVT_LTD"
+        : "PRIVATE_LIMITED"
     );
-    setRegisteredState(preset.state);
+    setRegisteredState("MAHARASHTRA");
     setDistrict(preset.district);
-    setIndustrialZone("APPROVED_ESTATE");
+    setIndustrialZone("INSIDE_NOTIFIED_INDUSTRIAL_AREA");
     setLifecycleStage("OPERATIONAL");
     setPlantInvestmentLakhs(String(preset.plantInvestmentLakhs));
     setTurnoverLakhs(String(preset.annualTurnoverLakhs));
@@ -571,6 +571,7 @@ function OnboardingContent() {
         ? "IMPORT_AND_DOMESTIC"
         : "DOMESTIC_ONLY"
     );
+    setStep(1);
   }, []);
 
   const loadVariableDefinitions = React.useCallback(async () => {
@@ -987,8 +988,25 @@ function OnboardingContent() {
           try {
             setUnderstandingLoading(true);
             const under = await api.orchestration.understand(currRunId);
-            if (under && (under.business_summary || under.operational_activities)) {
-              setBusinessUnderstanding(under);
+            if (
+              under &&
+              (under.business_summary ||
+                under.primary_activity ||
+                under.operational_activities ||
+                under.operational_characteristics ||
+                under.business_type)
+            ) {
+              setBusinessUnderstanding({
+                ...under,
+                business_summary: under.business_summary || under.primary_activity,
+                operational_activities:
+                  under.operational_activities ||
+                  under.operational_characteristics ||
+                  under.products,
+                identified_sector: under.identified_sector || under.business_type,
+                risk_categories:
+                  under.risk_categories || under.likely_regulatory_domains,
+              });
               gotUnderstanding = true;
             }
           } catch (uErr) {

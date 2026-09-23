@@ -149,12 +149,14 @@ export function TopBar({
       </div>
 
       {/* Right: Utility Actions + Profile */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
-        {/* Visible Language Selector */}
-        <LanguageSelector />
+      <div className="flex items-center gap-1.5 sm:gap-2.5">
+        {/* Visible Language Selector on sm and up */}
+        <div className="hidden sm:block">
+          <LanguageSelector />
+        </div>
 
         {/* Action Icons (Alerts, Mail) */}
-        <div className="flex items-center gap-2 relative">
+        <div className="flex items-center gap-1 sm:gap-2 relative">
           {/* Notification Bell */}
           <button
             type="button"
@@ -178,7 +180,7 @@ export function TopBar({
             aria-label={t("header.messagesAria")}
             onClick={() => onNavigateToView("assistant")}
             title="BIS Copilot Assistant Messages"
-            className="h-8 w-8 rounded-full bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] shadow-2xs transition-colors cursor-pointer"
+            className="hidden sm:flex h-8 w-8 rounded-full bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] items-center justify-center text-[#64748B] hover:text-[#0F172A] shadow-2xs transition-colors cursor-pointer"
           >
             <Mail className="h-4 w-4" />
           </button>

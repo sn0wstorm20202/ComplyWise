@@ -1,4 +1,5 @@
 import type { RequirementDetail } from "@/types";
+import { resolveAuthorityPortalUrl } from "@/lib/authorityPortals";
 
 export function normalizeRequirementDetail(raw: any, requirementId: string): RequirementDetail {
   const data = raw && typeof raw === "object" ? raw : {};
@@ -94,7 +95,12 @@ export function normalizeRequirementDetail(raw: any, requirementId: string): Req
         ("Submit formal application or declaration via " + authority + " designated portal."),
       ];
   const steps_available = Boolean(rawNext.steps_available ?? (steps.length > 0));
-  const official_portal = String(rawNext.official_portal || data.official_portal || "");
+  const resolvedPortal = resolveAuthorityPortalUrl(
+    authority,
+    name,
+    rawNext.official_portal || data.official_portal
+  );
+  const official_portal = String(resolvedPortal || "");
   const next_not_recorded_note =
     rawNext.not_recorded_note ??
     (steps.length > 0 ? null : "No filing procedure has been ingested for this requirement.");
@@ -116,7 +122,7 @@ export function normalizeRequirementDetail(raw: any, requirementId: string): Req
       locator: String(ev.locator || "Section / Rule Notification"),
       excerpt: String(ev.excerpt || "Statutory mandate published in official notification."),
       verification_status: String(ev.verification_status || "VERIFIED"),
-      canonical_url: ev.canonical_url ? String(ev.canonical_url) : undefined,
+      canonical_url: resolveAuthorityPortalUrl(ev.authority || authority, ev.source_title || name, ev.canonical_url),
     }));
   } else if (Array.isArray(data.evidence_refs) && data.evidence_refs.length > 0) {
     evidenceList = data.evidence_refs.map((ev: any, idx: number) => ({
@@ -126,7 +132,7 @@ export function normalizeRequirementDetail(raw: any, requirementId: string): Req
       locator: String(ev.locator || ev.id || "Statutory Rule"),
       excerpt: String(ev.excerpt || ("Statutory mandate under " + (ev.id || ev.locator))),
       verification_status: String(ev.verification_status || "VERIFIED"),
-      canonical_url: ev.canonical_url ? String(ev.canonical_url) : undefined,
+      canonical_url: resolveAuthorityPortalUrl(ev.authority || authority, ev.source_title || name, ev.canonical_url),
     }));
   } else if (Array.isArray(data.statutoryCitations) && data.statutoryCitations.length > 0) {
     evidenceList = data.statutoryCitations.map((c: any) => ({
@@ -136,7 +142,7 @@ export function normalizeRequirementDetail(raw: any, requirementId: string): Req
       locator: String(c),
       excerpt: "Statutory mandate under " + c,
       verification_status: "VERIFIED",
-      canonical_url: "https://egazette.gov.in",
+      canonical_url: resolveAuthorityPortalUrl(authority, name),
     }));
   }
 

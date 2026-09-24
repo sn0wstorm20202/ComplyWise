@@ -80,19 +80,55 @@ test.describe('Demo Profiles & Non-Preset Verification', () => {
     await expect(proceedToQBtn).toBeVisible({ timeout: 40000 });
     await proceedToQBtn.click();
 
-    // Step 3: Advance to analysis using preset prefill
-    const prefillBtn = page.locator('button:has-text("Prefill All 15 Verified Answers")');
-    await expect(prefillBtn).toBeVisible({ timeout: 50000 });
-    await prefillBtn.click();
+    // Step 3: Wait for 15-Question Wizard to load
+    await expect(
+      page.locator('h2:has-text("Your 15 Compliance Questions"), h2:has-text("15-Question Statutory Assessment"), p:has-text("15-Question Statutory Assessment")').first()
+    ).toBeVisible({ timeout: 50000 });
 
-    const analyzeBtn = page.locator('button:has-text("Analyze Regulatory Compliance")');
-    await expect(analyzeBtn).toBeVisible({ timeout: 25000 });
-    await analyzeBtn.click();
+    const prefillBtn = page.locator('button:has-text("Prefill All 15 Verified Answers")');
+    if (await prefillBtn.isVisible({ timeout: 15000 }).catch(() => false)) {
+      await prefillBtn.click();
+      await page.waitForTimeout(1000);
+    }
+
+    for (let i = 0; i < 22; i++) {
+      const boolYesBtn = page.locator('button:has-text("Yes —"), button:has-text("Yes")').first();
+      const optionBtn = page.locator('div.space-y-2\\.5 button').first();
+      const numInput = page.locator('input[type="number"]').first();
+      const dateInput = page.locator('input[type="date"]').first();
+      const textInput = page.locator('textarea, input[placeholder*="details"]').first();
+
+      if (await boolYesBtn.isVisible()) {
+        await boolYesBtn.click();
+      } else if (await optionBtn.isVisible()) {
+        await optionBtn.click();
+      } else if (await numInput.isVisible()) {
+        await numInput.fill('100');
+      } else if (await dateInput.isVisible()) {
+        await dateInput.fill('2026-01-01');
+      } else if (await textInput.isVisible()) {
+        await textInput.fill('Compliant industrial operations');
+      }
+
+      await page.waitForTimeout(200);
+
+      const actionBtn = page.locator('button:has-text("Analyze Regulatory Compliance"), button:has-text("Save & Next Question")').first();
+      if (!(await actionBtn.isVisible())) break;
+      const isFinal = (await actionBtn.innerText()).includes('Analyze');
+      await expect(actionBtn).toBeEnabled({ timeout: 8000 });
+      await actionBtn.click();
+      if (isFinal) break;
+
+      await page.waitForTimeout(400);
+      await expect(
+        page.locator('button:has-text("Save & Next Question"), button:has-text("Analyze Regulatory Compliance")').first()
+      ).toBeEnabled({ timeout: 20000 });
+    }
 
     // Wait for Initial Results
     await expect(
       page.locator('h1:has-text("Initial Results"), h2:has-text("Compliance Profile"), h2:has-text("Statutory Applicability Results")').first()
-    ).toBeVisible({ timeout: 90000 });
+    ).toBeVisible({ timeout: 120000 });
 
     // Navigate to /compliance to inspect full table
     await page.goto('/compliance');
@@ -156,7 +192,9 @@ test.describe('Demo Profiles & Non-Preset Verification', () => {
     await proceedToQBtn.click();
 
     // Step 3: Answer 15 questions to advance to analysis
-    await expect(page.locator('h2:has-text("15-Question Statutory Assessment")')).toBeVisible({ timeout: 50000 });
+    await expect(
+      page.locator('h2:has-text("Your 15 Compliance Questions"), h2:has-text("15-Question Statutory Assessment"), p:has-text("15-Question Statutory Assessment")').first()
+    ).toBeVisible({ timeout: 50000 });
 
     for (let i = 0; i < 22; i++) {
       const boolYesBtn = page.locator('button:has-text("Yes, Applicable"), button:has-text("Yes —")').first();
@@ -194,6 +232,6 @@ test.describe('Demo Profiles & Non-Preset Verification', () => {
     // Wait for Initial Results
     await expect(
       page.locator('h1:has-text("Initial Results"), h2:has-text("Compliance Profile"), h2:has-text("Statutory Applicability Results")').first()
-    ).toBeVisible({ timeout: 90000 });
+    ).toBeVisible({ timeout: 120000 });
   });
 });

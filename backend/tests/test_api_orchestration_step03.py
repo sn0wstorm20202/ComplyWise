@@ -409,7 +409,7 @@ def test_all_five_demo_profiles_execute_complete_intelligence_chain(
             assert len(r.get("evidence_ids", [])) > 0, f"{name}: Requirement {r.get('title')} lacks evidence_ids"
             assert len(r.get("source_urls", [])) > 0, f"{name}: Requirement {r.get('title')} lacks source_urls"
             assert len(r.get("business_facts_used", [])) > 0, f"{name}: Requirement {r.get('title')} lacks business_facts_used"
-            assert r.get("status") in {"APPLICABLE", "NEEDS_INFORMATION", "NOT_APPLICABLE"}
+            assert r.get("status") in {"APPLICABLE", "NEEDS_INFORMATION", "NEEDS_VERIFICATION", "NOT_APPLICABLE"}
 
         # 3. Schemes
         sch_res = assessment_orchestrator.execute_stage(run, AssessmentStage.SCHEMES, context=ctx)

@@ -80,6 +80,10 @@ export default function FifteenQuestionsWizard({
       return;
     }
     if (currentValue === null || currentValue === undefined || currentValue === "") {
+      if (targetIdx !== undefined) {
+        onSelectQuestionIndex(targetIdx);
+        return;
+      }
       if (currentQ.required) {
         setError("Please provide an answer before advancing.");
         return;
@@ -118,8 +122,11 @@ export default function FifteenQuestionsWizard({
               </span>
             </div>
             <h2 className="text-base sm:text-lg font-bold text-[#0F172A]">
-              15-Question Statutory Assessment
+              Your 15 Compliance Questions
             </h2>
+            <p className="text-xs text-[#64748B] mt-0.5">
+              15-Question Statutory Assessment tailored to your operations
+            </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">

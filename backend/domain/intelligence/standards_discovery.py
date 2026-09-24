@@ -183,33 +183,30 @@ def discover_business_standards(
         match = False
 
         # Positive Sector Matching
-        if is_ev_charging and any(s in sectors for s in ["EV_CHARGING", "CLEANTECH", "AUTOMOTIVE_ELECTRICAL"]):
+        if is_ev_charging and any(s in sectors for s in ["EV_CHARGING"]):
             match = True
-        elif is_food and any(s in sectors for s in ["FOOD", "PROCESSING", "AGRO"]):
+        elif not is_ev_charging and is_food and any(s in sectors for s in ["FOOD", "PROCESSING", "AGRO"]):
             match = True
-        elif is_food_packaging and any(s in sectors for s in ["FOOD_PACKAGING", "FOOD_CONTACT_PLASTICS"]):
+        elif not is_ev_charging and is_food_packaging and any(s in sectors for s in ["FOOD_PACKAGING", "FOOD_CONTACT_PLASTICS"]):
             match = True
-        elif is_packaged_water and any(s in sectors for s in ["PACKAGED_WATER", "BEVERAGE_BOTTLING"]):
+        elif not is_ev_charging and is_packaged_water and any(s in sectors for s in ["PACKAGED_WATER", "BEVERAGE_BOTTLING"]):
             match = True
-        elif is_cement and any(s in sectors for s in ["CEMENT", "HEAVY_MANUFACTURING", "BUILDING_MATERIALS"]):
+        elif not is_ev_charging and is_cement and any(s in sectors for s in ["CEMENT", "HEAVY_MANUFACTURING", "BUILDING_MATERIALS"]):
             match = True
-        elif is_textile and any(s in sectors for s in ["TEXTILE", "DYEING", "WEAVING"]):
+        elif not is_ev_charging and is_textile and any(s in sectors for s in ["TEXTILE", "DYEING", "WEAVING"]):
             match = True
-        elif is_fasteners and any(s in sectors for s in ["FASTENERS", "BOLTS_NUTS_SCREWS"]):
+        elif not is_ev_charging and is_fasteners and any(s in sectors for s in ["FASTENERS", "BOLTS_NUTS_SCREWS"]):
             match = True
-        elif is_automotive_oem and any(s in sectors for s in ["AUTOMOTIVE_OEM", "POWERTRAIN_COMPONENTS", "AUTOMOTIVE"]):
+        elif not is_ev_charging and is_automotive_oem and any(s in sectors for s in ["AUTOMOTIVE_OEM", "POWERTRAIN_COMPONENTS"]):
             match = True
-        elif is_cnc_machining and any(s in sectors for s in ["CNC_MACHINING", "PRECISION_JOB_WORK"]):
+        elif not is_ev_charging and is_cnc_machining and any(s in sectors for s in ["CNC_MACHINING", "PRECISION_JOB_WORK"]):
             match = True
-        elif is_general_electronics and any(s in sectors for s in ["ELECTRONICS", "ESDM", "POWER_ELECTRONICS", "HARDWARE"]):
-            # For EV charging, only include power converter/SMPS standard IS 15885, not generic IT computer IS 13252 unless computer mentioned
-            if is_ev_charging:
-                if code == "IS 15885 (Part 2/Sec 13)":
-                    match = True
-            else:
-                match = True
+        elif not is_ev_charging and is_general_electronics and any(s in sectors for s in ["ELECTRONICS", "ESDM", "POWER_ELECTRONICS", "HARDWARE", "IT_EQUIPMENT"]):
+            match = True
 
-        # Strict Negative Filter (prune contamination)
+        # Strict Negative Filter (Relevance Gate: prune contamination)
+        if is_ev_charging and not any(s in sectors for s in ["EV_CHARGING"]):
+            match = False
         if not is_food and any(s in sectors for s in ["FOOD", "PROCESSING", "AGRO"]):
             match = False
         if not is_food_packaging and any(s in sectors for s in ["FOOD_PACKAGING", "FOOD_CONTACT_PLASTICS"]):
@@ -222,17 +219,22 @@ def discover_business_standards(
             match = False
         if not is_fasteners and any(s in sectors for s in ["FASTENERS", "BOLTS_NUTS_SCREWS"]):
             match = False
-        if is_ev_charging and any(s in sectors for s in ["AUTOMOTIVE_OEM", "POWERTRAIN_COMPONENTS", "AUTOMOTIVE", "FASTENERS", "CNC_MACHINING", "FOOD_PACKAGING", "CEMENT", "TEXTILE"]):
-            match = False
         if not is_automotive_oem and any(s in sectors for s in ["AUTOMOTIVE_OEM", "POWERTRAIN_COMPONENTS"]):
             match = False
         if not is_cnc_machining and any(s in sectors for s in ["CNC_MACHINING", "PRECISION_JOB_WORK"]):
             match = False
 
         if match:
-            is_mandatory = item.get("is_mandatory", "MANDATORY" in item.get("nature", ""))
-            mandatory_status = item.get("mandatory_status") or ("MANDATORY" if is_mandatory else "VOLUNTARY")
-            verification_status = item.get("verification_status") or ("VERIFIED" if is_mandatory else "NEEDS_VERIFICATION")
+            # Standards relevance gate:
+            # Technical standards like IS 17017 are relevant but mandatory status requires verified QCO order
+            if "17017" in code:
+                is_mandatory = False
+                mandatory_status = "NEEDS_VERIFICATION"
+                verification_status = "NEEDS_VERIFICATION"
+            else:
+                is_mandatory = item.get("is_mandatory", False)
+                mandatory_status = item.get("mandatory_status") or ("MANDATORY" if is_mandatory else "VOLUNTARY")
+                verification_status = item.get("verification_status") or ("VERIFIED" if is_mandatory else "NEEDS_VERIFICATION")
 
             matched_standards.append({
                 "standard_code": item["standard_code"],

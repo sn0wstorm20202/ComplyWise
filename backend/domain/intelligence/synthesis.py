@@ -407,7 +407,7 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     covered_titles.add(clean_d_title)
                     covered_ev_ids.add(ev_id)
 
-        # Mandatory Requisite Standards check: EV Charging Systems (IS 17017)
+        # Requisite Standards check: EV Charging Systems (IS 17017)
         is_ev_mfg = any(
             term in product_desc.lower()
             for term in ["ev charging", "electric vehicle", "charging station", "evse"]
@@ -425,20 +425,20 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
             s_url_to_use = bis_ev.get("source_url") if bis_ev else "https://bis.gov.in"
             ev_req = {
                 "requirement_id": f"REQ-BIS-17017-{hashlib.sha256(ev_id_to_use.encode('utf-8')).hexdigest()[:6].upper()}",
-                "title": "BIS Certification for EV Charging Systems (IS 17017)",
-                "description": "Mandatory conformity assessment and safety type-testing for conductive electric vehicle supply equipment under IS 17017 (Part 1).",
+                "title": "BIS Standard for EV Conductive Charging Systems (IS 17017)",
+                "description": "Indian technical standard for conductive electric vehicle supply equipment under IS 17017 (Part 1). Mandatory conformity assessment status under Quality Control Orders requires verification.",
                 "regulatory_domain": "TECHNICAL_STANDARDS",
                 "authority": "Bureau of Indian Standards (BIS)",
                 "jurisdiction": "CENTRAL",
-                "status": "APPLICABLE",
-                "priority": "HIGH",
-                "why_it_matters": "Prohibits commercial sale, dispatch, or export of uncertified EV charging equipment in India.",
+                "status": "NEEDS_VERIFICATION",
+                "priority": "MEDIUM",
+                "why_it_matters": "Prescribes construction, electrical safety, and ingress protection specifications for EV conductive charging equipment.",
                 "business_facts_used": ["Commercial EV charging station and power electronics manufacturing"],
                 "evidence_ids": [ev_id_to_use],
                 "source_urls": [s_url_to_use],
                 "actions": [
                     {
-                        "action": "Submit prototype chargers to accredited laboratory (ARAI/ICAT/CPRI) and obtain IS 17017 conformity certificate.",
+                        "action": "Submit prototype chargers to accredited laboratory (ARAI/ICAT/CPRI) for IS 17017 technical testing.",
                         "owner": "OPERATIONS",
                         "documents_needed": ["Type Test Reports from NABL/BIS Lab", "Component Bill of Materials", "Circuit Diagrams"],
                         "estimated_effort": "4-6 weeks",
@@ -447,6 +447,86 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                 "deadline": None,
             }
             verified_requirements.insert(0, ev_req)
+
+        # Requisite E-Waste EPR check for EV Charging Equipment
+        has_ewaste = any(
+            "e-waste" in r.get("title", "").lower() or "epr" in r.get("title", "").lower()
+            for r in verified_requirements
+        )
+        if is_ev_mfg and not has_ewaste:
+            ev_id_to_use = "EVD-CPCB-EPR-EW"
+            ewaste_req = {
+                "requirement_id": f"REQ-CPCB-EW-{hashlib.sha256(ev_id_to_use.encode('utf-8')).hexdigest()[:6].upper()}",
+                "title": "Extended Producer Responsibility (EPR) for E-Waste",
+                "description": "Statutory EPR registration and target allocation under E-Waste (Management) Rules 2022. Scope applicability for commercial EVSE and charging stations requires verification.",
+                "regulatory_domain": "WASTE_MANAGEMENT",
+                "authority": "Central Pollution Control Board (CPCB)",
+                "jurisdiction": "CENTRAL",
+                "status": "NEEDS_VERIFICATION",
+                "priority": "MEDIUM",
+                "why_it_matters": "Scope applicability under Schedule I of E-Waste (Management) Rules 2022 must be verified for commercial EVSE and charging stations.",
+                "business_facts_used": ["Classification as EEE producer pending verification"],
+                "evidence_ids": [ev_id_to_use],
+                "source_urls": ["https://eprewastecpcb.in"],
+                "actions": [
+                    {
+                        "action": "Verify producer category under Schedule I and submit registration on CPCB centralized EPR portal if applicable.",
+                        "owner": "OPERATIONS",
+                        "documents_needed": ["Udyam Registration", "PAN", "Product Catalog"],
+                        "estimated_effort": "1-2 weeks",
+                    }
+                ],
+                "deadline": None,
+            }
+            verified_requirements.append(ewaste_req)
+
+        # Enforce jurisdictional authority accuracy, environmental consent semantics, and IT CRS isolation
+        state_name = ""
+        if isinstance(context, EnrichedBusinessContext):
+            state_name = context.state_name or context.state or ""
+        elif isinstance(context, OrchestrationContext):
+            state_name = context.geography.get("state_name") or context.geography.get("state") or ""
+        state_str = (state_name or "").lower()
+        for req in verified_requirements:
+            r_title = (req.get("title") or "").lower()
+            r_desc = (req.get("description") or "").lower()
+            r_jur = (req.get("jurisdiction") or "").strip().upper()
+
+            # State environmental consent: In West Bengal, authority must be WBPCB (never CPCB)
+            is_env_consent = any(kw in r_title or kw in r_desc for kw in ["consent to establish", "consent to operate", "cte", "cto"])
+            if is_env_consent:
+                if "west bengal" in state_str or r_jur == "WEST_BENGAL":
+                    req["authority"] = "West Bengal Pollution Control Board (WBPCB)"
+                    req["jurisdiction"] = "WEST_BENGAL"
+                    req["source_urls"] = ["https://wbpcb.gov.in"]
+                    # Environmental Consent Semantics (Req 11): Unresolved category is NEEDS_INFORMATION
+                    if req.get("status") == "APPLICABLE":
+                        req["status"] = "NEEDS_INFORMATION"
+                        req["why_it_matters"] = "Categorization (Red/Orange/Green/White) determines clearance procedure under Water and Air Acts."
+
+            # Factory Licensing: In West Bengal, authority must be Directorate of Factories
+            is_factory = any(kw in r_title or kw in r_desc for kw in ["factory license", "factory licence", "factories act"])
+            if is_factory and ("west bengal" in state_str or r_jur == "WEST_BENGAL"):
+                req["authority"] = "Directorate of Factories, Department of Labour, Government of West Bengal"
+                req["jurisdiction"] = "WEST_BENGAL"
+                req["source_urls"] = ["https://wbfactories.gov.in"]
+
+            # IT adapter CRS standard (IS 13252): Never apply to EV charging equipment
+            if is_ev_mfg and ("13252" in r_title or "13252" in r_desc or "power adapter" in r_title):
+                req["status"] = "NOT_APPLICABLE"
+                req["why_it_matters"] = "IS 13252 applies to Information Technology Equipment power adapters; does not apply to EVSE."
+
+            # EV charging standards: IS 17017 must not falsely claim mandatory status without QCO evidence
+            if "17017" in r_title or "17017" in r_desc:
+                req["title"] = "BIS Standard for EV Conductive Charging Systems (IS 17017)"
+                req["status"] = "NEEDS_VERIFICATION"
+                req["priority"] = "MEDIUM"
+
+            # E-Waste EPR: For EV charging, mark as NEEDS_VERIFICATION pending Schedule-I category confirmation
+            is_ewaste = any(kw in r_title or kw in r_desc for kw in ["e-waste", "epr"])
+            if is_ewaste and is_ev_mfg:
+                req["status"] = "NEEDS_VERIFICATION"
+                req["why_it_matters"] = "Classification of EV charging stations under Schedule-I of E-Waste Management Rules 2022 requires categorization confirmation."
 
         applicable_count = sum(1 for r in verified_requirements if r.get("status") == "APPLICABLE")
         needs_info_count = sum(1 for r in verified_requirements if r.get("status") in {"NEEDS_INFORMATION", "NEEDS_VERIFICATION"})
@@ -533,11 +613,20 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
             req_id = f"REQ-{hashlib.sha256(ev_id.encode('utf-8')).hexdigest()[:8].upper()}"
 
             if "consent to establish" in exc_lower or "cte" in exc_lower or "mpcb" in auth.lower() or "wbpcb" in auth.lower() or "spcb" in auth.lower() or "pollution" in exc_lower:
+                norm_facts = getattr(context, "normalized_facts", {}) or {}
+                ans_map = getattr(context, "answers", {}) or {}
+                env_category_resolved = (
+                    norm_facts.get("pollution_category_resolved") is True
+                    or ans_map.get("pollution_category_resolved") is True
+                )
+                is_ev_mfg = any(k in desc for k in ["ev ", "electric vehicle", "charging station", "charger", "evse"])
+                cte_status = "APPLICABLE" if (env_category_resolved and not is_ev_mfg) else "NEEDS_INFORMATION"
+
                 if "west bengal" in state.lower():
                     env_auth = "West Bengal Pollution Control Board (WBPCB)"
                     env_jur = "WEST_BENGAL"
                     env_url = "https://wbpcb.gov.in"
-                    env_desc = "Statutory prior environmental consent (CTE/CTO) under Section 25 of Water Act 1974 and Section 21 of Air Act 1981 via WBPCB. EV charger manufacturing and electronics assembly fall under Orange/Green category."
+                    env_desc = "Statutory prior environmental consent (CTE/CTO) under Section 25 of Water Act 1974 and Section 21 of Air Act 1981 via WBPCB. Categorization (Orange vs Green) depends on facility processes such as presence of painting, powder coating, or electroplating."
                 elif "maharashtra" in state.lower():
                     env_auth = "Maharashtra Pollution Control Board (MPCB)"
                     env_jur = "MAHARASHTRA"
@@ -556,17 +645,17 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     "regulatory_domain": "ENVIRONMENTAL",
                     "authority": env_auth,
                     "jurisdiction": env_jur,
-                    "status": "APPLICABLE",
-                    "priority": "HIGH",
-                    "why_it_matters": "Operating without CTE is a non-bailable statutory offense subject to immediate plant closure orders.",
-                    "business_facts_used": ["Manufacturing operations", f"Facility in {state}"],
+                    "status": cte_status,
+                    "priority": "HIGH" if cte_status == "APPLICABLE" else "MEDIUM",
+                    "why_it_matters": "Statutory prior consent required under Section 25 of Water Act 1974 and Section 21 of Air Act 1981 before commencing construction or operations. Industrial pollution category (Orange vs Green) must be confirmed." if cte_status != "APPLICABLE" else "Operating without CTE is a non-bailable statutory offense subject to immediate plant closure orders.",
+                    "business_facts_used": ["Manufacturing operations", f"Facility in {state}", "Pollution categorization pending process verification" if cte_status != "APPLICABLE" else "Industrial categorization confirmed"],
                     "evidence_ids": [ev_id],
                     "source_urls": [env_url],
                     "actions": [
                         {
-                            "action": "File electronic CTE application via SPCB portal with layout drawings and ETP/APCD design.",
+                            "action": "Determine industrial categorization (Orange/Green) on WBPCB/SPCB portal and file electronic CTE application with layout drawings.",
                             "owner": "OPERATIONS",
-                            "documents_needed": ["Approved Layout Plan", "Project Report", "Land Ownership Documents"],
+                            "documents_needed": ["Approved Layout Plan", "Project Report", "Land Ownership Documents", "Process Flowchart"],
                             "estimated_effort": "3-4 weeks",
                         }
                     ],
@@ -574,7 +663,7 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                 })
             elif "factories act" in exc_lower or "factory licence" in exc_lower or "shram" in auth.lower() or "factory" in exc_lower:
                 if "west bengal" in state.lower():
-                    fact_auth = "Directorate of Factories, West Bengal"
+                    fact_auth = "Directorate of Factories, Department of Labour, Government of West Bengal"
                     fact_jur = "WEST_BENGAL"
                     fact_url = "https://wbfactories.gov.in"
                     fact_desc = "Statutory registration and licensing of manufacturing premises under Section 6 of Factories Act 1948 and West Bengal Factories Rules."
@@ -615,20 +704,20 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
             elif "is 17017" in exc_lower or "ev charging" in exc_lower or ("charging" in desc and "bis" in auth.lower()):
                 reqs.append({
                     "requirement_id": req_id,
-                    "title": "BIS Certification for EV Charging Systems (IS 17017)",
-                    "description": "Mandatory conformity assessment and safety type-testing for conductive electric vehicle supply equipment under IS 17017 (Part 1).",
+                    "title": "BIS Standard for EV Conductive Charging Systems (IS 17017)",
+                    "description": "Technical conformity and safety type-testing for conductive electric vehicle supply equipment under IS 17017 (Part 1). Subject to voluntary compliance or commercial procurement specifications unless notified under a mandatory Quality Control Order (QCO).",
                     "regulatory_domain": "TECHNICAL_STANDARDS",
                     "authority": "Bureau of Indian Standards (BIS)",
                     "jurisdiction": "CENTRAL",
-                    "status": "APPLICABLE",
-                    "priority": "HIGH",
-                    "why_it_matters": "Prohibits commercial sale, dispatch, or export of uncertified EV charging equipment in India.",
+                    "status": "NEEDS_VERIFICATION",
+                    "priority": "MEDIUM",
+                    "why_it_matters": "Recommended Indian standard for EV charging equipment safety, protocol compliance, and interoperability. Verify if specific mandatory QCO or government procurement tenders mandate certification.",
                     "business_facts_used": ["EV charging station and power electronic converter manufacturing"],
                     "evidence_ids": [ev_id],
                     "source_urls": ["https://bis.gov.in"],
                     "actions": [
                         {
-                            "action": "Submit prototype chargers to accredited laboratory (ARAI/ICAT/CPRI) and obtain IS 17017 conformity certificate.",
+                            "action": "Submit prototype chargers to accredited laboratory (ARAI/ICAT/CPRI) and obtain IS 17017 conformity certificate if mandated by procurement or tender specifications.",
                             "owner": "OPERATIONS",
                             "documents_needed": ["Type Test Reports from NABL/BIS Lab", "Component Bill of Materials", "Circuit Diagrams"],
                             "estimated_effort": "4-6 weeks",
@@ -636,7 +725,10 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     ],
                     "deadline": None,
                 })
-            elif "compulsory registration scheme" in exc_lower or "crs" in exc_lower or "is 13252" in exc_lower:
+            elif ("compulsory registration scheme" in exc_lower or "crs" in exc_lower or "is 13252" in exc_lower):
+                is_ev_mfg = any(k in desc for k in ["ev ", "electric vehicle", "charging station", "charger", "evse"])
+                if is_ev_mfg:
+                    continue
                 reqs.append({
                     "requirement_id": req_id,
                     "title": "BIS Compulsory Registration Scheme (CRS) for Power Adapters",
@@ -663,12 +755,12 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
             elif "e-waste" in exc_lower or "eprewaste" in s_url or "cpcb_ewaste" in auth.lower():
                 norm_facts = getattr(context, "normalized_facts", {}) or {}
                 ans_map = getattr(context, "answers", {}) or {}
+                is_ev_mfg = any(k in desc for k in ["ev ", "electric vehicle", "charging station", "charger", "evse"])
                 is_producer_confirmed = (
                     norm_facts.get("is_ewaste_producer") is True
                     or ans_map.get("is_ewaste_producer") is True
                     or getattr(context, "is_ewaste_producer", False) is True
-                    or any(w in desc for w in ["registered producer", "eee producer", "producer registration"])
-                )
+                ) and not is_ev_mfg
                 reqs.append({
                     "requirement_id": req_id,
                     "title": "Extended Producer Responsibility (EPR) for E-Waste",
@@ -676,9 +768,9 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     "regulatory_domain": "WASTE_MANAGEMENT",
                     "authority": "Central Pollution Control Board (CPCB)",
                     "jurisdiction": "CENTRAL",
-                    "status": "APPLICABLE" if is_producer_confirmed else "NEEDS_INFORMATION",
+                    "status": "APPLICABLE" if is_producer_confirmed else "NEEDS_VERIFICATION",
                     "priority": "MEDIUM",
-                    "why_it_matters": "Mandatory for registered producers of covered Electrical & Electronic Equipment (EEE) under Schedule I of E-Waste Management Rules 2022. Verify end-product classification before commercial dispatch." if not is_producer_confirmed else "Mandatory for producers and manufacturers of IT and electronics hardware to meet recycling obligations.",
+                    "why_it_matters": "Scope applicability under Schedule I of E-Waste (Management) Rules 2022 must be verified. Dedicated commercial EV charging stations and chargers require classification confirmation before producer registration." if not is_producer_confirmed else "Mandatory for registered producers of covered Electrical & Electronic Equipment (EEE) under Schedule I.",
                     "business_facts_used": ["Electronics hardware producer" if is_producer_confirmed else "Classification as EEE producer pending verification"],
                     "evidence_ids": [ev_id],
                     "source_urls": ["https://eprewastecpcb.in"],
@@ -793,6 +885,43 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     ],
                     "deadline": None,
                 })
+
+        # Apply post-processing normalization
+        state_str = (state or "").lower()
+        is_ev_mfg = any(k in desc for k in ["ev ", "electric vehicle", "charging station", "charger", "evse"])
+        for r in reqs:
+            r_title = (r.get("title") or "").lower()
+            r_desc = (r.get("description") or "").lower()
+            r_jur = (r.get("jurisdiction") or "").strip().upper()
+
+            is_env_consent = any(kw in r_title or kw in r_desc for kw in ["consent to establish", "consent to operate", "cte", "cto"])
+            if is_env_consent and ("west bengal" in state_str or r_jur == "WEST_BENGAL"):
+                r["authority"] = "West Bengal Pollution Control Board (WBPCB)"
+                r["jurisdiction"] = "WEST_BENGAL"
+                r["source_urls"] = ["https://wbpcb.gov.in"]
+                if r.get("status") == "APPLICABLE":
+                    r["status"] = "NEEDS_INFORMATION"
+                    r["why_it_matters"] = "Categorization (Red/Orange/Green/White) determines clearance procedure under Water and Air Acts."
+
+            is_factory = any(kw in r_title or kw in r_desc for kw in ["factory license", "factory licence", "factories act"])
+            if is_factory and ("west bengal" in state_str or r_jur == "WEST_BENGAL"):
+                r["authority"] = "Directorate of Factories, Department of Labour, Government of West Bengal"
+                r["jurisdiction"] = "WEST_BENGAL"
+                r["source_urls"] = ["https://wbfactories.gov.in"]
+
+            if is_ev_mfg and ("13252" in r_title or "13252" in r_desc or "power adapter" in r_title):
+                r["status"] = "NOT_APPLICABLE"
+                r["why_it_matters"] = "IS 13252 applies to Information Technology Equipment power adapters; does not apply to EVSE."
+
+            if "17017" in r_title or "17017" in r_desc:
+                r["title"] = "BIS Standard for EV Conductive Charging Systems (IS 17017)"
+                r["status"] = "NEEDS_VERIFICATION"
+                r["priority"] = "MEDIUM"
+
+            is_ewaste = any(kw in r_title or kw in r_desc for kw in ["e-waste", "epr"])
+            if is_ewaste and is_ev_mfg:
+                r["status"] = "NEEDS_VERIFICATION"
+                r["why_it_matters"] = "Classification of EV charging stations under Schedule-I of E-Waste Management Rules 2022 requires categorization confirmation."
 
         summary = {
             "total_evaluated": len(reqs),

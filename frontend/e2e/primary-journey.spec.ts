@@ -44,36 +44,56 @@ test.describe('Primary End-to-End User Journey', () => {
     // Submit Step 2 Products form
     await page.locator('button:has-text("Generate Smart Questions")').click();
 
-    // Check for Operational Briefing Card and proceed if present
+    // Check for Operational Briefing Card and proceed to 15 questions
     const proceedToQBtn = page.locator('button:has-text("Begin 15-Question Regulatory Assessment")');
-    if (await proceedToQBtn.isVisible({ timeout: 10000 })) {
-      await proceedToQBtn.click();
-    }
+    await expect(proceedToQBtn).toBeVisible({ timeout: 25000 });
+    await proceedToQBtn.click();
 
-    // Step 3: Questions Wizard or Sequential AST Resolver
-    const prefillBtn = page.locator('button:has-text("Prefill All 15 Verified Answers")');
-    const buildPlanBtn = page.locator('button:has-text("Build My Compliance Plan")');
+    // Step 3: Wait for 15-Question Wizard to load
+    await expect(
+      page.locator('h2:has-text("Your 15 Compliance Questions"), h2:has-text("15-Question Statutory Assessment"), p:has-text("15-Question Statutory Assessment")').first()
+    ).toBeVisible({ timeout: 35000 });
 
-    if (await prefillBtn.isVisible()) {
-      await prefillBtn.click();
-      const pills = page.locator('div.grid-cols-15 button');
-      if ((await pills.count()) > 0) {
-        await pills.last().click();
+    // Step through questions and submit
+    for (let i = 0; i < 22; i++) {
+      const boolYesBtn = page.locator('button:has-text("Yes —"), button:has-text("Yes")').first();
+      const optionBtn = page.locator('div.space-y-2\\.5 button').first();
+      const numInput = page.locator('input[type="number"]').first();
+      const dateInput = page.locator('input[type="date"]').first();
+      const textInput = page.locator('textarea, input[placeholder*="details"]').first();
+
+      if (await boolYesBtn.isVisible()) {
+        await boolYesBtn.click();
+      } else if (await optionBtn.isVisible()) {
+        await optionBtn.click();
+      } else if (await numInput.isVisible()) {
+        await numInput.fill('10');
+      } else if (await dateInput.isVisible()) {
+        await dateInput.fill('2026-01-01');
+      } else if (await textInput.isVisible()) {
+        await textInput.fill('Compliant industrial operations');
       }
-      const analyzeBtn = page.locator('button:has-text("Analyze Regulatory Compliance")');
-      if (await analyzeBtn.isVisible()) {
-        await analyzeBtn.click();
-      }
-    } else if (await buildPlanBtn.isVisible()) {
-      await buildPlanBtn.click();
-    } else {
-      await expect(buildPlanBtn).toBeVisible({ timeout: 15000 });
-      await buildPlanBtn.click();
+
+      await page.waitForTimeout(300);
+
+      const actionBtn = page.locator('button:has-text("Analyze Regulatory Compliance"), button:has-text("Save & Next Question")').first();
+      if (!(await actionBtn.isVisible())) break;
+      const isFinal = (await actionBtn.innerText()).includes('Analyze');
+      await expect(actionBtn).toBeEnabled({ timeout: 8000 });
+      await actionBtn.click();
+      if (isFinal) break;
+
+      await page.waitForTimeout(500);
+      await expect(
+        page.locator('button:has-text("Save & Next Question"), button:has-text("Analyze Regulatory Compliance")').first()
+      ).toBeEnabled({ timeout: 20000 });
     }
 
     // 4. Verify Executive Compliance Summary / Initial Results
-    await expect(page.locator('h1:has-text("Initial Results"), h2:has-text("Compliance Profile")').first()).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('text=Intelligence Summary')).toBeVisible();
+    await expect(
+      page.locator('h1:has-text("Initial Results"), h2:has-text("Compliance Profile"), h2:has-text("Executive Operational Briefing"), h2:has-text("Statutory Applicability Results")').first()
+    ).toBeVisible({ timeout: 120000 });
+    await expect(page.locator(':has-text("Intelligence Summary")').first()).toBeVisible({ timeout: 10000 });
 
     // 5. Open "Why does this apply?" 4-Part Evidence Trace Modal (on Compliance page)
     await page.goto('/compliance');

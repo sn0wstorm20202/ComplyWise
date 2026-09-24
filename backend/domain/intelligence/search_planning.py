@@ -116,11 +116,11 @@ def plan_regulatory_searches(
             queries.append(f"{state_name} DISH factory licence registration manufacturing {core_product} rules")
 
     # 3. Product Standards & Mandatory Certification (BIS / QCO / FSSAI / CRS)
-    if "ev" in desc_lower or "charging" in desc_lower or "electric vehicle" in desc_lower:
+    if "ev" in desc_lower or "charging" in desc_lower or "electric vehicle" in desc_lower or "evse" in desc_lower:
         queries.append("Bureau of Indian Standards IS 17017 electric vehicle conductive charging systems official")
     elif "cement" in desc_lower:
         queries.append("BIS mandatory certification Quality Control Order cement IS 269 IS 1489 India")
-    elif "charger" in desc_lower or "adapter" in desc_lower or "electronics" in desc_lower:
+    elif ("laptop" in desc_lower or "mobile" in desc_lower or "it equipment" in desc_lower or "computer" in desc_lower) and ("charger" in desc_lower or "adapter" in desc_lower):
         queries.append("BIS CRS Compulsory Registration Scheme power adapter laptop charger IS 13252 India")
     elif "food" in desc_lower or "beverage" in desc_lower or "juice" in desc_lower or "millet" in desc_lower:
         queries.append("FSSAI manufacturing license state central food safety regulations standards")
@@ -130,7 +130,9 @@ def plan_regulatory_searches(
         queries.append(f"BIS mandatory certification Quality Control Order {core_product} India")
 
     # 4. Waste Management & EPR Frameworks (E-Waste, Plastic, Hazardous Waste, Battery)
-    if "charger" in desc_lower or "electronic" in desc_lower or "telecom" in desc_lower:
+    if "ev" in desc_lower or "charging station" in desc_lower or "evse" in desc_lower:
+        queries.append("CPCB E-Waste Management Rules 2022 EPR portal registration electric vehicle charging equipment scope")
+    elif "charger" in desc_lower or "electronic" in desc_lower or "telecom" in desc_lower:
         queries.append("CPCB E-Waste Management Rules 2022 EPR portal registration electronics manufacturer")
     elif "textile" in desc_lower or "dye" in desc_lower or hazardous_gen or "chemical" in desc_lower:
         queries.append(f"{state_name} SPCB Hazardous and Other Wastes Management authorization sludge disposal")

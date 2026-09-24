@@ -442,14 +442,19 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
                 "CPCB Environmental Standards for Cement Plants: Prescribes maximum particulate matter (PM) stack emission limits (30 mg/Nm3) and mandatory Continuous Emission Monitoring Systems (CEMS).",
                 "CENTRAL",
             )
-        elif "charger" in desc or "adapter" in desc or "electronic" in desc or "ev" in desc:
-            if "charger" in desc or "ev" in desc:
-                _add_portal_evidence(
-                    "BIS",
-                    "Bureau of Indian Standards: IS 17017 conductive EV charging systems and IS 15885 electronic power converter standards for electric vehicle supply equipment.",
-                    "CENTRAL",
-                )
-            else:
+        elif "ev" in desc or "charging station" in desc or "evse" in desc:
+            _add_portal_evidence(
+                "BIS",
+                "Bureau of Indian Standards: IS 17017 conductive electric vehicle charging systems and EVSE safety standards.",
+                "CENTRAL",
+            )
+            _add_portal_evidence(
+                "CPCB_EWASTE",
+                "CPCB E-Waste (Management) Rules 2022: Extended Producer Responsibility (EPR) classification for electrical equipment under Schedule-I requires product category confirmation.",
+                "CENTRAL",
+            )
+        elif "charger" in desc or "adapter" in desc or "electronic" in desc:
+            if "laptop" in desc or "mobile" in desc or "it equipment" in desc or "computer" in desc:
                 _add_portal_evidence(
                     "BIS_CRS",
                     "MeitY Compulsory Registration Scheme (CRS) & IS 13252 (Part 1): Power adapters and chargers for IT equipment mandate laboratory safety testing and BIS CRS registration number prior to commercial distribution or import.",

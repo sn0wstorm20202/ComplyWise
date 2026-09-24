@@ -12,6 +12,7 @@ import { api } from "@/lib/api";
 import { sanitizeExternalUrl } from "@/lib/url";
 import { ComplianceRequirementItem, CandidateRequirement, Business } from "@/types";
 import { DEMO_REQUIREMENTS } from "@/data/demo/compliance";
+import { resolveAuthorityPortalUrl } from "@/lib/authorityPortals";
 import { useLanguage } from "@/context/LanguageContext";
 
 type ViewTab = "action_required" | "verification_required" | "audit";
@@ -44,7 +45,7 @@ function ComplianceContent() {
         excerpt: `Statutory mandate under ${c}`,
         verification_status: "VERIFIED" as const,
         source_title: "Official Gazette / BIS Schedule",
-        canonical_url: "https://egazette.gov.in",
+        canonical_url: resolveAuthorityPortalUrl(req.authority, c),
       })),
     }))
   );
@@ -76,43 +77,56 @@ function ComplianceContent() {
         try {
           const orchComp = await api.orchestration.getCompliance(activeRunId);
           if (orchComp && orchComp.requirements && orchComp.requirements.length > 0) {
-            const mapped: ComplianceRequirementItem[] = orchComp.requirements.map((req: any) => ({
-              requirement_id: req.requirement_id || req.id,
-              name: req.name || req.title || "Statutory Requirement",
-              status: req.status as any,
-              category: req.domain || req.regulatory_domain || "STATUTORY",
-              authority: req.authority,
-              domain: req.domain || req.regulatory_domain || "STATUTORY",
-              jurisdiction: req.jurisdiction || "CENTRAL",
-              citation_count: req.citations?.length || req.evidence_ids?.length || 1,
-              evidence_count: req.evidence_ids?.length || req.citations?.length || 1,
-              description: req.description || req.why_it_matters || "",
-              applicable_facts: req.applicable_facts || req.business_facts_used,
-              missing_facts: req.missing_facts,
-              portal_url: req.portal_url || (req.source_urls && req.source_urls[0]) || "https://egazette.gov.in",
-              portal_name: req.portal_name || req.authority || "Official Government Portal",
-              citations: (req.citations && req.citations.length > 0)
-                ? req.citations.map((c: any) => ({
-                    evidence_id: c.evidence_id,
-                    locator: c.locator || req.statutory_act || "Statutory Schedule",
-                    authority: c.authority || req.authority,
-                    excerpt: c.excerpt || req.description,
-                    verification_status: (c.verification_status || "VERIFIED") as any,
-                    source_title: c.source_title || "Official Gazette / Government Portal",
-                    canonical_url: c.canonical_url || "https://egazette.gov.in",
-                  }))
-                : [
-                    {
-                      evidence_id: req.evidence_ids?.[0] || req.requirement_id,
-                      locator: req.statutory_act || "Statutory Schedule",
-                      authority: req.authority,
-                      excerpt: req.evidence_excerpts?.[0] || req.description || req.why_it_matters || "Statutory requirement verified against business facts.",
-                      verification_status: "VERIFIED" as const,
-                      source_title: "Official Government Portal",
-                      canonical_url: req.portal_url || (req.source_urls && req.source_urls[0]) || "https://egazette.gov.in",
-                    },
-                  ],
-            }));
+            const mapped: ComplianceRequirementItem[] = orchComp.requirements.map((req: any) => {
+              const reqAuthority = req.authority || "Regulatory Authority";
+              const reqTitle = req.name || req.title || "Statutory Requirement";
+              const resolvedPortal = resolveAuthorityPortalUrl(
+                reqAuthority,
+                reqTitle,
+                req.portal_url || (req.source_urls && req.source_urls[0])
+              );
+              return {
+                requirement_id: req.requirement_id || req.id,
+                name: reqTitle,
+                status: req.status as any,
+                category: req.domain || req.regulatory_domain || "STATUTORY",
+                authority: reqAuthority,
+                domain: req.domain || req.regulatory_domain || "STATUTORY",
+                jurisdiction: req.jurisdiction || "CENTRAL",
+                citation_count: req.citations?.length || req.evidence_ids?.length || 1,
+                evidence_count: req.evidence_ids?.length || req.citations?.length || 1,
+                description: req.description || req.why_it_matters || "",
+                applicable_facts: req.applicable_facts || req.business_facts_used,
+                missing_facts: req.missing_facts,
+                portal_url: resolvedPortal,
+                portal_name: req.portal_name || reqAuthority || "Official Government Portal",
+                citations: (req.citations && req.citations.length > 0)
+                  ? req.citations.map((c: any) => ({
+                      evidence_id: c.evidence_id,
+                      locator: c.locator || req.statutory_act || "Statutory Schedule",
+                      authority: c.authority || reqAuthority,
+                      excerpt: c.excerpt || req.description,
+                      verification_status: (c.verification_status || "VERIFIED") as any,
+                      source_title: c.source_title || "Official Gazette / Government Portal",
+                      canonical_url: resolveAuthorityPortalUrl(
+                        c.authority || reqAuthority,
+                        c.source_title || reqTitle,
+                        c.canonical_url
+                      ),
+                    }))
+                  : [
+                      {
+                        evidence_id: req.evidence_ids?.[0] || req.requirement_id,
+                        locator: req.statutory_act || "Statutory Schedule",
+                        authority: reqAuthority,
+                        excerpt: req.evidence_excerpts?.[0] || req.description || req.why_it_matters || "Statutory requirement verified against business facts.",
+                        verification_status: "VERIFIED" as const,
+                        source_title: "Official Government Portal",
+                        canonical_url: resolvedPortal,
+                      },
+                    ],
+              };
+            });
             setRequirements(mapped);
             setTotalCount(mapped.length);
             loadedFromOrchestration = true;
@@ -164,10 +178,16 @@ function ComplianceContent() {
 
   // Filtering buckets
   const actionRequiredItems = requirements.filter(
-    (r) => r.status === "APPLICABLE" || r.status === "NEEDS_INFORMATION"
+    (r) =>
+      r.status === "APPLICABLE" ||
+      r.status === "NEEDS_INFORMATION" ||
+      r.status === "NEEDS_VERIFICATION"
   );
   const verificationRequiredItems = requirements.filter(
-    (r) => r.status === "UNVERIFIED" || r.status === "CONFLICT_REVIEW"
+    (r) =>
+      r.status === "UNVERIFIED" ||
+      r.status === "CONFLICT_REVIEW" ||
+      r.status === "NEEDS_VERIFICATION"
   );
   const notApplicableItems = requirements.filter(
     (r) => r.status === "NOT_APPLICABLE"

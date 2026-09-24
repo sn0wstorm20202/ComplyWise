@@ -78,7 +78,7 @@ test.describe('EasternVolt EV Technologies Regression Test', () => {
     }
 
     // 6. Strict Verification: NO AST / Internal Rule Engine Strings Leaked
-    await expect(page.locator('h2:has-text("15-Question Statutory Assessment")')).toBeVisible({ timeout: 45000 });
+    await expect(page.locator('h2:has-text("Your 15 Compliance Questions"), h2:has-text("15-Question Statutory Assessment"), p:has-text("15-Question Statutory Assessment")').first()).toBeVisible({ timeout: 45000 });
     const bodyText = await page.innerText('body');
     expect(bodyText).not.toContain('ADAPTIVE RULE ENGINE');
     expect(bodyText).not.toContain('Sequential AST-Driven Discovery');

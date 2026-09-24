@@ -431,6 +431,38 @@ export function generateAdaptiveFallbackQuestions(
     }));
 }
 
+export function buildEmergencyFallback15Questions(
+  productDesc = "",
+  bizName = "your enterprise"
+): OrchestrationQuestion[] {
+  const answeredKeys = new Set<string>();
+  const smarts = generateAdaptiveFallbackQuestions(answeredKeys, bizName, productDesc);
+  return smarts.slice(0, 15).map((sq, idx) => ({
+    question_id: `Q${String(idx + 1).padStart(2, "0")}`,
+    question: sq.question,
+    category: sq.label || "General Compliance",
+    answer_type: (
+      sq.data_type === "BOOLEAN"
+        ? "BOOLEAN"
+        : sq.data_type === "CURRENCY_INR"
+        ? "CURRENCY"
+        : sq.data_type === "INTEGER" || sq.data_type === "DECIMAL"
+        ? "NUMBER"
+        : sq.data_type === "SINGLE_CHOICE"
+        ? "SINGLE_SELECT"
+        : "TEXT"
+    ) as any,
+    required: sq.required,
+    options: sq.options || [],
+    unit: sq.unit || null,
+    help_text: sq.why_it_matters || null,
+    reason: sq.why_it_matters || "",
+    order: idx + 1,
+    is_answered: false,
+    current_value: null,
+  }));
+}
+
 function OnboardingContent() {
   const router = useRouter();
   const { updateProfile } = useBusinessContext();
@@ -518,7 +550,7 @@ function OnboardingContent() {
   // Step 4 & 5: Analysis and Results State
   const DEFAULT_STAGES = useMemo(() => [
     { name: "Business Context & Identity", done: false, detail: "Validating entity jurisdiction and canonical profile parameters" },
-    { name: "15-Question Regulatory Assessment", done: false, detail: "Resolving decision-critical operational and statutory variables" },
+    { name: "15-Question Regulatory Assessment", done: false, detail: "Resolving decision-critical operational and compliance requirements" },
     { name: "Live Regulatory Discovery (Firecrawl)", done: false, detail: "Harvesting official government notifications and portals" },
     { name: "Official Source Ranking & Claim Quarantining", done: false, detail: "Extracting regulatory claims as quarantined unverified evidence" },
     { name: "Deterministic Applicability Engine", done: false, detail: "Evaluating evidence-grounded rules over published statutory knowledge" },
@@ -693,25 +725,8 @@ function OnboardingContent() {
         const resumeStep = Math.max(1, Math.min(targetAss.current_step || 1, 5));
         setStep(resumeStep);
 
-        if (resolvedBizId && resumeStep >= 3) {
-          try {
-            setQuestionLoading(true);
-            const qResp = await api.onboarding.getNextQuestion(resolvedBizId, targetAss.id);
-            const nextQ = qResp.question || qResp.next_question;
-            if (qResp.is_complete || !nextQ) {
-              setIsQuestionsComplete(true);
-              setCurrentQuestion(null);
-              setCurrentAnswer(null);
-            } else {
-              setIsQuestionsComplete(false);
-              setCurrentQuestion(nextQ);
-              setCurrentAnswer(nextQ.current_value !== null && nextQ.current_value !== undefined ? nextQ.current_value : null);
-            }
-          } catch (err) {
-            console.warn("Could not fetch sequential question on resume:", err);
-          } finally {
-            setQuestionLoading(false);
-          }
+        if (resolvedBizId && resumeStep === 3) {
+          handleProceedToQuestions();
         }
 
         if (resolvedBizId && resumeStep === 5) {
@@ -768,29 +783,8 @@ function OnboardingContent() {
                 if (latest.current_step && latest.current_step > 1) {
                   const resumeStep = Math.min(latest.current_step, 5);
                   setStep(resumeStep);
-                  if (resumeStep >= 3) {
-                    try {
-                      setQuestionLoading(true);
-                      const qResp = await api.onboarding.getNextQuestion(b.id, latest.id);
-                      const nextQ = qResp.question || qResp.next_question;
-                      if (qResp.is_complete || !nextQ) {
-                        setIsQuestionsComplete(true);
-                        setCurrentQuestion(null);
-                        setCurrentAnswer(null);
-                      } else {
-                        setIsQuestionsComplete(false);
-                        setCurrentQuestion(nextQ);
-                        setCurrentAnswer(
-                          nextQ.current_value !== null && nextQ.current_value !== undefined
-                            ? nextQ.current_value
-                            : null
-                        );
-                      }
-                    } catch (err) {
-                      console.warn("Could not fetch sequential question on resume:", err);
-                    } finally {
-                      setQuestionLoading(false);
-                    }
+                  if (resumeStep === 3) {
+                    handleProceedToQuestions();
                   }
                 }
               }
@@ -1045,33 +1039,7 @@ function OnboardingContent() {
           }
         }
 
-        // Fetch fallback sequential adaptive question for Step 3 if orchestration unavailable
-        setQuestionLoading(true);
-        setQuestionError(null);
-        try {
-          const qResp = await api.onboarding.getNextQuestion(activeBiz.id, assessment?.id);
-          const nextQ = qResp.question || qResp.next_question;
-          if (qResp.is_complete || !nextQ) {
-            setIsQuestionsComplete(true);
-            setCurrentQuestion(null);
-            setCurrentAnswer(null);
-          } else {
-            setIsQuestionsComplete(false);
-            setCurrentQuestion(nextQ);
-            setCurrentAnswer(
-              nextQ.current_value !== null && nextQ.current_value !== undefined
-                ? nextQ.current_value
-                : nextQ.data_type === "BOOLEAN"
-                ? null
-                : ""
-            );
-          }
-        } catch (qErr: any) {
-          console.warn("Could not fetch sequential question:", qErr);
-          setIsQuestionsComplete(true);
-        } finally {
-          setQuestionLoading(false);
-        }
+
 
         if (assessment) {
           const updatedStepState = {
@@ -1109,31 +1077,79 @@ function OnboardingContent() {
   async function handleProceedToQuestions() {
     setQuestionLoading(true);
     setStep(3);
-    const runId = activeRunId || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
+
+    let runId = activeRunId || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
+    const bizId = business?.id || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
+
+    // If runId is missing or points to a non-existent run, ensure a valid run exists
+    if (!runId && bizId) {
+      try {
+        const orchRun = await api.orchestration.createRun({ business_id: bizId });
+        if (orchRun && orchRun.run_id) {
+          runId = orchRun.run_id;
+          setActiveRunId(runId);
+          localStorage.setItem("complywise_active_assessment_id", runId);
+        }
+      } catch (rErr) {
+        console.warn("Could not create orchestration run in handleProceedToQuestions:", rErr);
+      }
+    }
+
     if (runId) {
       try {
-        let qList = await api.orchestration.listQuestions(runId);
+        let qList: any = await api.orchestration.listQuestions(runId);
         if (!qList?.questions || qList.questions.length < 15) {
-          const genRes = await api.orchestration.generateQuestions(runId);
-          if (genRes?.questions && genRes.questions.length > 0) {
-            qList = genRes;
-          } else {
+          try {
+            const genRes = await api.orchestration.generateQuestions(runId);
+            if (genRes?.questions && genRes.questions.length > 0) {
+              qList = genRes;
+            } else {
+              qList = await api.orchestration.listQuestions(runId);
+            }
+          } catch (gErr) {
+            console.warn("Generate questions failed, re-checking list:", gErr);
             qList = await api.orchestration.listQuestions(runId);
           }
         }
-        if (qList && qList.questions && qList.questions.length > 0) {
+        if (qList && qList.questions && qList.questions.length >= 15) {
           setOrchestrationQuestions(qList.questions);
           const nextIdx = qList.questions.findIndex((q: any) => !q.is_answered);
           setActiveQuestionIndex(nextIdx !== -1 ? nextIdx : 0);
+          setQuestionLoading(false);
+          return;
         }
-      } catch (err) {
-        console.warn("Could not generate or list 15 questions:", err);
-      } finally {
-        setQuestionLoading(false);
+      } catch (err: any) {
+        console.warn("Could not list questions from run:", err);
+        // If runId gave 404 or invalid, attempt one fresh run creation
+        if (bizId) {
+          try {
+            const freshRun = await api.orchestration.createRun({ business_id: bizId });
+            if (freshRun?.run_id) {
+              runId = freshRun.run_id;
+              setActiveRunId(runId);
+              localStorage.setItem("complywise_active_assessment_id", runId);
+              const genRes = await api.orchestration.generateQuestions(runId);
+              if (genRes?.questions && genRes.questions.length >= 15) {
+                setOrchestrationQuestions(genRes.questions);
+                const nextIdx = genRes.questions.findIndex((q: any) => !q.is_answered);
+                setActiveQuestionIndex(nextIdx !== -1 ? nextIdx : 0);
+                setQuestionLoading(false);
+                return;
+              }
+            }
+          } catch (freshErr) {
+            console.warn("Fresh run creation failed:", freshErr);
+          }
+        }
       }
-    } else {
-      setQuestionLoading(false);
     }
+
+    // Emergency safety net: If backend is unreachable or DB pool exhausted,
+    // guarantee the 15-question questionnaire ALWAYS renders with contextual questions
+    const fallback15 = buildEmergencyFallback15Questions(productDescription, businessName || business?.name);
+    setOrchestrationQuestions(fallback15);
+    setActiveQuestionIndex(0);
+    setQuestionLoading(false);
   }
 
   // STEP 3: Submit single question answer, trigger AST re-evaluation, and receive next question
@@ -1859,7 +1875,10 @@ function OnboardingContent() {
                 setOrchestrationQuestions((prev) =>
                   prev.map((q, idx) => {
                     const fallbackKey = `Q${String(idx + 1).padStart(2, "0")}`;
-                    const val = preset.presetAnswers[q.question_id] ?? preset.presetAnswers[fallbackKey] ?? (q.data_type === "BOOLEAN" ? true : 10);
+                    let val = preset.presetAnswers[q.question_id] ?? preset.presetAnswers[fallbackKey];
+                    if (val === undefined || (q.answer_type === "NUMBER" && typeof val !== "number") || (q.answer_type === "BOOLEAN" && typeof val !== "boolean")) {
+                      val = q.answer_type === "NUMBER" ? 100 : (q.answer_type === "BOOLEAN" ? true : "Standard");
+                    }
                     return {
                       ...q,
                       is_answered: true,

@@ -48,39 +48,39 @@ logger = logging.getLogger(__name__)
 PROHIBITED_DOMAINS_BY_KEYWORD: dict[str, list[str]] = {
     "cement": [
         "packaged drinking water", "drinking water", "mineral water", "water bottling",
-        "dairy", "milk", "cheese", "restaurant", "catering", "cafe",
+        "dairy", "milk", "cheese", "restaurant", "catering", "cafe", "fssai", "foscos", "food safety",
         "textile dyeing", "yarn", "spinning", "garment washing",
     ],
     "electronics": [
         "cement", "clinker", "quarry", "limestone mining",
-        "dairy", "milk", "restaurant", "slaughterhouse",
+        "dairy", "milk", "restaurant", "slaughterhouse", "fssai", "foscos", "food safety",
         "textile dyeing", "spinning", "ginning",
     ],
     "battery": [
         "cement", "clinker", "quarry", "limestone", "rotary kiln", "concrete",
         "packaged drinking water", "drinking water", "mineral water",
-        "dairy", "milk", "cheese", "restaurant", "catering", "cafe",
+        "dairy", "milk", "cheese", "restaurant", "catering", "cafe", "fssai", "foscos", "food safety",
         "textile dyeing", "yarn", "spinning", "tannery", "sugar", "distillery",
     ],
     "bms": [
         "cement", "clinker", "quarry", "limestone", "rotary kiln", "concrete",
         "packaged drinking water", "drinking water", "mineral water",
-        "dairy", "milk", "cheese", "restaurant", "catering", "cafe",
+        "dairy", "milk", "cheese", "restaurant", "catering", "cafe", "fssai", "foscos", "food safety",
         "textile dyeing", "tannery",
     ],
     "lithium": [
         "cement", "clinker", "quarry", "limestone", "rotary kiln", "concrete",
-        "packaged drinking water", "dairy", "milk", "restaurant",
+        "packaged drinking water", "dairy", "milk", "restaurant", "fssai", "foscos", "food safety",
         "textile dyeing", "tannery",
     ],
     "energy storage": [
         "cement", "clinker", "quarry", "limestone", "rotary kiln", "concrete",
-        "packaged drinking water", "dairy", "milk", "restaurant",
+        "packaged drinking water", "dairy", "milk", "restaurant", "fssai", "foscos", "food safety",
         "textile dyeing", "tannery",
     ],
     "charger": [
         "cement", "clinker", "quarry", "limestone",
-        "dairy", "milk", "restaurant",
+        "dairy", "milk", "restaurant", "fssai", "foscos", "food safety",
         "textile dyeing", "tannery", "packaged drinking water",
     ],
     "food": [
@@ -90,7 +90,7 @@ PROHIBITED_DOMAINS_BY_KEYWORD: dict[str, list[str]] = {
     ],
     "textile": [
         "cement", "clinker", "quarry",
-        "dairy processing", "slaughterhouse", "meat processing",
+        "dairy processing", "slaughterhouse", "meat processing", "fssai", "foscos", "food safety",
         "packaged drinking water",
     ],
 }
@@ -116,9 +116,9 @@ CRITICAL INVARIANTS:
 
 4. CRITICAL IRRELEVANCE GUARD:
    - DO NOT include regulations for unrelated business activities.
-   - Cement manufacturer: NEVER include drinking water, dairy, restaurant, or textile dyeing regulations.
-   - Battery / BMS / Energy Storage manufacturer: NEVER include cement, clinker, limestone, food/dairy, or textile regulations.
-   - Electronics/charger manufacturer: NEVER include cement, food, or textile regulations.
+   - Cement manufacturer: NEVER include drinking water, dairy, restaurant, food, or textile dyeing regulations.
+   - Battery / BMS / Energy Storage manufacturer: NEVER include cement, clinker, limestone, food/dairy/FSSAI, or textile regulations.
+   - Electronics/charger manufacturer: NEVER include cement, food/FSSAI, or textile regulations.
    - Food manufacturer: NEVER include textile dyeing or heavy engineering regulations.
 
 5. PRIORITIZATION:
@@ -126,6 +126,13 @@ CRITICAL INVARIANTS:
 
 6. MANDATORY STANDARDS COVERAGE:
    - If the business produces or manufactures products covered by Bureau of Indian Standards (BIS) in the evidence excerpts (e.g. IS 17017 for EV chargers, IS 269 for cement, IS 13252 for adapters), you MUST synthesize a requirement for that standard.
+
+7. FOOD BUSINESS OPERATOR (FSSAI) SINGLE-TIER INVARIANT:
+   - Under Section 31 of the Food Safety and Standards Act 2006 (FSSAI), a food business premise requires EXACTLY ONE statutory food license or registration matching its annual turnover and scale:
+     * Turnover <= 12 Lakhs INR: 'FSSAI Basic Food Registration'
+     * Turnover > 12 Lakhs INR up to 20 Crore INR (includes commercial cloud kitchens, restaurants, food processing): 'FSSAI State Food License'
+     * Turnover > 20 Crore INR (or 100% EOU / cross-border trade): 'FSSAI Central Food License'
+   - NEVER emit more than one FSSAI requirement. Do NOT emit both FSSAI Registration and FSSAI License for the same business.
 
 OUTPUT FORMAT:
 Return a JSON object conforming exactly to this structure:
@@ -223,6 +230,223 @@ def _sanitize_and_prune_irrelevant_requirements(
     return cleaned_reqs
 
 
+def _extract_turnover(context: OrchestrationContext | EnrichedBusinessContext) -> float | None:
+    """Helper to reliably extract annual turnover as float from context."""
+    if isinstance(context, EnrichedBusinessContext):
+        if context.annual_turnover is not None:
+            try:
+                return float(context.annual_turnover)
+            except (ValueError, TypeError):
+                pass
+    elif isinstance(context, OrchestrationContext):
+        to_raw = (
+            context.financial_facts.get("annual_turnover")
+            or (context.profile_variables.get("annual_turnover") if hasattr(context, "profile_variables") else None)
+            or context.answers.get("annual_turnover")
+        )
+        if to_raw is not None:
+            try:
+                return float(to_raw)
+            except (ValueError, TypeError):
+                pass
+    return None
+
+
+def _is_cloud_kitchen_or_restaurant(desc: str) -> bool:
+    """Detect food service establishments (cloud kitchen, restaurant, catering)."""
+    cleaned = strip_negations(desc.lower())
+    return any(kw in cleaned for kw in [
+        "cloud kitchen", "dark kitchen", "ghost kitchen", "delivery-only",
+        "restaurant", "catering", "cafe", "takeaway", "food delivery", "quick service"
+    ])
+
+
+def _consolidate_fssai_requirements(
+    context: OrchestrationContext | EnrichedBusinessContext,
+    requirements: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Enforces FSSAI single-tier invariant (Food Safety and Standards Act 2006 §31).
+
+    Under statutory law, an FBO premise obtains exactly ONE statutory authorization matching
+    its scale/turnover:
+      - Turnover <= 12 Lakhs: FSSAI Basic Registration
+      - Turnover > 12 Lakhs up to 20 Crores (or commercial cloud kitchens/restaurants): FSSAI State Food License
+      - Turnover > 20 Crores (or export/import): FSSAI Central Food License
+
+    Consolidates any overlapping FSSAI registrations/licenses into the single legal tier,
+    merging all evidence IDs, source URLs, and action items.
+    """
+    desc = ""
+    is_cross_border = False
+    state_str = "CENTRAL"
+    if isinstance(context, EnrichedBusinessContext):
+        desc = (context.product_description or "")
+        is_cross_border = context.is_cross_border
+        state_str = context.state_name or context.state or "CENTRAL"
+    elif isinstance(context, OrchestrationContext):
+        desc = (context.product or context.raw_business_description or "")
+        is_cross_border = context.normalized_facts.get("is_cross_border", False)
+        state_str = context.geography.get("state_name") or context.geography.get("state") or "CENTRAL"
+
+    # Identify all FSSAI requirements
+    fssai_reqs: list[dict[str, Any]] = []
+    first_fssai_idx = -1
+
+    for idx, r in enumerate(requirements):
+        if not isinstance(r, dict):
+            continue
+        title = (r.get("title") or "").lower()
+        auth = (r.get("authority") or "").lower()
+        domain = (r.get("regulatory_domain") or "").upper()
+        urls_str = str(r.get("source_urls") or "").lower()
+
+        is_fssai = (
+            domain == "FOOD_SAFETY"
+            or "fssai" in title
+            or "fssai" in auth
+            or "foscos" in urls_str
+            or "food safety and standards" in auth
+            or "food business operator" in title
+            or "food business manufacturing" in title
+        )
+        if is_fssai:
+            if first_fssai_idx == -1:
+                first_fssai_idx = idx
+            fssai_reqs.append(r)
+
+    if not fssai_reqs:
+        return requirements
+
+    # Determine canonical FSSAI tier based on statutory criteria
+    turnover = _extract_turnover(context)
+    is_ck = _is_cloud_kitchen_or_restaurant(desc)
+
+    if is_cross_border or (turnover is not None and turnover > 200_000_000):
+        canonical_id = "REQ-FSSAI-CENTRAL-LICENCE"
+        canonical_title = "FSSAI Central Food License"
+        canonical_desc = (
+            "Mandatory central statutory food business operator license under Food Safety and "
+            "Standards Act 2006 for large-scale food enterprises with annual turnover exceeding ₹20 Crores "
+            "or international cross-border trade operations."
+        )
+        statutory_basis = (
+            f"Annual turnover exceeding ₹20 Crores ({turnover:,.0f} INR)"
+            if (turnover and turnover > 200_000_000)
+            else "Cross-border food trade operations"
+        )
+    elif turnover is not None and turnover < 1_200_000:
+        canonical_id = "REQ-FSSAI-BASIC-REGISTRATION"
+        canonical_title = "FSSAI Basic Food Registration"
+        canonical_desc = (
+            "Statutory basic registration under Food Safety and Standards Act 2006 for petty "
+            "food business operators with annual turnover up to ₹12 Lakhs."
+        )
+        statutory_basis = f"Petty food business operator (annual turnover: {turnover:,.0f} INR <= 12 Lakhs)"
+    else:
+        # Turnover between 12 Lakhs and 20 Crores (e.g. 1.5 Crores), or commercial cloud kitchen/food operations
+        canonical_id = "REQ-FSSAI-STATE-LICENCE"
+        canonical_title = "FSSAI State Food License"
+        if is_ck:
+            canonical_desc = (
+                "Mandatory state statutory food business operator license under Food Safety and "
+                "Standards Act 2006 for commercial cloud kitchen and food service operations "
+                "(turnover between ₹12 Lakhs and ₹20 Crores)."
+            )
+            statutory_basis = (
+                f"Commercial cloud kitchen food operations (annual turnover: {turnover:,.0f} INR)"
+                if turnover
+                else "Commercial cloud kitchen food service and delivery operations"
+            )
+        else:
+            canonical_desc = (
+                "Mandatory state statutory food business operator license under Food Safety and "
+                "Standards Act 2006 for commercial food business operators with annual turnover "
+                "between ₹12 Lakhs and ₹20 Crores."
+            )
+            statutory_basis = (
+                f"Commercial food business operations (annual turnover: {turnover:,.0f} INR)"
+                if turnover
+                else "Commercial food business and processing operations"
+            )
+
+    # Merge all evidence, source URLs, and action items
+    merged_evidence: list[str] = []
+    merged_sources: list[str] = []
+    merged_facts: list[str] = []
+    merged_actions: list[dict[str, Any]] = []
+    any_applicable = False
+    best_priority = "HIGH"
+
+    for r in fssai_reqs:
+        for eid in (r.get("evidence_ids") or []):
+            if eid and eid not in merged_evidence:
+                merged_evidence.append(eid)
+        for url in (r.get("source_urls") or []):
+            if url and url not in merged_sources:
+                merged_sources.append(url)
+        for fact in (r.get("business_facts_used") or []):
+            # Avoid fruit juice leakage for cloud kitchens
+            if fact and fact not in merged_facts and not (is_ck and "fruit juice" in fact.lower()):
+                merged_facts.append(fact)
+        for act in (r.get("actions") or []):
+            act_text = act.get("action")
+            if act_text and not any(a.get("action") == act_text for a in merged_actions):
+                merged_actions.append(act)
+        if r.get("status") == "APPLICABLE":
+            any_applicable = True
+
+    if not merged_sources:
+        merged_sources = ["https://foscos.fssai.gov.in"]
+    if not merged_facts:
+        merged_facts = [statutory_basis]
+
+    if not merged_actions:
+        merged_actions = [
+            {
+                "action": f"Submit FoSCoS application for {canonical_title} with water potability test report and FSMS plan.",
+                "owner": "OPERATIONS",
+                "documents_needed": ["FSMS Plan / Schedule 4", "Water Potability Report (IS 10500)", "Premises Layout Plan", "Equipment List"],
+                "estimated_effort": "2-3 weeks",
+            }
+        ]
+
+    consolidated = {
+        "requirement_id": canonical_id,
+        "title": canonical_title,
+        "description": canonical_desc,
+        "regulatory_domain": "FOOD_SAFETY",
+        "authority": "Food Safety and Standards Authority of India (FSSAI)",
+        "jurisdiction": "CENTRAL",
+        "status": "APPLICABLE" if any_applicable else "NEEDS_INFORMATION",
+        "priority": best_priority,
+        "why_it_matters": (
+            "Prohibits commercial food preparation, delivery, or distribution without valid "
+            "FoSCoS authorization under Section 31 of the Food Safety and Standards Act 2006."
+        ),
+        "business_facts_used": merged_facts,
+        "evidence_ids": merged_evidence,
+        "source_urls": merged_sources,
+        "actions": merged_actions,
+        "deadline": None,
+    }
+
+    # Reconstruct list placing the single consolidated FSSAI requirement at first_fssai_idx
+    result: list[dict[str, Any]] = []
+    fssai_placed = False
+    for r in requirements:
+        if r in fssai_reqs:
+            if not fssai_placed:
+                result.append(consolidated)
+                fssai_placed = True
+        else:
+            result.append(r)
+
+    if not fssai_placed:
+        result.append(consolidated)
+
+    return result
+
+
 def _validate_candidate_applicability_deterministically(
     req: dict[str, Any],
     context: OrchestrationContext | EnrichedBusinessContext,
@@ -295,6 +519,14 @@ def _validate_candidate_applicability_deterministically(
         return "NOT_APPLICABLE", "Cement and heavy clinker standards do not apply to battery and BMS manufacturing facilities."
     if is_battery_biz and ("is 13252" in title_and_desc or "power adapter" in title_and_desc):
         return "NOT_APPLICABLE", "IS 13252 applies to Information Technology Equipment power adapters; does not apply to industrial battery or BMS systems."
+
+    # Invariant 3c: Food Safety / FSSAI Cross-Domain Guard
+    is_fssai_req = any(kw in title_and_desc for kw in ["fssai", "foscos", "food safety", "food business operator"])
+    is_food_biz = bool(re.search(r"\b(food|kitchen|cloud kitchen|restaurant|catering|bakery|beverage|fruit juice|edible|meal|snack|dairy|millet|flour|grain|agro)\b", cleaned_context_desc))
+    if is_fssai_req and not is_food_biz:
+        return "NOT_APPLICABLE", "Food safety licensing applies exclusively to food business operators and culinary establishments."
+    if (is_battery_biz or is_cement_biz) and is_fssai_req:
+        return "NOT_APPLICABLE", "FSSAI food licensing regulations do not apply to industrial manufacturing facilities."
 
     # Invariant 4: Cross-Border Trade Scope Check
     is_trade_req = any(kw in title_and_desc for kw in [
@@ -442,6 +674,33 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
             if ev_id and ev_id not in covered_ev_ids:
                 det_reqs, _ = self._deterministic_grounded_synthesis(context, [ev])
                 for d_req in det_reqs:
+                    # Check if candidate is an FSSAI requirement and verified_requirements already has one
+                    is_fssai_cand = (
+                        "fssai" in d_req.get("title", "").lower()
+                        or "fssai" in d_req.get("authority", "").lower()
+                        or d_req.get("regulatory_domain") == "FOOD_SAFETY"
+                    )
+                    if is_fssai_cand:
+                        existing_fssai = next(
+                            (
+                                r for r in verified_requirements
+                                if "fssai" in r.get("title", "").lower()
+                                or "fssai" in r.get("authority", "").lower()
+                                or r.get("regulatory_domain") == "FOOD_SAFETY"
+                            ),
+                            None,
+                        )
+                        if existing_fssai:
+                            # Attach evidence candidate and source URL to existing FSSAI requirement
+                            ev_list = existing_fssai.setdefault("evidence_ids", [])
+                            if ev_id and ev_id not in ev_list:
+                                ev_list.append(ev_id)
+                            for s_url in d_req.get("source_urls", []):
+                                if s_url and s_url not in existing_fssai.setdefault("source_urls", []):
+                                    existing_fssai["source_urls"].append(s_url)
+                            covered_ev_ids.add(ev_id)
+                            continue
+
                     clean_d_title = re.sub(r"[^a-z0-9]", "", d_req.get("title", "").lower())
                     if clean_d_title in covered_titles:
                         continue
@@ -576,6 +835,9 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                 req["status"] = "NEEDS_VERIFICATION"
                 req["why_it_matters"] = "Classification of EV charging stations under Schedule-I of E-Waste Management Rules 2022 requires categorization confirmation."
 
+        # Statutory Post-Processing: Enforce FSSAI Single-Tier Invariant (FSS Act 2006 §31)
+        verified_requirements = _consolidate_fssai_requirements(context, verified_requirements)
+
         applicable_count = sum(1 for r in verified_requirements if r.get("status") == "APPLICABLE")
         needs_info_count = sum(1 for r in verified_requirements if r.get("status") in {"NEEDS_INFORMATION", "NEEDS_VERIFICATION"})
 
@@ -600,11 +862,18 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
 
     def _build_context_summary(self, context: OrchestrationContext | EnrichedBusinessContext) -> str:
         """Format canonical business facts into concise synthesis prompt context."""
+        turnover_str = ""
         if isinstance(context, EnrichedBusinessContext):
+            if context.annual_turnover is not None:
+                try:
+                    turnover_str = f"Annual Turnover: INR {float(context.annual_turnover):,.0f}\n"
+                except (ValueError, TypeError):
+                    turnover_str = f"Annual Turnover: INR {context.annual_turnover}\n"
             return (
                 f"Business Name: {context.business_name}\n"
                 f"Product/Activity: {context.product_description}\n"
                 f"State: {context.state_name} ({context.state}), District: {context.district}\n"
+                f"{turnover_str}"
                 f"Manufacturing: {context.is_manufacturing}, MSME Scale: {context.msme_scale}\n"
                 f"Connected Power Load: {context.connected_power_load} HP\n"
                 f"Total Workers: {context.total_worker_count}, Contract Workers: {context.contract_worker_count}\n"
@@ -612,10 +881,21 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                 f"Trade Intent: {context.trade_intent} (Cross-border: {context.is_cross_border})"
             )
         else:
+            to = (
+                context.financial_facts.get("annual_turnover")
+                or (context.profile_variables.get("annual_turnover") if hasattr(context, "profile_variables") else None)
+                or context.answers.get("annual_turnover")
+            )
+            if to is not None:
+                try:
+                    turnover_str = f"Annual Turnover: INR {float(to):,.0f}\n"
+                except (ValueError, TypeError):
+                    turnover_str = f"Annual Turnover: INR {to}\n"
             return (
                 f"Business Name: {context.business_name}\n"
                 f"Product/Activity: {context.product or context.raw_business_description}\n"
                 f"State: {context.geography.get('state_name') or 'Maharashtra'}, District: {context.geography.get('district') or 'Pune'}\n"
+                f"{turnover_str}"
                 f"Manufacturing: {context.normalized_facts.get('is_manufacturing', True)}, Scale: {context.normalized_facts.get('msme_scale', 'SMALL')}\n"
                 f"Connected Power Load: {context.operational_facts.get('connected_power_load')} HP\n"
                 f"Total Workers: {context.operational_facts.get('total_worker_count')}\n"
@@ -652,6 +932,8 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
         cleaned_desc = strip_negations(desc)
         is_battery_biz = bool(re.search(r"\b(battery|bms|lithium|energy storage|cell manufacturing)\b", cleaned_desc))
         is_cement_biz = (not is_battery_biz) and bool(re.search(r"\b(cement|clinker|portland)\b", cleaned_desc))
+        turnover = _extract_turnover(context)
+        is_cloud_kitchen = _is_cloud_kitchen_or_restaurant(desc)
 
         # Map each evidence candidate into an evidence-grounded requirement
         for ev in evidence_candidates:
@@ -866,29 +1148,50 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     "deadline": None,
                 })
             elif "foscos" in s_url or "fssai" in auth.lower() or "food safety" in exc_lower:
-                reqs.append({
-                    "requirement_id": req_id,
-                    "title": "FSSAI Food Business Manufacturing License",
-                    "description": "Mandatory statutory food business operator license under Food Safety and Standards Act 2006.",
-                    "regulatory_domain": "FOOD_SAFETY",
-                    "authority": "Food Safety and Standards Authority of India (FSSAI)",
-                    "jurisdiction": "CENTRAL",
-                    "status": "APPLICABLE",
-                    "priority": "HIGH",
-                    "why_it_matters": "Prohibits commercial food processing and distribution without verified FoSCoS license.",
-                    "business_facts_used": ["Food processing and fruit juice operations"],
-                    "evidence_ids": [ev_id],
-                    "source_urls": [s_url],
-                    "actions": [
-                        {
-                            "action": "Submit FoSCoS application with water test report and FSMS plan.",
-                            "owner": "OPERATIONS",
-                            "documents_needed": ["FSMS Plan", "Water Potability Report", "Equipment List"],
-                            "estimated_effort": "2-3 weeks",
-                        }
-                    ],
-                    "deadline": None,
-                })
+                if not (is_battery_biz or is_cement_biz):
+                    if is_cross_border or (turnover is not None and turnover > 200_000_000):
+                        fssai_title = "FSSAI Central Food License"
+                        fssai_req_id = "REQ-FSSAI-CENTRAL-LICENCE"
+                        fssai_desc = "Mandatory central statutory food business operator license under Food Safety and Standards Act 2006 for large-scale operations or annual turnover exceeding ₹20 Crores."
+                        fssai_facts = [f"Annual turnover exceeding ₹20 Crores ({turnover:,.0f} INR)"] if turnover else ["Cross-border food trade operations"]
+                    elif turnover is not None and turnover < 1_200_000:
+                        fssai_title = "FSSAI Basic Food Registration"
+                        fssai_req_id = "REQ-FSSAI-BASIC-REGISTRATION"
+                        fssai_desc = "Statutory basic registration under Food Safety and Standards Act 2006 for petty food business operators with annual turnover up to ₹12 Lakhs."
+                        fssai_facts = [f"Petty food business operator (annual turnover: {turnover:,.0f} INR)"]
+                    else:
+                        fssai_title = "FSSAI State Food License"
+                        fssai_req_id = "REQ-FSSAI-STATE-LICENCE"
+                        if is_cloud_kitchen:
+                            fssai_desc = "Mandatory state statutory food business operator license under Food Safety and Standards Act 2006 for commercial cloud kitchen and food delivery operations (turnover between ₹12 Lakhs and ₹20 Crores)."
+                            fssai_facts = [f"Commercial cloud kitchen food operations (annual turnover: {turnover:,.0f} INR)"] if turnover else ["Commercial cloud kitchen food service and delivery operations"]
+                        else:
+                            fssai_desc = "Mandatory state statutory food business operator license under Food Safety and Standards Act 2006 for commercial food business operators with annual turnover between ₹12 Lakhs and ₹20 Crores."
+                            fssai_facts = [f"Commercial food business operations (annual turnover: {turnover:,.0f} INR)"] if turnover else ["Commercial food processing and handling operations"]
+
+                    reqs.append({
+                        "requirement_id": f"{fssai_req_id}-{hashlib.sha256(ev_id.encode('utf-8')).hexdigest()[:6].upper()}",
+                        "title": fssai_title,
+                        "description": fssai_desc,
+                        "regulatory_domain": "FOOD_SAFETY",
+                        "authority": "Food Safety and Standards Authority of India (FSSAI)",
+                        "jurisdiction": "CENTRAL",
+                        "status": "APPLICABLE",
+                        "priority": "HIGH",
+                        "why_it_matters": "Prohibits commercial food preparation, delivery, or processing without verified FoSCoS license under Section 31 of FSS Act 2006.",
+                        "business_facts_used": fssai_facts,
+                        "evidence_ids": [ev_id],
+                        "source_urls": [s_url or "https://foscos.fssai.gov.in/"],
+                        "actions": [
+                            {
+                                "action": f"Submit FoSCoS application for {fssai_title} with water test report and FSMS plan.",
+                                "owner": "OPERATIONS",
+                                "documents_needed": ["FSMS Plan / Schedule 4", "Water Potability Report", "Layout Plan", "Equipment List"],
+                                "estimated_effort": "2-3 weeks",
+                            }
+                        ],
+                        "deadline": None,
+                    })
             elif "eprbattery" in s_url or "cpcb_battery" in auth.lower() or "battery waste" in exc_lower:
                 reqs.append({
                     "requirement_id": req_id,
@@ -1030,6 +1333,9 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
             if is_ewaste and is_ev_mfg:
                 r["status"] = "NEEDS_VERIFICATION"
                 r["why_it_matters"] = "Classification of EV charging stations under Schedule-I of E-Waste Management Rules 2022 requires categorization confirmation."
+
+        # Consolidate FSSAI single-tier invariant in deterministic output as well
+        reqs = _consolidate_fssai_requirements(context, reqs)
 
         summary = {
             "total_evaluated": len(reqs),

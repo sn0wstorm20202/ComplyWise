@@ -494,6 +494,36 @@ class AssessmentComplianceView(APIView):
                 comp_data = res.data
             else:
                 comp_data = run.stage_metadata["compliance_synthesis"]
+                reqs = comp_data.get("requirements") or []
+                fssai_count = sum(
+                    1 for r in reqs
+                    if "fssai" in (r.get("title") or "").lower()
+                    or "fssai" in (r.get("authority") or "").lower()
+                    or (r.get("regulatory_domain") or "").upper() == "FOOD_SAFETY"
+                )
+                if fssai_count > 1:
+                    from domain.intelligence.synthesis import _consolidate_fssai_requirements
+                    from domain.intelligence.orchestration import OrchestrationContext
+                    ctx = OrchestrationContext.from_business(
+                        run.assessment.business,
+                        assessment=run.assessment,
+                        correlation_id=run.correlation_id,
+                    )
+                    consolidated = _consolidate_fssai_requirements(ctx, reqs)
+                    comp_data["requirements"] = consolidated
+                    comp_data["applicable_count"] = sum(1 for r in consolidated if r.get("status") == "APPLICABLE")
+                    if isinstance(comp_data.get("executive_summary"), dict):
+                        comp_data["executive_summary"]["total_evaluated"] = len(consolidated)
+                        comp_data["executive_summary"]["applicable_count"] = comp_data["applicable_count"]
+                        comp_data["executive_summary"]["needs_information_count"] = sum(
+                            1 for r in consolidated if r.get("status") in {"NEEDS_INFORMATION", "NEEDS_VERIFICATION"}
+                        )
+                    state = dict(run.stage_metadata)
+                    state["compliance_synthesis"] = comp_data
+                    if "COMPLIANCE_SYNTHESIS" in state and isinstance(state["COMPLIANCE_SYNTHESIS"], dict):
+                        state["COMPLIANCE_SYNTHESIS"]["data"] = comp_data
+                    run.stage_metadata = state
+                    run.save()
 
             return Response(
                 envelope(comp_data, meta={"correlation_id": run.correlation_id}),

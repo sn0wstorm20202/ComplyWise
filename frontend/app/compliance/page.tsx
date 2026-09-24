@@ -127,8 +127,46 @@ function ComplianceContent() {
                     ],
               };
             });
-            setRequirements(mapped);
-            setTotalCount(mapped.length);
+            // Client-side FSSAI Single-Tier deduplication guard (Food Safety & Standards Act §31)
+            const fssaiIndices = mapped
+              .map((r, idx) => ({ r, idx }))
+              .filter(
+                ({ r }) =>
+                  (r.authority || "").toLowerCase().includes("fssai") ||
+                  (r.name || "").toLowerCase().includes("fssai") ||
+                  (r.domain || "").toUpperCase() === "FOOD_SAFETY"
+              );
+
+            let finalMapped = mapped;
+            if (fssaiIndices.length > 1) {
+              const central = fssaiIndices.find(({ r }) => (r.name || "").toLowerCase().includes("central"));
+              const state = fssaiIndices.find(({ r }) => (r.name || "").toLowerCase().includes("state"));
+              const chosenObj = central || state || fssaiIndices[0];
+              const chosen = { ...chosenObj.r };
+
+              // Merge unique citations
+              const allCitations = fssaiIndices.flatMap(({ r }) => r.citations || []);
+              const seenCits = new Set<string>();
+              const uniqueCitations = allCitations.filter((c) => {
+                const key = c.evidence_id || c.locator || "";
+                if (seenCits.has(key)) return false;
+                seenCits.add(key);
+                return true;
+              });
+              chosen.citations = uniqueCitations;
+              chosen.citation_count = uniqueCitations.length;
+              chosen.evidence_count = uniqueCitations.length;
+
+              const otherIndices = new Set(
+                fssaiIndices.map(({ idx }) => idx).filter((idx) => idx !== chosenObj.idx)
+              );
+              finalMapped = mapped
+                .filter((_, idx) => !otherIndices.has(idx))
+                .map((r, idx) => (idx === chosenObj.idx ? chosen : r));
+            }
+
+            setRequirements(finalMapped);
+            setTotalCount(finalMapped.length);
             loadedFromOrchestration = true;
           }
         } catch (orchErr) {

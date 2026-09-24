@@ -90,8 +90,12 @@ class DerivedBusinessContext:
     def is_manufacturing(self) -> bool:
         """Heuristic indication of manufacturing operations."""
         desc = (self.product_description or "").lower()
-        mfg_words = ["manufactur", "assembl", "produc", "fabricat", "process", "plant", "factory", "boiler", "furnace"]
-        return any(w in desc for w in mfg_words) or (self.connected_power_load is not None and self.connected_power_load > 0)
+        service_words = ["software", "saas", "platform", "app", "web application", "cloud", "digital", "consulting", "it services", "edtech", "fintech", "pre-visualization", "agency"]
+        if any(sw in desc for sw in service_words) and not any(hw in desc for hw in ["hardware manufacturing", "assembly plant", "fabrication plant", "physical manufacturing"]):
+            return False
+
+        mfg_words = [r"\bmanufactur", r"\bassembl", r"\bfabricat", r"\bplant\b", r"\bfactory\b", r"\bboiler\b", r"\bfurnace\b"]
+        return any(re.search(w, desc) for w in mfg_words)
 
     @property
     def is_cross_border(self) -> bool:

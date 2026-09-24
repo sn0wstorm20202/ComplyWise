@@ -306,7 +306,7 @@ class AssessmentQuestionsListView(APIView):
             "questions": enriched_questions,
             "total_questions": len(enriched_questions),
             "answered_count": len(answers),
-            "is_complete": len(answers) >= len(enriched_questions) and len(enriched_questions) == 15,
+            "is_complete": len(answers) >= len(enriched_questions) and len(enriched_questions) >= 4,
             "next_question": next_q,
         }
         return Response(

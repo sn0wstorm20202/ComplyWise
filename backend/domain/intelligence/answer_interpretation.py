@@ -47,77 +47,102 @@ def coerce_and_validate_answer(
     if raw_val is None:
         raise StageInputInvalid("Answer value cannot be null.")
 
+    user_explanation: str | None = None
+    target_val = raw_val
+    if isinstance(raw_val, dict) and "value" in raw_val:
+        target_val = raw_val.get("value")
+        expl = raw_val.get("explanation")
+        if expl and str(expl).strip():
+            user_explanation = str(expl).strip()
+
+    if target_val is None:
+        raise StageInputInvalid("Answer value cannot be null.")
+
     atype = answer_type.upper()
+    validated_val: Any = None
 
     if atype == QuestionAnswerType.BOOLEAN.value:
-        if isinstance(raw_val, bool):
-            return raw_val
-        s = str(raw_val).strip().lower()
-        if s in {"true", "yes", "y", "1"}:
-            return True
-        elif s in {"false", "no", "n", "0"}:
-            return False
-        raise StageInputInvalid(f"Invalid boolean value: '{raw_val}'. Expected True or False.")
+        if isinstance(target_val, bool):
+            validated_val = target_val
+        else:
+            s = str(target_val).strip().lower()
+            if s in {"true", "yes", "y", "1"}:
+                validated_val = True
+            elif s in {"false", "no", "n", "0"}:
+                validated_val = False
+            else:
+                raise StageInputInvalid(f"Invalid boolean value: '{target_val}'. Expected True or False.")
 
     elif atype in {QuestionAnswerType.NUMBER.value, QuestionAnswerType.PERCENTAGE.value}:
         if options:
             valid_vals = {str(opt.get("value", "")).strip().upper() for opt in options if isinstance(opt, dict)}
             valid_labels = {str(opt.get("label", "")).strip().upper() for opt in options if isinstance(opt, dict)}
-            if str(raw_val).strip().upper() in valid_vals or str(raw_val).strip().upper() in valid_labels:
-                return str(raw_val).strip()
-        try:
-            # Strip commas or unit suffixes
-            cleaned = re.sub(r"[^\d.-]", "", str(raw_val)).strip()
-            num = float(cleaned)
-            if atype == QuestionAnswerType.PERCENTAGE.value:
-                if num < 0 or num > 100:
-                    raise StageInputInvalid(f"Percentage must be between 0 and 100: {num}")
-            return int(num) if num.is_integer() else num
-        except (ValueError, TypeError) as exc:
-            if str(raw_val).strip():
-                return str(raw_val).strip()
-            raise StageInputInvalid(f"Invalid number: '{raw_val}'") from exc
+            if str(target_val).strip().upper() in valid_vals or str(target_val).strip().upper() in valid_labels:
+                validated_val = str(target_val).strip()
+        if validated_val is None:
+            try:
+                # Strip commas or unit suffixes
+                cleaned = re.sub(r"[^\d.-]", "", str(target_val)).strip()
+                num = float(cleaned)
+                if atype == QuestionAnswerType.PERCENTAGE.value:
+                    if num < 0 or num > 100:
+                        raise StageInputInvalid(f"Percentage must be between 0 and 100: {num}")
+                validated_val = int(num) if num.is_integer() else num
+            except (ValueError, TypeError) as exc:
+                if str(target_val).strip():
+                    validated_val = str(target_val).strip()
+                else:
+                    raise StageInputInvalid(f"Invalid number: '{target_val}'") from exc
 
     elif atype == QuestionAnswerType.CURRENCY.value:
         try:
-            cleaned = re.sub(r"[^\d.-]", "", str(raw_val)).strip()
+            cleaned = re.sub(r"[^\d.-]", "", str(target_val)).strip()
             num = float(cleaned)
-            return int(num) if num.is_integer() else num
+            validated_val = int(num) if num.is_integer() else num
         except (ValueError, TypeError) as exc:
-            if str(raw_val).strip():
-                return str(raw_val).strip()
-            raise StageInputInvalid(f"Invalid currency amount: '{raw_val}'") from exc
+            if str(target_val).strip():
+                validated_val = str(target_val).strip()
+            else:
+                raise StageInputInvalid(f"Invalid currency amount: '{target_val}'") from exc
 
     elif atype == QuestionAnswerType.SINGLE_SELECT.value:
-        str_val = str(raw_val).strip()
+        str_val = str(target_val).strip()
         if options:
-            valid_vals = {str(opt.get("value", "")).strip().upper() for opt in options}
-            valid_labels = {str(opt.get("label", "")).strip().upper() for opt in options}
+            valid_vals = {str(opt.get("value", "")).strip().upper() for opt in options if isinstance(opt, dict)}
+            valid_labels = {str(opt.get("label", "")).strip().upper() for opt in options if isinstance(opt, dict)}
             if str_val.upper() in valid_vals:
-                return str_val
-            for opt in options:
-                if str(opt.get("label", "")).strip().upper() == str_val.upper():
-                    return opt.get("value")
-            # If not exact match, accept normalized string if non-empty
-            if not str_val:
-                raise StageInputInvalid(f"Selected option cannot be empty.")
-        return str_val
+                validated_val = str_val
+            else:
+                for opt in options:
+                    if isinstance(opt, dict) and str(opt.get("label", "")).strip().upper() == str_val.upper():
+                        validated_val = opt.get("value")
+                        break
+            if validated_val is None:
+                if not str_val:
+                    raise StageInputInvalid("Selected option cannot be empty.")
+                validated_val = str_val
+        else:
+            validated_val = str_val
 
     elif atype == QuestionAnswerType.MULTI_SELECT.value:
-        if isinstance(raw_val, list):
-            vals = [str(v).strip() for v in raw_val if str(v).strip()]
+        if isinstance(target_val, list):
+            vals = [str(v).strip() for v in target_val if str(v).strip()]
         else:
-            vals = [str(raw_val).strip()]
+            vals = [str(target_val).strip()]
         if not vals:
             raise StageInputInvalid("Multi-select value cannot be empty.")
-        return vals
+        validated_val = vals
 
     else:
         # TEXT / DATE / other
-        s = str(raw_val).strip()
+        s = str(target_val).strip()
         if not s:
             raise StageInputInvalid("Text answer cannot be empty.")
-        return s
+        validated_val = s
+
+    if user_explanation:
+        return {"value": validated_val, "explanation": user_explanation}
+    return validated_val
 
 
 class AnswerInterpreter:
@@ -209,6 +234,20 @@ class AnswerInterpreter:
         q_by_id = {q.get("question_id"): q for q in questions if isinstance(q, dict)}
 
         for qid, val in answers.items():
+            actual_val = val
+            user_explanation = None
+            if isinstance(val, dict) and "value" in val:
+                actual_val = val.get("value")
+                user_explanation = val.get("explanation")
+
+            if user_explanation:
+                extracted_facts.append({
+                    "key": f"{qid.lower()}_user_note",
+                    "value": user_explanation,
+                    "source": "USER_EXPLANATION",
+                    "confidence": "EXPLICIT",
+                })
+
             q_info = q_by_id.get(qid, {})
             q_text = (q_info.get("question") or "").lower()
             category = (q_info.get("category") or "").lower()
@@ -227,9 +266,19 @@ class AnswerInterpreter:
                     pass
 
             # Total Workforce
-            elif "total" in q_text and ("employee" in q_text or "worker" in q_text or "staff" in q_text):
+            elif "total" in q_text and ("employee" in q_text or "worker" in q_text or "staff" in q_text or "workforce" in q_text):
                 try:
-                    num_val = int(float(str(val).replace(",", "").strip()))
+                    str_v = str(actual_val).upper()
+                    if "BELOW_10" in str_v or "<10" in str_v or "1 TO 9" in str_v:
+                        num_val = 5
+                    elif "10_TO_19" in str_v or "10-19" in str_v or "10 TO 19" in str_v:
+                        num_val = 15
+                    elif "20_TO_49" in str_v or "20-49" in str_v:
+                        num_val = 30
+                    elif "50_PLUS" in str_v or "50+" in str_v:
+                        num_val = 60
+                    else:
+                        num_val = int(float(str(actual_val).replace(",", "").strip()))
                     extracted_facts.append({
                         "key": "total_worker_count",
                         "value": num_val,
@@ -265,7 +314,17 @@ class AnswerInterpreter:
             # Turnover
             elif "turnover" in q_text or "revenue" in q_text:
                 try:
-                    num_val = float(str(val).replace(",", "").strip())
+                    str_v = str(actual_val).upper()
+                    if "UP_TO_12_LAKHS" in str_v:
+                        num_val = 1_000_000.0
+                    elif "BELOW_20_LAKHS" in str_v:
+                        num_val = 1_500_000.0
+                    elif "12_LAKHS_TO_20_CRORE" in str_v or "20_LAKHS_TO_1_5_CRORE" in str_v:
+                        num_val = 15_000_000.0
+                    elif "ABOVE_20_CRORE" in str_v:
+                        num_val = 250_000_000.0
+                    else:
+                        num_val = float(str(actual_val).replace(",", "").strip())
                     extracted_facts.append({
                         "key": "annual_turnover",
                         "value": num_val,

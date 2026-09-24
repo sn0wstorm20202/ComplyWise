@@ -95,48 +95,68 @@ class SmartQuestion:
 
 
 QUESTION_GENERATION_SYSTEM_PROMPT = """You are the ComplyWise Adaptive Questioning Intelligence Engine.
-Your task is to generate EXACTLY 15 intelligent, high-leverage compliance questions for the specified Indian business.
+Your task is to generate between 5 and 6 intelligent, high-leverage compliance questions (Q01 through Q05 or Q06) tailored specifically to the provided Indian business profile.
 
 RULES:
-1. You must generate EXACTLY 15 questions. Not 10, not 12, not 16. EXACTLY 15.
-2. Questions must be tailored specifically to the business's product, manufacturing processes, geography, trade, and operational characteristics.
-3. Every question must be in clear, business-friendly language understandable to an enterprise owner.
-4. Questions must cover decision-critical compliance dimensions such as:
-   - Connected electrical load (HP or kVA) and captive power generation (DG sets)
-   - Process water consumption and effluent discharge (Effluent Treatment Plant / ETP)
-   - Atmospheric emissions, boilers, furnaces, chimneys, or stack heights
-   - Hazardous chemicals storage and hazardous waste disposal (Manifest / SPCB authorization)
-   - Total workforce and contract labor engagement (Factories Act / Contract Labour Act)
-   - Plant & machinery capital investment tier (MSME classification thresholds)
-   - Siting / zoning (MIDC / GIDC approved industrial estate vs agricultural / eco-sensitive zone)
-   - Import / export activities, foreign currency receipts, customs bonded warehousing
-   - Sector-specific statutory standards (e.g. BIS CRS / QCO for electronics, FSSAI for food, PESO for flammable materials, Textile effluent / ZLD)
-   - Packaging materials / Extended Producer Responsibility (EPR for plastic packaging)
+1. You must generate between 5 and 6 questions (minimum 5, maximum 6). Not 15, not 10. EXACTLY 5 or 6 questions.
+2. Questions must be tailored specifically to the business's sector, product/service, operations, workforce, trade, and geography.
+3. Every question must be in clear, founder-friendly language.
+4. Sector-Specific Invariants:
+   - For SOFTWARE / IT / SAAS / DIGITAL PLATFORMS / MEDIA / CREATIVE SERVICES:
+     * Focus on:
+       1) Total workforce scale (on-roll staff and contractors for Shops & Establishments Act, PF, ESI).
+       2) Service export model and foreign client billing (to determine GST LUT under Section 16 of IGST Act vs physical goods IEC).
+       3) User personal data collection, processing, and storage (Digital Personal Data Protection / DPDP Act 2023).
+       4) Commercial premises arrangement (leased commercial office vs co-working vs remote).
+       5) Intellectual property / software licensing / cloud infrastructure security.
+       6) Annual turnover tier (GST threshold & filing requirements).
+     * NEVER ask about factory connected electrical load, industrial boilers, chimney emissions, industrial effluent, or hazardous waste disposal.
+   - For FOOD BUSINESSES / CLOUD KITCHENS / RESTAURANTS:
+     * Focus on:
+       1) Annual turnover tier (determines FSSAI Basic <= ₹12L, State ₹12L-₹20Cr, or Central >₹20Cr under FSS Act §31).
+       2) Operating model (cloud kitchen / delivery-only vs takeaway vs dine-in).
+       3) Potable water source and laboratory testing (IS 10500 potability report).
+       4) Total kitchen workforce count (food handler health checks & worker thresholds).
+       5) Commercial LPG / fire suppression clearance and Municipal Health Trade License.
+     * NEVER ask about heavy engineering or metal smelting standards.
+   - For PHYSICAL MANUFACTURING / ELECTRONICS / BATTERIES / CHEMICALS:
+     * Focus on:
+       1) Connected electrical load (HP or kVA).
+       2) Total factory workforce & shift laborers (Factories Act threshold of 10+ workers).
+       3) Industrial emissions, effluent discharge, or hazardous waste handling.
+       4) Siting / zoning (approved industrial estate vs non-conforming land).
+       5) Technical product standards and conformity testing (BIS CRS, QCO, ARAI, etc.).
+       6) Foreign trade scope (importing components vs exporting finished goods).
 5. STRICT RULE ON REASONS & LEGAL CONCLUSIONS:
    The "reason" field must NOT contain final legal applicability conclusions.
    Avoid phrases such as "triggers mandatory license", "is legally required", "is applicable", "the company must obtain...", or "the business is exempt from...".
    Always provide factual/contextual explanations, for example:
-   "This helps determine which electrical and factory safety requirements may be relevant to your facility."
-6. Allowed `answer_type` values: "TEXT", "NUMBER", "BOOLEAN", "SINGLE_SELECT", "MULTI_SELECT", "DATE", "CURRENCY", "PERCENTAGE".
+   "This helps determine which state employment frameworks and establishment registrations apply to your facility."
+6. Allowed `answer_type` values: "SINGLE_SELECT", "MULTI_SELECT", "BOOLEAN", "NUMBER", "CURRENCY", "TEXT".
+   Prefer "SINGLE_SELECT", "MULTI_SELECT", or "BOOLEAN" with 2 to 4 clear, intuitive options. The user can also provide their own explanation/description alongside any option.
 7. If answer_type is SINGLE_SELECT or MULTI_SELECT, provide at least 2 clear options with {"value": "...", "label": "..."}.
-8. If answer_type is BOOLEAN, options should be empty.
 
 Output a valid JSON object matching this schema:
 {
   "questions": [
     {
       "question_id": "Q01",
-      "question": "What is the total connected electrical load of your production facility?",
-      "category": "Operations",
-      "answer_type": "NUMBER",
+      "question": "What is the total size of your current workforce (including full-time employees and contractors)?",
+      "category": "Workforce & Labor",
+      "answer_type": "SINGLE_SELECT",
       "required": true,
-      "options": [],
-      "unit": "HP",
-      "help_text": "Include the total sanctioned load from the electricity distribution company (MSEDCL/TNEB/etc.).",
-      "reason": "This helps determine which electrical infrastructure and factory safety requirements may be relevant to your facility.",
+      "options": [
+        {"value": "BELOW_10", "label": "1 to 9 employees"},
+        {"value": "10_TO_19", "label": "10 to 19 employees"},
+        {"value": "20_TO_49", "label": "20 to 49 employees"},
+        {"value": "50_PLUS", "label": "50 or more employees"}
+      ],
+      "unit": null,
+      "help_text": "Workforce size determines applicability of Shops & Establishments, PF, and ESI registration thresholds.",
+      "reason": "This helps determine which state employment frameworks and social security thresholds apply to your team.",
       "order": 1
     }
-    // ... exactly 15 questions Q01 through Q15
+    // ... 5 to 6 questions total (Q01 through Q05 or Q06)
   ]
 }
 Output ONLY the raw JSON object. Do not include markdown formatting or commentary."""
@@ -182,12 +202,12 @@ def sanitize_question_reason(reason: str, category: str) -> str:
 
 
 def validate_and_normalize_questions(raw_questions: list[dict[str, Any]]) -> list[SmartQuestion]:
-    """Validate 15-question list against quality guards."""
+    """Validate 5-6 question list against quality guards."""
     if not isinstance(raw_questions, list):
         raise StructuredOutputInvalid("Generated questions must be a list.")
 
-    if len(raw_questions) != 15:
-        raise StructuredOutputInvalid(f"Generated questions count must be exactly 15, received {len(raw_questions)}.")
+    if not (4 <= len(raw_questions) <= 8):
+        raise StructuredOutputInvalid(f"Generated questions count must be between 5 and 6, received {len(raw_questions)}.")
 
     seen_ids: set[str] = set()
     seen_texts: set[str] = set()
@@ -272,501 +292,379 @@ def strip_negations(text: str) -> str:
     return re.sub(pattern, " ", text, flags=re.IGNORECASE)
 
 
-def generate_emergency_15_questions(
+def generate_emergency_questions(
     context: OrchestrationContext,
     understanding: BusinessUnderstandingResult | None = None,
 ) -> list[SmartQuestion]:
-    """Deterministic emergency fallback generating 15 valid questions tailored to business sector."""
+    """Deterministic emergency fallback generating 5 to 6 valid questions tailored to business sector."""
     desc = (context.raw_business_description or context.product or context.business_name or "").lower()
     cleaned_desc = strip_negations(desc)
-    is_battery = bool(re.search(r"\b(battery|bms|lithium|energy storage|cell manufacturing|bess)\b", cleaned_desc))
-    is_cement = (not is_battery) and bool(re.search(r"\b(cement|clinker|concrete|limestone|rotary kiln)\b", cleaned_desc))
-    is_food = bool(re.search(r"\b(food|dairy|beverage|snack|bakery)\b", cleaned_desc))
-    is_textile = bool(re.search(r"\b(textile|garment|apparel|cloth|dye)\b", cleaned_desc))
-    is_electronics = bool(re.search(r"\b(electronic|charg|circuit|pcb|importer)\b", cleaned_desc))
+    is_software = bool(re.search(r"(software|saas|it|digital|platform|app|cloud|web|ai|tech|film pre-visualization|storyloom)", cleaned_desc))
+    is_food = (not is_software) and bool(re.search(r"(food|kitchen|cloud kitchen|restaurant|catering|bakery|beverage|fruit juice|edible|meal|snack|dairy|millet|flour|grain|agro)", cleaned_desc))
+    is_battery = (not is_software) and (not is_food) and bool(re.search(r"(battery|bms|lithium|energy storage|cell manufacturing|bess)", cleaned_desc))
+    is_electronics = (not is_software) and (not is_food) and (not is_battery) and bool(re.search(r"(electronic|charg|circuit|pcb|importer|hardware)", cleaned_desc))
 
     questions_data: list[dict[str, Any]] = []
 
-    # 1. Connected Load
-    questions_data.append({
-        "question_id": "Q01",
-        "question": "What is the sanctioned or connected electrical load of your facility?",
-        "category": "Facility & Power",
-        "answer_type": "NUMBER",
-        "required": True,
-        "options": [],
-        "unit": "HP",
-        "help_text": "Enter the total connected electrical load sanctioned by the electricity utility.",
-        "reason": "This helps determine which electrical infrastructure and factory safety requirements may be relevant to your facility.",
-        "order": 1,
-    })
-
-    # 2. Total Workforce
-    questions_data.append({
-        "question_id": "Q02",
-        "question": "How many total employees (on-roll staff and laborers) work at your enterprise?",
-        "category": "Workforce & Labor",
-        "answer_type": "NUMBER",
-        "required": True,
-        "options": [],
-        "unit": "workers",
-        "help_text": "Include all administrative, technical, and operational on-roll personnel.",
-        "reason": "This helps determine which workforce scale and social security frameworks may be relevant to your enterprise.",
-        "order": 2,
-    })
-
-    # 3. Contract Labor
-    questions_data.append({
-        "question_id": "Q03",
-        "question": "Do you engage or plan to engage contract workers or third-party outsourced labor?",
-        "category": "Workforce & Labor",
-        "answer_type": "BOOLEAN",
-        "required": True,
-        "options": [],
-        "unit": None,
-        "help_text": "Applies if you hire security, housekeeping, packing, or casual labor through contractors.",
-        "reason": "This helps determine which contractor engagement and workforce guidelines may be relevant to your operations.",
-        "order": 3,
-    })
-
-    # 4. Plant & Machinery Investment
-    questions_data.append({
-        "question_id": "Q04",
-        "question": "What is the total capital investment in plant, machinery, and production equipment?",
-        "category": "Capital & MSME",
-        "answer_type": "CURRENCY",
-        "required": True,
-        "options": [],
-        "unit": "INR",
-        "help_text": "Gross original value of plant and machinery excluding land and buildings.",
-        "reason": "This helps determine which MSME investment tier and capital incentive frameworks may be relevant to your enterprise.",
-        "order": 4,
-    })
-
-    # 5. Annual Turnover
-    questions_data.append({
-        "question_id": "Q05",
-        "question": "What is the expected or current annual gross turnover of the business?",
-        "category": "Financial",
-        "answer_type": "CURRENCY",
-        "required": True,
-        "options": [],
-        "unit": "INR",
-        "help_text": "Total annual revenue from sales of goods or services.",
-        "reason": "This helps determine which enterprise revenue thresholds and statutory filing schedules may be relevant to your business.",
-        "order": 5,
-    })
-
-    # 6. Industrial Estate vs Non-conforming Land
-    questions_data.append({
-        "question_id": "Q06",
-        "question": "Where is the physical manufacturing or business premises situated?",
-        "category": "Siting & Land",
-        "answer_type": "SINGLE_SELECT",
-        "required": True,
-        "options": [
-            {"value": "APPROVED_ESTATE", "label": "Approved Industrial Area / Estate (e.g. MIDC / GIDC / RIICO)"},
-            {"value": "SPECIAL_ECONOMIC_ZONE", "label": "Special Economic Zone (SEZ)"},
-            {"value": "CONVERTED_COMMERCIAL", "label": "Commercial Converted Land / Municipal Zone"},
-            {"value": "NON_CONFORMING", "label": "Non-conforming Industrial Area / Agricultural conversion"},
-        ],
-        "unit": None,
-        "help_text": "Indicate whether the facility is in a government-notified industrial zone.",
-        "reason": "This helps determine which industrial estate siting guidelines and municipal norms may be relevant to your facility.",
-        "order": 6,
-    })
-
-    # 7. DG Set Captive Power
-    questions_data.append({
-        "question_id": "Q07",
-        "question": "Do you install or operate a diesel generator (DG set) for backup or captive power?",
-        "category": "Operations",
-        "answer_type": "BOOLEAN",
-        "required": True,
-        "options": [],
-        "unit": None,
-        "help_text": "Select yes if you have an acoustic enclosed diesel generator.",
-        "reason": "This helps determine which backup power emission guidelines and acoustic standards may be relevant to your facility.",
-        "order": 7,
-    })
-
-    # 8. Hazardous Waste Generation
-    questions_data.append({
-        "question_id": "Q08",
-        "question": "Does your production generate hazardous wastes such as spent oils, chemical sludge, or electronic scrap?",
-        "category": "Environmental",
-        "answer_type": "BOOLEAN",
-        "required": True,
-        "options": [],
-        "unit": None,
-        "help_text": "Includes used machine oil, solvent residues, e-waste, or chemical containers.",
-        "reason": "This helps determine which waste stream management protocols and environmental safeguards may be relevant to your facility.",
-        "order": 8,
-    })
-
-    # 9. Trade Intent (Imports / Exports)
-    questions_data.append({
-        "question_id": "Q09",
-        "question": "What is the cross-border trade scope of your business operations?",
-        "category": "Foreign Trade",
-        "answer_type": "SINGLE_SELECT",
-        "required": True,
-        "options": [
-            {"value": "DOMESTIC_ONLY", "label": "Domestic operations only within India"},
-            {"value": "EXPORT_ONLY", "label": "Direct exports to overseas markets"},
-            {"value": "IMPORT_ONLY", "label": "Importing components / raw materials from abroad"},
-            {"value": "IMPORT_AND_EXPORT", "label": "Both importing materials and exporting finished goods"},
-        ],
-        "unit": None,
-        "help_text": "Specify if cross-border goods movement or foreign currency transactions are planned.",
-        "reason": "This helps determine which cross-border trade documentation and customs procedures may be relevant to your operations.",
-        "order": 9,
-    })
-
-    # Sector-Specific Questions (10, 11, 12, 13)
-    if is_battery:
-        questions_data.append({
-            "question_id": "Q10",
-            "question": "What battery cell chemistry or energy storage technology is used in your manufacturing/assembly?",
-            "category": "Cell Chemistry",
-            "answer_type": "SINGLE_SELECT",
-            "required": True,
-            "options": [
-                {"value": "LFP", "label": "Lithium Iron Phosphate (LFP)"},
-                {"value": "NMC", "label": "Nickel Manganese Cobalt (NMC)"},
-                {"value": "SOLID_STATE_SODIUM", "label": "Sodium-Ion or Solid-State"},
-                {"value": "LEAD_ACID", "label": "Advanced Lead-Acid or Other"},
-            ],
-            "unit": None,
-            "help_text": "Battery chemistry determines hazard categorization, transport safety, and thermal management standards.",
-            "reason": "This helps determine which chemical safety guidelines, storage standards, and hazard classifications may be relevant to your facility.",
-            "order": 10,
-        })
-        questions_data.append({
-            "question_id": "Q11",
-            "question": "Does the facility perform secondary cell fabrication or battery pack & BMS integration?",
-            "category": "Manufacturing Scope",
-            "answer_type": "SINGLE_SELECT",
-            "required": True,
-            "options": [
-                {"value": "PACK_AND_BMS", "label": "Battery Pack Assembly and Battery Management System (BMS) integration"},
-                {"value": "CELL_FABRICATION", "label": "Electrode coating, cell fabrication, and chemical assembly"},
-                {"value": "FULL_INTEGRATION", "label": "Integrated cell manufacturing and battery pack production"},
-            ],
-            "unit": None,
-            "help_text": "BMS assembly focuses on electrical safety type-testing, while cell fabrication involves chemical manufacturing.",
-            "reason": "This helps determine which environmental consent category (Red vs Orange) and process safety rules apply to your unit.",
-            "order": 11,
-        })
-        questions_data.append({
-            "question_id": "Q12",
-            "question": "Has your enterprise registered as a Producer under the CPCB Battery Waste Management Rules 2022?",
-            "category": "Waste & EPR",
-            "answer_type": "BOOLEAN",
-            "required": True,
-            "options": [],
-            "unit": None,
-            "help_text": "Mandatory Extended Producer Responsibility (EPR) registration on the CPCB centralized portal eprbattery.cpcb.gov.in.",
-            "reason": "This helps determine statutory EPR targets and end-of-life battery collection framework compliance.",
-            "order": 12,
-        })
-        questions_data.append({
-            "question_id": "Q13",
-            "question": "Are your battery packs or cells certified under BIS IS 16046 (Part 2) / IEC 62133-2 under MeitY CRS?",
-            "category": "BIS Compliance",
-            "answer_type": "BOOLEAN",
-            "required": True,
-            "options": [],
-            "unit": None,
-            "help_text": "Compulsory Registration Scheme (CRS) safety standard for secondary lithium cells and batteries.",
-            "reason": "This helps determine which mandatory laboratory safety testing and BIS R-number registrations apply before commercial dispatch.",
-            "order": 13,
-        })
-    elif is_cement:
-        questions_data.append({
-            "question_id": "Q10",
-            "question": "What type of clinker grinding or cement manufacturing process is utilized?",
-            "category": "Process & Emissions",
-            "answer_type": "SINGLE_SELECT",
-            "required": True,
-            "options": [
-                {"value": "INTEGRATED_PLANT", "label": "Integrated Cement Plant with captive limestone mining and rotary kiln"},
-                {"value": "STANDALONE_GRINDING", "label": "Standalone Clinker Grinding and Blending Unit"},
-                {"value": "READY_MIX_CONCRETE", "label": "Ready Mix Concrete (RMC) batching plant"},
-            ],
-            "unit": None,
-            "help_text": "Integrated plants involve rotary kilns, whereas grinding units process pre-manufactured clinker.",
-            "reason": "This helps determine which clinker processing guidelines and environmental frameworks may be relevant to your facility.",
-            "order": 10,
-        })
-        questions_data.append({
-            "question_id": "Q11",
-            "question": "What is the planned annual clinker or cement production capacity?",
-            "category": "Production Scale",
-            "answer_type": "NUMBER",
-            "required": True,
-            "options": [],
-            "unit": "MT/annum",
-            "help_text": "Nominal design capacity in metric tonnes per year.",
-            "reason": "This helps determine which production capacity and emission monitoring standards may be relevant to your facility.",
-            "order": 11,
-        })
-        questions_data.append({
-            "question_id": "Q12",
-            "question": "Will your facility operate captive limestone quarrying or procure clinker externally?",
-            "category": "Raw Materials",
-            "answer_type": "SINGLE_SELECT",
-            "required": True,
-            "options": [
-                {"value": "CAPTIVE_MINING", "label": "Captive limestone mining under mineral concession lease"},
-                {"value": "EXTERNAL_PROCUREMENT", "label": "Procured from domestic/imported merchant suppliers"},
-            ],
-            "unit": None,
-            "help_text": "Mining activities involve lease permissions and mineral dispatch guidelines.",
-            "reason": "This helps determine which raw material sourcing guidelines and mineral transportation frameworks may be relevant to your facility.",
-            "order": 12,
-        })
-        questions_data.append({
-            "question_id": "Q13",
-            "question": "Does the cement facility maintain a captive thermal power plant or waste heat recovery system?",
-            "category": "Energy & Power",
-            "answer_type": "BOOLEAN",
-            "required": True,
-            "options": [],
-            "unit": None,
-            "help_text": "Waste Heat Recovery Systems (WHRS) assist energy efficiency and thermal optimization.",
-            "reason": "This helps determine which waste heat recovery programs and energy efficiency frameworks may be relevant to your facility.",
-            "order": 13,
-        })
+    if is_software:
+        # Software / SaaS / Digital Platform / Media: 5 targeted questions
+        questions_data = [
+            {
+                "question_id": "Q01",
+                "question": "What is the total size of your workforce (full-time employees and contractors)?",
+                "category": "Workforce & Labor",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "BELOW_10", "label": "1 to 9 employees"},
+                    {"value": "10_TO_19", "label": "10 to 19 employees"},
+                    {"value": "20_TO_49", "label": "20 to 49 employees"},
+                    {"value": "50_PLUS", "label": "50 or more employees"},
+                ],
+                "unit": None,
+                "help_text": "Workforce size determines applicability of State Shops and Commercial Establishments Act, PF, and ESI.",
+                "reason": "This helps determine which state employment frameworks and social security thresholds apply to your team.",
+                "order": 1,
+            },
+            {
+                "question_id": "Q02",
+                "question": "How does your business sell or deliver its software products and services?",
+                "category": "Foreign Trade & GST",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "DOMESTIC_ONLY", "label": "Exclusively to clients within India"},
+                    {"value": "EXPORT_ONLINE_SERVICES", "label": "Online export to international clients (cross-border service delivery)"},
+                    {"value": "BOTH_DOMESTIC_AND_EXPORT", "label": "Both domestic Indian clients and international exports"},
+                ],
+                "unit": None,
+                "help_text": "Software service exports delivered electronically do not require physical goods IEC; GST LUT under Section 16 of IGST Act applies.",
+                "reason": "This helps determine whether export GST Letter of Undertaking (LUT) and SOFTEX reporting apply to your revenue.",
+                "order": 2,
+            },
+            {
+                "question_id": "Q03",
+                "question": "Does your digital platform collect, store, or process personal user data or payment information?",
+                "category": "Data Privacy & DPDP",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "YES_USER_DATA", "label": "Yes, collects customer/user personal identifiable information (PII)"},
+                    {"value": "NO_PERSONAL_DATA", "label": "No personal data; enterprise B2B non-personal data only"},
+                ],
+                "unit": None,
+                "help_text": "Processing personal data activates obligations under the Digital Personal Data Protection (DPDP) Act 2023.",
+                "reason": "This helps determine which data protection guidelines, consent architectures, and privacy frameworks apply to your platform.",
+                "order": 3,
+            },
+            {
+                "question_id": "Q04",
+                "question": "What is the physical operational arrangement of your business premises?",
+                "category": "Premises & Establishment",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "LEASED_OFFICE", "label": "Dedicated leased commercial office"},
+                    {"value": "COWORKING", "label": "Co-working space / shared business incubator"},
+                    {"value": "REMOTE_VIRTUAL", "label": "Fully remote distributed team with virtual registered office"},
+                ],
+                "unit": None,
+                "help_text": "Premises type dictates registration under the State Shops and Commercial Establishments Act.",
+                "reason": "This helps determine which local municipal trade and commercial establishment registration rules apply.",
+                "order": 4,
+            },
+            {
+                "question_id": "Q05",
+                "question": "What is the expected or current annual gross turnover of the company?",
+                "category": "Financial & GST",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "BELOW_20_LAKHS", "label": "Below ₹20 Lakhs"},
+                    {"value": "20_LAKHS_TO_1_5_CRORE", "label": "₹20 Lakhs to ₹1.5 Crore"},
+                    {"value": "ABOVE_1_5_CRORE", "label": "Above ₹1.5 Crore"},
+                ],
+                "unit": None,
+                "help_text": "Turnover determines GST registration requirement (threshold of ₹20 Lakhs for services) and MSME classification.",
+                "reason": "This helps determine statutory GST registration schedules and MSME development benefits.",
+                "order": 5,
+            },
+        ]
     elif is_food:
-        questions_data.append({
-            "question_id": "Q10",
-            "question": "What is the daily processing or production capacity of food/beverage products?",
-            "category": "Food Safety",
-            "answer_type": "NUMBER",
-            "required": True,
-            "options": [],
-            "unit": "MT/day",
-            "help_text": "Metric tonnes of finished food items produced per operational day.",
-            "reason": "This helps determine which food processing scale and hygiene standards may be relevant to your facility.",
-            "order": 10,
-        })
-        questions_data.append({
-            "question_id": "Q11",
-            "question": "Does the facility require cold chain storage or chilled transport vehicles?",
-            "category": "Cold Chain & Storage",
-            "answer_type": "BOOLEAN",
-            "required": True,
-            "options": [],
-            "unit": None,
-            "help_text": "Temperature-controlled warehousing or refrigerated delivery vans.",
-            "reason": "This helps determine which cold chain standards and temperature monitoring guidelines may be relevant to your facility.",
-            "order": 11,
-        })
-        questions_data.append({
-            "question_id": "Q12",
-            "question": "What is the primary water source for food processing and washing?",
-            "category": "Water & Sanitation",
-            "answer_type": "SINGLE_SELECT",
-            "required": True,
-            "options": [
-                {"value": "MUNICIPAL_SUPPLY", "label": "Municipal / Industrial Water Corporation Pipe"},
-                {"value": "GROUNDWATER_BOREWELL", "label": "Captive Groundwater Borewell / Tubewell"},
-                {"value": "PRIVATE_TANKER", "label": "Private Water Tanker supply"},
-            ],
-            "unit": None,
-            "help_text": "Specifies utility water sourcing vs private or groundwater extraction.",
-            "reason": "This helps determine which process water quality standards and testing schedules may be relevant to your facility.",
-            "order": 12,
-        })
-        questions_data.append({
-            "question_id": "Q13",
-            "question": "Are food products fortified or categorized as proprietary / novel foods?",
-            "category": "Product Standards",
-            "answer_type": "BOOLEAN",
-            "required": True,
-            "options": [],
-            "unit": None,
-            "help_text": "Proprietary formulations, novel ingredients, or enriched nutrients.",
-            "reason": "This helps determine which food product labeling and formulation standards may be relevant to your facility.",
-            "order": 13,
-        })
-    elif is_electronics:
-        questions_data.append({
-            "question_id": "Q10",
-            "question": "Are your electronic products or chargers covered under the BIS Compulsory Registration Scheme (CRS)?",
-            "category": "BIS Compliance",
-            "answer_type": "BOOLEAN",
-            "required": True,
-            "options": [],
-            "unit": None,
-            "help_text": "Power adapters, chargers, laptops, and IT equipment notified under standard product safety codes.",
-            "reason": "This helps determine which equipment safety standards and technical certification frameworks may be relevant to your facility.",
-            "order": 10,
-        })
-        questions_data.append({
-            "question_id": "Q11",
-            "question": "What is the expected monthly production or assembly volume of electronic units?",
-            "category": "Production Scale",
-            "answer_type": "NUMBER",
-            "required": True,
-            "options": [],
-            "unit": "units/month",
-            "help_text": "Total number of finished power adapters, chargers, or assemblies.",
-            "reason": "This helps determine which production volume and electronic lifecycle frameworks may be relevant to your facility.",
-            "order": 11,
-        })
-        questions_data.append({
-            "question_id": "Q12",
-            "question": "Do you import electronic components (such as semiconductor ICs, transformers, or enclosures) from abroad?",
-            "category": "Supply Chain",
-            "answer_type": "BOOLEAN",
-            "required": True,
-            "options": [],
-            "unit": None,
-            "help_text": "Importing components from overseas component suppliers.",
-            "reason": "This helps determine which component sourcing procedures and import documentation frameworks may be relevant to your facility.",
-            "order": 12,
-        })
-        questions_data.append({
-            "question_id": "Q13",
-            "question": "Are surface-mount technology (SMT) pick-and-place lines and wave soldering used in assembly?",
-            "category": "Manufacturing Process",
-            "answer_type": "BOOLEAN",
-            "required": True,
-            "options": [],
-            "unit": None,
-            "help_text": "Soldering processes release fumes that require local exhaust ventilation.",
-            "reason": "This helps determine which electronic assembly ventilation and workplace environment standards may be relevant to your facility.",
-            "order": 13,
-        })
-    elif is_textile:
-        questions_data.append({
-            "question_id": "Q10",
-            "question": "Does your textile operation involve wet processing such as dyeing, bleaching, printing, or washing?",
-            "category": "Chemical Processing",
-            "answer_type": "BOOLEAN",
-            "required": True,
-            "options": [],
-            "unit": None,
-            "help_text": "Wet processing operations involving water, colorants, or chemical treatments.",
-            "reason": "This helps determine which wet processing guidelines and effluent treatment frameworks may be relevant to your facility.",
-            "order": 10,
-        })
-        questions_data.append({
-            "question_id": "Q11",
-            "question": "What is the estimated daily water consumption for production processes?",
-            "category": "Water & Effluent",
-            "answer_type": "NUMBER",
-            "required": True,
-            "options": [],
-            "unit": "kilo-litres/day",
-            "help_text": "Combined water usage for processing, steam generation, and cleaning.",
-            "reason": "This helps determine which water consumption thresholds and recycling standards may be relevant to your facility.",
-            "order": 11,
-        })
-        questions_data.append({
-            "question_id": "Q12",
-            "question": "What is the monthly garment or fabric production capacity?",
-            "category": "Scale & Capacity",
-            "answer_type": "NUMBER",
-            "required": True,
-            "options": [],
-            "unit": "pieces/month",
-            "help_text": "Finished garments or meters of woven/knitted fabric produced.",
-            "reason": "This helps determine which garment manufacturing volume and export promotion frameworks may be relevant to your facility.",
-            "order": 12,
-        })
-        questions_data.append({
-            "question_id": "Q13",
-            "question": "Do you operate an industrial boiler or thermic fluid heater for steam generation?",
-            "category": "Boiler & Steam",
-            "answer_type": "BOOLEAN",
-            "required": True,
-            "options": [],
-            "unit": None,
-            "help_text": "Steam boilers used for pressing, curing, or dye vessels.",
-            "reason": "This helps determine which thermal equipment standards and steam safety guidelines may be relevant to your facility.",
-            "order": 13,
-        })
+        # Food / Cloud Kitchen / Restaurant: 5 targeted questions
+        questions_data = [
+            {
+                "question_id": "Q01",
+                "question": "What is the current or projected annual gross turnover of your food operations?",
+                "category": "Food Safety & FSSAI",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "UP_TO_12_LAKHS", "label": "Up to ₹12 Lakhs (Petty Food Business Operator)"},
+                    {"value": "12_LAKHS_TO_20_CRORE", "label": "₹12 Lakhs to ₹20 Crore (State Food License)"},
+                    {"value": "ABOVE_20_CRORE", "label": "Above ₹20 Crore or Export/Import (Central Food License)"},
+                ],
+                "unit": None,
+                "help_text": "FSS Act 2006 Section 31 specifies licensing tier based directly on annual turnover.",
+                "reason": "This helps determine which FoSCoS food license or basic registration tier is relevant to your operations.",
+                "order": 1,
+            },
+            {
+                "question_id": "Q02",
+                "question": "What is the operating model of your culinary facility?",
+                "category": "Operations",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "CLOUD_KITCHEN_DELIVERY", "label": "Cloud Kitchen (Delivery-only via platforms and direct)"},
+                    {"value": "TAKEAWAY_AND_DELIVERY", "label": "Takeaway counter and online delivery"},
+                    {"value": "DINE_IN_RESTAURANT", "label": "Dine-in restaurant or cafe with customer seating"},
+                ],
+                "unit": None,
+                "help_text": "Cloud kitchens require specific delivery-service FSSAI endorsements and municipal trade licenses.",
+                "reason": "This helps determine which municipal health trade guidelines and food delivery standards apply.",
+                "order": 2,
+            },
+            {
+                "question_id": "Q03",
+                "question": "What is the source of water used for cooking, food preparation, and ice?",
+                "category": "Hygiene & Water",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "TESTED_POTABLE_SUPPLY", "label": "Potable RO/municipal supply tested in NABL lab per IS 10500"},
+                    {"value": "MUNICIPAL_UNTESTED", "label": "Municipal piped water pending chemical/bacteriological test report"},
+                    {"value": "BOREWELL_SUPPLY", "label": "Private borewell or tanker supply"},
+                ],
+                "unit": None,
+                "help_text": "FSSAI FoSCoS mandates an annual water potability test report under Indian Standard IS 10500.",
+                "reason": "This helps determine which water quality documentation and testing schedules apply to your kitchen.",
+                "order": 3,
+            },
+            {
+                "question_id": "Q04",
+                "question": "How many kitchen staff, chefs, and food handlers work at your premise?",
+                "category": "Workforce & Safety",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "BELOW_10", "label": "1 to 9 kitchen staff"},
+                    {"value": "10_TO_19", "label": "10 to 19 staff"},
+                    {"value": "20_PLUS", "label": "20 or more staff"},
+                ],
+                "unit": None,
+                "help_text": "Food handlers must hold medical fitness certificates (Form IX) and undergo FoSTaC hygiene training.",
+                "reason": "This helps determine food safety training mandates and employee health inspection standards.",
+                "order": 4,
+            },
+            {
+                "question_id": "Q05",
+                "question": "What is your commercial cooking fuel setup and fire safety status?",
+                "category": "Fire & Life Safety",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "COMMERCIAL_LPG_WITH_NOC", "label": "Commercial piped LPG cylinder bank with Fire NOC"},
+                    {"value": "COMMERCIAL_LPG_PENDING", "label": "Commercial LPG cylinders (Fire inspection / NOC in progress)"},
+                    {"value": "ALL_ELECTRIC", "label": "100% Electric induction commercial cooking (no gas cylinders)"},
+                ],
+                "unit": None,
+                "help_text": "Commercial kitchens using gas cylinders require fire suppression systems and local Fire NOC.",
+                "reason": "This helps determine which life safety, gas pipeline, and fire safety norms apply to your kitchen.",
+                "order": 5,
+            },
+        ]
+    elif is_battery or is_electronics:
+        # Battery / Electronics / Manufacturing: 6 targeted questions
+        questions_data = [
+            {
+                "question_id": "Q01",
+                "question": "What is the total connected electrical power load of your facility?",
+                "category": "Facility & Power",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "BELOW_10_HP", "label": "Below 10 HP"},
+                    {"value": "10_TO_50_HP", "label": "10 to 50 HP"},
+                    {"value": "50_TO_100_HP", "label": "50 to 100 HP"},
+                    {"value": "ABOVE_100_HP", "label": "Above 100 HP"},
+                ],
+                "unit": None,
+                "help_text": "Connected load determines factory safety electrical inspectorate oversight and utility clearances.",
+                "reason": "This helps determine which electrical infrastructure and factory safety requirements may be relevant.",
+                "order": 1,
+            },
+            {
+                "question_id": "Q02",
+                "question": "How many total employees and shopfloor laborers work at your enterprise?",
+                "category": "Workforce & Labor",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "BELOW_10", "label": "1 to 9 workers"},
+                    {"value": "10_TO_19", "label": "10 to 19 workers"},
+                    {"value": "20_TO_49", "label": "20 to 49 workers"},
+                    {"value": "50_PLUS", "label": "50 or more workers"},
+                ],
+                "unit": None,
+                "help_text": "Factories Act 1948 applies to premises employing 10+ workers with power or 20+ without power.",
+                "reason": "This helps determine which workforce scale and factory premises licensing thresholds apply.",
+                "order": 2,
+            },
+            {
+                "question_id": "Q03",
+                "question": "Does production generate hazardous chemical wastes, spent solvents, or electronic scrap?",
+                "category": "Environmental & Waste",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "NO_HAZARDOUS_WASTE", "label": "Dry assembly only; no hazardous waste generated"},
+                    {"value": "SPENT_BATTERIES_OR_SOLVENTS", "label": "Generates scrap cells, electronic waste, or solvent residues"},
+                    {"value": "PROCESS_EFFLUENT_ETP", "label": "Wet process generating liquid effluent requiring treatment"},
+                ],
+                "unit": None,
+                "help_text": "Hazardous waste triggers SPCB authorization and manifest tracking under Hazardous Waste Rules.",
+                "reason": "This helps determine which waste stream management protocols and environmental safeguards apply.",
+                "order": 3,
+            },
+            {
+                "question_id": "Q04",
+                "question": "Where is the physical production premises situated?",
+                "category": "Siting & Land",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "APPROVED_ESTATE", "label": "Approved Industrial Area / Estate (e.g. MIDC / GIDC / RIICO)"},
+                    {"value": "SPECIAL_ECONOMIC_ZONE", "label": "Special Economic Zone (SEZ)"},
+                    {"value": "CONVERTED_COMMERCIAL", "label": "Commercial Converted Land / Municipal Zone"},
+                    {"value": "NON_CONFORMING", "label": "Non-conforming Industrial Area"},
+                ],
+                "unit": None,
+                "help_text": "Siting determines ease of obtaining State Pollution Control Board environmental consent (CTE/CTO).",
+                "reason": "This helps determine which industrial estate siting guidelines and municipal norms apply.",
+                "order": 4,
+            },
+            {
+                "question_id": "Q05",
+                "question": "What is the certification status of your products under Bureau of Indian Standards (BIS)?",
+                "category": "Technical Standards",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "BIS_CERTIFIED", "label": "Certified under applicable BIS standard (e.g. IS 17017 / IS 16046)"},
+                    {"value": "IN_PROGRESS_TESTING", "label": "Prototypes undergoing NABL / ARAI accredited laboratory testing"},
+                    {"value": "NOT_YET_TESTED", "label": "Testing not yet commenced; standards to be determined"},
+                ],
+                "unit": None,
+                "help_text": "Ministry Quality Control Orders (QCO) mandate BIS certification prior to commercial sale.",
+                "reason": "This helps determine which product safety standards and technical certification frameworks apply.",
+                "order": 5,
+            },
+            {
+                "question_id": "Q06",
+                "question": "What is the cross-border trade scope of your components and finished products?",
+                "category": "Foreign Trade",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "DOMESTIC_ONLY", "label": "Domestic operations only within India"},
+                    {"value": "IMPORT_COMPONENTS", "label": "Importing components or raw materials from abroad"},
+                    {"value": "EXPORT_FINISHED", "label": "Exporting finished goods to international markets"},
+                    {"value": "IMPORT_AND_EXPORT", "label": "Both importing materials and exporting finished goods"},
+                ],
+                "unit": None,
+                "help_text": "Physical cross-border movement of goods requires DGFT Import Export Code (IEC) and customs clearance.",
+                "reason": "This helps determine which customs procedures and import/export authorizations apply.",
+                "order": 6,
+            },
+        ]
     else:
-        # General manufacturing / trading
-        questions_data.append({
-            "question_id": "Q10",
-            "question": "Do you utilize industrial chemical solvents, paints, lubricants, or flammable adhesives in processing?",
-            "category": "Chemical Safety",
-            "answer_type": "BOOLEAN",
-            "required": True,
-            "options": [],
-            "unit": None,
-            "help_text": "Storage of industrial chemicals or solvents in production areas.",
-            "reason": "This helps determine which chemical storage and workplace handling guidelines may be relevant to your facility.",
-            "order": 10,
-        })
-        questions_data.append({
-            "question_id": "Q11",
-            "question": "What is the total built-up factory or warehouse floor area?",
-            "category": "Facility",
-            "answer_type": "NUMBER",
-            "required": True,
-            "options": [],
-            "unit": "sq ft",
-            "help_text": "Enclosed operational area across all floors.",
-            "reason": "This helps determine which built-up area and facility layout guidelines may be relevant to your facility.",
-            "order": 11,
-        })
-        questions_data.append({
-            "question_id": "Q12",
-            "question": "Does the enterprise operate on e-commerce platforms or direct-to-consumer online channels?",
-            "category": "Digital Commerce",
-            "answer_type": "BOOLEAN",
-            "required": True,
-            "options": [],
-            "unit": None,
-            "help_text": "Selling via online marketplaces or direct consumer digital channels.",
-            "reason": "This helps determine which digital commerce standards and consumer disclosure frameworks may be relevant to your facility.",
-            "order": 12,
-        })
-        questions_data.append({
-            "question_id": "Q13",
-            "question": "Are finished goods sold in pre-packaged retail containers with mandatory label declarations?",
-            "category": "Packaging & Metrology",
-            "answer_type": "BOOLEAN",
-            "required": True,
-            "options": [],
-            "unit": None,
-            "help_text": "Retail packages with printed net quantity, manufacturing dates, and consumer details.",
-            "reason": "This helps determine which packaged commodity guidelines and declaration standards may be relevant to your facility.",
-            "order": 13,
-        })
-
-    # 14. Plastic Packaging & EPR
-    questions_data.append({
-        "question_id": "Q14",
-        "question": "Do you use plastic packaging material (corrugated boxes, pouches, bubble wrap, shrink film) for finished goods?",
-        "category": "Packaging & EPR",
-        "answer_type": "BOOLEAN",
-        "required": True,
-        "options": [],
-        "unit": None,
-        "help_text": "Applies to brand owners and producers who package products in plastics.",
-        "reason": "This helps determine which packaging waste management and recycling frameworks may be relevant to your facility.",
-        "order": 14,
-    })
-
-    # 15. Fire Safety & NOC
-    questions_data.append({
-        "question_id": "Q15",
-        "question": "Does your commercial facility possess an updated Fire Safety NOC from the State Fire Services / Municipal Authority?",
-        "category": "Fire & Life Safety",
-        "answer_type": "BOOLEAN",
-        "required": True,
-        "options": [],
-        "unit": None,
-        "help_text": "Fire department clearance certificate for industrial buildings.",
-        "reason": "This helps determine which building life safety standards and emergency preparedness guidelines may be relevant to your facility.",
-        "order": 15,
-    })
+        # General Commercial Fallback: 5 questions
+        questions_data = [
+            {
+                "question_id": "Q01",
+                "question": "What is the total size of your workforce (employees and contract staff)?",
+                "category": "Workforce & Labor",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "BELOW_10", "label": "1 to 9 employees"},
+                    {"value": "10_TO_19", "label": "10 to 19 employees"},
+                    {"value": "20_TO_49", "label": "20 to 49 employees"},
+                    {"value": "50_PLUS", "label": "50 or more employees"},
+                ],
+                "unit": None,
+                "help_text": "Workforce size dictates applicability of Shops & Establishments, PF, and ESI registration.",
+                "reason": "This helps determine which state employment frameworks and social security thresholds apply.",
+                "order": 1,
+            },
+            {
+                "question_id": "Q02",
+                "question": "What is the nature of your physical operating premises?",
+                "category": "Premises & Establishment",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "COMMERCIAL_OFFICE", "label": "Commercial office / retail shop premise"},
+                    {"value": "WAREHOUSE", "label": "Warehouse / storage godown"},
+                    {"value": "FACTORY_WORKSHOP", "label": "Manufacturing workshop or fabrication shed"},
+                    {"value": "REMOTE_VIRTUAL", "label": "Remote / residential registered address"},
+                ],
+                "unit": None,
+                "help_text": "Premises type dictates local municipal trade license and shop establishment registration.",
+                "reason": "This helps determine which municipal trade norms and establishment licenses apply.",
+                "order": 2,
+            },
+            {
+                "question_id": "Q03",
+                "question": "What is the expected or current annual gross turnover of the business?",
+                "category": "Financial & GST",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "BELOW_20_LAKHS", "label": "Below ₹20 Lakhs (Exempt from mandatory GST)"},
+                    {"value": "20_LAKHS_TO_40_LAKHS", "label": "₹20 Lakhs to ₹40 Lakhs (GST threshold for goods)"},
+                    {"value": "40_LAKHS_TO_1_5_CRORE", "label": "₹40 Lakhs to ₹1.5 Crore"},
+                    {"value": "ABOVE_1_5_CRORE", "label": "Above ₹1.5 Crore"},
+                ],
+                "unit": None,
+                "help_text": "Turnover dictates GST registration schedules and MSME development categorization.",
+                "reason": "This helps determine statutory GST registration schedules and taxation compliance.",
+                "order": 3,
+            },
+            {
+                "question_id": "Q04",
+                "question": "Does your business engage in cross-border trade (importing or exporting)?",
+                "category": "Foreign Trade",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "DOMESTIC_ONLY", "label": "Purely domestic business within India"},
+                    {"value": "SERVICES_EXPORT", "label": "Exporting services/software electronically"},
+                    {"value": "GOODS_IMPORT_EXPORT", "label": "Importing or exporting physical goods"},
+                ],
+                "unit": None,
+                "help_text": "Cross-border trade activates DGFT, customs, and FEMA regulatory requirements.",
+                "reason": "This helps determine whether DGFT IEC, customs filing, or GST LUT applies.",
+                "order": 4,
+            },
+            {
+                "question_id": "Q05",
+                "question": "Does your business manufacture physical products or provide services?",
+                "category": "Operations Scope",
+                "answer_type": "SINGLE_SELECT",
+                "required": True,
+                "options": [
+                    {"value": "SERVICES_DIGITAL", "label": "Services, consulting, or digital products (Non-manufacturing)"},
+                    {"value": "TRADING_DISTRIBUTION", "label": "Wholesale, retail, or e-commerce trading of goods"},
+                    {"value": "PHYSICAL_MANUFACTURING", "label": "Physical processing, assembly, or manufacturing"},
+                ],
+                "unit": None,
+                "help_text": "Manufacturing operations fall under Factories Act and environmental consents; services do not.",
+                "reason": "This helps determine whether factory safety and industrial environmental laws apply.",
+                "order": 5,
+            },
+        ]
 
     return [
         SmartQuestion(
@@ -783,6 +681,9 @@ def generate_emergency_15_questions(
         )
         for item in questions_data
     ]
+
+
+generate_emergency_15_questions = generate_emergency_questions
 
 
 class QuestionnaireEngine:
@@ -813,7 +714,7 @@ class QuestionnaireEngine:
         existing_meta = run.stage_metadata.get("question_generation")
         if isinstance(existing_meta, dict) and "questions" in existing_meta:
             raw_qs = existing_meta.get("questions")
-            if isinstance(raw_qs, list) and len(raw_qs) == 15:
+            if isinstance(raw_qs, list) and 4 <= len(raw_qs) <= 8:
                 logger.info("AssessmentRun %s returning existing 15 questions from state (idempotent).", run.run_id)
                 try:
                     return validate_and_normalize_questions(raw_qs)
@@ -824,7 +725,7 @@ class QuestionnaireEngine:
         existing_plan = SmartQuestionPlan.objects.filter(assessment=run.assessment).first()
         if existing_plan:
             existing_instances = list(existing_plan.questions.all().order_by("created_at"))
-            if len(existing_instances) == 15:
+            if 4 <= len(existing_instances) <= 8:
                 logger.info("AssessmentRun %s returning 15 questions from existing plan (idempotent).", run.run_id)
                 reconstructed = []
                 for idx, inst in enumerate(existing_instances, start=1):
@@ -846,23 +747,29 @@ class QuestionnaireEngine:
 
         # Construct single prompt for 15 questions
         t0 = time.perf_counter()
-        user_prompt_lines = [
-            f"Business Name: {context.business_name}",
-            f"State: {context.geography.get('state_name') or context.geography.get('state') or 'Maharashtra'}",
-            f"District: {context.geography.get('district') or 'Pune'}",
-            f"Business Description: {context.raw_business_description or context.product or 'Industrial Enterprise'}",
-        ]
+        user_prompt_dict = {
+            "business_name": context.business_name,
+            "state": context.geography.get("state_name") or context.geography.get("state") or "Maharashtra",
+            "district": context.geography.get("district") or "Pune",
+            "business_description": context.raw_business_description or context.product or "Commercial Enterprise",
+        }
         if understanding:
-            user_prompt_lines.append(f"Business Type: {understanding.business_type}")
-            user_prompt_lines.append(f"Primary Activity: {understanding.primary_activity}")
-            user_prompt_lines.append(f"Products: {', '.join(understanding.products)}")
-            user_prompt_lines.append(f"Trade Intent: {understanding.trade_intent}")
-            user_prompt_lines.append(f"Likely Regulatory Domains: {', '.join(understanding.likely_regulatory_domains)}")
-            user_prompt_lines.append(f"Critical Unknowns to Resolve: {', '.join(understanding.important_unknowns)}")
+            user_prompt_dict["business_type"] = understanding.business_type
+            user_prompt_dict["primary_activity"] = understanding.primary_activity
+            user_prompt_dict["products"] = understanding.products
+            user_prompt_dict["trade_intent"] = understanding.trade_intent
+            user_prompt_dict["likely_regulatory_domains"] = understanding.likely_regulatory_domains
+            user_prompt_dict["critical_unknowns"] = understanding.important_unknowns
+
+        user_prompt = (
+            f"BUSINESS PROFILE (JSON):\n"
+            f"{json.dumps(user_prompt_dict, indent=2)}\n\n"
+            f"Generate 5 to 6 targeted compliance questions with clear options for this business."
+        )
 
         messages = [
             ChatMessage(role="system", content=QUESTION_GENERATION_SYSTEM_PROMPT),
-            ChatMessage(role="user", content="\n".join(user_prompt_lines)),
+            ChatMessage(role="user", content=user_prompt),
         ]
 
         questions: list[SmartQuestion] = []
@@ -900,9 +807,9 @@ class QuestionnaireEngine:
             logger.exception("Unexpected error generating questions, engaging emergency fallback: %s", err)
             questions = generate_emergency_15_questions(context, understanding)
 
-        # Enforce exactly 15 questions
-        if len(questions) != 15:
-            questions = generate_emergency_15_questions(context, understanding)
+        # Enforce question count between 4 and 8
+        if not (4 <= len(questions) <= 8):
+            questions = generate_emergency_questions(context, understanding)
 
         # Persist to SmartQuestionPlan & SmartQuestionInstance
         self._persist_questionnaire(questions, context, run, understanding)

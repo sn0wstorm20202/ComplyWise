@@ -437,7 +437,7 @@ export function buildEmergencyFallback15Questions(
 ): OrchestrationQuestion[] {
   const answeredKeys = new Set<string>();
   const smarts = generateAdaptiveFallbackQuestions(answeredKeys, bizName, productDesc);
-  return smarts.slice(0, 15).map((sq, idx) => ({
+  return smarts.slice(0, 6).map((sq, idx) => ({
     question_id: `Q${String(idx + 1).padStart(2, "0")}`,
     question: sq.question,
     category: sq.label || "General Compliance",
@@ -550,7 +550,7 @@ function OnboardingContent() {
   // Step 4 & 5: Analysis and Results State
   const DEFAULT_STAGES = useMemo(() => [
     { name: "Business Context & Identity", done: false, detail: "Validating entity jurisdiction and canonical profile parameters" },
-    { name: "15-Question Regulatory Assessment", done: false, detail: "Resolving decision-critical operational and compliance requirements" },
+    { name: "Adaptive Statutory Assessment", done: false, detail: "Resolving decision-critical operational and compliance requirements" },
     { name: "Live Regulatory Discovery (Firecrawl)", done: false, detail: "Harvesting official government notifications and portals" },
     { name: "Official Source Ranking & Claim Quarantining", done: false, detail: "Extracting regulatory claims as quarantined unverified evidence" },
     { name: "Deterministic Applicability Engine", done: false, detail: "Evaluating evidence-grounded rules over published statutory knowledge" },
@@ -1098,7 +1098,7 @@ function OnboardingContent() {
     if (runId) {
       try {
         let qList: any = await api.orchestration.listQuestions(runId);
-        if (!qList?.questions || qList.questions.length < 15) {
+        if (!qList?.questions || qList.questions.length < 4) {
           try {
             const genRes = await api.orchestration.generateQuestions(runId);
             if (genRes?.questions && genRes.questions.length > 0) {
@@ -1111,7 +1111,7 @@ function OnboardingContent() {
             qList = await api.orchestration.listQuestions(runId);
           }
         }
-        if (qList && qList.questions && qList.questions.length >= 15) {
+        if (qList && qList.questions && qList.questions.length >= 4) {
           setOrchestrationQuestions(qList.questions);
           const nextIdx = qList.questions.findIndex((q: any) => !q.is_answered);
           setActiveQuestionIndex(nextIdx !== -1 ? nextIdx : 0);
@@ -1129,7 +1129,7 @@ function OnboardingContent() {
               setActiveRunId(runId);
               localStorage.setItem("complywise_active_assessment_id", runId);
               const genRes = await api.orchestration.generateQuestions(runId);
-              if (genRes?.questions && genRes.questions.length >= 15) {
+              if (genRes?.questions && genRes.questions.length >= 4) {
                 setOrchestrationQuestions(genRes.questions);
                 const nextIdx = genRes.questions.findIndex((q: any) => !q.is_answered);
                 setActiveQuestionIndex(nextIdx !== -1 ? nextIdx : 0);

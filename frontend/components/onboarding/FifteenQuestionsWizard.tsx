@@ -42,19 +42,33 @@ export default function FifteenQuestionsWizard({
 }: FifteenQuestionsWizardProps) {
   const currentQ = questions[activeQuestionIndex];
   const [currentValue, setCurrentValue] = useState<any>(() => {
-    return currentQ?.current_value ?? "";
+    const raw = currentQ?.current_value;
+    if (raw && typeof raw === "object" && "value" in raw) {
+      return raw.value;
+    }
+    return raw ?? "";
+  });
+  const [currentExplanation, setCurrentExplanation] = useState<string>(() => {
+    const raw = currentQ?.current_value;
+    if (raw && typeof raw === "object" && "explanation" in raw) {
+      return raw.explanation || "";
+    }
+    return "";
   });
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Sync current value whenever active question changes
+  // Sync current value and explanation whenever active question changes
   useEffect(() => {
     if (currentQ) {
-      setCurrentValue(
-        currentQ.current_value !== undefined && currentQ.current_value !== null
-          ? currentQ.current_value
-          : ""
-      );
+      const raw = currentQ.current_value;
+      if (raw && typeof raw === "object" && "value" in raw) {
+        setCurrentValue(raw.value !== undefined && raw.value !== null ? raw.value : "");
+        setCurrentExplanation(raw.explanation || "");
+      } else {
+        setCurrentValue(raw !== undefined && raw !== null ? raw : "");
+        setCurrentExplanation("");
+      }
       setError(null);
     }
   }, [currentQ, activeQuestionIndex]);
@@ -90,9 +104,14 @@ export default function FifteenQuestionsWizard({
       }
     }
 
+    const finalExplanation = currentExplanation.trim();
+    const submissionPayload = finalExplanation
+      ? { value: currentValue, explanation: finalExplanation }
+      : currentValue;
+
     setSaving(true);
     try {
-      await onAnswerSubmitted(currentQ.question_id, currentValue);
+      await onAnswerSubmitted(currentQ.question_id, submissionPayload);
       if (targetIdx !== undefined) {
         onSelectQuestionIndex(targetIdx);
       } else if (!isLastQuestion) {
@@ -122,10 +141,10 @@ export default function FifteenQuestionsWizard({
               </span>
             </div>
             <h2 className="text-base sm:text-lg font-bold text-[#0F172A]">
-              Your 15 Compliance Questions
+              Statutory Compliance Questions
             </h2>
             <p className="text-xs text-[#64748B] mt-0.5">
-              15-Question Statutory Assessment tailored to your operations
+              Targeted Statutory Assessment tailored to your operational profile
             </p>
           </div>
 
@@ -414,6 +433,22 @@ export default function FifteenQuestionsWizard({
           )}
         </div>
 
+        {/* Optional Context/Description Input */}
+        {currentQ.answer_type !== "TEXT" && (
+          <div className="pt-3 border-t border-slate-200/80 space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-600">
+              Have specific context or details? Explain in your own words (optional):
+            </label>
+            <textarea
+              rows={2}
+              value={currentExplanation}
+              onChange={(e) => setCurrentExplanation(e.target.value)}
+              placeholder="e.g. We deliver software to international clients over cloud, remote team of 15..."
+              className="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-xs text-[#0F172A] placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+            />
+          </div>
+        )}
+
         {/* Error message */}
         {error && (
           <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
@@ -438,7 +473,7 @@ export default function FifteenQuestionsWizard({
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
           >
             <Sparkles className="h-3.5 w-3.5" />
-            <span>⚡ Prefill All 15 Verified Answers</span>
+            <span>⚡ Prefill All Verified Answers</span>
           </button>
         </div>
       )}

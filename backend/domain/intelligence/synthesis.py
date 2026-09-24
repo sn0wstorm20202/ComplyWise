@@ -95,44 +95,65 @@ PROHIBITED_DOMAINS_BY_KEYWORD: dict[str, list[str]] = {
     ],
 }
 
-SYNTHESIS_SYSTEM_PROMPT = """You are the statutory compliance synthesis engine for ComplyWise.
-Your task is to evaluate regulatory requirements for a business using STRICTLY the provided BusinessContext and Official Evidence Excerpts.
+SYNTHESIS_SYSTEM_PROMPT = """You are the authoritative statutory compliance intelligence engine for ComplyWise.
+Your task is to analyze the business profile (JSON), user questionnaire answers & explanations (JSON), and official evidence excerpts from live webscraping, and directly evaluate statutory compliance requirements under Indian law.
 
-CRITICAL INVARIANTS:
-1. EVIDENCE-GROUNDED RULE:
-   - Every requirement MUST cite at least one valid 'evidence_id' from the provided OFFICIAL EVIDENCE EXCERPTS.
-   - Every requirement MUST explicitly list the 'business_facts_used' that triggered its relevance.
-   - If an official evidence item is NOT provided for a requirement, DO NOT emit it as APPLICABLE. Return NEEDS_INFORMATION or omit it.
+CRITICAL INVARIANTS & STATUTORY RULES:
+1. THE LLM IS THE DIRECT STATUTORY AUTHORITY:
+   - You determine legal applicability based on the actual operations, premises, workforce, revenue, and trade model of the business.
+   - Every requirement must reflect real Indian statutes and official gazette notifications.
 
-2. ZERO HALLUCINATIONS:
-   - Do NOT invent law names, section numbers, certificate names, deadlines, fees, or penalties that are not supported by the evidence excerpts.
-   - If a fee, deadline, or form number is unknown in the excerpt, set it to null or omit it.
+2. EVIDENCE-GROUNDED RULE:
+   - Every requirement MUST cite at least one valid 'evidence_id' and 'source_urls' from the provided OFFICIAL EVIDENCE EXCERPTS.
+   - Every requirement MUST explicitly list the 'business_facts_used' that triggered its relevance (including facts from user questionnaire answers and explanations).
+   - If an official evidence item is NOT provided for a requirement, return NEEDS_INFORMATION or omit it.
 
-3. STRICT STATUS DETERMINATION:
-   - 'APPLICABLE': The requirement is confirmed by official evidence AND matches confirmed business facts.
-   - 'NEEDS_INFORMATION': The requirement is relevant in principle, but missing specific business details (e.g. exact chemical quantity, boiler heating surface area) prevent final applicability determination.
-   - 'NOT_APPLICABLE': The business clearly falls below statutory thresholds or exempt criteria based on user facts.
-   - 'NEEDS_VERIFICATION': The requirement originates from guidance or secondary material requiring official portal confirmation.
+3. ZERO HALLUCINATIONS:
+   - Do NOT invent law names, section numbers, certificate names, or penalties that are not supported by Indian statutory jurisprudence.
 
-4. CRITICAL IRRELEVANCE GUARD:
-   - DO NOT include regulations for unrelated business activities.
-   - Cement manufacturer: NEVER include drinking water, dairy, restaurant, food, or textile dyeing regulations.
-   - Battery / BMS / Energy Storage manufacturer: NEVER include cement, clinker, limestone, food/dairy/FSSAI, or textile regulations.
-   - Electronics/charger manufacturer: NEVER include cement, food/FSSAI, or textile regulations.
-   - Food manufacturer: NEVER include textile dyeing or heavy engineering regulations.
+4. SECTOR-SPECIFIC STATUTORY RULES (STRICT COMPLIANCE INVARIANTS):
+   A. SOFTWARE / SAAS / IT / DIGITAL PLATFORMS / CREATIVE & MEDIA SERVICES:
+      - NEVER include Factory License / Factories Act 1948: Software companies operate from commercial offices, coworking spaces, or remote setups; they do not have physical manufacturing premises, heavy power machinery, or manufacturing shifts.
+      - NEVER include industrial Consent to Establish (CTE) or Consent to Operate (CTO) from State Pollution Control Boards: Software development is classified as "White Category" (non-polluting) by CPCB and State PCBs and is exempt from environmental consents.
+      - FOREIGN TRADE & EXPORTS (FTP Para 2.05): For pure software / SaaS service exports delivered electronically over the internet, an Import-Export Code (IEC) is NOT legally mandatory under Foreign Trade Policy unless claiming DGFT merchandise export incentives. The statutory export requirements for software/SaaS are:
+        * GST Letter of Undertaking (LUT) under Section 16 of the IGST Act (enables zero-rated export of services without paying upfront IGST).
+        * RBI / STPI SOFTEX form reporting for software export realization.
+        Do NOT mandate physical goods IEC for pure software SaaS companies.
+      - MANDATORY & STATUTORY REQUIREMENTS FOR SOFTWARE / SAAS:
+        * State Shops and Commercial Establishments Act Registration (governs commercial office premises, employment terms, working hours, and leave).
+        * GST Registration (mandatory if domestic turnover > ₹20 Lakhs, or for any interstate supply / export).
+        * GST Letter of Undertaking (LUT) (for service exports to overseas clients).
+        * Digital Personal Data Protection (DPDP) Act 2023 & IT Act Rules (if collecting, processing, or storing user personal data / credentials / payments).
+        * Professional Tax (PT) Registration (State-specific, e.g. Maharashtra, Karnataka, West Bengal, Delhi etc.).
+        * EPF (Employees' Provident Fund) if workforce >= 20, and ESI if workforce >= 10/20.
 
-5. PRIORITIZATION:
-   - Assign priority: 'HIGH' (mandatory pre-operational licenses like CTE, Factory License, or mandatory QCO standards), 'MEDIUM' (operational reporting or standards), 'LOW' (voluntary or record-keeping).
+   B. FOOD BUSINESSES / CLOUD KITCHENS / RESTAURANTS:
+      - Under Section 31 of the Food Safety and Standards Act 2006 (FSSAI), a food business premise requires EXACTLY ONE statutory food license or registration matching its annual turnover:
+        * Turnover <= ₹12 Lakhs: 'FSSAI Basic Food Registration'
+        * Turnover > ₹12 Lakhs up to ₹20 Crore (includes commercial cloud kitchens and restaurants): 'FSSAI State Food License'
+        * Turnover > ₹20 Crore (or international import/export): 'FSSAI Central Food License'
+      - NEVER emit more than one FSSAI requirement.
+      - Municipal Health Trade License / Eating House License.
+      - Water potability testing report under IS 10500.
+      - Commercial LPG installation clearance / Fire Safety NOC.
 
-6. MANDATORY STANDARDS COVERAGE:
-   - If the business produces or manufactures products covered by Bureau of Indian Standards (BIS) in the evidence excerpts (e.g. IS 17017 for EV chargers, IS 269 for cement, IS 13252 for adapters), you MUST synthesize a requirement for that standard.
+   C. PHYSICAL MANUFACTURING (BATTERIES, ELECTRONICS, CHEMICALS, TEXTILES, ENGINEERING):
+      - Factory License under Factories Act 1948 applies IF 10 or more workers with power (or 20 without power).
+      - State Pollution Control Board Consent to Establish (CTE) & Consent to Operate (CTO) according to industrial pollution categorization (Red, Orange, Green).
+      - Technical standards conformity under Bureau of Indian Standards (BIS CRS / QCO orders, e.g. IS 17017 for EV charging, IS 16046 for batteries).
+      - Hazardous Waste Authorization under Hazardous Waste Rules 2016 if handling spent chemicals, solvents, or scrap.
+      - DGFT Import-Export Code (IEC) if importing components or exporting physical goods.
 
-7. FOOD BUSINESS OPERATOR (FSSAI) SINGLE-TIER INVARIANT:
-   - Under Section 31 of the Food Safety and Standards Act 2006 (FSSAI), a food business premise requires EXACTLY ONE statutory food license or registration matching its annual turnover and scale:
-     * Turnover <= 12 Lakhs INR: 'FSSAI Basic Food Registration'
-     * Turnover > 12 Lakhs INR up to 20 Crore INR (includes commercial cloud kitchens, restaurants, food processing): 'FSSAI State Food License'
-     * Turnover > 20 Crore INR (or 100% EOU / cross-border trade): 'FSSAI Central Food License'
-   - NEVER emit more than one FSSAI requirement. Do NOT emit both FSSAI Registration and FSSAI License for the same business.
+5. STRICT STATUS DETERMINATION:
+   - 'APPLICABLE': The requirement is confirmed applicable by official evidence AND confirmed business facts.
+   - 'NEEDS_INFORMATION': The requirement is relevant in principle, but missing specific business details prevent final filing determination.
+   - 'NOT_APPLICABLE': The business clearly falls outside the statutory scope or below thresholds based on user profile and answers.
+   - 'NEEDS_VERIFICATION': The requirement originates from voluntary standards or tender-specific guidelines.
+
+6. PRIORITIZATION:
+   - 'HIGH': Mandatory pre-operational licenses or registrations required to legally commence operations.
+   - 'MEDIUM': Ongoing statutory filings, periodic reporting, or technical certifications.
+   - 'LOW': Voluntary standards or good practice frameworks.
 
 OUTPUT FORMAT:
 Return a JSON object conforming exactly to this structure:
@@ -560,6 +581,8 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
         self,
         context: OrchestrationContext | EnrichedBusinessContext,
         discovered_material: dict[str, Any],
+        questions: list[dict[str, Any]] | None = None,
+        answers: dict[str, Any] | None = None,
     ) -> ComplianceSynthesisResult:
         business_id = context.business_id
 
@@ -568,8 +591,70 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
         if not evidence_candidates and "discovered_regulatory_candidates" in discovered_material:
             evidence_candidates = discovered_material.get("discovered_regulatory_candidates") or []
 
-        # Prepare structured context string
-        facts_summary = self._build_context_summary(context)
+        # Build structured Business Profile JSON
+        profile_json = {
+            "business_name": context.business_name,
+            "product_or_activity": (
+                context.product_description
+                if isinstance(context, EnrichedBusinessContext)
+                else (context.product or context.raw_business_description or "")
+            ),
+            "state": (
+                context.state_name
+                if isinstance(context, EnrichedBusinessContext)
+                else (context.geography.get("state_name") or context.geography.get("state") or "Maharashtra")
+            ),
+            "district": (
+                context.district
+                if isinstance(context, EnrichedBusinessContext)
+                else (context.geography.get("district") or "Pune")
+            ),
+            "is_manufacturing": getattr(context, "is_manufacturing", True),
+            "trade_intent": getattr(context, "trade_intent", "DOMESTIC_ONLY"),
+            "total_workers": getattr(context, "total_worker_count", None),
+            "annual_turnover": getattr(context, "annual_turnover", None),
+        }
+        if isinstance(context, EnrichedBusinessContext) and context.interpreted_facts:
+            profile_json["interpreted_facts"] = [
+                {"key": f.key, "value": f.value} for f in context.interpreted_facts
+            ]
+
+        # Build structured Questionnaire Q&A JSON
+        qa_list = []
+        ans_source = answers if answers is not None else getattr(context, "answers", {}) or {}
+        if questions:
+            for q in questions:
+                qid = q.get("question_id")
+                q_text = q.get("question")
+                ans_obj = ans_source.get(qid)
+                if ans_obj is not None:
+                    if isinstance(ans_obj, dict) and "value" in ans_obj:
+                        qa_list.append({
+                            "question_id": qid,
+                            "question": q_text,
+                            "selected_value": ans_obj.get("value"),
+                            "user_explanation": ans_obj.get("explanation"),
+                        })
+                    else:
+                        qa_list.append({
+                            "question_id": qid,
+                            "question": q_text,
+                            "selected_value": ans_obj,
+                            "user_explanation": None,
+                        })
+        elif ans_source:
+            for qid, ans_obj in ans_source.items():
+                if isinstance(ans_obj, dict) and "value" in ans_obj:
+                    qa_list.append({
+                        "question_id": qid,
+                        "selected_value": ans_obj.get("value"),
+                        "user_explanation": ans_obj.get("explanation"),
+                    })
+                else:
+                    qa_list.append({
+                        "question_id": qid,
+                        "selected_value": ans_obj,
+                    })
 
         # Build official evidence excerpt prompt payload
         evidence_prompt_blocks: list[str] = []
@@ -589,11 +674,14 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
         evidence_text = "\n\n".join(evidence_prompt_blocks) if evidence_prompt_blocks else "(No official evidence excerpts found.)"
 
         user_prompt = (
-            f"BUSINESS CONTEXT:\n"
-            f"{facts_summary}\n\n"
-            f"OFFICIAL EVIDENCE EXCERPTS:\n"
+            f"BUSINESS PROFILE (JSON):\n"
+            f"{json.dumps(profile_json, indent=2)}\n\n"
+            f"QUESTIONNAIRE QUESTIONS & USER ANSWERS (JSON):\n"
+            f"{json.dumps(qa_list, indent=2)}\n\n"
+            f"OFFICIAL EVIDENCE EXCERPTS (FROM WEBSCRAPING / OFFICIAL SOURCES):\n"
             f"{evidence_text}\n\n"
-            f"Synthesize the compliance requirements adhering strictly to the invariants."
+            f"Analyze the business profile, user questionnaire answers & explanations, and official evidence excerpts. "
+            f"Synthesize the structured compliance requirements with complete legal fidelity adhering strictly to the sector-specific invariants."
         )
 
         provider = get_llm_provider()
@@ -638,16 +726,19 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
         )
         pruned_requirements = _sanitize_and_prune_irrelevant_requirements(requirements, product_desc)
 
-        # Step 4: Deterministic Scope & Applicability Validation (Final Authority)
-        # Guarantees that LLM is NEVER the final legal authority (PRD_v2.0 §P4)
+        # Step 4: Authoritative Synthesis Processing
+        # The LLM is the direct statutory analysis authority. We ensure clean status and valid actions structure.
         verified_requirements: list[dict[str, Any]] = []
         for req in pruned_requirements:
-            deterministic_status, reason = _validate_candidate_applicability_deterministically(
-                req, context, evidence_candidates
-            )
-            req["status"] = deterministic_status
-            if reason:
-                req["why_it_matters"] = f"{req.get('why_it_matters', '')} ({reason})".strip()
+            llm_status = req.get("status")
+            if llm_status not in {"APPLICABLE", "NOT_APPLICABLE", "NEEDS_INFORMATION", "NEEDS_VERIFICATION"}:
+                req["status"] = "APPLICABLE"
+
+            # Invariant: Unbacked requirements cannot be APPLICABLE
+            if not req.get("evidence_ids"):
+                if req["status"] == "APPLICABLE":
+                    req["status"] = "NEEDS_INFORMATION"
+                    req["why_it_matters"] = f"{req.get('why_it_matters', '')} (Pending official portal evidence attachment)".strip()
 
             # Ensure valid actions structure
             if "actions" not in req or not isinstance(req["actions"], list):
@@ -662,59 +753,7 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
 
             verified_requirements.append(req)
 
-        # Ensure that official statutory and standards evidence candidates are not dropped
-        covered_ev_ids = {
-            eid for r in verified_requirements for eid in (r.get("evidence_ids") or [])
-        }
-        covered_titles = {
-            re.sub(r"[^a-z0-9]", "", r.get("title", "").lower()) for r in verified_requirements
-        }
-        for ev in evidence_candidates:
-            ev_id = ev.get("evidence_id")
-            if ev_id and ev_id not in covered_ev_ids:
-                det_reqs, _ = self._deterministic_grounded_synthesis(context, [ev])
-                for d_req in det_reqs:
-                    # Check if candidate is an FSSAI requirement and verified_requirements already has one
-                    is_fssai_cand = (
-                        "fssai" in d_req.get("title", "").lower()
-                        or "fssai" in d_req.get("authority", "").lower()
-                        or d_req.get("regulatory_domain") == "FOOD_SAFETY"
-                    )
-                    if is_fssai_cand:
-                        existing_fssai = next(
-                            (
-                                r for r in verified_requirements
-                                if "fssai" in r.get("title", "").lower()
-                                or "fssai" in r.get("authority", "").lower()
-                                or r.get("regulatory_domain") == "FOOD_SAFETY"
-                            ),
-                            None,
-                        )
-                        if existing_fssai:
-                            # Attach evidence candidate and source URL to existing FSSAI requirement
-                            ev_list = existing_fssai.setdefault("evidence_ids", [])
-                            if ev_id and ev_id not in ev_list:
-                                ev_list.append(ev_id)
-                            for s_url in d_req.get("source_urls", []):
-                                if s_url and s_url not in existing_fssai.setdefault("source_urls", []):
-                                    existing_fssai["source_urls"].append(s_url)
-                            covered_ev_ids.add(ev_id)
-                            continue
-
-                    clean_d_title = re.sub(r"[^a-z0-9]", "", d_req.get("title", "").lower())
-                    if clean_d_title in covered_titles:
-                        continue
-                    d_status, d_reason = _validate_candidate_applicability_deterministically(
-                        d_req, context, evidence_candidates
-                    )
-                    d_req["status"] = d_status
-                    if d_reason:
-                        d_req["why_it_matters"] = f"{d_req.get('why_it_matters', '')} ({d_reason})".strip()
-                    verified_requirements.append(d_req)
-                    covered_titles.add(clean_d_title)
-                    covered_ev_ids.add(ev_id)
-
-        # Requisite Standards check: EV Charging Systems (IS 17017)
+                # Requisite Standards check: EV Charging Systems (IS 17017)
         is_ev_mfg = any(
             term in product_desc.lower()
             for term in ["ev charging", "electric vehicle", "charging station", "evse"]
@@ -930,10 +969,11 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
             trade_intent = context.answers.get("trade_intent") or ("EXPORT_ONLY" if is_cross_border else "DOMESTIC_ONLY")
 
         cleaned_desc = strip_negations(desc)
-        is_battery_biz = bool(re.search(r"\b(battery|bms|lithium|energy storage|cell manufacturing)\b", cleaned_desc))
-        is_cement_biz = (not is_battery_biz) and bool(re.search(r"\b(cement|clinker|portland)\b", cleaned_desc))
+        is_software = bool(re.search(r"\b(software|saas|it|digital|platform|app|cloud|web|ai|tech|film pre-visualization|storyloom)\b", cleaned_desc))
+        is_battery_biz = (not is_software) and bool(re.search(r"\b(battery|bms|lithium|energy storage|cell manufacturing)\b", cleaned_desc))
+        is_cement_biz = (not is_software) and (not is_battery_biz) and bool(re.search(r"\b(cement|clinker|portland)\b", cleaned_desc))
         turnover = _extract_turnover(context)
-        is_cloud_kitchen = _is_cloud_kitchen_or_restaurant(desc)
+        is_cloud_kitchen = (not is_software) and _is_cloud_kitchen_or_restaurant(desc)
 
         # Map each evidence candidate into an evidence-grounded requirement
         for ev in evidence_candidates:
@@ -947,6 +987,8 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
             req_id = f"REQ-{hashlib.sha256(ev_id.encode('utf-8')).hexdigest()[:8].upper()}"
 
             if "consent to establish" in exc_lower or "cte" in exc_lower or "mpcb" in auth.lower() or "wbpcb" in auth.lower() or "spcb" in auth.lower() or "pollution" in exc_lower:
+                if is_software:
+                    continue
                 norm_facts = getattr(context, "normalized_facts", {}) or {}
                 ans_map = getattr(context, "answers", {}) or {}
                 env_category_resolved = (
@@ -996,6 +1038,8 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     "deadline": None,
                 })
             elif "factories act" in exc_lower or "factory licence" in exc_lower or "shram" in auth.lower() or "factory" in exc_lower:
+                if is_software:
+                    continue
                 if "west bengal" in state.lower():
                     fact_auth = "Directorate of Factories, Department of Labour, Government of West Bengal"
                     fact_jur = "WEST_BENGAL"

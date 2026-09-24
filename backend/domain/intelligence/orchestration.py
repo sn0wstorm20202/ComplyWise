@@ -746,8 +746,8 @@ class LLMFirstStrategy(AssessmentStrategy):
                 status=StageStatus.COMPLETED,
                 data={
                     "answered_count": len(answers),
-                    "total_questions": len(q_meta) or 15,
-                    "is_complete": len(answers) >= (len(q_meta) or 15),
+                    "total_questions": len(q_meta) or 6,
+                    "is_complete": len(answers) >= (len(q_meta) or 6),
                     "next_question": next_q,
                 },
             )
@@ -851,8 +851,15 @@ class LLMFirstStrategy(AssessmentStrategy):
                 ctx_to_use = build_canonical_enriched_context(context, under_res, interpreted_facts)
 
             discovered_material = run.stage_metadata.get("regulatory_discovery") or {}
+            q_meta = run.stage_metadata.get("question_generation", {}).get("questions", [])
+            answers_map = run.stage_metadata.get("answers", {})
             synth_provider = LiveComplianceSynthesisProvider()
-            synth_res = synth_provider.synthesize(ctx_to_use, discovered_material)
+            synth_res = synth_provider.synthesize(
+                ctx_to_use,
+                discovered_material,
+                questions=q_meta,
+                answers=answers_map,
+            )
             clean_synth = synth_res.to_dict()
             state = dict(run.stage_metadata)
             state["compliance_synthesis"] = clean_synth

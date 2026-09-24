@@ -53,11 +53,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return true;
       }
       throw new Error("Invalid user payload");
-    } catch {
-      // Token is invalid, expired, or rejected with 401
-      setAuthToken(null);
-      setUser(null);
-      setTokenState(null);
+    } catch (err: unknown) {
+      // Only clear credentials if the server explicitly rejected the token (401 Unauthorized / 403 Forbidden)
+      const isUnauthorized =
+        (err && typeof err === "object" && "status" in err && (err as { status: number }).status === 401) ||
+        (err instanceof Error && (err.message.includes("401") || err.message.includes("credentials were not provided")));
+      if (isUnauthorized) {
+        setAuthToken(null);
+        setUser(null);
+        setTokenState(null);
+      }
       setLoading(false);
       return false;
     }

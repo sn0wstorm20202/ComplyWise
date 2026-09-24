@@ -155,35 +155,61 @@ class BusinessSummarySerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    def _get_current_profile(self, obj: Business) -> BusinessProfileVersion | None:
+        if not hasattr(obj, "_cached_cp"):
+            obj._cached_cp = obj.current_profile
+        return obj._cached_cp
+
+    def _get_latest_assessment(self, obj: Business) -> Assessment | None:
+        if not hasattr(obj, "_cached_la"):
+            obj._cached_la = obj.latest_assessment
+        return obj._cached_la
+
     def get_profile_version(self, obj: Business) -> int | None:
-        current = obj.current_profile
-        return current.version if current else None
+        cp = self._get_current_profile(obj)
+        return cp.version if cp else None
 
     def get_state(self, obj: Business) -> str | None:
-        current = obj.current_profile
-        return current.raw_value("state") if current else None
+        cp = self._get_current_profile(obj)
+        return cp.raw_value("state") if cp else None
 
     def get_district(self, obj: Business) -> str | None:
-        current = obj.current_profile
-        return current.raw_value("district") if current else None
+        cp = self._get_current_profile(obj)
+        return cp.raw_value("district") if cp else None
 
     def get_industry(self, obj: Business) -> str | None:
-        current = obj.current_profile
-        return current.raw_value("industry") if current else None
+        cp = self._get_current_profile(obj)
+        return cp.raw_value("industry") if cp else None
 
     def get_product_description(self, obj: Business) -> str | None:
-        current = obj.current_profile
-        return current.raw_value("product_description") if current else None
+        cp = self._get_current_profile(obj)
+        return cp.raw_value("product_description") if cp else None
 
     def get_assessment_count(self, obj: Business) -> int:
+        if hasattr(obj, "_cached_cnt"):
+            return obj._cached_cnt
         return obj.assessments.count()
 
     def get_latest_assessment(self, obj: Business) -> dict[str, Any] | None:
-        latest = obj.assessments.order_by("-assessment_number").first()
-        return AssessmentSummarySerializer(latest).data if latest else None
+        latest = self._get_latest_assessment(obj)
+        if not latest:
+            return None
+        return {
+            "id": str(latest.id),
+            "business_id": str(latest.business_id),
+            "business_name": obj.name,
+            "assessment_number": latest.assessment_number,
+            "title": latest.title,
+            "status": latest.status,
+            "current_step": latest.current_step,
+            "created_at": latest.created_at.isoformat() if latest.created_at else None,
+            "updated_at": latest.updated_at.isoformat() if latest.updated_at else None,
+            "completed_at": latest.completed_at.isoformat() if latest.completed_at else None,
+            "summary": latest.summary,
+        }
 
     def get_last_assessed_at(self, obj: Business) -> str | None:
-        latest = obj.assessments.order_by("-assessment_number").first()
+        latest = self._get_latest_assessment(obj)
         if latest and latest.completed_at:
             return latest.completed_at.isoformat()
         if latest:

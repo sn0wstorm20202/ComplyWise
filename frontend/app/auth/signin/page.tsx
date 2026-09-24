@@ -27,22 +27,26 @@ function SignInContent() {
   const [error, setError] = useState<string | null>(null);
 
   async function resolveWorkspaceAndRedirect(fallbackUrl: string) {
+    const target = fallbackUrl === "/auth/signin" ? "/dashboard" : fallbackUrl;
     try {
-      const ws = await businessesApi.getWorkspace();
+      const ws = await Promise.race([
+        businessesApi.getWorkspace(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+      ]);
       if (ws?.active_business_id) {
         localStorage.setItem("complywise_active_business_id", ws.active_business_id);
       }
       if (ws?.active_assessment_id) {
         localStorage.setItem("complywise_active_assessment_id", ws.active_assessment_id);
       }
-      if (ws?.redirect_url && fallbackUrl === "/dashboard") {
+      if (ws?.redirect_url && (target === "/dashboard" || target === "/")) {
         router.push(ws.redirect_url);
         return;
       }
     } catch {
       // Non-blocking workspace restoration fallback
     }
-    router.push(fallbackUrl);
+    router.push(target);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -203,6 +207,21 @@ function SignInContent() {
                 className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
               />
             </div>
+
+            {mode === "signin" && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("compliance.officer@example.com");
+                    setPassword("CompliancePass123!");
+                  }}
+                  className="text-xs font-medium text-amber-700 hover:text-amber-900 underline cursor-pointer"
+                >
+                  Fill demo credentials
+                </button>
+              </div>
+            )}
 
             <button
               type="submit"

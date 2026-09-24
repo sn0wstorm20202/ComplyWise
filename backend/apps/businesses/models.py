@@ -436,7 +436,9 @@ class UserWorkspaceState(models.Model):
         if not user or not user.is_authenticated:
             raise PermissionError("User is not authenticated.")
 
-        ws, _ = cls.objects.get_or_create(user=user)
+        ws = cls.objects.select_related("active_business", "active_assessment").filter(user=user).first()
+        if not ws:
+            ws = cls.objects.create(user=user)
 
         # 1. Validate currently stored active_assessment
         if ws.active_assessment:

@@ -168,6 +168,31 @@ class UserProfileHomeView(APIView):
         else:
             redirect_url = f"/onboarding?business_id={ws.active_business_id}&new_assessment=true"
 
+        total_businesses = businesses.count()
+        total_assessments = assessments.count()
+
+        businesses_list = list(businesses[:20])
+        biz_ids = [b.id for b in businesses_list]
+        if biz_ids:
+            pvs_by_biz = {}
+            for pv in BusinessProfileVersion.objects.filter(business_id__in=biz_ids).order_by("business_id", "-version"):
+                if pv.business_id not in pvs_by_biz:
+                    pvs_by_biz[pv.business_id] = pv
+
+            ass_by_biz = {}
+            cnt_by_biz = {}
+            for ass in Assessment.objects.filter(business_id__in=biz_ids).order_by("business_id", "-assessment_number"):
+                if ass.business_id not in ass_by_biz:
+                    ass_by_biz[ass.business_id] = ass
+                cnt_by_biz[ass.business_id] = cnt_by_biz.get(ass.business_id, 0) + 1
+
+            for b in businesses_list:
+                b._cached_cp = pvs_by_biz.get(b.id)
+                b._cached_la = ass_by_biz.get(b.id)
+                b._cached_cnt = cnt_by_biz.get(b.id, 0)
+
+        recent_assessments = list(assessments.select_related("business")[:10])
+
         data = {
             "user": {
                 "id": str(user.id),
@@ -180,10 +205,10 @@ class UserProfileHomeView(APIView):
                 "redirect_target": redirect_target,
                 "redirect_url": redirect_url,
             },
-            "businesses": BusinessSummarySerializer(businesses, many=True).data,
-            "recent_assessments": AssessmentSummarySerializer(assessments[:10], many=True).data,
-            "total_businesses": businesses.count(),
-            "total_assessments": assessments.count(),
+            "businesses": BusinessSummarySerializer(businesses_list, many=True).data,
+            "recent_assessments": AssessmentSummarySerializer(recent_assessments, many=True).data,
+            "total_businesses": total_businesses,
+            "total_assessments": total_assessments,
         }
         return Response(envelope(data), status=status.HTTP_200_OK)
 

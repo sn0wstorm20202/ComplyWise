@@ -41,14 +41,14 @@ export function LanguageSelector({ className = "", compact = false }: LanguageSe
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label="Select Language"
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-xs font-semibold text-[#0F172A] shadow-2xs transition-colors cursor-pointer select-none focus:outline-hidden focus:ring-1 focus:ring-slate-400`}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E2E8F0] dark:border-white/15 bg-white dark:bg-[#141A21] hover:bg-[#F8FAFD] dark:hover:bg-white/10 text-xs font-semibold text-[#0B1220] dark:text-[#F7F9FC] shadow-2xs transition-colors cursor-pointer select-none focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
       >
-        <Globe className="h-3.5 w-3.5 text-[#64748B] shrink-0" />
+        <Globe className="h-3.5 w-3.5 text-[#475569] dark:text-[#A8B2BE] shrink-0" />
         <span className="font-sans">
           {compact ? activeLang.label : `Language: ${activeLang.label}`}
         </span>
         <ChevronDown
-          className={`h-3 w-3 text-[#64748B] transition-transform duration-150 ${
+          className={`h-3 w-3 text-[#475569] dark:text-[#A8B2BE] transition-transform duration-150 ${
             isOpen ? "rotate-180" : ""
           }`}
         />
@@ -58,40 +58,42 @@ export function LanguageSelector({ className = "", compact = false }: LanguageSe
         <div
           role="listbox"
           aria-label="Available Languages"
-          className="absolute right-0 top-10 mt-1 w-44 rounded-[12px] bg-white border border-[#E2E8F0] p-1.5 shadow-xl z-50 text-xs text-[#0F172A] animate-in fade-in slide-in-from-top-2 duration-150 focus:outline-hidden"
+          className="absolute right-0 top-10 mt-1 w-48 rounded-2xl bg-white dark:bg-[#0E1318] border border-[#E2E8F0] dark:border-white/15 p-1.5 shadow-2xl z-50 text-xs text-[#0B1220] dark:text-[#F7F9FC] animate-in fade-in slide-in-from-top-2 duration-150 focus:outline-hidden"
         >
-          <div className="px-2.5 py-1 text-[10px] font-semibold tracking-wider uppercase text-[#94A3B8] border-b border-[#F1F5F9] mb-1">
+          <div className="px-2.5 py-1.5 text-xs font-bold tracking-wider uppercase text-[#475569] dark:text-[#A8B2BE] border-b border-[#F1F5F9] dark:border-white/10 mb-1">
             {t("language.selectorLabel")}
           </div>
 
-          {supportedLanguages.map((option) => {
-            const isSelected = option.code === language;
-            return (
-              <button
-                key={option.code}
-                role="option"
-                aria-selected={isSelected}
-                onClick={() => {
-                  setLanguage(option.code as LanguageCode);
-                  setIsOpen(false);
-                }}
-                className={`w-full text-left px-2.5 py-1.5 rounded-[8px] flex items-center justify-between text-xs transition-colors cursor-pointer ${
-                  isSelected
-                    ? "bg-[#0F172A] text-white font-medium"
-                    : "hover:bg-[#F8FAFC] text-[#334155] hover:text-[#0F172A]"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-sans">{option.label}</span>
-                </div>
-                {isSelected ? (
-                  <Check className="h-3.5 w-3.5 text-white shrink-0" />
-                ) : (
-                  <span className="w-3.5" />
-                )}
-              </button>
-            );
-          })}
+          <div className="space-y-0.5">
+            {supportedLanguages.map((option) => {
+              const isSelected = option.code === language;
+              return (
+                <button
+                  key={option.code}
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    setLanguage(option.code as LanguageCode);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full text-left px-2.5 py-2 rounded-xl flex items-center justify-between text-xs transition-colors cursor-pointer ${
+                    isSelected
+                      ? "bg-[#0B1220] dark:bg-blue-600 text-white font-semibold"
+                      : "hover:bg-[#F8FAFD] dark:hover:bg-white/10 text-[#334155] dark:text-[#D4DBE4] hover:text-[#0B1220] dark:hover:text-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-sans">{option.label}</span>
+                  </div>
+                  {isSelected ? (
+                    <Check className="h-3.5 w-3.5 text-white shrink-0" />
+                  ) : (
+                    <span className="w-3.5" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

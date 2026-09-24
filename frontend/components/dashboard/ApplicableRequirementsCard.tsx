@@ -22,11 +22,11 @@ export function ApplicableRequirementsCard({
   return (
     <div
       onClick={onOpen}
-      className="bg-[#DCE8DE] rounded-[20px] p-5 sm:p-6 flex flex-col justify-between h-full min-h-[270px] relative shadow-sm border border-[#C5D7C9] cursor-pointer group hover:border-[#B2CAB7] transition-all select-none overflow-hidden"
+      className="bg-[#E6F3EA] dark:bg-[#0E2419] rounded-[20px] p-5 sm:p-6 flex flex-col justify-between h-full min-h-[270px] relative shadow-sm border border-[#C2E0CC] dark:border-emerald-500/30 cursor-pointer group hover:border-emerald-300 dark:hover:border-emerald-500/50 transition-all select-none overflow-hidden"
     >
       {/* Top Header: Floating Arrow on Left, BIS Logo on Right */}
       <div className="flex justify-between items-center relative z-10">
-        <div className="h-7 w-7 rounded-full bg-white shadow-2xs flex items-center justify-center text-[#111827] group-hover:scale-105 transition-transform">
+        <div className="h-7 w-7 rounded-full bg-white dark:bg-white/15 shadow-2xs flex items-center justify-center text-[#0B1220] dark:text-[#F7F9FC] group-hover:scale-105 transition-transform border border-emerald-200/50 dark:border-emerald-500/20">
           <ArrowUpRight className="h-3.5 w-3.5" />
         </div>
         <BISLogo className="h-5 w-5" />
@@ -34,20 +34,20 @@ export function ApplicableRequirementsCard({
 
       {/* Main Metric */}
       <div className="my-auto pl-0.5 relative z-10">
-        <div className="text-xs font-medium text-[#374151] max-w-[140px] leading-snug">
+        <div className="text-xs font-bold uppercase tracking-wider text-[#14532D] dark:text-emerald-300 max-w-[140px] leading-snug">
           Applicable Requirements
         </div>
-        <div className="text-5xl sm:text-6xl font-bold text-[#111827] tracking-tight mt-1.5 font-sans">
+        <div className="text-5xl sm:text-6xl font-extrabold text-[#0B1220] dark:text-white tracking-tight mt-1.5 font-sans">
           {requirementsData.applicableCount}
         </div>
       </div>
 
       {/* Bottom Footer Row */}
-      <div className="flex items-center justify-between pt-3 border-t border-[#C5D7C9]/60 relative z-10">
-        <span className="text-xs font-medium text-[#4B5563]">
+      <div className="flex items-center justify-between pt-3 border-t border-[#C2E0CC] dark:border-emerald-500/20 relative z-10">
+        <span className="text-xs font-semibold text-[#166534] dark:text-emerald-200">
           IS Standards
         </span>
-        <span className="px-3 py-0.5 rounded-full bg-white text-[#111827] font-semibold text-xs shadow-2xs">
+        <span className="px-3 py-1 rounded-full bg-white dark:bg-white/15 text-[#0B1220] dark:text-white font-bold text-xs shadow-2xs border border-emerald-200/40 dark:border-emerald-500/25 font-mono">
           {requirementsData.isStandardsRatio}
         </span>
       </div>

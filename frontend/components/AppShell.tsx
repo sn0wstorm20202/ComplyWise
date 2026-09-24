@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { X } from "lucide-react";
@@ -31,6 +33,31 @@ export function AppShell({
   const [searchOpen, setSearchOpen] = useState(false);
   const [newQueryOpen, setNewQueryOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Restore collapsed sidebar preference from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("complywise-sidebar-collapsed");
+      if (saved !== null) {
+        setSidebarCollapsed(saved === "true");
+      }
+    } catch {
+      // safe fallback
+    }
+  }, []);
+
+  const handleToggleSidebar = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("complywise-sidebar-collapsed", String(next));
+      } catch {
+        // safe fallback
+      }
+      return next;
+    });
+  };
 
   // Route protection guard
   useEffect(() => {
@@ -49,14 +76,14 @@ export function AppShell({
         view === "dashboard"
           ? "/dashboard"
           : view === "updates"
-          ? "/regulatory-updates"
-          : view === "assistant"
-          ? "/ai-assistant"
-          : view === "profile"
-          ? "/business-profile"
-          : view === "settings"
-          ? "/settings"
-          : `/${view}`;
+            ? "/regulatory-updates"
+            : view === "assistant"
+              ? "/ai-assistant"
+              : view === "profile"
+                ? "/business-profile"
+                : view === "settings"
+                  ? "/settings"
+                  : `/${view}`;
       router.push(targetPath);
     }
   }
@@ -68,17 +95,17 @@ export function AppShell({
     activeView === "dashboard"
       ? "dashboard"
       : activeView === "compliance"
-      ? "compliance"
-      : activeView === "updates"
-      ? "reports"
-      : "dashboard";
+        ? "compliance"
+        : activeView === "updates"
+          ? "reports"
+          : "dashboard";
 
   if (requireAuth && loading) {
     return (
-      <div className="min-h-screen bg-[#EDEFF2] flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-[#F4F7FB] dark:bg-[#070A0D] flex flex-col items-center justify-center p-4 transition-colors">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 rounded-full border-2 border-[#18181B] border-t-transparent animate-spin" />
-          <p className="text-xs font-medium text-[#64748B] tracking-wide">
+          <div className="h-9 w-9 rounded-full border-2 border-blue-600 dark:border-blue-400 border-t-transparent animate-spin" />
+          <p className="text-sm font-medium text-[#475569] dark:text-[#A8B2BE] tracking-wide">
             {t("header.verifyingAuth")}
           </p>
         </div>
@@ -88,19 +115,19 @@ export function AppShell({
 
   if (requireAuth && !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#EDEFF2] flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-[#F4F7FB] dark:bg-[#070A0D] flex flex-col items-center justify-center p-4 transition-colors">
         <div className="flex flex-col items-center gap-2">
-          <div className="h-6 w-6 rounded-full border-2 border-[#18181B] border-t-transparent animate-spin" />
-          <p className="text-xs text-[#64748B]">{t("header.redirectingAuth")}</p>
+          <div className="h-7 w-7 rounded-full border-2 border-blue-600 dark:border-blue-400 border-t-transparent animate-spin" />
+          <p className="text-sm text-[#475569] dark:text-[#A8B2BE]">{t("header.redirectingAuth")}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#EDEFF2] p-2 sm:p-4 lg:p-6 flex flex-col justify-center relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#F4F7FB] dark:bg-[#070A0D] p-2 sm:p-4 lg:p-6 flex flex-col justify-center relative overflow-x-hidden transition-colors duration-200">
       {/* Floating Application Window Container */}
-      <div className="w-full max-w-[1440px] mx-auto bg-white rounded-[24px] border border-[#E2E8F0] overflow-hidden flex flex-col min-h-[900px] shadow-xl relative z-10">
+      <div className="w-full max-w-[1440px] mx-auto bg-white dark:bg-[#0E1318] rounded-[24px] border border-[#E2E8F0] dark:border-white/12 overflow-hidden flex flex-col min-h-[900px] shadow-2xl relative z-10 transition-colors duration-200">
         {/* Top Header Navigation */}
         <TopBar
           activePill={activePill}
@@ -110,7 +137,7 @@ export function AppShell({
             if (pill === "reports") handleSelectView("updates");
           }}
           onNavigateToView={handleSelectView}
-          onAddMember={() => {}}
+          onAddMember={() => { }}
           onToggleMobileMenu={() => setMobileMenuOpen((prev) => !prev)}
         />
 
@@ -120,10 +147,12 @@ export function AppShell({
           <Sidebar
             activeView={activeView}
             onSelectView={handleSelectView}
+            isCollapsed={sidebarCollapsed}
+            onToggleCollapse={handleToggleSidebar}
           />
 
           {/* Right Scrollable Content Canvas */}
-          <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 overflow-y-auto min-w-0 bg-[#F4F6F8]">
+          <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 overflow-y-auto min-w-0 bg-[#F4F7FB] dark:bg-[#070A0D] text-[#0F172A] dark:text-[#F7F9FC] transition-colors duration-200">
             {renderViewContent ? renderViewContent(activeView) : children}
           </main>
         </div>
@@ -134,18 +163,18 @@ export function AppShell({
         <div className="fixed inset-0 z-50 lg:hidden">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* Drawer panel */}
-          <div className="fixed inset-y-0 left-0 max-w-[280px] w-full bg-white border-r border-[#E2E8F0] p-4 flex flex-col justify-between shadow-2xl z-10 animate-in slide-in-from-left duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-[#F1F5F9]">
-              <div className="text-sm font-semibold text-[#111827]">Navigation</div>
+          <div className="fixed inset-y-0 left-0 max-w-[280px] w-full bg-white dark:bg-[#0E1318] border-r border-[#E2E8F0] dark:border-white/12 p-4 flex flex-col justify-between shadow-2xl z-10 animate-in slide-in-from-left duration-200 text-[#0F172A] dark:text-[#F7F9FC]">
+            <div className="flex items-center justify-between pb-3 border-b border-[#F1F5F9] dark:border-white/10">
+              <div className="text-sm font-bold text-[#0B1220] dark:text-[#F7F9FC]">Navigation</div>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="Close navigation"
-                className="h-7 w-7 rounded-[8px] bg-[#F1F5F9] hover:bg-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#111827] transition-colors cursor-pointer"
+                className="h-8 w-8 rounded-lg bg-[#F1F5F9] dark:bg-white/10 hover:bg-[#E2E8F0] dark:hover:bg-white/15 flex items-center justify-center text-[#475569] dark:text-[#A8B2BE] hover:text-[#0B1220] dark:hover:text-white transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>

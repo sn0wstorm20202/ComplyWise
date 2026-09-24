@@ -63,37 +63,37 @@ export function ComplianceStatusCard({
   const stats = categoryBreakdown[selectedCategory] || categoryBreakdown["Overall"] || Object.values(categoryBreakdown)[0];
 
   return (
-    <div className="bg-white rounded-[20px] p-5 sm:p-6 border border-[#E5E7EB] shadow-sm flex flex-col justify-between h-full min-h-[270px] relative select-none w-full">
+    <div className="bg-white dark:bg-[#0E1318] rounded-[20px] p-5 sm:p-6 border border-[#E2E8F0] dark:border-white/12 shadow-sm flex flex-col justify-between h-full min-h-[270px] relative select-none w-full transition-colors">
       {/* Header */}
       <div>
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-sm font-semibold text-[#111827] whitespace-nowrap">
+          <h3 className="text-base font-bold text-[#0B1220] dark:text-[#F7F9FC] whitespace-nowrap">
             Compliance Status
           </h3>
           <button
             type="button"
             onClick={onExpand}
             aria-label="Expand compliance status"
-            className="h-6 w-6 rounded-[6px] bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#111827] transition-colors cursor-pointer"
+            className="h-7 w-7 rounded-lg bg-[#F8FAFD] dark:bg-[#141A21] hover:bg-[#F1F5F9] dark:hover:bg-white/10 border border-[#E2E8F0] dark:border-white/15 flex items-center justify-center text-[#475569] dark:text-[#D4DBE4] hover:text-[#0B1220] dark:hover:text-white transition-colors cursor-pointer"
           >
-            <ArrowUpRight className="h-3 w-3" />
+            <ArrowUpRight className="h-3.5 w-3.5" />
           </button>
         </div>
 
         {/* Dropdown Pill Button */}
-        <div className="mt-2 relative">
+        <div className="mt-2.5 relative">
           <button
             type="button"
             onClick={() => setIsDropdownOpen((prev) => !prev)}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-[#111827] text-xs font-medium transition-colors cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-[#141A21] hover:bg-[#F8FAFD] dark:hover:bg-white/10 border border-[#E2E8F0] dark:border-white/15 text-[#0B1220] dark:text-[#F7F9FC] text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
           >
             <span>{selectedCategory}</span>
-            <ChevronDown className="h-3 w-3 text-[#64748B]" />
+            <ChevronDown className="h-3.5 w-3.5 text-[#475569] dark:text-[#A8B2BE]" />
           </button>
 
           {/* Interactive Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute left-0 top-8 z-30 w-52 bg-white rounded-[12px] shadow-2xl border border-[#E2E8F0] p-1.5 space-y-0.5 animate-in fade-in duration-100">
+            <div className="absolute left-0 top-9 z-30 w-56 bg-white dark:bg-[#141A21] rounded-2xl shadow-2xl border border-[#E2E8F0] dark:border-white/15 p-1.5 space-y-0.5 animate-in fade-in duration-100 text-xs">
               {categories.map((cat) => (
                 <button
                   key={cat}
@@ -102,14 +102,14 @@ export function ComplianceStatusCard({
                     setSelectedCategory(cat);
                     setIsDropdownOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-1.5 rounded-[8px] text-xs font-medium flex items-center justify-between transition-colors ${
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
                     selectedCategory === cat
-                      ? "bg-[#F1F5F9] text-[#111827] font-semibold"
-                      : "hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#111827]"
+                      ? "bg-[#F1F5F9] dark:bg-white/10 text-[#0B1220] dark:text-[#F7F9FC] font-semibold"
+                      : "hover:bg-[#F8FAFD] dark:hover:bg-white/5 text-[#334155] dark:text-[#D4DBE4] hover:text-[#0B1220] dark:hover:text-white"
                   }`}
                 >
                   <span>{cat}</span>
-                  {selectedCategory === cat && <Check className="h-3.5 w-3.5 text-indigo-600" />}
+                  {selectedCategory === cat && <Check className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />}
                 </button>
               ))}
             </div>
@@ -121,25 +121,25 @@ export function ComplianceStatusCard({
       <div className="relative h-24 flex items-center justify-center my-auto">
         <div className="relative w-48 h-24 flex items-center justify-center">
           {/* Main Central Turquoise/Mint Bubble */}
-          <div className="relative z-10 h-[88px] w-[88px] rounded-full bg-[#5EEAD4] flex flex-col items-center justify-center shadow-[0_4px_20px_rgba(94,234,212,0.35)] transition-all duration-500">
+          <div className="relative z-10 h-[88px] w-[88px] rounded-full bg-[#5EEAD4] dark:bg-[#0D9488] flex flex-col items-center justify-center shadow-[0_4px_20px_rgba(94,234,212,0.35)] dark:shadow-[0_4px_20px_rgba(13,148,136,0.4)] transition-all duration-500">
             <div className="flex items-baseline">
-              <span className="text-2xl font-bold text-[#0F172A] tracking-tight">
+              <span className="text-2xl font-bold text-[#0B1220] dark:text-white tracking-tight">
                 {stats.healthPercentage}
               </span>
-              <span className="text-xs font-bold text-[#0F172A] ml-0.5">%</span>
+              <span className="text-xs font-bold text-[#0B1220] dark:text-white ml-0.5">%</span>
             </div>
           </div>
 
           {/* Top-Right Overlapping Bubble */}
-          <div className="absolute top-0 right-6 z-20 h-12 w-12 rounded-full bg-[#E0F2FE] border border-[#BAE6FD] flex items-center justify-center shadow-xs transition-all duration-500">
-            <span className="text-[11px] font-bold text-[#0369A1]">
+          <div className="absolute top-0 right-6 z-20 h-12 w-12 rounded-full bg-[#E0F2FE] dark:bg-blue-500/25 border border-[#BAE6FD] dark:border-blue-500/35 flex items-center justify-center shadow-xs transition-all duration-500">
+            <span className="text-xs font-bold text-[#0369A1] dark:text-blue-200">
               {stats.inProgressPercentage}%
             </span>
           </div>
 
           {/* Bottom-Left Overlapping Bubble */}
-          <div className="absolute bottom-0 left-6 z-20 h-10 w-10 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center shadow-xs transition-all duration-500">
-            <span className="text-[10px] font-bold text-[#475569]">
+          <div className="absolute bottom-0 left-6 z-20 h-10 w-10 rounded-full bg-[#F1F5F9] dark:bg-white/15 border border-[#E2E8F0] dark:border-white/20 flex items-center justify-center shadow-xs transition-all duration-500">
+            <span className="text-xs font-bold text-[#334155] dark:text-slate-100">
               {stats.overduePercentage}%
             </span>
           </div>
@@ -147,30 +147,30 @@ export function ComplianceStatusCard({
       </div>
 
       {/* Bottom 3-Column Metrics */}
-      <div className="grid grid-cols-3 gap-2 pt-2 text-left border-t border-[#F0F2F5]">
+      <div className="grid grid-cols-3 gap-2 pt-3 text-left border-t border-[#E2E8F0] dark:border-white/10">
         <div>
-          <div className="text-xl sm:text-2xl font-bold text-[#111827] tracking-tight">
+          <div className="text-xl sm:text-2xl font-extrabold text-[#0B1220] dark:text-[#F7F9FC] tracking-tight">
             {stats.compliantCount}
           </div>
-          <div className="text-[11px] text-[#6B7280] mt-0.5">
+          <div className="text-xs font-semibold text-[#475569] dark:text-[#A8B2BE] mt-0.5">
             Compliant
           </div>
         </div>
 
         <div>
-          <div className="text-xl sm:text-2xl font-bold text-[#111827] tracking-tight">
+          <div className="text-xl sm:text-2xl font-extrabold text-[#0B1220] dark:text-[#F7F9FC] tracking-tight">
             {stats.inProgressCount}
           </div>
-          <div className="text-[11px] text-[#6B7280] mt-0.5">
+          <div className="text-xs font-semibold text-[#475569] dark:text-[#A8B2BE] mt-0.5">
             In Progress
           </div>
         </div>
 
         <div>
-          <div className="text-xl sm:text-2xl font-bold text-[#EF4444] tracking-tight">
+          <div className="text-xl sm:text-2xl font-extrabold text-rose-600 dark:text-rose-400 tracking-tight">
             {stats.overdueCount}
           </div>
-          <div className="text-[11px] text-[#6B7280] mt-0.5">
+          <div className="text-xs font-semibold text-[#475569] dark:text-[#A8B2BE] mt-0.5">
             Overdue
           </div>
         </div>

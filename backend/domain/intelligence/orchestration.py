@@ -716,6 +716,17 @@ class LLMFirstStrategy(AssessmentStrategy):
             under_res = validate_business_understanding_schema(under_raw) if under_raw else None
             engine = QuestionnaireEngine()
             questions = engine.generate_questionnaire(context, run, understanding=under_res)
+
+            # Guarantee question set is explicitly stored in run stage_metadata
+            state = dict(run.stage_metadata)
+            state["question_generation"] = {
+                "questions": [q.to_dict() for q in questions],
+                "count": len(questions),
+                "generated_at": time.time(),
+            }
+            run.stage_metadata = state
+            run.save()
+
             return StageResult(
                 stage=stage,
                 status=StageStatus.COMPLETED,
@@ -926,6 +937,10 @@ class LLMFirstStrategy(AssessmentStrategy):
                     "title": s.title,
                     "is_mandatory": s.is_mandatory,
                     "nature": s.category,
+                    "mandatory_status": s.extra.get("mandatory_status", "MANDATORY" if s.is_mandatory else "VOLUNTARY"),
+                    "verification_status": s.extra.get("verification_status", "VERIFIED" if s.is_mandatory else "NEEDS_VERIFICATION"),
+                    "testing_requirements": s.extra.get("testing_requirements", ""),
+                    "next_step": s.extra.get("next_step", ""),
                 }
                 for s in raw_stds
             ]

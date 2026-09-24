@@ -129,8 +129,8 @@ def _patch_calendar(events: list[dict]):
 class TestConfigurablePolicies:
     def test_default_policy_offsets(self):
         assert DEFAULT_NOTIFICATION_POLICY.offsets == [7, 1]
-        assert DEFAULT_NOTIFICATION_POLICY.get_channels_for_offset(7) == [NotificationChannel.GOOGLE_CALENDAR]
-        assert DEFAULT_NOTIFICATION_POLICY.get_channels_for_offset(1) == [NotificationChannel.GOOGLE_CALENDAR, NotificationChannel.EMAIL]
+        assert DEFAULT_NOTIFICATION_POLICY.get_channels_for_offset(7) == [NotificationChannel.EMAIL]
+        assert DEFAULT_NOTIFICATION_POLICY.get_channels_for_offset(1) == [NotificationChannel.EMAIL, NotificationChannel.GOOGLE_CALENDAR]
 
     def test_medium_policy_includes_t14(self, test_business):
         due = date(2026, 12, 20)
@@ -145,7 +145,7 @@ class TestConfigurablePolicies:
                 force=True,
             )
         assert result["total_dispatched"] == 1
-        assert result["dispatched"][0]["channel"] == NotificationChannel.GOOGLE_CALENDAR
+        assert result["dispatched"][0]["channel"] == NotificationChannel.IN_APP
 
     def test_high_policy_includes_t30_and_in_app(self, test_business):
         due = date(2026, 12, 30)

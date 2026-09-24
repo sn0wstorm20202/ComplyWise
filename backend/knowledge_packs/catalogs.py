@@ -278,6 +278,78 @@ GOVERNMENT_SCHEME_CATALOG: list[dict[str, Any]] = [
 
 
 STANDARDS_CATALOG: list[dict[str, Any]] = [
+    # --- EV CHARGING & ELECTRIC VEHICLE SUPPLY EQUIPMENT (IS 17017 FAMILY) ---
+    {
+        "standard_code": "IS 17017 (Part 1):2018",
+        "title": "Electric Vehicle Conductive Charging System — Part 1: General Requirements",
+        "authority": "Bureau of Indian Standards (BIS)",
+        "nature": "MANDATORY_TECHNICAL_STANDARD",
+        "sectors": ["EV_CHARGING", "CLEANTECH", "AUTOMOTIVE_ELECTRICAL"],
+        "why_it_matters": "Statutory Indian technical standard under Central Electricity Authority Regulations. EV supply equipment and conductive charging stations must meet electrical insulation, fault protection, and ingress protection specifications.",
+        "testing_requirements": "Insulation resistance, high-voltage dielectric withstand, temperature rise, mechanical impact (IK10), and ingress protection (IP54 minimum) testing in BIS/NABL-accredited test laboratory.",
+        "next_step": "Submit EV charger design files and type-test prototype to accredited laboratory (ARAI/ICAT/CPRI/BIS) for IS 17017 (Part 1) conformity certificate.",
+        "source_url": "https://www.bis.gov.in",
+        "is_mandatory": True,
+        "mandatory_status": "MANDATORY",
+        "verification_status": "VERIFIED",
+    },
+    {
+        "standard_code": "IS 17017 (Part 21):2021",
+        "title": "Electric Vehicle Conductive Charging System — Part 21: EMC Requirements for Off-Board Systems",
+        "authority": "Bureau of Indian Standards (BIS)",
+        "nature": "TECHNICAL_STANDARD",
+        "sectors": ["EV_CHARGING", "CLEANTECH"],
+        "why_it_matters": "Prescribes electromagnetic compatibility (EMC) emissions and immunity standards for off-board AC and DC EV charging equipment to prevent radio and power grid interference.",
+        "testing_requirements": "Radiated emissions (CISPR 22/32), harmonic current emissions (IEC 61000-3-12), and electrostatic discharge (ESD) immunity testing.",
+        "next_step": "Perform pre-compliance EMC scan for high-frequency switching power electronics and line filters.",
+        "source_url": "https://www.bis.gov.in",
+        "is_mandatory": False,
+        "mandatory_status": "VOLUNTARY",
+        "verification_status": "VERIFIED",
+    },
+    {
+        "standard_code": "IS 17017 (Part 22):2021",
+        "title": "Electric Vehicle Conductive Charging System — Part 22: AC Electric Vehicle Supply Equipment",
+        "authority": "Bureau of Indian Standards (BIS)",
+        "nature": "TECHNICAL_STANDARD",
+        "sectors": ["EV_CHARGING", "CLEANTECH"],
+        "why_it_matters": "Defines construction, control pilot signaling, and residual current protection for AC slow and fast chargers (Type-2 connectors and wallboxes up to 22 kW).",
+        "testing_requirements": "Type B RCD or 6mA DC residual current detection testing, interlocking mechanism verification, and pilot wire duty cycle analysis.",
+        "next_step": "Validate AC charging controller firmware and integrate certified Type-2 socket outlets.",
+        "source_url": "https://www.bis.gov.in",
+        "is_mandatory": False,
+        "mandatory_status": "VOLUNTARY",
+        "verification_status": "VERIFIED",
+    },
+    {
+        "standard_code": "IS 17017 (Part 23):2021",
+        "title": "Electric Vehicle Conductive Charging System — Part 23: DC Electric Vehicle Supply Equipment",
+        "authority": "Bureau of Indian Standards (BIS)",
+        "nature": "TECHNICAL_STANDARD",
+        "sectors": ["EV_CHARGING", "CLEANTECH"],
+        "why_it_matters": "Prescribes safety and functional requirements for high-power DC fast charging stations (CCS-2, CHAdeMO, and Bharat DC-001 systems up to 240+ kW).",
+        "testing_requirements": "Insulation Monitoring Device (IMD) functional trip test, DC contactor electrical endurance, emergency shutdown response time (<100ms), and thermal runaway isolation.",
+        "next_step": "Integrate certified IMD and DC fast charging controller with CCS-2 protocol compliance.",
+        "source_url": "https://www.bis.gov.in",
+        "is_mandatory": False,
+        "mandatory_status": "VOLUNTARY",
+        "verification_status": "VERIFIED",
+    },
+    {
+        "standard_code": "IS 17017 (Part 24):2021",
+        "title": "Electric Vehicle Conductive Charging System — Part 24: Digital Communication between DC EVSE and EV",
+        "authority": "Bureau of Indian Standards (BIS)",
+        "nature": "TECHNICAL_STANDARD",
+        "sectors": ["EV_CHARGING", "CLEANTECH"],
+        "why_it_matters": "Standardizes digital CAN and Power Line Communication (PLC) messages between DC charger controller and vehicle Battery Management System (BMS).",
+        "testing_requirements": "Protocol conformance testing with automated protocol analyzer covering DIN 70121, ISO 15118, and GB/T sequences.",
+        "next_step": "Verify interoperability with major OEM EV models and flash latest certified communication stack.",
+        "source_url": "https://www.bis.gov.in",
+        "is_mandatory": False,
+        "mandatory_status": "VOLUNTARY",
+        "verification_status": "VERIFIED",
+    },
+
     # --- FOOD PROCESSING STANDARDS ---
     {
         "standard_code": "FSSAI-STD-REG-2011",
@@ -289,6 +361,9 @@ STANDARDS_CATALOG: list[dict[str, Any]] = [
         "testing_requirements": "Periodic batch testing in FSSAI-notified and NABL-accredited laboratory for moisture, microbiological count, and preservative levels.",
         "next_step": "Implement recipe compliance and retain batch test reports in technical compliance dossier.",
         "source_url": "https://fssai.gov.in",
+        "is_mandatory": True,
+        "mandatory_status": "MANDATORY",
+        "verification_status": "VERIFIED",
     },
     {
         "standard_code": "IS 2491:2013",
@@ -300,6 +375,9 @@ STANDARDS_CATALOG: list[dict[str, Any]] = [
         "testing_requirements": "Internal hygiene audit and verification of personal cleanliness facilities for food handling staff.",
         "next_step": "Align factory processing room floor plan, washable wall tiling, and drainage slopes to IS 2491 specifications.",
         "source_url": "https://www.bis.gov.in",
+        "is_mandatory": True,
+        "mandatory_status": "MANDATORY",
+        "verification_status": "VERIFIED",
     },
     {
         "standard_code": "ISO 22000 / HACCP",
@@ -311,17 +389,23 @@ STANDARDS_CATALOG: list[dict[str, Any]] = [
         "testing_requirements": "Third-party certification audit by an accredited certification body reviewing hazard analysis, CCP monitoring, and product traceability.",
         "next_step": "Draft documented Standard Operating Procedures (SOPs) and engage an accredited registrar for initial certification audit.",
         "source_url": "https://www.iso.org/iso-22000-food-safety-management.html",
+        "is_mandatory": False,
+        "mandatory_status": "VOLUNTARY",
+        "verification_status": "VERIFIED",
     },
     {
         "standard_code": "IS 10146 / IS 9845",
         "title": "Polyethylene for Safe Use in Contact with Foodstuffs & Migration Testing",
         "authority": "Bureau of Indian Standards (BIS)",
         "nature": "MANDATORY_PACKAGING_STANDARD",
-        "sectors": ["FOOD", "PACKAGING"],
+        "sectors": ["FOOD_PACKAGING", "FOOD_CONTACT_PLASTICS"],
         "why_it_matters": "Ensures flexible plastic pouches, heat-sealed bags, and containers do not leach harmful organic chemicals into packaged food items.",
         "testing_requirements": "Overall migration and specific migration testing using food simulants at accredited lab.",
         "next_step": "Obtain Food Grade Migration Test Certificate from your packaging film suppliers.",
         "source_url": "https://www.bis.gov.in",
+        "is_mandatory": True,
+        "mandatory_status": "MANDATORY",
+        "verification_status": "VERIFIED",
     },
 
     # --- AUTOMOTIVE & PRECISION ENGINEERING ---
@@ -330,33 +414,42 @@ STANDARDS_CATALOG: list[dict[str, Any]] = [
         "title": "Quality Management System for Automotive Production & Component Machining",
         "authority": "International Automotive Task Force (IATF)",
         "nature": "MANDATORY_OEM_BENCHMARK",
-        "sectors": ["AUTOMOTIVE", "ENGINEERING", "MACHINING"],
+        "sectors": ["AUTOMOTIVE_OEM", "POWERTRAIN_COMPONENTS"],
         "why_it_matters": "Primary global quality specification for tier-1 and tier-2 automotive component suppliers, emphasizing defect prevention and reduction of variation.",
         "testing_requirements": "Rigorous stage 1 & stage 2 quality management audits including PPAP (Production Part Approval Process) and FMEA reviews.",
         "next_step": "Establish Advanced Product Quality Planning (APQP) protocols and prepare for baseline ISO 9001 -> IATF certification ladder.",
         "source_url": "https://www.iatfglobaloversight.org",
+        "is_mandatory": False,
+        "mandatory_status": "VOLUNTARY",
+        "verification_status": "VERIFIED",
     },
     {
         "standard_code": "IS 1367 / IS 1363",
         "title": "Technical Supply Conditions for Threaded Steel Fasteners and Precision Turned Parts",
         "authority": "Bureau of Indian Standards (BIS)",
         "nature": "MANDATORY_QCO",
-        "sectors": ["ENGINEERING", "MACHINING", "AUTOMOTIVE"],
+        "sectors": ["FASTENERS", "BOLTS_NUTS_SCREWS"],
         "why_it_matters": "Covered under Ministry of Commerce Quality Control Order (QCO). Fasteners and precision turned components must conform to tensile strength, hardness, and dimensional tolerances.",
         "testing_requirements": "Proof load testing, core hardness testing, and salt-spray corrosion resistance tests.",
         "next_step": "Procure BIS certification or verify raw material test certificates (MTC) from primary steel manufacturers.",
         "source_url": "https://www.bis.gov.in",
+        "is_mandatory": True,
+        "mandatory_status": "MANDATORY",
+        "verification_status": "VERIFIED",
     },
     {
         "standard_code": "ISO 9001:2015",
         "title": "Quality Management Systems — Requirements for Precision Machining",
         "authority": "Bureau of Indian Standards / ISO",
         "nature": "INDUSTRY_STANDARD",
-        "sectors": ["ENGINEERING", "MACHINING", "MANUFACTURING"],
+        "sectors": ["CNC_MACHINING", "PRECISION_JOB_WORK"],
         "why_it_matters": "Validates process control, calibration management, and systematic traceability across CNC turning, milling, and grinding operations.",
         "testing_requirements": "Quality manual implementation and third-party registrar audit.",
         "next_step": "Calibrate all vernier calipers, micrometers, and coordinate measuring machines (CMM) with traceable calibration certificates.",
         "source_url": "https://www.iso.org",
+        "is_mandatory": False,
+        "mandatory_status": "VOLUNTARY",
+        "verification_status": "VERIFIED",
     },
 
     # --- ELECTRONICS & ESDM ---
@@ -365,35 +458,76 @@ STANDARDS_CATALOG: list[dict[str, Any]] = [
         "title": "Information Technology Equipment — Safety (General Requirements)",
         "authority": "Bureau of Indian Standards (BIS)",
         "nature": "MANDATORY_CRS_QCO",
-        "sectors": ["ELECTRONICS", "ESDM", "HARDWARE"],
+        "sectors": ["ELECTRONICS", "ESDM", "HARDWARE", "POWER_ELECTRONICS"],
         "why_it_matters": "Mandatory under Ministry of Electronics & IT (MeitY) Compulsory Registration Scheme (CRS). Electronic products cannot be imported or sold without registration.",
         "testing_requirements": "Comprehensive electric shock hazard, heating, abnormal operation, and fire resistance testing in BIS-recognized lab.",
         "next_step": "Submit production samples to accredited test laboratory and upload test report to Manakonline portal.",
         "source_url": "https://www.crsbis.in",
+        "is_mandatory": True,
+        "mandatory_status": "MANDATORY",
+        "verification_status": "VERIFIED",
     },
     {
         "standard_code": "IS 15885 (Part 2/Sec 13)",
-        "title": "Safety of Lamp Controlgear / LED Drivers and Power Supplies",
+        "title": "Safety of Lamp Controlgear / Electronic Power Converters and Power Supplies",
         "authority": "Bureau of Indian Standards (BIS)",
         "nature": "MANDATORY_CRS_QCO",
-        "sectors": ["ELECTRONICS", "ESDM"],
-        "why_it_matters": "Mandatory safety registration for switch-mode power supplies (SMPS) and auxiliary electronic driver circuits.",
+        "sectors": ["ELECTRONICS", "ESDM", "POWER_ELECTRONICS", "EV_CHARGING"],
+        "why_it_matters": "Mandatory safety registration for switch-mode power supplies (SMPS), electronic power converters, and auxiliary driver circuits under MeitY CRS.",
         "testing_requirements": "Dielectric strength, creepage distance, and temperature rise testing under extreme operating conditions.",
         "next_step": "Obtain BIS R-number prior to commercial product distribution.",
         "source_url": "https://www.crsbis.in",
+        "is_mandatory": True,
+        "mandatory_status": "MANDATORY",
+        "verification_status": "VERIFIED",
     },
 
-    # --- ENVIRONMENTAL GENERAL ---
+    # --- PACKAGED WATER & BOTTLING ---
     {
         "standard_code": "IS 10500:2012",
         "title": "Drinking Water — Specification",
         "authority": "Bureau of Indian Standards (BIS)",
         "nature": "STATUTORY_WORKPLACE_SAFETY",
-        "sectors": ["ALL", "MANUFACTURING"],
-        "why_it_matters": "Factories Act mandates that cool, clean drinking water conforming to IS 10500 must be made available to all industrial workers.",
-        "testing_requirements": "Quarterly physical, chemical, and microbiological water analysis test from accredited laboratory.",
-        "next_step": "Install commercial RO / UV filtration and maintain quarterly laboratory potability test certificate at factory office.",
+        "sectors": ["PACKAGED_WATER", "BEVERAGE_BOTTLING"],
+        "why_it_matters": "Statutory potability standard for commercial packaged drinking water plants and workplace welfare potability testing.",
+        "testing_requirements": "Physical, chemical, and microbiological water analysis test from accredited laboratory.",
+        "next_step": "Install commercial RO/UV filtration and maintain laboratory potability test certificate.",
         "source_url": "https://www.bis.gov.in",
+        "is_mandatory": False,
+        "mandatory_status": "VOLUNTARY_EXCEPT_PACKAGED_WATER",
+        "verification_status": "NEEDS_VERIFICATION",
+    },
+
+    # --- CEMENT & HEAVY INDUSTRIAL ---
+    {
+        "standard_code": "IS 269:2015",
+        "title": "Ordinary Portland Cement — Specification",
+        "authority": "Bureau of Indian Standards (BIS)",
+        "nature": "MANDATORY_QCO",
+        "sectors": ["CEMENT", "HEAVY_MANUFACTURING", "BUILDING_MATERIALS"],
+        "why_it_matters": "Mandatory under Cement (Quality Control) Order. No enterprise may manufacture, sell, or distribute cement without the BIS Standard Mark (ISI mark).",
+        "testing_requirements": "Compressive strength, setting time, sound test (Le Chatelier), and fineness test (Blaine's air permeability).",
+        "next_step": "Obtain BIS Certification Scheme I license for ISI marking on all cement bagging units.",
+        "source_url": "https://www.bis.gov.in",
+        "is_mandatory": True,
+        "mandatory_status": "MANDATORY",
+        "verification_status": "VERIFIED",
+    },
+
+    # --- TEXTILE & APPAREL DYEING ---
+    {
+        "standard_code": "IS 1390:2022",
+        "title": "Textiles — Determination of pH of Aqueous Extract & Eco-Standards",
+        "authority": "Bureau of Indian Standards (BIS)",
+        "nature": "INDUSTRY_STANDARD",
+        "sectors": ["TEXTILE", "DYEING", "WEAVING"],
+        "why_it_matters": "Prescribes pH tolerance and chemical purity standards for wet-processed and dyed fabrics to prevent skin irritation and ensure chemical safety.",
+        "testing_requirements": "pH meter aqueous extraction and color fastness testing at accredited laboratory.",
+        "next_step": "Calibrate dye bath neutralization protocols and maintain batch chemical safety certificates.",
+        "source_url": "https://www.bis.gov.in",
+        "is_mandatory": False,
+        "mandatory_status": "VOLUNTARY",
+        "verification_status": "VERIFIED",
     },
 ]
 
@@ -751,9 +885,14 @@ STATUTORY_PORTAL_REGISTRY: dict[str, dict[str, str]] = {
         "description": "Telangana State Pollution Control Board Consent System",
     },
     "WBPCB": {
-        "name": "Silpa Sathi - West Bengal Single Window Portal",
-        "url": "https://silpasathi.wb.gov.in/",
-        "description": "West Bengal Single Window System for Environmental Clearance",
+        "name": "West Bengal Pollution Control Board (WBPCB) Portal",
+        "url": "https://wbpcb.gov.in/",
+        "description": "West Bengal State Pollution Control Board Consent & Environmental Clearances",
+    },
+    "WB_FACTORIES": {
+        "name": "Directorate of Factories, West Bengal",
+        "url": "https://wbfactories.gov.in/",
+        "description": "West Bengal Directorate of Factories Licensing & Safety Clearances",
     },
     "DPCC": {
         "name": "DPCC OCMMS Online Consent Management Portal",
@@ -763,9 +902,9 @@ STATUTORY_PORTAL_REGISTRY: dict[str, dict[str, str]] = {
 
     # Foreign Trade
     "DGFT": {
-        "name": "DGFT Online Services (IEC Application)",
-        "url": "https://www.dgft.gov.in/CP/?opt=iec-service",
-        "description": "Directorate General of Foreign Trade Importer-Exporter Code",
+        "name": "Directorate General of Foreign Trade (DGFT) Portal",
+        "url": "https://dgft.gov.in/",
+        "description": "Directorate General of Foreign Trade Importer-Exporter Code (IEC)",
     },
 
     # Labor, Factories & Safety (DISH)
@@ -780,8 +919,8 @@ STATUTORY_PORTAL_REGISTRY: dict[str, dict[str, str]] = {
         "description": "Directorate of Industrial Safety & Health Factory Licensing",
     },
     "DISH_WB": {
-        "name": "Silpa Sathi - West Bengal Single Window (Factory License)",
-        "url": "https://silpasathi.wb.gov.in/",
+        "name": "Directorate of Factories, West Bengal",
+        "url": "https://wbfactories.gov.in/",
         "description": "West Bengal Directorate of Factories Single Window Portal",
     },
     "SHRAM_SUVIDHA": {
@@ -896,7 +1035,7 @@ def resolve_statutory_portal(
     if "TSPCB" in auth_upper or ("TELANGANA" in req_upper and "CONSENT" in req_upper):
         return STATUTORY_PORTAL_REGISTRY["TSPCB"]
 
-    if "WBPCB" in auth_upper or ("WEST BENGAL" in req_upper and "CTE" in req_upper):
+    if "WBPCB" in auth_upper or ("WEST BENGAL" in req_upper and ("CTE" in req_upper or "CONSENT" in req_upper or "POLLUTION" in req_upper)):
         return STATUTORY_PORTAL_REGISTRY["WBPCB"]
 
     if "DISH_GUJARAT" in auth_upper or ("GUJARAT" in req_upper and "FACTORY" in req_upper):
@@ -905,8 +1044,8 @@ def resolve_statutory_portal(
     if "DISH_TN" in auth_upper or ("TAMIL" in req_upper and "FACTORY" in req_upper):
         return STATUTORY_PORTAL_REGISTRY["DISH_TN"]
 
-    if "DISH_WB" in auth_upper or ("WEST BENGAL" in req_upper and "FACTORY" in req_upper):
-        return STATUTORY_PORTAL_REGISTRY["DISH_WB"]
+    if "WB_FACTORIES" in auth_upper or "DISH_WB" in auth_upper or ("WEST BENGAL" in req_upper and "FACTORY" in req_upper):
+        return STATUTORY_PORTAL_REGISTRY["WB_FACTORIES"]
 
     if "CDSCO" in auth_upper or "MEDICAL DEVICE" in req_upper:
         return STATUTORY_PORTAL_REGISTRY["CDSCO"]
@@ -939,8 +1078,11 @@ STATUTORY_PORTALS["EPR_PLASTIC"] = "https://eprplastic.cpcb.gov.in/"
 STATUTORY_PORTALS["JAIVIK_BHARAT"] = "https://jaivikbharat.fssai.gov.in/"
 STATUTORY_PORTALS["SILPASATHI_WB"] = "https://silpasathi.wb.gov.in/"
 STATUTORY_PORTALS["DISH_CENTRAL"] = "https://shramsuvidha.gov.in/"
-STATUTORY_PORTALS["WBPCB"] = "https://silpasathi.wb.gov.in/"
+STATUTORY_PORTALS["WBPCB"] = "https://wbpcb.gov.in/"
+STATUTORY_PORTALS["WB_FACTORIES"] = "https://wbfactories.gov.in/"
 STATUTORY_PORTALS["CPCB"] = "https://cpcb.nic.in/"
+STATUTORY_PORTALS["DGFT"] = "https://dgft.gov.in/"
+STATUTORY_PORTALS["BIS"] = "https://bis.gov.in/"
 STATUTORY_PORTALS["MEITY_DPDP"] = "https://www.meity.gov.in/"
 STATUTORY_PORTALS["INDIA_GOV"] = "https://www.nsws.gov.in/"
 

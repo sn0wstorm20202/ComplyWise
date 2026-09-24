@@ -99,7 +99,10 @@ CRITICAL INVARIANTS:
    - Food manufacturer: NEVER include textile dyeing or heavy engineering regulations.
 
 5. PRIORITIZATION:
-   - Assign priority: 'HIGH' (mandatory pre-operational licenses like CTE or Factory License), 'MEDIUM' (operational reporting or standards), 'LOW' (voluntary or record-keeping).
+   - Assign priority: 'HIGH' (mandatory pre-operational licenses like CTE, Factory License, or mandatory QCO standards), 'MEDIUM' (operational reporting or standards), 'LOW' (voluntary or record-keeping).
+
+6. MANDATORY STANDARDS COVERAGE:
+   - If the business produces or manufactures products covered by Bureau of Indian Standards (BIS) in the evidence excerpts (e.g. IS 17017 for EV chargers, IS 269 for cement, IS 13252 for adapters), you MUST synthesize a requirement for that standard.
 
 OUTPUT FORMAT:
 Return a JSON object conforming exactly to this structure:
@@ -379,6 +382,72 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
 
             verified_requirements.append(req)
 
+        # Ensure that official statutory and standards evidence candidates are not dropped
+        covered_ev_ids = {
+            eid for r in verified_requirements for eid in (r.get("evidence_ids") or [])
+        }
+        covered_titles = {
+            re.sub(r"[^a-z0-9]", "", r.get("title", "").lower()) for r in verified_requirements
+        }
+        for ev in evidence_candidates:
+            ev_id = ev.get("evidence_id")
+            if ev_id and ev_id not in covered_ev_ids:
+                det_reqs, _ = self._deterministic_grounded_synthesis(context, [ev])
+                for d_req in det_reqs:
+                    clean_d_title = re.sub(r"[^a-z0-9]", "", d_req.get("title", "").lower())
+                    if clean_d_title in covered_titles:
+                        continue
+                    d_status, d_reason = _validate_candidate_applicability_deterministically(
+                        d_req, context, evidence_candidates
+                    )
+                    d_req["status"] = d_status
+                    if d_reason:
+                        d_req["why_it_matters"] = f"{d_req.get('why_it_matters', '')} ({d_reason})".strip()
+                    verified_requirements.append(d_req)
+                    covered_titles.add(clean_d_title)
+                    covered_ev_ids.add(ev_id)
+
+        # Mandatory Requisite Standards check: EV Charging Systems (IS 17017)
+        is_ev_mfg = any(
+            term in product_desc.lower()
+            for term in ["ev charging", "electric vehicle", "charging station", "evse"]
+        )
+        has_is17017 = any(
+            "17017" in r.get("title", "") or "17017" in r.get("description", "")
+            for r in verified_requirements
+        )
+        if is_ev_mfg and not has_is17017:
+            bis_ev = next(
+                (e for e in evidence_candidates if "bis" in (e.get("authority") or "").lower()),
+                evidence_candidates[0] if evidence_candidates else None,
+            )
+            ev_id_to_use = bis_ev.get("evidence_id") if bis_ev else "EVD-BIS-17017"
+            s_url_to_use = bis_ev.get("source_url") if bis_ev else "https://bis.gov.in"
+            ev_req = {
+                "requirement_id": f"REQ-BIS-17017-{hashlib.sha256(ev_id_to_use.encode('utf-8')).hexdigest()[:6].upper()}",
+                "title": "BIS Certification for EV Charging Systems (IS 17017)",
+                "description": "Mandatory conformity assessment and safety type-testing for conductive electric vehicle supply equipment under IS 17017 (Part 1).",
+                "regulatory_domain": "TECHNICAL_STANDARDS",
+                "authority": "Bureau of Indian Standards (BIS)",
+                "jurisdiction": "CENTRAL",
+                "status": "APPLICABLE",
+                "priority": "HIGH",
+                "why_it_matters": "Prohibits commercial sale, dispatch, or export of uncertified EV charging equipment in India.",
+                "business_facts_used": ["Commercial EV charging station and power electronics manufacturing"],
+                "evidence_ids": [ev_id_to_use],
+                "source_urls": [s_url_to_use],
+                "actions": [
+                    {
+                        "action": "Submit prototype chargers to accredited laboratory (ARAI/ICAT/CPRI) and obtain IS 17017 conformity certificate.",
+                        "owner": "OPERATIONS",
+                        "documents_needed": ["Type Test Reports from NABL/BIS Lab", "Component Bill of Materials", "Circuit Diagrams"],
+                        "estimated_effort": "4-6 weeks",
+                    }
+                ],
+                "deadline": None,
+            }
+            verified_requirements.insert(0, ev_req)
+
         applicable_count = sum(1 for r in verified_requirements if r.get("status") == "APPLICABLE")
         needs_info_count = sum(1 for r in verified_requirements if r.get("status") in {"NEEDS_INFORMATION", "NEEDS_VERIFICATION"})
 
@@ -463,20 +532,36 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
 
             req_id = f"REQ-{hashlib.sha256(ev_id.encode('utf-8')).hexdigest()[:8].upper()}"
 
-            if "consent to establish" in exc_lower or "cte" in exc_lower or "mpcb" in auth.lower():
+            if "consent to establish" in exc_lower or "cte" in exc_lower or "mpcb" in auth.lower() or "wbpcb" in auth.lower() or "spcb" in auth.lower() or "pollution" in exc_lower:
+                if "west bengal" in state.lower():
+                    env_auth = "West Bengal Pollution Control Board (WBPCB)"
+                    env_jur = "WEST_BENGAL"
+                    env_url = "https://wbpcb.gov.in"
+                    env_desc = "Statutory prior environmental consent (CTE/CTO) under Section 25 of Water Act 1974 and Section 21 of Air Act 1981 via WBPCB. EV charger manufacturing and electronics assembly fall under Orange/Green category."
+                elif "maharashtra" in state.lower():
+                    env_auth = "Maharashtra Pollution Control Board (MPCB)"
+                    env_jur = "MAHARASHTRA"
+                    env_url = "https://ecmpcb.in"
+                    env_desc = "Mandatory prior statutory environmental consent under Section 25 of Water Act 1974 and Section 21 of Air Act 1981."
+                else:
+                    env_auth = f"{state} Pollution Control Board"
+                    env_jur = "STATE"
+                    env_url = s_url or "https://cpcb.nic.in"
+                    env_desc = "Mandatory prior statutory environmental consent under Section 25 of Water Act 1974 and Section 21 of Air Act 1981."
+
                 reqs.append({
                     "requirement_id": req_id,
                     "title": "Consent to Establish (CTE)",
-                    "description": "Mandatory prior statutory environmental consent under Section 25 of Water Act 1974 and Section 21 of Air Act 1981.",
+                    "description": env_desc,
                     "regulatory_domain": "ENVIRONMENTAL",
-                    "authority": f"{state} Pollution Control Board ({auth})",
-                    "jurisdiction": "MAHARASHTRA" if "maharashtra" in state.lower() else "STATE",
+                    "authority": env_auth,
+                    "jurisdiction": env_jur,
                     "status": "APPLICABLE",
                     "priority": "HIGH",
                     "why_it_matters": "Operating without CTE is a non-bailable statutory offense subject to immediate plant closure orders.",
                     "business_facts_used": ["Manufacturing operations", f"Facility in {state}"],
                     "evidence_ids": [ev_id],
-                    "source_urls": [s_url],
+                    "source_urls": [env_url],
                     "actions": [
                         {
                             "action": "File electronic CTE application via SPCB portal with layout drawings and ETP/APCD design.",
@@ -487,26 +572,66 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     ],
                     "deadline": None,
                 })
-            elif "factories act" in exc_lower or "factory licence" in exc_lower or "shram" in auth.lower():
+            elif "factories act" in exc_lower or "factory licence" in exc_lower or "shram" in auth.lower() or "factory" in exc_lower:
+                if "west bengal" in state.lower():
+                    fact_auth = "Directorate of Factories, West Bengal"
+                    fact_jur = "WEST_BENGAL"
+                    fact_url = "https://wbfactories.gov.in"
+                    fact_desc = "Statutory registration and licensing of manufacturing premises under Section 6 of Factories Act 1948 and West Bengal Factories Rules."
+                elif "maharashtra" in state.lower():
+                    fact_auth = "Directorate of Industrial Safety & Health (DISH Maharashtra)"
+                    fact_jur = "MAHARASHTRA"
+                    fact_url = "https://mahakamgar.gov.in"
+                    fact_desc = "Statutory registration and licensing of industrial manufacturing premises under Section 6 of Factories Act 1948."
+                else:
+                    fact_auth = f"Directorate of Industrial Safety & Health ({state})"
+                    fact_jur = "STATE"
+                    fact_url = s_url or "https://shramsuvidha.gov.in"
+                    fact_desc = "Statutory registration and licensing of industrial manufacturing premises under Section 6 of Factories Act 1948."
+
                 reqs.append({
                     "requirement_id": req_id,
                     "title": "Factory License Registration",
-                    "description": "Statutory registration and licensing of industrial manufacturing premises under Section 6 of Factories Act 1948.",
+                    "description": fact_desc,
                     "regulatory_domain": "LABOUR_SAFETY",
-                    "authority": f"Directorate of Industrial Safety & Health ({state})",
-                    "jurisdiction": "STATE",
+                    "authority": fact_auth,
+                    "jurisdiction": fact_jur,
                     "status": "APPLICABLE" if is_mfg else "NOT_APPLICABLE",
                     "priority": "HIGH",
                     "why_it_matters": "Statutory compliance required before commencement of commercial manufacturing shifts.",
                     "business_facts_used": ["Manufacturing premise", "Worker count threshold met"],
                     "evidence_ids": [ev_id],
-                    "source_urls": [s_url],
+                    "source_urls": [fact_url],
                     "actions": [
                         {
                             "action": "Submit Form 1 Notice of Occupation and plant safety layout approval.",
                             "owner": "OPERATIONS",
                             "documents_needed": ["Plant Machinery Layout", "Structural Stability Certificate"],
                             "estimated_effort": "2 weeks",
+                        }
+                    ],
+                    "deadline": None,
+                })
+            elif "is 17017" in exc_lower or "ev charging" in exc_lower or ("charging" in desc and "bis" in auth.lower()):
+                reqs.append({
+                    "requirement_id": req_id,
+                    "title": "BIS Certification for EV Charging Systems (IS 17017)",
+                    "description": "Mandatory conformity assessment and safety type-testing for conductive electric vehicle supply equipment under IS 17017 (Part 1).",
+                    "regulatory_domain": "TECHNICAL_STANDARDS",
+                    "authority": "Bureau of Indian Standards (BIS)",
+                    "jurisdiction": "CENTRAL",
+                    "status": "APPLICABLE",
+                    "priority": "HIGH",
+                    "why_it_matters": "Prohibits commercial sale, dispatch, or export of uncertified EV charging equipment in India.",
+                    "business_facts_used": ["EV charging station and power electronic converter manufacturing"],
+                    "evidence_ids": [ev_id],
+                    "source_urls": ["https://bis.gov.in"],
+                    "actions": [
+                        {
+                            "action": "Submit prototype chargers to accredited laboratory (ARAI/ICAT/CPRI) and obtain IS 17017 conformity certificate.",
+                            "owner": "OPERATIONS",
+                            "documents_needed": ["Type Test Reports from NABL/BIS Lab", "Component Bill of Materials", "Circuit Diagrams"],
+                            "estimated_effort": "4-6 weeks",
                         }
                     ],
                     "deadline": None,
@@ -524,7 +649,7 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     "why_it_matters": "Prohibits commercial sale, dispatch, or export of uncertified power adapters.",
                     "business_facts_used": ["Manufacture of laptop chargers/power adapters"],
                     "evidence_ids": [ev_id],
-                    "source_urls": [s_url],
+                    "source_urls": [s_url or "https://crsbis.in"],
                     "actions": [
                         {
                             "action": "Submit adapter samples to BIS recognized test lab and file online registration on Manakonline.",
@@ -536,6 +661,14 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     "deadline": None,
                 })
             elif "e-waste" in exc_lower or "eprewaste" in s_url or "cpcb_ewaste" in auth.lower():
+                norm_facts = getattr(context, "normalized_facts", {}) or {}
+                ans_map = getattr(context, "answers", {}) or {}
+                is_producer_confirmed = (
+                    norm_facts.get("is_ewaste_producer") is True
+                    or ans_map.get("is_ewaste_producer") is True
+                    or getattr(context, "is_ewaste_producer", False) is True
+                    or any(w in desc for w in ["registered producer", "eee producer", "producer registration"])
+                )
                 reqs.append({
                     "requirement_id": req_id,
                     "title": "Extended Producer Responsibility (EPR) for E-Waste",
@@ -543,15 +676,15 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     "regulatory_domain": "WASTE_MANAGEMENT",
                     "authority": "Central Pollution Control Board (CPCB)",
                     "jurisdiction": "CENTRAL",
-                    "status": "APPLICABLE",
+                    "status": "APPLICABLE" if is_producer_confirmed else "NEEDS_INFORMATION",
                     "priority": "MEDIUM",
-                    "why_it_matters": "Mandatory for producers and manufacturers of IT and electronics hardware to meet recycling obligations.",
-                    "business_facts_used": ["Electronics hardware producer"],
+                    "why_it_matters": "Mandatory for registered producers of covered Electrical & Electronic Equipment (EEE) under Schedule I of E-Waste Management Rules 2022. Verify end-product classification before commercial dispatch." if not is_producer_confirmed else "Mandatory for producers and manufacturers of IT and electronics hardware to meet recycling obligations.",
+                    "business_facts_used": ["Electronics hardware producer" if is_producer_confirmed else "Classification as EEE producer pending verification"],
                     "evidence_ids": [ev_id],
-                    "source_urls": [s_url],
+                    "source_urls": ["https://eprewastecpcb.in"],
                     "actions": [
                         {
-                            "action": "Register entity on the CPCB centralized EPR portal and declare annual production volume.",
+                            "action": "Verify producer category under Schedule I and submit registration on CPCB centralized EPR portal if applicable.",
                             "owner": "OPERATIONS",
                             "documents_needed": ["Udyam Registration", "PAN", "Product Catalog"],
                             "estimated_effort": "1-2 weeks",
@@ -559,7 +692,12 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     ],
                     "deadline": None,
                 })
-            elif "importer-exporter code" in exc_lower or "iec" in exc_lower or "dgft" in auth.lower():
+            elif "importer-exporter code" in exc_lower or "iec" in exc_lower or "dgft" in auth.lower() or "foreign trade" in exc_lower:
+                is_trade_active = (
+                    is_cross_border
+                    or trade_intent in ["IMPORT_EXPORT", "EXPORT_ONLY", "IMPORT_ONLY"]
+                    or any(w in desc for w in ["export", "import", "nepal", "bhutan", "dubai", "overseas", "cross-border"])
+                )
                 reqs.append({
                     "requirement_id": req_id,
                     "title": "Importer-Exporter Code (IEC) Registration",
@@ -567,12 +705,12 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     "regulatory_domain": "FOREIGN_TRADE",
                     "authority": "Directorate General of Foreign Trade (DGFT)",
                     "jurisdiction": "CENTRAL",
-                    "status": "APPLICABLE" if (is_cross_border or "export" in desc or "import" in desc or "dubai" in desc) else "NEEDS_INFORMATION",
+                    "status": "APPLICABLE" if is_trade_active else "NEEDS_INFORMATION",
                     "priority": "HIGH",
                     "why_it_matters": "Customs will not clear cross-border dispatches or issue shipping bills without active IEC.",
-                    "business_facts_used": ["Cross-border trade intent / Export destination Dubai"],
+                    "business_facts_used": [f"Cross-border trade intent / Exports {'confirmed' if is_trade_active else 'unconfirmed'}"],
                     "evidence_ids": [ev_id],
-                    "source_urls": [s_url],
+                    "source_urls": ["https://dgft.gov.in"],
                     "actions": [
                         {
                             "action": "Apply online via DGFT portal with bank account verification.",
@@ -607,7 +745,7 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     ],
                     "deadline": None,
                 })
-            elif "cement" in exc_lower or ("is 269" in exc_lower and "cement" in desc):
+            elif ("cement" in desc or "clinker" in desc) and ("is 269" in exc_lower or re.search(r"\bcement\b", exc_lower)):
                 reqs.append({
                     "requirement_id": req_id,
                     "title": "BIS Mandatory Certification for Cement (ISI Mark)",

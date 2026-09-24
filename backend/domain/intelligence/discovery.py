@@ -243,15 +243,27 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
                 except Exception as db_exc:
                     logger.warning("Could not persist evidence record for %s: %s", c_url, db_exc)
 
-        # Step 4: Graceful Internal Fallback to Verified Knowledge Catalog
-        # If live search yielded 0 primary official sources (e.g. no API key configured, network off in tests,
-        # or rate limit), load authoritative verified evidence records from statutory portal registry
+        # Step 4: Graceful Internal Fallback & Core Statutory Evidence Assurance
+        # If live search yielded 0 primary official sources or was partially rate-limited,
+        # supplement with authoritative verified evidence records from statutory portal registry
+        catalog_evidence = self._generate_verified_catalog_evidence(context, business)
+        existing_urls = {canonicalize_url(e["source_url"]) for e in evidence_candidates}
+        existing_auths = {(e.get("authority") or "").upper() for e in evidence_candidates}
+
         fallback_used = False
         if not evidence_candidates:
             fallback_used = True
-            evidence_candidates = self._generate_verified_catalog_evidence(context, business)
+            evidence_candidates = catalog_evidence
             if not has_firecrawl:
                 warnings.append("Live discovery service unavailable; authoritative statutory portal records used.")
+        else:
+            for c_ev in catalog_evidence:
+                c_url = canonicalize_url(c_ev["source_url"])
+                c_auth = (c_ev.get("authority") or "").upper()
+                if c_url not in existing_urls and not any(c_auth in a or a in c_auth for a in existing_auths):
+                    evidence_candidates.append(c_ev)
+                    existing_urls.add(c_url)
+                    existing_auths.add(c_auth)
 
         # Step 5: Save DiscoveryRun Audit Trail
         disc_run = None
@@ -384,7 +396,13 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
                     pass
 
         # 1. State Environmental Board
-        if "Maharashtra" in state:
+        if "West Bengal" in state:
+            _add_portal_evidence(
+                "WBPCB",
+                "West Bengal Pollution Control Board: Industrial siting and categorisation mandates Consent to Establish (CTE) and Consent to Operate (CTO) under Section 25 of Water Act 1974 and Section 21 of Air Act 1981 via wbpcb.gov.in. Electronics and EV charger assembly operations fall under Orange/Green category.",
+                "WEST_BENGAL",
+            )
+        elif "Maharashtra" in state:
             _add_portal_evidence(
                 "MPCB",
                 "Maharashtra Pollution Control Board e-CMP: Consent to Establish (CTE) under Section 25 of Water Act 1974 and Section 21 of Air Act 1981 is mandatory prior to industrial plant construction or capital investment.",
@@ -399,11 +417,18 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
 
         # 2. Factories Act / Labor Safety
         if is_mfg:
-            _add_portal_evidence(
-                "SHRAM_SUVIDHA",
-                "Factories Act 1948 Section 6: Factory licence registration and approved plant layout plan endorsement are required for manufacturing premises employing 10 or more workers with power or 20 or more workers without power.",
-                "CENTRAL",
-            )
+            if "West Bengal" in state:
+                _add_portal_evidence(
+                    "WB_FACTORIES",
+                    "Directorate of Factories, West Bengal: Factory licence registration and approved plant layout plan endorsement are required for manufacturing premises employing 10 or more workers with power or 20 or more without power via wbfactories.gov.in.",
+                    "WEST_BENGAL",
+                )
+            else:
+                _add_portal_evidence(
+                    "SHRAM_SUVIDHA",
+                    "Factories Act 1948 Section 6: Factory licence registration and approved plant layout plan endorsement are required for manufacturing premises employing 10 or more workers with power or 20 or more workers without power.",
+                    "CENTRAL",
+                )
 
         # 3. Product-specific Standards & Clearances
         if "cement" in desc:
@@ -417,15 +442,22 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
                 "CPCB Environmental Standards for Cement Plants: Prescribes maximum particulate matter (PM) stack emission limits (30 mg/Nm3) and mandatory Continuous Emission Monitoring Systems (CEMS).",
                 "CENTRAL",
             )
-        elif "charger" in desc or "adapter" in desc or "electronic" in desc:
-            _add_portal_evidence(
-                "BIS_CRS",
-                "MeitY Compulsory Registration Scheme (CRS) & IS 13252 (Part 1): Power adapters and chargers for IT equipment mandate laboratory safety testing and BIS CRS registration number prior to commercial distribution or import.",
-                "CENTRAL",
-            )
+        elif "charger" in desc or "adapter" in desc or "electronic" in desc or "ev" in desc:
+            if "charger" in desc or "ev" in desc:
+                _add_portal_evidence(
+                    "BIS",
+                    "Bureau of Indian Standards: IS 17017 conductive EV charging systems and IS 15885 electronic power converter standards for electric vehicle supply equipment.",
+                    "CENTRAL",
+                )
+            else:
+                _add_portal_evidence(
+                    "BIS_CRS",
+                    "MeitY Compulsory Registration Scheme (CRS) & IS 13252 (Part 1): Power adapters and chargers for IT equipment mandate laboratory safety testing and BIS CRS registration number prior to commercial distribution or import.",
+                    "CENTRAL",
+                )
             _add_portal_evidence(
                 "CPCB_EWASTE",
-                "E-Waste (Management) Rules 2022: Producers and manufacturers of Electrical and Electronic Equipment (EEE) must obtain Extended Producer Responsibility (EPR) registration on the CPCB centralized portal.",
+                "E-Waste (Management) Rules 2022: Producers and manufacturers of Electrical and Electronic Equipment (EEE) must obtain Extended Producer Responsibility (EPR) registration on the CPCB centralized portal eprewastecpcb.in.",
                 "CENTRAL",
             )
         elif "food" in desc or "fruit" in desc or "juice" in desc or "agro" in desc:
@@ -447,10 +479,10 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
             )
 
         # 4. Cross-border trade (Import / Export)
-        if is_cross_border or "export" in desc or "import" in desc or "dubai" in desc:
+        if is_cross_border or "export" in desc or "import" in desc or "dubai" in desc or "nepal" in desc or "bhutan" in desc:
             _add_portal_evidence(
                 "DGFT",
-                "Foreign Trade Policy (FTP 2023): Importer-Exporter Code (IEC) issued by Directorate General of Foreign Trade is mandatory for commercial customs clearance, shipping bill generation, and export authorization.",
+                "Foreign Trade Policy (FTP 2023): Importer-Exporter Code (IEC) issued by Directorate General of Foreign Trade is mandatory for commercial customs clearance, shipping bill generation, and export authorization via dgft.gov.in.",
                 "CENTRAL",
             )
 

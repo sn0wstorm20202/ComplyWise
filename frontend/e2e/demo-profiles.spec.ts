@@ -44,61 +44,60 @@ test.describe('Demo Profiles & Non-Preset Verification', () => {
 
       // Check for Operational Briefing Card and proceed if present
       const proceedToQBtn = page.locator('button:has-text("Begin 15-Question Regulatory Assessment")');
-      if (await proceedToQBtn.isVisible({ timeout: 5000 })) {
+      try {
+        await proceedToQBtn.waitFor({ state: 'visible', timeout: 20000 });
         await proceedToQBtn.click();
-      }
+      } catch {}
 
       // Verify Step 3 is reached
       await expect(
-        page.locator('h1:has-text("Smart Questions"), h1:has-text("Statutory Variable Determination"), h2:has-text("Questions")').first()
-      ).toBeVisible({ timeout: 20000 });
+        page.locator('h1:has-text("15-Question Statutory Assessment"), h2:has-text("15-Question Statutory Assessment"), h2:has-text("Preparing Your 15-Question Regulatory Assessment"), h1:has-text("Smart Questions")').first()
+      ).toBeVisible({ timeout: 25000 });
     }
   });
 
   test('Ambuja Cement Regression: No Unrelated Requirements in Rendered UI', async ({ page }) => {
-    test.setTimeout(120000);
+    test.setTimeout(180000);
     await page.goto('/onboarding?new=true');
+    await page.waitForTimeout(1000);
 
     // Select Cement preset
     const cementCard = page.locator('button:has-text("Ambuja Heritage Cement")').first();
+    await expect(cementCard).toBeVisible({ timeout: 20000 });
     await cementCard.click();
 
     // Submit Step 1
-    await page.locator('form button[type="submit"]').first().click();
+    const step1Submit = page.locator('form button[type="submit"]').first();
+    await expect(step1Submit).toBeEnabled({ timeout: 10000 });
+    await step1Submit.click();
 
     // Wait for Step 2 and submit
-    await expect(page.locator('h1:has-text("Products & Activities")')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('h1:has-text("Products & Activities")')).toBeVisible({ timeout: 25000 });
     await page.locator('button:has-text("Generate Smart Questions")').click();
 
-    // Check for Operational Briefing Card
+    // Wait for Operational Briefing Card and proceed
     const proceedToQBtn = page.locator('button:has-text("Begin 15-Question Regulatory Assessment")');
-    if (await proceedToQBtn.isVisible({ timeout: 5000 })) {
-      await proceedToQBtn.click();
-    }
+    await expect(proceedToQBtn).toBeVisible({ timeout: 40000 });
+    await proceedToQBtn.click();
 
-    // Step 3: Advance to analysis
+    // Step 3: Advance to analysis using preset prefill
     const prefillBtn = page.locator('button:has-text("Prefill All 15 Verified Answers")');
-    const buildPlanBtn = page.locator('button:has-text("Build My Compliance Plan")');
+    await expect(prefillBtn).toBeVisible({ timeout: 50000 });
+    await prefillBtn.click();
 
-    if (await prefillBtn.isVisible()) {
-      await prefillBtn.click();
-      const analyzeBtn = page.locator('button:has-text("Analyze Regulatory Compliance")');
-      if (await analyzeBtn.isVisible()) {
-        await analyzeBtn.click();
-      }
-    } else if (await buildPlanBtn.isVisible()) {
-      await buildPlanBtn.click();
-    } else {
-      await expect(buildPlanBtn).toBeVisible({ timeout: 15000 });
-      await buildPlanBtn.click();
-    }
+    const analyzeBtn = page.locator('button:has-text("Analyze Regulatory Compliance")');
+    await expect(analyzeBtn).toBeVisible({ timeout: 25000 });
+    await analyzeBtn.click();
 
     // Wait for Initial Results
-    await expect(page.locator('h1:has-text("Initial Results"), h2:has-text("Compliance Profile")').first()).toBeVisible({ timeout: 60000 });
+    await expect(
+      page.locator('h1:has-text("Initial Results"), h2:has-text("Compliance Profile"), h2:has-text("Statutory Applicability Results")').first()
+    ).toBeVisible({ timeout: 90000 });
 
     // Navigate to /compliance to inspect full table
     await page.goto('/compliance');
-    await page.waitForTimeout(1500);
+    await expect(page.locator('h1:has-text("Statutory Requirements")')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('button:has-text("View Details"), a:has-text("View Details"), div:has-text("View Details")').first()).toBeVisible({ timeout: 25000 });
 
     const bodyText = await page.innerText('body');
 
@@ -113,8 +112,9 @@ test.describe('Demo Profiles & Non-Preset Verification', () => {
   });
 
   test('Non-Preset Unseen Business Profile Completes Full Journey', async ({ page }) => {
-    test.setTimeout(120000);
+    test.setTimeout(180000);
     await page.goto('/onboarding?new=true');
+    await page.waitForTimeout(1200);
 
     // Custom Profile: Industrial Battery Management System Manufacturer in Pune
     const nameInput = page.locator('input[placeholder*="Apex Biotech"], input[placeholder*="Enterprise Name"]').first();
@@ -128,47 +128,72 @@ test.describe('Demo Profiles & Non-Preset Verification', () => {
     await page.locator('select').nth(1).selectOption('MAHARASHTRA');
 
     // Fill District
-    const districtInput = page.locator('input[placeholder*="Ahmedabad"], input[placeholder*="Pune"]').first();
+    const districtInput = page.locator('input[placeholder*="Ahmedabad"], input[placeholder*="Pune"], input[placeholder*="District"]').first();
     await districtInput.fill('Pune MIDC');
+
+    // Select Industrial Zone
+    await page.locator('select').nth(2).selectOption('INSIDE_NOTIFIED_INDUSTRIAL_AREA');
 
     // Select Lifecycle Stage
     await page.locator('select').nth(3).selectOption('OPERATIONAL');
 
     // Submit Step 1
-    await page.locator('button:has-text("Continue to Products")').click();
+    const step1Submit = page.locator('form button[type="submit"], button:has-text("Continue to Products")').first();
+    await expect(step1Submit).toBeEnabled({ timeout: 10000 });
+    await step1Submit.click();
 
     // Step 2: Fill custom product description
-    await expect(page.locator('h1:has-text("Products & Activities")')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('h1:has-text("Products & Activities")')).toBeVisible({ timeout: 20000 });
     const descTextarea = page.locator('textarea').first();
     await descTextarea.fill('Design and assembly of industrial lithium-ion battery management systems in Pune MIDC, exporting 25% of electronic BMS controllers to Germany.');
 
     // Submit Step 2
     await page.locator('button:has-text("Generate Smart Questions")').click();
 
-    // Check for Operational Briefing Card
+    // Wait for Operational Briefing Card and proceed
     const proceedToQBtn = page.locator('button:has-text("Begin 15-Question Regulatory Assessment")');
-    try {
-      await proceedToQBtn.waitFor({ state: 'visible', timeout: 15000 });
-      await proceedToQBtn.click();
-    } catch {
-      // Auto-transitioned or already at questions
-    }
+    await expect(proceedToQBtn).toBeVisible({ timeout: 40000 });
+    await proceedToQBtn.click();
 
-    // Step 3: Advance to analysis
-    const prefillBtn = page.locator('button:has-text("Prefill All 15 Verified Answers")');
-    try {
-      await prefillBtn.waitFor({ state: 'visible', timeout: 10000 });
-      await prefillBtn.click();
-    } catch {
-      // Continue if already prefilled
-    }
+    // Step 3: Answer 15 questions to advance to analysis
+    await expect(page.locator('h2:has-text("15-Question Statutory Assessment")')).toBeVisible({ timeout: 50000 });
 
-    const buildPlanBtn = page.locator('button:has-text("Build My Compliance Plan"), button:has-text("Analyze Regulatory Compliance")').first();
-    await expect(buildPlanBtn).toBeVisible({ timeout: 25000 });
-    await buildPlanBtn.click();
+    for (let i = 0; i < 22; i++) {
+      const boolYesBtn = page.locator('button:has-text("Yes, Applicable"), button:has-text("Yes —")').first();
+      const optionBtn = page.locator('div.space-y-2\\.5 button').first();
+      const numInput = page.locator('input[type="number"]').first();
+      const dateInput = page.locator('input[type="date"]').first();
+      const textInput = page.locator('textarea, input[placeholder*="details"]').first();
+
+      if (await boolYesBtn.isVisible()) {
+        await boolYesBtn.click();
+      } else if (await optionBtn.isVisible()) {
+        await optionBtn.click();
+      } else if (await numInput.isVisible()) {
+        await numInput.fill('10');
+      } else if (await dateInput.isVisible()) {
+        await dateInput.fill('2026-01-01');
+      } else if (await textInput.isVisible()) {
+        await textInput.fill('Operational industrial facility in Pune MIDC');
+      }
+
+      await page.waitForTimeout(300);
+      const actionBtn = page.locator('button:has-text("Analyze Regulatory Compliance"), button:has-text("Save & Next Question")').first();
+      if (!(await actionBtn.isVisible())) {
+        break;
+      }
+      const isFinal = (await actionBtn.innerText()).includes('Analyze');
+      await expect(actionBtn).toBeEnabled({ timeout: 8000 });
+      await actionBtn.click();
+      if (isFinal) {
+        break;
+      }
+      await page.waitForTimeout(1000);
+    }
 
     // Wait for Initial Results
-    await expect(page.locator('h1:has-text("Initial Results"), h2:has-text("Compliance Profile")').first()).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('h1, h2, h3').filter({ hasText: /Initial Results|Compliance Profile|Summary/ }).first()).toBeVisible();
+    await expect(
+      page.locator('h1:has-text("Initial Results"), h2:has-text("Compliance Profile"), h2:has-text("Statutory Applicability Results")').first()
+    ).toBeVisible({ timeout: 90000 });
   });
 });

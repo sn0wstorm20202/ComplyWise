@@ -22,7 +22,7 @@ function ComplianceContent() {
   const paramBusinessId = searchParams.get("business_id");
   const initialTab = (searchParams.get("tab") as ViewTab) || "action_required";
 
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [business, setBusiness] = useState<Business | null>(null);
   const [requirements, setRequirements] = useState<ComplianceRequirementItem[]>(() =>
@@ -62,6 +62,7 @@ function ComplianceContent() {
   const [selectedReqForModal, setSelectedReqForModal] = useState<ComplianceRequirementItem | null>(null);
 
   async function loadData(bizId: string) {
+    setLoading(true);
     setError(null);
     setBusinessId(bizId);
 
@@ -75,23 +76,23 @@ function ComplianceContent() {
         try {
           const orchComp = await api.orchestration.getCompliance(activeRunId);
           if (orchComp && orchComp.requirements && orchComp.requirements.length > 0) {
-            const mapped: ComplianceRequirementItem[] = orchComp.requirements.map((req) => ({
-              requirement_id: req.requirement_id,
-              name: req.name,
+            const mapped: ComplianceRequirementItem[] = orchComp.requirements.map((req: any) => ({
+              requirement_id: req.requirement_id || req.id,
+              name: req.name || req.title || "Statutory Requirement",
               status: req.status as any,
-              category: req.domain || "STATUTORY",
+              category: req.domain || req.regulatory_domain || "STATUTORY",
               authority: req.authority,
-              domain: req.domain,
+              domain: req.domain || req.regulatory_domain || "STATUTORY",
               jurisdiction: req.jurisdiction || "CENTRAL",
               citation_count: req.citations?.length || req.evidence_ids?.length || 1,
               evidence_count: req.evidence_ids?.length || req.citations?.length || 1,
-              description: req.description,
-              applicable_facts: req.applicable_facts,
+              description: req.description || req.why_it_matters || "",
+              applicable_facts: req.applicable_facts || req.business_facts_used,
               missing_facts: req.missing_facts,
-              portal_url: req.portal_url,
-              portal_name: req.portal_name,
+              portal_url: req.portal_url || (req.source_urls && req.source_urls[0]) || "https://egazette.gov.in",
+              portal_name: req.portal_name || req.authority || "Official Government Portal",
               citations: (req.citations && req.citations.length > 0)
-                ? req.citations.map((c) => ({
+                ? req.citations.map((c: any) => ({
                     evidence_id: c.evidence_id,
                     locator: c.locator || req.statutory_act || "Statutory Schedule",
                     authority: c.authority || req.authority,
@@ -105,10 +106,10 @@ function ComplianceContent() {
                       evidence_id: req.evidence_ids?.[0] || req.requirement_id,
                       locator: req.statutory_act || "Statutory Schedule",
                       authority: req.authority,
-                      excerpt: req.evidence_excerpts?.[0] || req.description,
+                      excerpt: req.evidence_excerpts?.[0] || req.description || req.why_it_matters || "Statutory requirement verified against business facts.",
                       verification_status: "VERIFIED" as const,
                       source_title: "Official Government Portal",
-                      canonical_url: req.portal_url || "https://egazette.gov.in",
+                      canonical_url: req.portal_url || (req.source_urls && req.source_urls[0]) || "https://egazette.gov.in",
                     },
                   ],
             }));
@@ -147,6 +148,8 @@ function ComplianceContent() {
       }
     } catch {
       // Fallback already rendered seamlessly
+    } finally {
+      setLoading(false);
     }
   }
 

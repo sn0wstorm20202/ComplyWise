@@ -75,6 +75,10 @@ export default function FifteenQuestionsWizard({
 
   async function handleSaveCurrentAndGo(targetIdx?: number) {
     setError(null);
+    if (answeredCount === questions.length && (isLastQuestion || targetIdx === undefined)) {
+      onCompleteQuestions();
+      return;
+    }
     if (currentValue === null || currentValue === undefined || currentValue === "") {
       if (currentQ.required) {
         setError("Please provide an answer before advancing.");
@@ -463,11 +467,11 @@ export default function FifteenQuestionsWizard({
           <span>
             {saving
               ? "Saving Answer..."
-              : isLastQuestion
+              : isLastQuestion || answeredCount === questions.length
               ? "Analyze Regulatory Compliance →"
               : "Save & Next Question →"}
           </span>
-          {!isLastQuestion && <ArrowRight className="h-4 w-4" />}
+          {!isLastQuestion && answeredCount < questions.length && <ArrowRight className="h-4 w-4" />}
         </button>
       </div>
     </div>

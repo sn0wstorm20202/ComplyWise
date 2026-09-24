@@ -60,6 +60,11 @@ def coerce_and_validate_answer(
         raise StageInputInvalid(f"Invalid boolean value: '{raw_val}'. Expected True or False.")
 
     elif atype in {QuestionAnswerType.NUMBER.value, QuestionAnswerType.PERCENTAGE.value}:
+        if options:
+            valid_vals = {str(opt.get("value", "")).strip().upper() for opt in options if isinstance(opt, dict)}
+            valid_labels = {str(opt.get("label", "")).strip().upper() for opt in options if isinstance(opt, dict)}
+            if str(raw_val).strip().upper() in valid_vals or str(raw_val).strip().upper() in valid_labels:
+                return str(raw_val).strip()
         try:
             # Strip commas or unit suffixes
             cleaned = re.sub(r"[^\d.-]", "", str(raw_val)).strip()
@@ -69,6 +74,8 @@ def coerce_and_validate_answer(
                     raise StageInputInvalid(f"Percentage must be between 0 and 100: {num}")
             return int(num) if num.is_integer() else num
         except (ValueError, TypeError) as exc:
+            if str(raw_val).strip():
+                return str(raw_val).strip()
             raise StageInputInvalid(f"Invalid number: '{raw_val}'") from exc
 
     elif atype == QuestionAnswerType.CURRENCY.value:
@@ -77,6 +84,8 @@ def coerce_and_validate_answer(
             num = float(cleaned)
             return int(num) if num.is_integer() else num
         except (ValueError, TypeError) as exc:
+            if str(raw_val).strip():
+                return str(raw_val).strip()
             raise StageInputInvalid(f"Invalid currency amount: '{raw_val}'") from exc
 
     elif atype == QuestionAnswerType.SINGLE_SELECT.value:
@@ -126,9 +135,22 @@ class AnswerInterpreter:
         # Find question definition in stage metadata or database
         q_meta = run.stage_metadata.get("question_generation", {}).get("questions", [])
         matched_q = next((q for q in q_meta if q.get("question_id") == qid), None)
+        if not matched_q:
+            digits = re.sub(r"\D", "", qid)
+            alt_qid = f"Q{int(digits):02d}" if digits.isdigit() else qid
+            matched_q = next((q for q in q_meta if q.get("question_id") == alt_qid), None)
 
-        answer_type = matched_q.get("answer_type", "TEXT") if matched_q else "TEXT"
-        options = matched_q.get("options", []) if matched_q else []
+        plan = SmartQuestionPlan.objects.filter(assessment=run.assessment).first()
+        inst = None
+        if plan:
+            inst = SmartQuestionInstance.objects.filter(plan=plan, question_id=qid).first()
+            if not inst:
+                digits = re.sub(r"\D", "", qid)
+                alt_qid = f"Q{int(digits):02d}" if digits.isdigit() else qid
+                inst = SmartQuestionInstance.objects.filter(plan=plan, question_id=alt_qid).first()
+
+        answer_type = (inst.data_type if inst and inst.data_type else None) or (matched_q.get("answer_type") if matched_q else "TEXT")
+        options = (inst.options if inst and inst.options else None) or (matched_q.get("options") if matched_q else [])
 
         normalized_value = coerce_and_validate_answer(answer_type, raw_value, options)
 

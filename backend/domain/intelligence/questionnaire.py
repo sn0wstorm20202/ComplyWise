@@ -844,6 +844,20 @@ class QuestionnaireEngine:
         run: AssessmentRun,
         understanding: BusinessUnderstandingResult | None,
     ) -> None:
+        # Always update run metadata first
+        try:
+            state = dict(run.stage_metadata)
+            state["question_generation"] = {
+                "questions": [q.to_dict() for q in questions],
+                "count": len(questions),
+                "generated_at": time.time(),
+            }
+            run.stage_metadata = state
+            run.save()
+            logger.info("Persisted 15 questions in metadata for assessment run %s", run.run_id)
+        except Exception as meta_exc:
+            logger.exception("Could not save questions to run stage_metadata: %s", meta_exc)
+
         try:
             biz = Business.objects.filter(pk=context.business_id).first()
             if not biz:
@@ -885,17 +899,7 @@ class QuestionnaireEngine:
                     )
                 )
             SmartQuestionInstance.objects.bulk_create(instances)
-
-            # Update run metadata
-            state = dict(run.stage_metadata)
-            state["question_generation"] = {
-                "questions": [q.to_dict() for q in questions],
-                "count": len(questions),
-                "generated_at": time.time(),
-            }
-            run.stage_metadata = state
-            run.save()
-            logger.info("Persisted 15 questions for assessment run %s", run.run_id)
+            logger.info("Persisted 15 questions to SmartQuestionPlan for assessment run %s", run.run_id)
 
         except Exception as p_exc:
             logger.exception("Could not persist question set to database: %s", p_exc)

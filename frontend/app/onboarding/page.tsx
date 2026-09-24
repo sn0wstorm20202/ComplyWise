@@ -78,13 +78,22 @@ const FALLBACK_VAR_DEFS: ProfileVariableDefinition[] = [
     unit: null,
     default_relevance: "CORE",
     options: [
-      { value: "Gujarat", label: "Gujarat" },
-      { value: "Haryana", label: "Haryana" },
-      { value: "Maharashtra", label: "Maharashtra" },
-      { value: "Karnataka", label: "Karnataka" },
-      { value: "Tamil Nadu", label: "Tamil Nadu" },
-      { value: "Uttar Pradesh", label: "Uttar Pradesh" },
-      { value: "Rajasthan", label: "Rajasthan" },
+      { value: "ANDHRA_PRADESH", label: "Andhra Pradesh" },
+      { value: "CENTRAL", label: "Central (All India)" },
+      { value: "DELHI", label: "Delhi (NCT)" },
+      { value: "GUJARAT", label: "Gujarat" },
+      { value: "HARYANA", label: "Haryana" },
+      { value: "KARNATAKA", label: "Karnataka" },
+      { value: "KERALA", label: "Kerala" },
+      { value: "MADHYA_PRADESH", label: "Madhya Pradesh" },
+      { value: "MAHARASHTRA", label: "Maharashtra" },
+      { value: "ODISHA", label: "Odisha" },
+      { value: "PUNJAB", label: "Punjab" },
+      { value: "RAJASTHAN", label: "Rajasthan" },
+      { value: "TAMIL_NADU", label: "Tamil Nadu" },
+      { value: "TELANGANA", label: "Telangana" },
+      { value: "UTTAR_PRADESH", label: "Uttar Pradesh" },
+      { value: "WEST_BENGAL", label: "West Bengal" },
     ],
   },
   {
@@ -509,10 +518,10 @@ function OnboardingContent() {
   // Step 4 & 5: Analysis and Results State
   const DEFAULT_STAGES = useMemo(() => [
     { name: "Business Context & Identity", done: false, detail: "Validating entity jurisdiction and canonical profile parameters" },
-    { name: "Adaptive Smart Questions", done: false, detail: "Resolving decision-critical variable requirements" },
+    { name: "15-Question Regulatory Assessment", done: false, detail: "Resolving decision-critical operational and statutory variables" },
     { name: "Live Regulatory Discovery (Firecrawl)", done: false, detail: "Harvesting official government notifications and portals" },
     { name: "Official Source Ranking & Claim Quarantining", done: false, detail: "Extracting regulatory claims as quarantined unverified evidence" },
-    { name: "Deterministic Applicability Engine (AST)", done: false, detail: "Executing three-valued Kleene AST logic over published knowledge" },
+    { name: "Deterministic Applicability Engine", done: false, detail: "Evaluating evidence-grounded rules over published statutory knowledge" },
     { name: "Procedural Clearance Workflows", done: false, detail: "Sequencing prerequisite-aware multi-step approvals" },
     { name: "Statutory Document Checklist", done: false, detail: "Synthesizing mandatory paperwork for applicable authorities" },
     { name: "Statutory Calendar & MSME Schemes", done: false, detail: "Calculating renewal cycles and matching central/state grants" },
@@ -566,10 +575,10 @@ function OnboardingContent() {
     setProductDescription(preset.productDescription || "");
     setTradeIntent(
       preset.exports
-        ? "EXPORTER"
+        ? "EXPORT_ONLY"
         : preset.activities.some((a) => a.toLowerCase().includes("import"))
-        ? "IMPORT_AND_DOMESTIC"
-        : "DOMESTIC_ONLY"
+        ? "IMPORT_ONLY"
+        : "NONE"
     );
     setStep(1);
   }, []);
@@ -795,7 +804,6 @@ function OnboardingContent() {
         // Fresh onboarding assessment: ensure no old business or assessment is retained in state
         setBusiness(null);
         setAssessment(null);
-        setBusinessName("");
       }
     }
     init();
@@ -1015,15 +1023,25 @@ function OnboardingContent() {
             setUnderstandingLoading(false);
           }
 
+          // Pre-generate or fetch questions in the background
           try {
-            const qList = await api.orchestration.listQuestions(currRunId);
-            if (qList && qList.questions && qList.questions.length > 0) {
-              setOrchestrationQuestions(qList.questions);
-              const nextIdx = qList.questions.findIndex((q) => !q.is_answered);
-              setActiveQuestionIndex(nextIdx !== -1 ? nextIdx : 0);
-            }
+            api.orchestration.generateQuestions(currRunId).then((gRes) => {
+              if (gRes?.questions && gRes.questions.length > 0) {
+                setOrchestrationQuestions(gRes.questions);
+                const nextIdx = gRes.questions.findIndex((q: any) => !q.is_answered);
+                setActiveQuestionIndex(nextIdx !== -1 ? nextIdx : 0);
+              }
+            }).catch(() => {
+              api.orchestration.listQuestions(currRunId).then((lRes) => {
+                if (lRes?.questions && lRes.questions.length > 0) {
+                  setOrchestrationQuestions(lRes.questions);
+                  const nextIdx = lRes.questions.findIndex((q: any) => !q.is_answered);
+                  setActiveQuestionIndex(nextIdx !== -1 ? nextIdx : 0);
+                }
+              }).catch(() => {});
+            });
           } catch (qErr) {
-            console.warn("Orchestration question list error:", qErr);
+            console.warn("Orchestration question trigger error:", qErr);
           }
         }
 
@@ -1073,7 +1091,7 @@ function OnboardingContent() {
 
         // If AI understanding briefing is available, stay on Step 2 to show briefing, otherwise advance to 3
         if (!gotUnderstanding) {
-          setStep(3);
+          handleProceedToQuestions();
         }
       } else {
         setIsQuestionsComplete(true);
@@ -1084,6 +1102,37 @@ function OnboardingContent() {
       setStep(3);
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Proceed from Business Understanding directly to 15-Question Regulatory Assessment
+  async function handleProceedToQuestions() {
+    setQuestionLoading(true);
+    setStep(3);
+    const runId = activeRunId || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
+    if (runId) {
+      try {
+        let qList = await api.orchestration.listQuestions(runId);
+        if (!qList?.questions || qList.questions.length < 15) {
+          const genRes = await api.orchestration.generateQuestions(runId);
+          if (genRes?.questions && genRes.questions.length > 0) {
+            qList = genRes;
+          } else {
+            qList = await api.orchestration.listQuestions(runId);
+          }
+        }
+        if (qList && qList.questions && qList.questions.length > 0) {
+          setOrchestrationQuestions(qList.questions);
+          const nextIdx = qList.questions.findIndex((q: any) => !q.is_answered);
+          setActiveQuestionIndex(nextIdx !== -1 ? nextIdx : 0);
+        }
+      } catch (err) {
+        console.warn("Could not generate or list 15 questions:", err);
+      } finally {
+        setQuestionLoading(false);
+      }
+    } else {
+      setQuestionLoading(false);
     }
   }
 
@@ -1205,7 +1254,7 @@ function OnboardingContent() {
           authority: String(ref.authority || r.authority || "Regulatory Authority"),
           locator: String(ref.locator || "Official Statutory Citation"),
           verification_status: (ref.verification_status || "VERIFIED") as any,
-          excerpt: String(ref.excerpt || `Statutory evidence evaluated by deterministic AST rules.`),
+          excerpt: String(ref.excerpt || `Statutory evidence evaluated by regulatory applicability rules.`),
           source_title: String(ref.source_title || ref.title || "Official Government Gazette / Portal"),
           canonical_url: ref.canonical_url || ref.source_url || undefined,
         };
@@ -1216,7 +1265,7 @@ function OnboardingContent() {
         authority: String(r.authority || "Regulatory Authority"),
         locator: refStr,
         verification_status: "VERIFIED" as const,
-        excerpt: `Statutory evidence citation ${refStr} evaluated by deterministic AST rules.`,
+        excerpt: `Statutory evidence citation ${refStr} evaluated by regulatory applicability rules.`,
         source_title: "Official Government Gazette / Portal",
       };
     });
@@ -1266,7 +1315,7 @@ function OnboardingContent() {
       `Querying official ${registeredState || "State"} Industrial portal...`,
       "Harvesting FSSAI, Pollution Control Board, and Factories Act requirements...",
       "Analyzing mandatory Bureau of Indian Standards (BIS) and QCO schedules...",
-      "Executing deterministic three-valued AST logic over knowledge packs...",
+      "Executing deterministic applicability evaluation over knowledge packs...",
       "Sequencing clearance workflows and statutory document checklists...",
     ];
 
@@ -1684,7 +1733,7 @@ function OnboardingContent() {
             businessName={businessName || business?.name || "Your Enterprise"}
             understanding={businessUnderstanding}
             loading={understandingLoading}
-            onProceed={() => setStep(3)}
+            onProceed={handleProceedToQuestions}
             onEditProducts={() => setBusinessUnderstanding(null)}
           />
         )}
@@ -1806,15 +1855,26 @@ function OnboardingContent() {
             onPrefillAllAnswers={async () => {
               const preset = CONTROLLED_DEMO_PROFILES.find((p) => p.presetKey === selectedPresetKey);
               const runId = activeRunId || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
-              if (runId && preset) {
-                await api.orchestration.submitAnswer(runId, { answers: preset.presetAnswers });
+              if (preset) {
                 setOrchestrationQuestions((prev) =>
-                  prev.map((q) => ({
-                    ...q,
-                    is_answered: true,
-                    current_value: preset.presetAnswers[q.question_id] ?? q.current_value,
-                  }))
+                  prev.map((q, idx) => {
+                    const fallbackKey = `Q${String(idx + 1).padStart(2, "0")}`;
+                    const val = preset.presetAnswers[q.question_id] ?? preset.presetAnswers[fallbackKey] ?? (q.data_type === "BOOLEAN" ? true : 10);
+                    return {
+                      ...q,
+                      is_answered: true,
+                      current_value: val,
+                    };
+                  })
                 );
+                setActiveQuestionIndex(14);
+                if (runId) {
+                  try {
+                    await api.orchestration.submitAnswer(runId, { answers: preset.presetAnswers });
+                  } catch (err) {
+                    console.warn("Background prefill submission error:", err);
+                  }
+                }
               }
             }}
             onCompleteQuestions={handleProceedToAnalysis}
@@ -1824,274 +1884,40 @@ function OnboardingContent() {
         )}
 
         {step === 3 && orchestrationQuestions.length === 0 && (
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6">
-            <div className="border-b border-[#E2E8F0] pb-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-900 px-2.5 py-0.5 text-[11px] font-bold tracking-wide uppercase">
-                      Adaptive Rule Engine
-                    </span>
-                    <span className="text-xs text-[#64748B]">
-                      Sequential AST-Driven Discovery
-                    </span>
-                  </div>
-                  <h2 className="text-base sm:text-lg font-sans font-bold text-[#0F172A]">
-                    Statutory Variable Determination for {business?.name || "your enterprise"}
-                  </h2>
-                  <p className="text-xs text-[#64748B] mt-0.5">
-                    Targeting only unresolved variables that alter candidate regulatory requirements. Each answer refines the compliance boundary.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700">
-                    {answeredCount} statutory variable{answeredCount === 1 ? "" : "s"} resolved
-                  </span>
-                </div>
-              </div>
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-8 sm:p-12 text-center space-y-6 shadow-2xs">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-700 animate-pulse text-2xl font-bold">
+              ⚡
             </div>
-
-            {/* State A: Loading next question */}
-            {questionLoading && !currentQuestion ? (
-              <div className="py-16 text-center space-y-4">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 font-bold text-xl animate-pulse">
-                  ⚡
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-[#0F172A]">
-                    Re-evaluating Candidate Rules...
-                  </h3>
-                  <p className="text-xs text-[#64748B] max-w-sm mx-auto">
-                    Computing Three-Valued Kleene AST logic over published regulations to determine the next decision-relevant variable.
-                  </p>
-                </div>
-              </div>
-            ) : isQuestionsComplete || !currentQuestion ? (
-              /* State B: All variables resolved / Complete */
-              <div className="py-10 px-6 rounded-xl border border-emerald-200 bg-emerald-50/40 text-center space-y-5">
-                <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 text-2xl font-bold shadow-2xs">
-                  ✓
-                </div>
-                <div className="space-y-1.5 max-w-md mx-auto">
-                  <h3 className="text-base font-bold text-[#0F172A]">
-                    Statutory Variables Resolved
-                  </h3>
-                  <p className="text-xs text-[#64748B] leading-relaxed">
-                    All candidate statutory rules for your enterprise profile have been fully evaluated against known parameters. No further clarification variables are required.
-                  </p>
-                </div>
-
-                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setStep(2)}
-                    className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs w-full sm:w-auto"
-                  >
-                    ← Back to Products
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleProceedToAnalysis}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer w-full sm:w-auto"
-                  >
-                    Build My Compliance Plan →
-                  </button>
-                </div>
+            <div className="space-y-2 max-w-lg mx-auto">
+              <h2 className="text-lg sm:text-xl font-bold text-[#0F172A]">
+                Preparing Your 15-Question Regulatory Assessment
+              </h2>
+              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+                ComplyWise is structuring 15 intelligent statutory questions tailored to {businessName || business?.name || "your enterprise"} covering electrical connected load, environmental clearances, labor thresholds, and product standards.
+              </p>
+            </div>
+            {questionLoading ? (
+              <div className="flex items-center justify-center gap-2 text-xs font-semibold text-indigo-600">
+                <span className="inline-block h-2 w-2 rounded-full bg-indigo-600 animate-ping" />
+                <span>Generating questions...</span>
               </div>
             ) : (
-              /* State C: Active Single Question */
-              <form onSubmit={handleSequentialAnswerSubmit} className="space-y-6">
-                <div className="p-5 sm:p-6 rounded-xl border border-amber-200/80 bg-[#FFFDF7] space-y-4 shadow-2xs">
-                  {/* Question Metadata strip */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-200">
-                      Question #{answeredCount + 1}
-                    </span>
-                    <span className="font-mono text-[11px] font-bold text-[#0F172A] bg-white px-2.5 py-0.5 rounded-full border border-[#E2E8F0]">
-                      {currentQuestion.variable_key || currentQuestion.key}
-                    </span>
-                    {(currentQuestion.candidate_rules_count ?? currentQuestion.rule_dependency_count ?? 0) > 0 && (
-                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-medium text-slate-700 border border-slate-200">
-                        {(currentQuestion.candidate_rules_count ?? currentQuestion.rule_dependency_count)} candidate rule{((currentQuestion.candidate_rules_count ?? currentQuestion.rule_dependency_count) > 1 ? "s" : "")} depend on this
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Main Question Text */}
-                  <div className="space-y-1">
-                    <h3 className="text-base sm:text-lg font-sans font-bold text-[#0F172A] leading-snug">
-                      {currentQuestion.question || currentQuestion.question_text || currentQuestion.label}
-                    </h3>
-                  </div>
-
-                  {/* Statutory Rationale Callout */}
-                  {(currentQuestion.why_it_matters || currentQuestion.reason) && (
-                    <div className="text-xs text-[#475569] bg-white border border-[#E2E8F0] rounded-xl p-3.5 space-y-1 leading-relaxed">
-                      <p>
-                        <strong className="text-[#0F172A]">Statutory Rationale:</strong>{" "}
-                        {currentQuestion.why_it_matters || currentQuestion.reason}
-                      </p>
-                      {currentQuestion.expected_discovery_impact &&
-                        currentQuestion.expected_discovery_impact !== (currentQuestion.why_it_matters || currentQuestion.reason) && (
-                          <p className="text-indigo-800 pt-1 border-t border-slate-100">
-                            <strong>Regulatory Focus:</strong> {currentQuestion.expected_discovery_impact}
-                          </p>
-                        )}
-                    </div>
-                  )}
-
-                  {/* Dynamic Control according to data_type */}
-                  <div className="pt-2">
-                    {isBooleanType(currentQuestion.data_type) ? (
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCurrentAnswer(true);
-                            setQuestionError(null);
-                          }}
-                          className={`px-6 py-2.5 rounded-xl text-sm font-semibold border transition-all cursor-pointer shadow-2xs flex items-center gap-2 ${
-                            currentAnswer === true
-                              ? "bg-[#0F172A] text-white border-[#0F172A] ring-2 ring-slate-900/20"
-                              : "bg-white text-[#475569] border-[#E2E8F0] hover:border-slate-300 hover:text-[#0F172A]"
-                          }`}
-                        >
-                          <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${currentAnswer === true ? "border-white bg-white" : "border-slate-400"}`}>
-                            {currentAnswer === true && <span className="w-1.5 h-1.5 rounded-full bg-[#0F172A]" />}
-                          </span>
-                          Yes
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCurrentAnswer(false);
-                            setQuestionError(null);
-                          }}
-                          className={`px-6 py-2.5 rounded-xl text-sm font-semibold border transition-all cursor-pointer shadow-2xs flex items-center gap-2 ${
-                            currentAnswer === false
-                              ? "bg-[#0F172A] text-white border-[#0F172A] ring-2 ring-slate-900/20"
-                              : "bg-white text-[#475569] border-[#E2E8F0] hover:border-slate-300 hover:text-[#0F172A]"
-                          }`}
-                        >
-                          <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${currentAnswer === false ? "border-white bg-white" : "border-slate-400"}`}>
-                            {currentAnswer === false && <span className="w-1.5 h-1.5 rounded-full bg-[#0F172A]" />}
-                          </span>
-                          No
-                        </button>
-                      </div>
-                    ) : currentQuestion.options && currentQuestion.options.length > 0 ? (
-                      <div className="space-y-2 max-w-lg">
-                        <select
-                          value={String(currentAnswer ?? "")}
-                          onChange={(e) => {
-                            setCurrentAnswer(e.target.value);
-                            setQuestionError(null);
-                          }}
-                          className="w-full rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white text-[#0F172A] shadow-2xs"
-                        >
-                          <option value="" className="text-[#64748B]">Select an option...</option>
-                          {currentQuestion.options.map((opt: any, optIdx: number) => (
-                            <option key={`${opt.value}-${optIdx}`} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : isNumericType(currentQuestion.data_type) ? (
-                      <div className="flex items-center gap-2 max-w-xs">
-                        <input
-                          type="number"
-                          min="0"
-                          value={currentAnswer === null || currentAnswer === undefined ? "" : currentAnswer}
-                          onChange={(e) => {
-                            setCurrentAnswer(e.target.value === "" ? "" : Number(e.target.value));
-                            setQuestionError(null);
-                          }}
-                          placeholder="Enter value"
-                          className="w-full rounded-xl border border-[#E2E8F0] px-3.5 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white text-[#0F172A] shadow-2xs"
-                        />
-                        {currentQuestion.unit && (
-                          <span className="text-xs font-semibold text-[#64748B] bg-white border border-[#E2E8F0] px-2.5 py-2 rounded-xl">
-                            {currentQuestion.unit}
-                          </span>
-                        )}
-                      </div>
-                    ) : isMultiChoiceType(currentQuestion.data_type) ? (
-                      <div className="space-y-1.5 max-w-lg">
-                        <input
-                          type="text"
-                          placeholder="Separate multiple values with commas"
-                          value={Array.isArray(currentAnswer) ? currentAnswer.join(", ") : String(currentAnswer ?? "")}
-                          onChange={(e) => {
-                            setCurrentAnswer(e.target.value);
-                            setQuestionError(null);
-                          }}
-                          className="w-full rounded-xl border border-[#E2E8F0] px-3.5 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white text-[#0F172A] placeholder-[#94A3B8] shadow-2xs"
-                        />
-                        <p className="text-[11px] text-[#64748B]">
-                          Enter multiple values separated by commas.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="max-w-lg">
-                        <input
-                          type="text"
-                          value={String(currentAnswer ?? "")}
-                          onChange={(e) => {
-                            setCurrentAnswer(e.target.value);
-                            setQuestionError(null);
-                          }}
-                          placeholder="Enter your response"
-                          className="w-full rounded-xl border border-[#E2E8F0] px-3.5 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white text-[#0F172A] shadow-2xs"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Error display */}
-                  {questionError && (
-                    <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
-                      {questionError}
-                    </div>
-                  )}
-                </div>
-
-                {/* Question Navigation Controls */}
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-[#E2E8F0]">
-                  <button
-                    type="button"
-                    onClick={() => setStep(2)}
-                    className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs w-full sm:w-auto"
-                  >
-                    {t("onboarding.backToProducts")}
-                  </button>
-
-                  <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                    <button
-                      type="button"
-                      onClick={handleProceedToAnalysis}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                    >
-                      Finish & Analyze Now →
-                    </button>
-
-                    <button
-                      type="submit"
-                      disabled={questionLoading}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer min-w-[140px]"
-                    >
-                      {questionLoading ? (
-                        <>
-                          <span className="inline-block h-3.5 w-3.5 rounded-full border-2 border-white/20 border-t-white animate-spin" />
-                          <span>Evaluating...</span>
-                        </>
-                      ) : (
-                        "Next Question →"
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </form>
+              <div className="flex justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                >
+                  ← Back to Operations
+                </button>
+                <button
+                  type="button"
+                  onClick={handleProceedToQuestions}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
+                >
+                  Generate 15 Questions
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -2108,7 +1934,7 @@ function OnboardingContent() {
                 Building Your Compliance Plan
               </h2>
               <p className="text-xs text-[#64748B]">
-                Orchestrating deterministic AST applicability, statutory document checklists, clearance workflows, and official web harvesting for {business?.name || "your enterprise"}.
+                Orchestrating regulatory applicability, statutory document checklists, clearance workflows, and official web harvesting for {business?.name || "your enterprise"}.
               </p>
               {/* Dynamic query feedback strip */}
               <div className="p-2.5 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] text-xs font-semibold text-amber-800 flex items-center justify-center gap-2 shadow-2xs">

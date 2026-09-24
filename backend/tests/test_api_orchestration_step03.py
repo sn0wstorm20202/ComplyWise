@@ -113,7 +113,7 @@ def mock_external_network_services(request, monkeypatch):
         monkeypatch.setattr("domain.intelligence.discovery.firecrawl.is_configured", lambda: False)
 
     # Disable live LLM calls so synthesis uses fast deterministic synthesis
-    if "test_llm" not in request.node.name:
+    if "test_llm" not in request.node.name and "test_actual_llm" not in request.node.name:
         mock_llm = MagicMock()
         mock_llm.is_configured = False
         monkeypatch.setattr("domain.providers.get_llm_provider", lambda: mock_llm)
@@ -735,14 +735,7 @@ def test_actual_llm_invocation_budget_profile(charger_business):
                 "normalized_facts": [],
             }
             return CompletionResult(text=json.dumps(payload), provider="mock", model="test-llm", usage={"input_tokens": 1200, "output_tokens": 400})
-        elif "15" in content_str or "questionnaire" in content_str:
-            call_counters["question_generation"] += 1
-            qs = [{"question_id": f"Q{i+1:02d}", "text": f"Question {i+1}?", "category": "OPS", "answer_type": "YES_NO", "reason": "Factual context"} for i in range(15)]
-            return CompletionResult(text=json.dumps({"questions": qs}), provider="mock", model="test-llm", usage={"input_tokens": 1500, "output_tokens": 800})
-        elif "interpret" in content_str or "interpretation" in content_str:
-            call_counters["answer_interpretation"] += 1
-            return CompletionResult(text=json.dumps({"interpreted_facts": [{"key": "is_manufacturing", "value": True, "confidence": "HIGH"}]}), provider="mock", model="test-llm", usage={"input_tokens": 1400, "output_tokens": 500})
-        elif "synthesize the compliance requirements" in content_str or "compliance requirements" in content_str:
+        elif "synthesize the compliance requirements" in content_str or "compliance requirements" in content_str or "statutory compliance synthesis" in content_str:
             call_counters["compliance_synthesis"] += 1
             reqs = [
                 {
@@ -762,6 +755,13 @@ def test_actual_llm_invocation_budget_profile(charger_business):
                 }
             ]
             return CompletionResult(text=json.dumps({"requirements": reqs, "executive_summary": {"total_evaluated": 1, "applicable_count": 1}}), provider="mock", model="test-llm", usage={"input_tokens": 2000, "output_tokens": 600})
+        elif "15" in content_str or "questionnaire" in content_str:
+            call_counters["question_generation"] += 1
+            qs = [{"question_id": f"Q{i+1:02d}", "text": f"Question {i+1}?", "category": "OPS", "answer_type": "YES_NO", "reason": "Factual context"} for i in range(15)]
+            return CompletionResult(text=json.dumps({"questions": qs}), provider="mock", model="test-llm", usage={"input_tokens": 1500, "output_tokens": 800})
+        elif "interpret" in content_str or "interpretation" in content_str:
+            call_counters["answer_interpretation"] += 1
+            return CompletionResult(text=json.dumps({"interpreted_facts": [{"key": "is_manufacturing", "value": True, "confidence": "HIGH"}]}), provider="mock", model="test-llm", usage={"input_tokens": 1400, "output_tokens": 500})
         return CompletionResult(text="{}", provider="mock", model="test-llm", usage={"input_tokens": 100, "output_tokens": 50})
 
     mock_llm.complete.side_effect = _mock_complete

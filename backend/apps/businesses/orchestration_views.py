@@ -275,7 +275,10 @@ class AssessmentQuestionsListView(APIView):
         if not q_meta:
             from domain.intelligence.orchestration import AssessmentStage
             res = assessment_orchestrator.execute_stage(run, AssessmentStage.QUESTION_GENERATION)
+            run = assessment_orchestrator.get_run(run.run_id) or run
             q_meta = run.stage_metadata.get("question_generation", {}).get("questions", [])
+            if not q_meta and res and res.data:
+                q_meta = res.data.get("questions", [])
 
         # Enrich questions with answer state
         enriched_questions = []

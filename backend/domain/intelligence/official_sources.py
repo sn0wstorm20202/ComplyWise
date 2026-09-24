@@ -85,6 +85,8 @@ KNOWN_PRIMARY_OFFICIAL_HOSTS: dict[str, dict[str, str]] = {
 
     # West Bengal Regulators
     "wbpcb.gov.in": {"authority": "WBPCB", "jurisdiction": "WEST_BENGAL", "name": "West Bengal Pollution Control Board"},
+    "wbfactories.gov.in": {"authority": "WB_FACTORIES", "jurisdiction": "WEST_BENGAL", "name": "Directorate of Factories, West Bengal"},
+    "labour.wb.gov.in": {"authority": "WB_LABOUR", "jurisdiction": "WEST_BENGAL", "name": "Department of Labour, Government of West Bengal"},
     "silpasathi.wb.gov.in": {"authority": "SILPA_SATHI", "jurisdiction": "WEST_BENGAL", "name": "Silpa Sathi West Bengal Single Window"},
 
     # Karnataka Regulators

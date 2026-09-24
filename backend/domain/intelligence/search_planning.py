@@ -108,13 +108,17 @@ def plan_regulatory_searches(
     if is_manufacturing:
         if "cement" in desc_lower:
             queries.append(f"{state_name} factories act factory licence heavy industrial manufacturing plant")
+        elif "west bengal" in state_name.lower():
+            queries.append("Directorate of Factories West Bengal factory licence wbfactories.gov.in")
         elif "textile" in desc_lower or "dye" in desc_lower:
             queries.append(f"{state_name} factories directorate textile spinning weaving safety licence")
         else:
             queries.append(f"{state_name} DISH factory licence registration manufacturing {core_product} rules")
 
     # 3. Product Standards & Mandatory Certification (BIS / QCO / FSSAI / CRS)
-    if "cement" in desc_lower:
+    if "ev" in desc_lower or "charging" in desc_lower or "electric vehicle" in desc_lower:
+        queries.append("Bureau of Indian Standards IS 17017 electric vehicle conductive charging systems official")
+    elif "cement" in desc_lower:
         queries.append("BIS mandatory certification Quality Control Order cement IS 269 IS 1489 India")
     elif "charger" in desc_lower or "adapter" in desc_lower or "electronics" in desc_lower:
         queries.append("BIS CRS Compulsory Registration Scheme power adapter laptop charger IS 13252 India")

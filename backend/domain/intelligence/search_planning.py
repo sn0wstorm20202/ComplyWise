@@ -39,6 +39,16 @@ def _extract_core_product_tokens(text: str, max_words: int = 4) -> str:
     return " ".join(words[:max_words])
 
 
+def strip_negations(text: str) -> str:
+    """Strip negative clauses (e.g. 'no cement manufacturing', 'does not produce...')
+    so negative exclusions are not falsely matched as positive business activities.
+    """
+    if not text:
+        return ""
+    pattern = r"\b(?:no|not|neither|nor|without|does\s+not|doesn't|do\s+not|don't|has\s+no|have\s+no|excluding|except\s+for|except)\s+[^.;\n]+"
+    return re.sub(pattern, " ", text, flags=re.IGNORECASE)
+
+
 def plan_regulatory_searches(
     context: OrchestrationContext | EnrichedBusinessContext | DerivedBusinessContext,
     max_queries: int = 6,
@@ -87,58 +97,74 @@ def plan_regulatory_searches(
         hazardous_gen = bool(context.hazardous_waste_generation)
 
     desc_lower = product_desc.lower()
-    core_product = _extract_core_product_tokens(product_desc) or "industrial"
+    cleaned_desc = strip_negations(desc_lower)
+    is_battery = bool(re.search(r"\b(battery|bms|lithium|energy storage|cell manufacturing|bess)\b", cleaned_desc))
+    is_cement = (not is_battery) and bool(re.search(r"\b(cement|clinker|portland)\b", cleaned_desc))
+    is_ev = bool(re.search(r"\b(ev\b|electric vehicle|charging station|evse)", cleaned_desc))
+    is_electronics = bool(re.search(r"\b(charger|adapter|electronic|inverter|converter|hardware)\b", cleaned_desc))
+    is_textile = bool(re.search(r"\b(textile|dye|yarn|fabric|garment)\b", cleaned_desc))
+    is_food = bool(re.search(r"\b(food|fruit|juice|agro|dairy|bakery)\b", cleaned_desc))
+
+    core_product = _extract_core_product_tokens(strip_negations(product_desc)) or "industrial"
 
     queries: list[str] = []
 
     # 1. State Pollution Control Board (Consent to Establish / Operate)
     # Target specific activity + state board portal
-    if "cement" in desc_lower:
+    if is_battery:
+        queries.append(f"{state_name} pollution control board consent battery pack manufacturing CTE CTO guidelines")
+    elif is_cement:
         queries.append(f"{state_name} pollution control board consent to establish cement manufacturing MPCB guidelines")
-    elif "charger" in desc_lower or "electronics" in desc_lower:
+    elif is_electronics:
         queries.append(f"{state_name} pollution control board consent electronic hardware manufacturing CTE CTO")
-    elif "textile" in desc_lower or "dye" in desc_lower:
+    elif is_textile:
         queries.append(f"{state_name} pollution control board textile dyeing effluent ETP consent to establish")
-    elif "food" in desc_lower or "juice" in desc_lower or "processing" in desc_lower:
+    elif is_food:
         queries.append(f"{state_name} pollution control board consent food processing effluent trade waste")
     else:
         queries.append(f"{state_name} pollution control board consent to establish {core_product} manufacturing official")
 
     # 2. Directorate of Industrial Safety & Health (Factories Act / Licensing)
     if is_manufacturing:
-        if "cement" in desc_lower:
+        if is_battery:
+            queries.append(f"{state_name} factories act factory licence registration electronics battery manufacturing")
+        elif is_cement:
             queries.append(f"{state_name} factories act factory licence heavy industrial manufacturing plant")
         elif "west bengal" in state_name.lower():
             queries.append("Directorate of Factories West Bengal factory licence wbfactories.gov.in")
-        elif "textile" in desc_lower or "dye" in desc_lower:
+        elif is_textile:
             queries.append(f"{state_name} factories directorate textile spinning weaving safety licence")
         else:
             queries.append(f"{state_name} DISH factory licence registration manufacturing {core_product} rules")
 
     # 3. Product Standards & Mandatory Certification (BIS / QCO / FSSAI / CRS)
-    if "ev" in desc_lower or "charging" in desc_lower or "electric vehicle" in desc_lower or "evse" in desc_lower:
+    if is_battery:
+        queries.append("BIS CRS Compulsory Registration Scheme lithium battery pack IS 16046 India")
+    elif is_ev:
         queries.append("Bureau of Indian Standards IS 17017 electric vehicle conductive charging systems official")
-    elif "cement" in desc_lower:
+    elif is_cement:
         queries.append("BIS mandatory certification Quality Control Order cement IS 269 IS 1489 India")
     elif ("laptop" in desc_lower or "mobile" in desc_lower or "it equipment" in desc_lower or "computer" in desc_lower) and ("charger" in desc_lower or "adapter" in desc_lower):
         queries.append("BIS CRS Compulsory Registration Scheme power adapter laptop charger IS 13252 India")
-    elif "food" in desc_lower or "beverage" in desc_lower or "juice" in desc_lower or "millet" in desc_lower:
+    elif is_food:
         queries.append("FSSAI manufacturing license state central food safety regulations standards")
-    elif "textile" in desc_lower:
+    elif is_textile:
         queries.append("textile ministry Quality Control Order technical textiles mandatory BIS certification India")
     else:
         queries.append(f"BIS mandatory certification Quality Control Order {core_product} India")
 
     # 4. Waste Management & EPR Frameworks (E-Waste, Plastic, Hazardous Waste, Battery)
-    if "ev" in desc_lower or "charging station" in desc_lower or "evse" in desc_lower:
+    if is_battery:
+        queries.append("CPCB Battery Waste Management Rules 2022 EPR portal registration battery manufacturer eprbattery.cpcb.gov.in")
+    elif is_ev:
         queries.append("CPCB E-Waste Management Rules 2022 EPR portal registration electric vehicle charging equipment scope")
-    elif "charger" in desc_lower or "electronic" in desc_lower or "telecom" in desc_lower:
+    elif is_electronics or "telecom" in desc_lower:
         queries.append("CPCB E-Waste Management Rules 2022 EPR portal registration electronics manufacturer")
-    elif "textile" in desc_lower or "dye" in desc_lower or hazardous_gen or "chemical" in desc_lower:
+    elif is_textile or hazardous_gen or "chemical" in desc_lower:
         queries.append(f"{state_name} SPCB Hazardous and Other Wastes Management authorization sludge disposal")
-    elif "food" in desc_lower:
+    elif is_food:
         queries.append("CPCB centralized EPR portal plastic packaging waste management registration brand owner")
-    elif "cement" in desc_lower:
+    elif is_cement:
         queries.append("CPCB emission standards co-processing hazardous waste cement plants guidelines")
     elif hazardous_gen:
         queries.append(f"Hazardous and Other Wastes Management Rules authorization {state_name} official")
@@ -161,14 +187,16 @@ def plan_regulatory_searches(
             queries.append(f"DGFT import authorization electronic goods customs clearance IEC India")
         else:
             queries.append(f"DGFT Importer Exporter Code IEC registration guidelines {core_product} India")
-    elif "food" in desc_lower:
+    elif is_food:
         # Domestic packaging requirement for food
         queries.append("Legal Metrology Packaged Commodities Rules 2011 food manufacturing labelling declarations")
 
     # 6. Sectoral Specific Compliance (Thermal, Boiler, Ground Water, Packaging)
-    if "cement" in desc_lower:
+    if is_battery:
+        queries.append("Legal Metrology Packaged Commodities Rules battery packaging declarations India")
+    elif is_cement:
         queries.append("Indian Boilers Act 1923 captive power plant steam boiler registration Maharashtra")
-    elif "charger" in desc_lower or "electronic" in desc_lower:
+    elif is_electronics:
         if "wireless" in desc_lower or "radio" in desc_lower or "telemetry" in desc_lower:
             queries.append("WPC ETA Equipment Type Approval Saral Sanchar wireless import India")
         else:

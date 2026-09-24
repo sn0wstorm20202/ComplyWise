@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
@@ -261,16 +262,28 @@ def validate_and_normalize_questions(raw_questions: list[dict[str, Any]]) -> lis
     return validated
 
 
+def strip_negations(text: str) -> str:
+    """Strip negative clauses (e.g. 'no cement manufacturing', 'does not produce...')
+    so negative exclusions are not falsely matched as positive business activities.
+    """
+    if not text:
+        return ""
+    pattern = r"\b(?:no|not|neither|nor|without|does\s+not|doesn't|do\s+not|don't|has\s+no|have\s+no|excluding|except\s+for|except)\s+[^.;\n]+"
+    return re.sub(pattern, " ", text, flags=re.IGNORECASE)
+
+
 def generate_emergency_15_questions(
     context: OrchestrationContext,
     understanding: BusinessUnderstandingResult | None = None,
 ) -> list[SmartQuestion]:
     """Deterministic emergency fallback generating 15 valid questions tailored to business sector."""
     desc = (context.raw_business_description or context.product or context.business_name or "").lower()
-    is_cement = "cement" in desc or "clinker" in desc or "concrete" in desc or "lime" in desc
-    is_food = "food" in desc or "dairy" in desc or "beverage" in desc or "snack" in desc or "bakery" in desc
-    is_textile = "textile" in desc or "garment" in desc or "apparel" in desc or "cloth" in desc or "dye" in desc
-    is_electronics = "electronic" in desc or "charg" in desc or "battery" in desc or "circuit" in desc or "pcb" in desc or "importer" in desc
+    cleaned_desc = strip_negations(desc)
+    is_battery = bool(re.search(r"\b(battery|bms|lithium|energy storage|cell manufacturing|bess)\b", cleaned_desc))
+    is_cement = (not is_battery) and bool(re.search(r"\b(cement|clinker|concrete|limestone|rotary kiln)\b", cleaned_desc))
+    is_food = bool(re.search(r"\b(food|dairy|beverage|snack|bakery)\b", cleaned_desc))
+    is_textile = bool(re.search(r"\b(textile|garment|apparel|cloth|dye)\b", cleaned_desc))
+    is_electronics = bool(re.search(r"\b(electronic|charg|circuit|pcb|importer)\b", cleaned_desc))
 
     questions_data: list[dict[str, Any]] = []
 
@@ -411,7 +424,65 @@ def generate_emergency_15_questions(
     })
 
     # Sector-Specific Questions (10, 11, 12, 13)
-    if is_cement:
+    if is_battery:
+        questions_data.append({
+            "question_id": "Q10",
+            "question": "What battery cell chemistry or energy storage technology is used in your manufacturing/assembly?",
+            "category": "Cell Chemistry",
+            "answer_type": "SINGLE_SELECT",
+            "required": True,
+            "options": [
+                {"value": "LFP", "label": "Lithium Iron Phosphate (LFP)"},
+                {"value": "NMC", "label": "Nickel Manganese Cobalt (NMC)"},
+                {"value": "SOLID_STATE_SODIUM", "label": "Sodium-Ion or Solid-State"},
+                {"value": "LEAD_ACID", "label": "Advanced Lead-Acid or Other"},
+            ],
+            "unit": None,
+            "help_text": "Battery chemistry determines hazard categorization, transport safety, and thermal management standards.",
+            "reason": "This helps determine which chemical safety guidelines, storage standards, and hazard classifications may be relevant to your facility.",
+            "order": 10,
+        })
+        questions_data.append({
+            "question_id": "Q11",
+            "question": "Does the facility perform secondary cell fabrication or battery pack & BMS integration?",
+            "category": "Manufacturing Scope",
+            "answer_type": "SINGLE_SELECT",
+            "required": True,
+            "options": [
+                {"value": "PACK_AND_BMS", "label": "Battery Pack Assembly and Battery Management System (BMS) integration"},
+                {"value": "CELL_FABRICATION", "label": "Electrode coating, cell fabrication, and chemical assembly"},
+                {"value": "FULL_INTEGRATION", "label": "Integrated cell manufacturing and battery pack production"},
+            ],
+            "unit": None,
+            "help_text": "BMS assembly focuses on electrical safety type-testing, while cell fabrication involves chemical manufacturing.",
+            "reason": "This helps determine which environmental consent category (Red vs Orange) and process safety rules apply to your unit.",
+            "order": 11,
+        })
+        questions_data.append({
+            "question_id": "Q12",
+            "question": "Has your enterprise registered as a Producer under the CPCB Battery Waste Management Rules 2022?",
+            "category": "Waste & EPR",
+            "answer_type": "BOOLEAN",
+            "required": True,
+            "options": [],
+            "unit": None,
+            "help_text": "Mandatory Extended Producer Responsibility (EPR) registration on the CPCB centralized portal eprbattery.cpcb.gov.in.",
+            "reason": "This helps determine statutory EPR targets and end-of-life battery collection framework compliance.",
+            "order": 12,
+        })
+        questions_data.append({
+            "question_id": "Q13",
+            "question": "Are your battery packs or cells certified under BIS IS 16046 (Part 2) / IEC 62133-2 under MeitY CRS?",
+            "category": "BIS Compliance",
+            "answer_type": "BOOLEAN",
+            "required": True,
+            "options": [],
+            "unit": None,
+            "help_text": "Compulsory Registration Scheme (CRS) safety standard for secondary lithium cells and batteries.",
+            "reason": "This helps determine which mandatory laboratory safety testing and BIS R-number registrations apply before commercial dispatch.",
+            "order": 13,
+        })
+    elif is_cement:
         questions_data.append({
             "question_id": "Q10",
             "question": "What type of clinker grinding or cement manufacturing process is utilized?",

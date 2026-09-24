@@ -77,6 +77,16 @@ def sanitize_scraped_text(raw_text: str) -> str:
     return cleaned.strip()[:MAX_CONTENT_CHARS_PER_SOURCE]
 
 
+def strip_negations(text: str) -> str:
+    """Strip negative clauses (e.g. 'no cement manufacturing', 'does not produce...')
+    so negative exclusions are not falsely matched as positive business activities.
+    """
+    if not text:
+        return ""
+    pattern = r"\b(?:no|not|neither|nor|without|does\s+not|doesn't|do\s+not|don't|has\s+no|have\s+no|excluding|except\s+for|except)\s+[^.;\n]+"
+    return re.sub(pattern, " ", text, flags=re.IGNORECASE)
+
+
 def _make_source_ids(canonical_url: str) -> tuple[str, str]:
     """Generate deterministic source and evidence IDs from canonical URL."""
     digest = hashlib.sha256(canonical_url.encode("utf-8")).hexdigest()[:12].upper()
@@ -431,7 +441,26 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
                 )
 
         # 3. Product-specific Standards & Clearances
-        if "cement" in desc:
+        cleaned_desc = strip_negations(desc)
+        is_battery = bool(re.search(r"\b(battery|bms|lithium|energy storage|cell manufacturing|bess)\b", cleaned_desc))
+        is_cement = (not is_battery) and bool(re.search(r"\b(cement|clinker|portland)\b", cleaned_desc))
+        is_ev = bool(re.search(r"\b(ev\b|electric vehicle|charging station|evse)", cleaned_desc))
+        is_charger = bool(re.search(r"\b(charger|adapter|electronic|inverter|converter|hardware)\b", cleaned_desc))
+        is_food = bool(re.search(r"\b(food|fruit|juice|agro|dairy|bakery)\b", cleaned_desc))
+        is_textile = bool(re.search(r"\b(textile|dye|yarn|fabric|garment)\b", cleaned_desc))
+
+        if is_battery:
+            _add_portal_evidence(
+                "CPCB_BATTERY",
+                "CPCB Battery Waste Management Rules 2022: Producers and manufacturers of industrial, EV, and portable batteries must obtain EPR registration on eprbattery.cpcb.gov.in.",
+                "CENTRAL",
+            )
+            _add_portal_evidence(
+                "BIS_CRS",
+                "MeitY Compulsory Registration Scheme (CRS) & IS 16046 (Part 2): Secondary lithium cells and battery packs mandate laboratory safety testing and BIS CRS registration prior to commercial distribution or export.",
+                "CENTRAL",
+            )
+        elif is_cement:
             _add_portal_evidence(
                 "BIS",
                 "Cement Quality Control Order 2003 & BIS (Conformity Assessment) Regulations: Mandatory ISI mark certification for Ordinary Portland Cement (IS 269) and Portland Pozzolana Cement (IS 1489).",
@@ -442,7 +471,7 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
                 "CPCB Environmental Standards for Cement Plants: Prescribes maximum particulate matter (PM) stack emission limits (30 mg/Nm3) and mandatory Continuous Emission Monitoring Systems (CEMS).",
                 "CENTRAL",
             )
-        elif "ev" in desc or "charging station" in desc or "evse" in desc:
+        elif is_ev:
             _add_portal_evidence(
                 "BIS",
                 "Bureau of Indian Standards: IS 17017 conductive electric vehicle charging systems and EVSE safety standards.",
@@ -453,7 +482,7 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
                 "CPCB E-Waste (Management) Rules 2022: Extended Producer Responsibility (EPR) classification for electrical equipment under Schedule-I requires product category confirmation.",
                 "CENTRAL",
             )
-        elif "charger" in desc or "adapter" in desc or "electronic" in desc:
+        elif is_charger:
             if "laptop" in desc or "mobile" in desc or "it equipment" in desc or "computer" in desc:
                 _add_portal_evidence(
                     "BIS_CRS",
@@ -465,7 +494,7 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
                 "E-Waste (Management) Rules 2022: Producers and manufacturers of Electrical and Electronic Equipment (EEE) must obtain Extended Producer Responsibility (EPR) registration on the CPCB centralized portal eprewastecpcb.in.",
                 "CENTRAL",
             )
-        elif "food" in desc or "fruit" in desc or "juice" in desc or "agro" in desc:
+        elif is_food:
             _add_portal_evidence(
                 "FSSAI_STATE" if "state" in desc else "FSSAI_CENTRAL",
                 "Food Safety and Standards (Licensing and Registration of Food Businesses) Regulations 2011: Mandatory manufacturing license on FoSCoS portal with sanitary and hygienic requirements compliance.",
@@ -476,7 +505,7 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
                 "Plastic Waste Management Rules 2016 (as amended): Brand owners and packaging food manufacturers must obtain EPR registration on the CPCB centralized portal for post-consumer plastic packaging.",
                 "CENTRAL",
             )
-        elif "textile" in desc or "dye" in desc:
+        elif is_textile:
             _add_portal_evidence(
                 "CPCB",
                 "CPCB Standards for Textile (Dyeing & Printing) Industry: Mandatory Effluent Treatment Plant (ETP) installation, zero liquid discharge (ZLD) parameters for identified clusters, and hazardous sludge disposal authorization.",

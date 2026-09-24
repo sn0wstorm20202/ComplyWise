@@ -482,6 +482,22 @@ STANDARDS_CATALOG: list[dict[str, Any]] = [
         "verification_status": "VERIFIED",
     },
 
+    # --- BATTERY & ENERGY STORAGE ---
+    {
+        "standard_code": "IS 16046 (Part 2):2018",
+        "title": "Secondary Cells and Batteries Containing Alkaline or Other Non-Acid Electrolytes — Secondary Lithium Cells and Batteries",
+        "authority": "Bureau of Indian Standards (BIS)",
+        "nature": "MANDATORY_CRS_QCO",
+        "sectors": ["BATTERY", "ENERGY_STORAGE", "ELECTRONICS"],
+        "why_it_matters": "Mandatory under MeitY Compulsory Registration Scheme (CRS). Secondary lithium-ion cells and battery packs must be tested at a BIS-recognized laboratory and registered on the CRS Manakonline portal prior to commercial distribution or export.",
+        "testing_requirements": "Continuous charging, external short circuit, free fall, thermal abuse, crush, and overcharging safety testing under IS 16046 (Part 2).",
+        "next_step": "Submit battery pack specimens to NABL/BIS-accredited test lab and obtain BIS CRS Registration Number (R-number).",
+        "source_url": "https://www.crsbis.in",
+        "is_mandatory": True,
+        "mandatory_status": "MANDATORY",
+        "verification_status": "VERIFIED",
+    },
+
     # --- PACKAGED WATER & BOTTLING ---
     {
         "standard_code": "IS 10500:2012",

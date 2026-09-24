@@ -56,6 +56,28 @@ PROHIBITED_DOMAINS_BY_KEYWORD: dict[str, list[str]] = {
         "dairy", "milk", "restaurant", "slaughterhouse",
         "textile dyeing", "spinning", "ginning",
     ],
+    "battery": [
+        "cement", "clinker", "quarry", "limestone", "rotary kiln", "concrete",
+        "packaged drinking water", "drinking water", "mineral water",
+        "dairy", "milk", "cheese", "restaurant", "catering", "cafe",
+        "textile dyeing", "yarn", "spinning", "tannery", "sugar", "distillery",
+    ],
+    "bms": [
+        "cement", "clinker", "quarry", "limestone", "rotary kiln", "concrete",
+        "packaged drinking water", "drinking water", "mineral water",
+        "dairy", "milk", "cheese", "restaurant", "catering", "cafe",
+        "textile dyeing", "tannery",
+    ],
+    "lithium": [
+        "cement", "clinker", "quarry", "limestone", "rotary kiln", "concrete",
+        "packaged drinking water", "dairy", "milk", "restaurant",
+        "textile dyeing", "tannery",
+    ],
+    "energy storage": [
+        "cement", "clinker", "quarry", "limestone", "rotary kiln", "concrete",
+        "packaged drinking water", "dairy", "milk", "restaurant",
+        "textile dyeing", "tannery",
+    ],
     "charger": [
         "cement", "clinker", "quarry", "limestone",
         "dairy", "milk", "restaurant",
@@ -95,6 +117,7 @@ CRITICAL INVARIANTS:
 4. CRITICAL IRRELEVANCE GUARD:
    - DO NOT include regulations for unrelated business activities.
    - Cement manufacturer: NEVER include drinking water, dairy, restaurant, or textile dyeing regulations.
+   - Battery / BMS / Energy Storage manufacturer: NEVER include cement, clinker, limestone, food/dairy, or textile regulations.
    - Electronics/charger manufacturer: NEVER include cement, food, or textile regulations.
    - Food manufacturer: NEVER include textile dyeing or heavy engineering regulations.
 
@@ -142,12 +165,23 @@ Return a JSON object conforming exactly to this structure:
 """
 
 
+def strip_negations(text: str) -> str:
+    """Strip negative clauses (e.g. 'no cement manufacturing', 'does not produce...')
+    so negative exclusions are not falsely matched as positive business activities.
+    """
+    if not text:
+        return ""
+    pattern = r"\b(?:no|not|neither|nor|without|does\s+not|doesn't|do\s+not|don't|has\s+no|have\s+no|excluding|except\s+for|except)\s+[^.;\n]+"
+    return re.sub(pattern, " ", text, flags=re.IGNORECASE)
+
+
 def _sanitize_and_prune_irrelevant_requirements(
     requirements: list[dict[str, Any]],
     product_desc: str,
 ) -> list[dict[str, Any]]:
     """Programmatically prunes any requirements violating the cross-domain irrelevance guard."""
     desc_lower = (product_desc or "").lower()
+    cleaned_desc = strip_negations(desc_lower)
     cleaned_reqs: list[dict[str, Any]] = []
 
     # Find which prohibitions apply
@@ -155,8 +189,8 @@ def _sanitize_and_prune_irrelevant_requirements(
     for trigger_kw, prohibited_list in PROHIBITED_DOMAINS_BY_KEYWORD.items():
         if trigger_kw in desc_lower:
             for term in prohibited_list:
-                # Only prohibit if the term is NOT explicitly in the business description
-                if term not in desc_lower:
+                # Only prohibit if the term is NOT a positive activity in the business description
+                if term not in cleaned_desc:
                     active_prohibitions.add(term.lower())
 
     seen_signatures: set[str] = set()
@@ -247,6 +281,20 @@ def _validate_candidate_applicability_deterministically(
     ])
     if is_mfg_req and not is_mfg:
         return "NOT_APPLICABLE", "Business activity is non-manufacturing/trading; factory premises rules do not apply"
+
+    # Invariant 3a: Heavy Mineral / Cement Cross-Domain Guard
+    is_cement_req = any(kw in title_and_desc for kw in ["cement", "clinker", "rotary kiln", "limestone mining", "is 269", "is 1489"])
+    cleaned_context_desc = strip_negations(desc)
+    is_cement_biz = bool(re.search(r"\b(cement|clinker|portland)\b", cleaned_context_desc))
+    if is_cement_req and not is_cement_biz:
+        return "NOT_APPLICABLE", "Requirement applies exclusively to cement and clinker manufacturing facilities."
+
+    # Invariant 3b: Battery & Energy Storage Isolation Guard
+    is_battery_biz = bool(re.search(r"\b(battery|bms|lithium|energy storage|cell manufacturing)\b", cleaned_context_desc))
+    if is_battery_biz and is_cement_req:
+        return "NOT_APPLICABLE", "Cement and heavy clinker standards do not apply to battery and BMS manufacturing facilities."
+    if is_battery_biz and ("is 13252" in title_and_desc or "power adapter" in title_and_desc):
+        return "NOT_APPLICABLE", "IS 13252 applies to Information Technology Equipment power adapters; does not apply to industrial battery or BMS systems."
 
     # Invariant 4: Cross-Border Trade Scope Check
     is_trade_req = any(kw in title_and_desc for kw in [
@@ -601,6 +649,10 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
             is_cross_border = context.normalized_facts.get("is_cross_border", False)
             trade_intent = context.answers.get("trade_intent") or ("EXPORT_ONLY" if is_cross_border else "DOMESTIC_ONLY")
 
+        cleaned_desc = strip_negations(desc)
+        is_battery_biz = bool(re.search(r"\b(battery|bms|lithium|energy storage|cell manufacturing)\b", cleaned_desc))
+        is_cement_biz = (not is_battery_biz) and bool(re.search(r"\b(cement|clinker|portland)\b", cleaned_desc))
+
         # Map each evidence candidate into an evidence-grounded requirement
         for ev in evidence_candidates:
             ev_id = ev.get("evidence_id")
@@ -837,7 +889,55 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                     ],
                     "deadline": None,
                 })
-            elif ("cement" in desc or "clinker" in desc) and ("is 269" in exc_lower or re.search(r"\bcement\b", exc_lower)):
+            elif "eprbattery" in s_url or "cpcb_battery" in auth.lower() or "battery waste" in exc_lower:
+                reqs.append({
+                    "requirement_id": req_id,
+                    "title": "CPCB Battery Waste Management EPR Registration",
+                    "description": "Mandatory Extended Producer Responsibility (EPR) registration under Battery Waste Management Rules 2022 on the centralized portal eprbattery.cpcb.gov.in.",
+                    "regulatory_domain": "WASTE_MANAGEMENT",
+                    "authority": "Central Pollution Control Board (CPCB)",
+                    "jurisdiction": "CENTRAL",
+                    "status": "APPLICABLE",
+                    "priority": "HIGH",
+                    "why_it_matters": "Prohibits commercial sale, distribution, or import of industrial, EV, or portable batteries without active CPCB EPR registration and recycling targets.",
+                    "business_facts_used": ["Battery and energy storage system manufacturing"],
+                    "evidence_ids": [ev_id],
+                    "source_urls": [s_url or "https://eprbattery.cpcb.gov.in/"],
+                    "actions": [
+                        {
+                            "action": "Register as Producer on CPCB Battery EPR portal and declare end-of-life battery collection targets.",
+                            "owner": "OPERATIONS",
+                            "documents_needed": ["Entity PAN", "GSTIN", "Udyam Registration", "Battery Chemistry Specifications"],
+                            "estimated_effort": "1-2 weeks",
+                        }
+                    ],
+                    "deadline": None,
+                })
+            elif "is 16046" in exc_lower or (is_battery_biz and "crs" in exc_lower):
+                reqs.append({
+                    "requirement_id": req_id,
+                    "title": "BIS CRS Registration for Secondary Lithium Batteries (IS 16046)",
+                    "description": "Mandatory safety type-testing and registration under MeitY Compulsory Registration Scheme (CRS) and IS 16046 (Part 2) for secondary lithium cells and battery packs.",
+                    "regulatory_domain": "TECHNICAL_STANDARDS",
+                    "authority": "Bureau of Indian Standards (BIS)",
+                    "jurisdiction": "CENTRAL",
+                    "status": "APPLICABLE",
+                    "priority": "HIGH",
+                    "why_it_matters": "Prohibits commercial dispatch, distribution, or sale of lithium battery packs without valid BIS CRS R-number.",
+                    "business_facts_used": ["Lithium battery and BMS pack manufacturing"],
+                    "evidence_ids": [ev_id],
+                    "source_urls": [s_url or "https://www.crsbis.in"],
+                    "actions": [
+                        {
+                            "action": "Submit battery packs to BIS-recognized laboratory for safety testing and apply for CRS R-number on Manakonline.",
+                            "owner": "OPERATIONS",
+                            "documents_needed": ["Test Reports from BIS Recognized Lab", "Bill of Materials", "Cell Datasheets"],
+                            "estimated_effort": "4-6 weeks",
+                        }
+                    ],
+                    "deadline": None,
+                })
+            elif not is_battery_biz and is_cement_biz and ("is 269" in exc_lower or re.search(r"\bcement\b", exc_lower)):
                 reqs.append({
                     "requirement_id": req_id,
                     "title": "BIS Mandatory Certification for Cement (ISI Mark)",
@@ -912,6 +1012,14 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
             if is_ev_mfg and ("13252" in r_title or "13252" in r_desc or "power adapter" in r_title):
                 r["status"] = "NOT_APPLICABLE"
                 r["why_it_matters"] = "IS 13252 applies to Information Technology Equipment power adapters; does not apply to EVSE."
+
+            if is_battery_biz and ("cement" in r_title or "cement" in r_desc or "is 269" in r_title):
+                r["status"] = "NOT_APPLICABLE"
+                r["why_it_matters"] = "Cement standards and mandatory ISI certification do not apply to battery manufacturing operations."
+
+            if is_battery_biz and ("13252" in r_title or "13252" in r_desc or "power adapter" in r_title):
+                r["status"] = "NOT_APPLICABLE"
+                r["why_it_matters"] = "IS 13252 applies to Information Technology Equipment power adapters; does not apply to battery or BMS systems."
 
             if "17017" in r_title or "17017" in r_desc:
                 r["title"] = "BIS Standard for EV Conductive Charging Systems (IS 17017)"

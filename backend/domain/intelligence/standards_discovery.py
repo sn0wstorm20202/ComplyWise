@@ -10,12 +10,23 @@ Identifies business-specific standards from:
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from apps.businesses.models import Business
 from domain.context.business_context import DerivedBusinessContext, build_business_context
 
 from knowledge_packs.catalogs import STANDARDS_CATALOG
+
+
+def strip_negations(text: str) -> str:
+    """Strip negative clauses (e.g. 'no cement manufacturing', 'does not produce...')
+    so negative exclusions are not falsely matched as positive business activities.
+    """
+    if not text:
+        return ""
+    pattern = r"\b(?:no|not|neither|nor|without|does\s+not|doesn't|do\s+not|don't|has\s+no|have\s+no|excluding|except\s+for|except)\s+[^.;\n]+"
+    return re.sub(pattern, " ", text, flags=re.IGNORECASE)
 
 
 def discover_business_standards(
@@ -31,7 +42,8 @@ def discover_business_standards(
     biz_name = (business.name or "").lower()
     raw_acts = getattr(context, "detected_activities", None) or getattr(context, "activities", None) or []
     activities = [a.lower() for a in raw_acts]
-    combined_text = f"{biz_name} {desc} {' '.join(activities)}"
+    raw_combined = f"{biz_name} {desc} {' '.join(activities)}"
+    combined_text = strip_negations(raw_combined)
 
     # 1. Precise Sector Determination
     is_ev_charging = any(
@@ -124,7 +136,14 @@ def discover_business_standards(
         ]
     )
 
-    is_general_electronics = is_ev_charging or any(
+    is_battery = bool(
+        re.search(
+            r"\b(battery|bms|lithium|energy storage|cell manufacturing|bess)\b",
+            combined_text,
+        )
+    )
+
+    is_general_electronics = is_ev_charging or is_battery or any(
         w in combined_text
         for w in [
             "electron",
@@ -135,8 +154,6 @@ def discover_business_standards(
             "smart",
             "sensor",
             "meter",
-            "bess",
-            "battery",
             "inverter",
             "converter",
             "power supply",
@@ -150,15 +167,11 @@ def discover_business_standards(
         ]
     )
 
-    is_cement = any(
-        w in combined_text
-        for w in [
-            "cement",
-            "clinker",
-            "portland",
-            "concrete",
-            "quarry",
-        ]
+    is_cement = (not is_battery) and bool(
+        re.search(
+            r"\b(cement|clinker|portland|concrete|quarry)\b",
+            combined_text,
+        )
     )
 
     is_textile = any(
@@ -185,6 +198,8 @@ def discover_business_standards(
         # Positive Sector Matching
         if is_ev_charging and any(s in sectors for s in ["EV_CHARGING"]):
             match = True
+        elif not is_ev_charging and is_battery and any(s in sectors for s in ["BATTERY", "ENERGY_STORAGE"]):
+            match = True
         elif not is_ev_charging and is_food and any(s in sectors for s in ["FOOD", "PROCESSING", "AGRO"]):
             match = True
         elif not is_ev_charging and is_food_packaging and any(s in sectors for s in ["FOOD_PACKAGING", "FOOD_CONTACT_PLASTICS"]):
@@ -207,13 +222,15 @@ def discover_business_standards(
         # Strict Negative Filter (Relevance Gate: prune contamination)
         if is_ev_charging and not any(s in sectors for s in ["EV_CHARGING"]):
             match = False
+        if not is_battery and any(s in sectors for s in ["BATTERY", "ENERGY_STORAGE"]):
+            match = False
         if not is_food and any(s in sectors for s in ["FOOD", "PROCESSING", "AGRO"]):
             match = False
         if not is_food_packaging and any(s in sectors for s in ["FOOD_PACKAGING", "FOOD_CONTACT_PLASTICS"]):
             match = False
         if not is_packaged_water and any(s in sectors for s in ["PACKAGED_WATER", "BEVERAGE_BOTTLING"]):
             match = False
-        if not is_cement and any(s in sectors for s in ["CEMENT", "BUILDING_MATERIALS"]):
+        if not is_cement and any(s in sectors for s in ["CEMENT", "HEAVY_MANUFACTURING", "BUILDING_MATERIALS"]):
             match = False
         if not is_textile and any(s in sectors for s in ["TEXTILE", "DYEING", "WEAVING"]):
             match = False

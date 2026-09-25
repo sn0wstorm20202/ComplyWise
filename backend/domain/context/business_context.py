@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from decimal import Decimal
+import re
 from typing import Any
 
 from domain.jurisdictions.resolver import JurisdictionRegistry, normalize_jurisdiction

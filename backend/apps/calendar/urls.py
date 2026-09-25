@@ -5,8 +5,12 @@ from __future__ import annotations
 from django.urls import path
 
 from .views import (
+    AdminCaseDeadlinesView,
+    AdminDeadlineDetailView,
+    AdminDeadlineSendAlertView,
     BusinessCalendarListView,
     BusinessCalendarNotificationsListView,
+    CaseDeadlinesListView,
     GoogleCalendarAuthUrlView,
     GoogleCalendarCallbackView,
     GoogleCalendarDisconnectView,
@@ -33,4 +37,15 @@ urlpatterns = [
     path("calendar/google/callback", GoogleCalendarCallbackView.as_view(), name="calendar-google-callback"),
     path("calendar/google/status", GoogleCalendarStatusView.as_view(), name="calendar-google-status"),
     path("calendar/google/disconnect", GoogleCalendarDisconnectView.as_view(), name="calendar-google-disconnect"),
+
+    # Statutory & Admin Deadlines (§18, §19, §21)
+    path("cases/<uuid:case_id>/deadlines", CaseDeadlinesListView.as_view(), name="case-deadlines"),
+    path("cases/<str:case_id>/deadlines", CaseDeadlinesListView.as_view(), name="case-deadlines-str"),
+    path("admin/cases/<uuid:case_id>/deadlines", AdminCaseDeadlinesView.as_view(), name="admin-case-deadlines"),
+    path("admin/cases/<str:case_id>/deadlines", AdminCaseDeadlinesView.as_view(), name="admin-case-deadlines-str"),
+    path("admin/deadlines/<uuid:deadline_id>", AdminDeadlineDetailView.as_view(), name="admin-deadline-detail"),
+    path("admin/deadlines/<str:deadline_id>", AdminDeadlineDetailView.as_view(), name="admin-deadline-detail-str"),
+    path("admin/deadlines/<uuid:deadline_id>/send-alert", AdminDeadlineSendAlertView.as_view(), name="admin-deadline-send-alert"),
+    path("admin/deadlines/<str:deadline_id>/send-alert", AdminDeadlineSendAlertView.as_view(), name="admin-deadline-send-alert-str"),
 ]
+

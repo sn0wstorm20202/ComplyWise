@@ -219,13 +219,13 @@ function ComplianceContent() {
     (r) =>
       r.status === "APPLICABLE" ||
       r.status === "NEEDS_INFORMATION" ||
-      r.status === "NEEDS_VERIFICATION"
+      (r.status as string) === "NEEDS_VERIFICATION"
   );
   const verificationRequiredItems = requirements.filter(
     (r) =>
       r.status === "UNVERIFIED" ||
       r.status === "CONFLICT_REVIEW" ||
-      r.status === "NEEDS_VERIFICATION"
+      (r.status as string) === "NEEDS_VERIFICATION"
   );
   const notApplicableItems = requirements.filter(
     (r) => r.status === "NOT_APPLICABLE"

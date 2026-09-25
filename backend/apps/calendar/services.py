@@ -1112,3 +1112,290 @@ def retry_failed_notifications(
         "total_retried": len(retried),
         "records": retried,
     }
+
+
+class DeadlineService:
+    """Service orchestrating statutory and administrative deadlines, calendar sync, and alert dispatches.
+
+    Authority: Architectural Specification §18-§21.
+    """
+
+    @classmethod
+    def create_deadline(
+        cls,
+        case=None,
+        business=None,
+        title: str = "",
+        due_at=None,
+        requirement_id_code: str = "",
+        description: str = "",
+        priority: str = "MEDIUM",
+        source: str = "ADMIN_SET",
+        created_by=None,
+        email_notification_enabled: bool = True,
+        calendar_notification_enabled: bool = True,
+        in_app_notification_enabled: bool = True,
+        reminder_policy: dict | None = None,
+        notes: str = "",
+        metadata: dict | None = None,
+    ) -> Any:
+        from apps.calendar.models import Deadline
+        from apps.workflows.models import OutboxEvent, WorkflowEvent
+        from common.enums import ActorType, DeadlineSource, DeadlineStatus, Priority as PriorityEnum
+
+        if case and not business:
+            business = case.business
+        if case and not requirement_id_code:
+            requirement_id_code = case.requirement_id_code
+
+        deadline = Deadline.objects.create(
+            case=case,
+            business=business,
+            requirement_id_code=requirement_id_code or "GENERAL",
+            title=title or f"Statutory Compliance Deadline: {requirement_id_code}",
+            description=description,
+            due_at=due_at or (timezone.now() + timedelta(days=14)),
+            source=source or DeadlineSource.ADMIN_SET,
+            created_by=created_by,
+            status=DeadlineStatus.PENDING,
+            priority=priority or PriorityEnum.MEDIUM,
+            reminder_policy=reminder_policy or {"days_before": [7, 3, 1]},
+            email_notification_enabled=email_notification_enabled,
+            calendar_notification_enabled=calendar_notification_enabled,
+            in_app_notification_enabled=in_app_notification_enabled,
+            notes=notes,
+            metadata=metadata or {},
+        )
+
+        # Emit OutboxEvent for transactional side effects
+        OutboxEvent.objects.create(
+            event_type="DEADLINE_CREATED",
+            payload={
+                "deadline_id": str(deadline.id),
+                "case_id": str(case.id) if case else None,
+                "business_id": str(business.id) if business else None,
+                "title": deadline.title,
+                "due_at": deadline.due_at.isoformat(),
+            },
+        )
+
+        if case:
+            WorkflowEvent.objects.create(
+                compliance_case=case,
+                event_code="DEADLINE_CREATED",
+                actor_type=ActorType.ADMIN if (created_by and created_by.is_staff) else ActorType.USER,
+                actor_user=created_by,
+                payload={"deadline_id": str(deadline.id), "title": deadline.title, "due_at": deadline.due_at.isoformat()},
+                notes=f"Compliance deadline '{deadline.title}' set for {deadline.due_at.strftime('%Y-%m-%d')}.",
+            )
+
+        logger.info("Created deadline %s for case %s", deadline.id, getattr(case, "case_number", None))
+        return deadline
+
+    @classmethod
+    def update_deadline(
+        cls,
+        deadline: Any,
+        updated_by=None,
+        **fields: Any,
+    ) -> Any:
+        from apps.workflows.models import OutboxEvent, WorkflowEvent
+        from common.enums import ActorType
+
+        allowed_fields = {
+            "title",
+            "description",
+            "due_at",
+            "status",
+            "priority",
+            "notes",
+            "reminder_policy",
+            "email_notification_enabled",
+            "calendar_notification_enabled",
+            "in_app_notification_enabled",
+            "metadata",
+        }
+
+        updated_keys = []
+        for k, v in fields.items():
+            if k in allowed_fields and v is not None:
+                setattr(deadline, k, v)
+                updated_keys.append(k)
+
+        if updated_keys:
+            deadline.save(update_fields=updated_keys + ["updated_at"])
+
+            OutboxEvent.objects.create(
+                event_type="DEADLINE_UPDATED",
+                payload={
+                    "deadline_id": str(deadline.id),
+                    "updated_fields": updated_keys,
+                    "status": deadline.status,
+                    "due_at": deadline.due_at.isoformat(),
+                },
+            )
+
+            if deadline.case:
+                WorkflowEvent.objects.create(
+                    compliance_case=deadline.case,
+                    event_code="DEADLINE_MODIFIED",
+                    actor_type=ActorType.ADMIN if (updated_by and updated_by.is_staff) else ActorType.USER,
+                    actor_user=updated_by,
+                    payload={"deadline_id": str(deadline.id), "updated_fields": updated_keys},
+                    notes=f"Deadline updated: {', '.join(updated_keys)}.",
+                )
+
+        return deadline
+
+    @classmethod
+    def cancel_deadline(cls, deadline: Any, reason: str = "", actor=None) -> Any:
+        from common.enums import DeadlineStatus
+        return cls.update_deadline(
+            deadline,
+            updated_by=actor,
+            status=DeadlineStatus.CANCELLED,
+            notes=(deadline.notes + f"\n[Cancelled: {reason}]").strip(),
+        )
+
+    @classmethod
+    def send_alert_now(cls, deadline: Any, actor=None, notes: str = "") -> dict[str, Any]:
+        """Trigger immediate on-demand compliance alert across configured channels.
+
+        Authority: Architectural Specification §18, §19, §21.
+        """
+        from apps.calendar.models import (
+            DeadlineNotificationDelivery,
+            NotificationChannel,
+            NotificationDeliveryStatus,
+            NotificationEventType,
+            NotificationPriority,
+        )
+        from apps.workflows.models import OutboxEvent, WorkflowEvent
+        from common.enums import ActorType
+
+        business = deadline.business
+        if not business and deadline.case:
+            business = deadline.case.business
+
+        target_user = None
+        if business and business.owner:
+            target_user = business.owner
+        elif deadline.created_by:
+            target_user = deadline.created_by
+
+        recipient_email = getattr(target_user, "email", "") or ""
+        event_dict = {
+            "title": deadline.title,
+            "authority": (deadline.requirement and deadline.requirement.authority) or "Regulatory Authority",
+            "basis": deadline.description or "Mandatory compliance obligation",
+        }
+
+        due_date = deadline.due_at.date()
+        offset_days = (due_date - timezone.now().date()).days
+        is_overdue = offset_days < 0
+
+        dispatches: dict[str, Any] = {}
+
+        # 1. In-App Notification Delivery
+        if deadline.in_app_notification_enabled and target_user and business:
+            in_app_res = dispatch_in_app_notification(
+                user=target_user,
+                business=business,
+                event=event_dict,
+                due_date=due_date,
+                offset_days=abs(offset_days),
+                is_overdue=is_overdue,
+                priority=deadline.priority or "HIGH",
+            )
+            # Record Delivery
+            DeadlineNotificationDelivery.objects.create(
+                user=target_user,
+                business=business,
+                requirement_id=deadline.requirement_id_code,
+                deadline_date=due_date,
+                offset_days=offset_days,
+                channel=NotificationChannel.IN_APP,
+                event_type=NotificationEventType.OVERDUE if is_overdue else NotificationEventType.UPCOMING,
+                priority=NotificationPriority.HIGH if is_overdue else NotificationPriority.MEDIUM,
+                status=NotificationDeliveryStatus.DELIVERED,
+                subject_or_title=deadline.title,
+                recipient=target_user.email,
+                details={"source": "INSTANT_ADMIN_ALERT", "notes": notes},
+            )
+            dispatches["in_app"] = in_app_res
+
+        # 2. Email Delivery
+        if deadline.email_notification_enabled and target_user and business:
+            email_res = dispatch_email_notification(
+                user=target_user,
+                business=business,
+                event=event_dict,
+                due_date=due_date,
+                offset_days=abs(offset_days),
+                is_overdue=is_overdue,
+            )
+            DeadlineNotificationDelivery.objects.create(
+                user=target_user,
+                business=business,
+                requirement_id=deadline.requirement_id_code,
+                deadline_date=due_date,
+                offset_days=offset_days,
+                channel=NotificationChannel.EMAIL,
+                event_type=NotificationEventType.OVERDUE if is_overdue else NotificationEventType.UPCOMING,
+                priority=NotificationPriority.HIGH if is_overdue else NotificationPriority.MEDIUM,
+                status=email_res.get("status", NotificationDeliveryStatus.DELIVERED),
+                subject_or_title=deadline.title,
+                recipient=recipient_email,
+                details={"source": "INSTANT_ADMIN_ALERT", "notes": notes, "provider": email_res.get("provider")},
+            )
+            dispatches["email"] = email_res
+
+        # 3. Google Calendar Delivery
+        if deadline.calendar_notification_enabled and target_user and business:
+            cal_res = dispatch_google_calendar_event(
+                user=target_user,
+                business=business,
+                event=event_dict,
+                due_date=due_date,
+                offset_days=abs(offset_days),
+            )
+            if cal_res.get("event_id"):
+                deadline.google_calendar_event_id = cal_res["event_id"]
+            dispatches["calendar"] = cal_res
+
+        # Update metadata
+        current_meta = dict(deadline.metadata or {})
+        current_meta["last_alert_sent_at"] = timezone.now().isoformat()
+        current_meta["alerts_sent_count"] = current_meta.get("alerts_sent_count", 0) + 1
+        deadline.metadata = current_meta
+        deadline.save(update_fields=["metadata", "google_calendar_event_id", "updated_at"])
+
+        # Transactional outbox
+        OutboxEvent.objects.create(
+            event_type="DEADLINE_ALERT_DISPATCHED",
+            payload={
+                "deadline_id": str(deadline.id),
+                "case_id": str(deadline.case_id) if deadline.case_id else None,
+                "dispatches": dispatches,
+            },
+        )
+
+        if deadline.case:
+            WorkflowEvent.objects.create(
+                compliance_case=deadline.case,
+                event_code="DEADLINE_ALERT_SENT",
+                actor_type=ActorType.ADMIN if (actor and actor.is_staff) else ActorType.SYSTEM,
+                actor_user=actor,
+                payload={"deadline_id": str(deadline.id), "channels": list(dispatches.keys())},
+                notes=f"Compliance alert dispatched to {recipient_email} for deadline '{deadline.title}'.",
+            )
+
+        logger.info("Sent instant deadline alert for %s to %s", deadline.id, recipient_email)
+        return {
+            "success": True,
+            "deadline_id": str(deadline.id),
+            "dispatches": dispatches,
+            "recipient": recipient_email,
+            "last_alert_sent_at": current_meta["last_alert_sent_at"],
+        }
+

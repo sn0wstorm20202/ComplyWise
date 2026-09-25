@@ -12,6 +12,7 @@ from __future__ import annotations
 from django.conf import settings
 from django.db import models
 
+from common.enums import DeadlineSource, DeadlineStatus, Priority
 from common.models import BaseModel
 
 
@@ -241,4 +242,92 @@ class UserGoogleCalendarConnection(BaseModel):
                 )
 
         return self.access_token or ""
+
+
+class Deadline(BaseModel):
+    """First-class statutory and administrative compliance deadline.
+
+    Authority: Architectural Specification §18-§21.
+    All user calendar views are projections of actual Deadline records.
+    Admin can create, edit, cancel, change due dates, and trigger instant alerts.
+    """
+
+    case = models.ForeignKey(
+        "workflows.ComplianceCase",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="calendar_deadlines",
+        db_index=True,
+    )
+    business = models.ForeignKey(
+        "businesses.Business",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="compliance_deadlines",
+        db_index=True,
+    )
+    requirement = models.ForeignKey(
+        "knowledge.RequirementDefinition",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="requirement_deadlines",
+    )
+    requirement_id_code = models.CharField(max_length=100, db_index=True)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default="")
+    due_at = models.DateTimeField(db_index=True)
+    source = models.CharField(
+        max_length=50,
+        choices=DeadlineSource.choices,
+        default=DeadlineSource.ADMIN_SET,
+        db_index=True,
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    status = models.CharField(
+        max_length=30,
+        choices=DeadlineStatus.choices,
+        default=DeadlineStatus.PENDING,
+        db_index=True,
+    )
+    priority = models.CharField(
+        max_length=20,
+        choices=Priority.choices,
+        default=Priority.MEDIUM,
+    )
+    reminder_policy = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Configured alert triggers (e.g. {'days_before': [7, 3, 1]})",
+    )
+    google_calendar_event_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Google Calendar event ID for idempotent synchronization",
+    )
+    email_notification_enabled = models.BooleanField(default=True)
+    calendar_notification_enabled = models.BooleanField(default=True)
+    in_app_notification_enabled = models.BooleanField(default=True)
+    notes = models.TextField(blank=True, default="")
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        db_table = "calendar_deadline"
+        ordering = ["due_at"]
+        indexes = [
+            models.Index(fields=["business", "due_at"]),
+            models.Index(fields=["case", "status"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"Deadline: {self.title} due {self.due_at.strftime('%Y-%m-%d')} [{self.status}]"
 

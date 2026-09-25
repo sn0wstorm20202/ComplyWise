@@ -63,16 +63,19 @@ class Business(BaseModel):
         """Single place that answers "may this user see this business?"."""
         if not user or not user.is_authenticated:
             return False
+        if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
+            return True
         if self.owner_id == user.id:
             return True
         return self.memberships.filter(user_id=user.id).exists()
 
     @classmethod
-    def accessible_to(cls, user) -> models.QuerySet[Business]:  # noqa: ANN001
-        """Queryset scoped to a user. Views must start from here, never from
-        `Business.objects.all()` plus a client-supplied id (TRD_v2.0 §32)."""
+    def accessible_to(cls, user) -> models.QuerySet[Business]:
+        """Queryset scoped to a user. Staff and superusers have platform-wide access."""
         if not user or not user.is_authenticated:
             return cls.objects.none()
+        if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
+            return cls.objects.all()
         return cls.objects.filter(
             models.Q(owner=user) | models.Q(memberships__user=user)
         ).distinct()

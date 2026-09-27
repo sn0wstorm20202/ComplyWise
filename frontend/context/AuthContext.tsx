@@ -17,6 +17,7 @@ interface AuthContextValue {
   loading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<AuthSession>;
+  adminLogin: (email: string, password: string) => Promise<AuthSession>;
   register: (
     email: string,
     password: string,
@@ -79,6 +80,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session.user);
       setTokenState(session.token);
       setAuthToken(session.token);
+      return session;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const adminLogin = async (
+    email: string,
+    password: string
+  ): Promise<AuthSession> => {
+    setLoading(true);
+    try {
+      const session = await authApi.adminLogin(email, password);
+      setUser(session.user);
+      setTokenState(session.token);
+      setAuthToken(session.token);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("complywise_admin_token", session.token);
+      }
       return session;
     } finally {
       setLoading(false);
@@ -163,6 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     isAuthenticated: Boolean(user && token),
     login,
+    adminLogin,
     register,
     fastDemoLogin,
     logout,

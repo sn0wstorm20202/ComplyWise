@@ -1,0 +1,107 @@
+[
+  {
+    "source_id": "SRC-DISH-MAHARASHTRA",
+    "authority": "Directorate of Industrial Safety & Health (DISH), Government of Maharashtra",
+    "title": "Maharashtra Factories Rules, 1963 and Factories Act, 1948 Statutory Framework",
+    "source_type": "STATUTE",
+    "canonical_url": "https://mahakamgar.gov.in",
+    "publication_date": "1963-01-01",
+    "effective_date": "1963-01-01",
+    "status": "ACTIVE",
+    "content_hash": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+    "metadata": {
+      "jurisdiction": "MAHARASHTRA",
+      "regulatory_domain": "LABOR"
+    }
+  },
+  {
+    "source_id": "SRC-MPCB-MAHARASHTRA",
+    "authority": "Maharashtra Pollution Control Board (MPCB)",
+    "title": "Water (P&CP) Act 1974, Air (P&CP) Act 1981, and Hazardous Waste Rules 2016",
+    "source_type": "REGULATION",
+    "canonical_url": "https://ecmpcb.in",
+    "publication_date": "1981-05-16",
+    "effective_date": "1981-05-16",
+    "status": "ACTIVE",
+    "content_hash": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3",
+    "metadata": {
+      "jurisdiction": "MAHARASHTRA",
+      "regulatory_domain": "ENVIRONMENT"
+    }
+  },
+  {
+    "source_id": "SRC-BOILER-MAHARASHTRA",
+    "authority": "Directorate of Steam Boilers, Government of Maharashtra",
+    "title": "The Indian Boilers Act, 1923 and Maharashtra Boiler Rules, 1962",
+    "source_type": "STATUTE",
+    "canonical_url": "https://mahaboiler.gov.in",
+    "publication_date": "1923-02-23",
+    "effective_date": "1924-01-01",
+    "status": "ACTIVE",
+    "content_hash": "c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4",
+    "metadata": {
+      "jurisdiction": "MAHARASHTRA",
+      "regulatory_domain": "MANUFACTURING"
+    }
+  },
+  {
+    "source_id": "SRC-TEXTILES-COMMITTEE",
+    "authority": "Textiles Committee, Ministry of Textiles, Government of India",
+    "title": "Textiles Committee Act, 1963 and Cess Rules",
+    "source_type": "STATUTE",
+    "canonical_url": "https://textilescommittee.nic.in",
+    "publication_date": "1963-12-03",
+    "effective_date": "1964-02-20",
+    "status": "ACTIVE",
+    "content_hash": "d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5",
+    "metadata": {
+      "jurisdiction": "CENTRAL",
+      "regulatory_domain": "MANUFACTURING"
+    }
+  },
+  {
+    "source_id": "SRC-EPFO-INDIA",
+    "authority": "Employees' Provident Fund Organisation (EPFO), Ministry of Labour and Employment",
+    "title": "Employees' Provident Funds and Miscellaneous Provisions Act, 1952",
+    "source_type": "STATUTE",
+    "canonical_url": "https://shramsuvidha.gov.in",
+    "publication_date": "1952-03-04",
+    "effective_date": "1952-11-01",
+    "status": "ACTIVE",
+    "content_hash": "e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6",
+    "metadata": {
+      "jurisdiction": "CENTRAL",
+      "regulatory_domain": "LABOR"
+    }
+  },
+  {
+    "source_id": "SRC-ESIC-INDIA",
+    "authority": "Employees' State Insurance Corporation (ESIC), Ministry of Labour and Employment",
+    "title": "Employees' State Insurance Act, 1948",
+    "source_type": "STATUTE",
+    "canonical_url": "https://shramsuvidha.gov.in",
+    "publication_date": "1948-04-19",
+    "effective_date": "1948-04-19",
+    "status": "ACTIVE",
+    "content_hash": "f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7",
+    "metadata": {
+      "jurisdiction": "CENTRAL",
+      "regulatory_domain": "LABOR"
+    }
+  },
+  {
+    "source_id": "SRC-CGWA-INDIA",
+    "authority": "Central Ground Water Authority (CGWA), Ministry of Jal Shakti",
+    "title": "Guidelines to Regulate and Control Ground Water Extraction in India (2020)",
+    "source_type": "REGULATION",
+    "canonical_url": "https://cgwa-noc.gov.in",
+    "publication_date": "2020-09-24",
+    "effective_date": "2020-09-24",
+    "status": "ACTIVE",
+    "content_hash": "a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8",
+    "metadata": {
+      "jurisdiction": "CENTRAL",
+      "regulatory_domain": "ENVIRONMENT"
+    }
+  }
+]

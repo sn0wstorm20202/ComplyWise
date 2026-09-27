@@ -149,7 +149,7 @@ class BusinessComplianceListView(_BusinessScopedView):
                 run = assessment.decision_run
             elif assessment:
                 run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
-        if run is None:
+        if run is None and not assessment_id:
             run = (
                 DecisionRun.objects.filter(business=business)
                 .prefetch_related("results")
@@ -165,10 +165,52 @@ class BusinessComplianceListView(_BusinessScopedView):
         items: list[dict[str, Any]] = []
 
         if latest_run:
-            results = latest_run.results.all()
+            results = list(latest_run.results.all())
             if status_filter:
-                results = results.filter(status=status_filter.upper())
+                results = [r for r in results if r.status == status_filter.upper()]
 
+            import re
+            desc_parts = [business.name]
+            if business.current_profile and business.current_profile.variables:
+                vars_dict = business.current_profile.variables
+                for k in ["product_description", "sector", "nature_of_business", "primary_business_activity"]:
+                    val = vars_dict.get(k)
+                    if isinstance(val, dict):
+                        desc_parts.append(str(val.get("value") or ""))
+                    elif val:
+                        desc_parts.append(str(val))
+            desc_lower = " ".join(desc_parts).lower()
+            is_pure_software = bool(re.search(r"\b(software|saas|platform|app|web|digital|pre-visualization|film pre-visualization|consulting|it services|agency)\b", desc_lower)) and not any(hw in desc_lower for hw in ["hardware manufacturing", "assembly plant", "fabrication plant", "physical manufacturing"])
+            is_physical_mfg = any(mfg_kw in desc_lower for mfg_kw in [
+                "mill", "textile", "weaving", "spinning", "dyeing", "fabric", "yarn", "foundry", "plant", "casting",
+                "manufacturing", "factory", "machinery", "engineering", "chemical", "metal", "assembly", "battery"
+            ]) and not is_pure_software
+
+            seen_canonical = set()
+            cleaned_results = []
+            for r in results:
+                req_id_upper = r.requirement_id.upper()
+                req_name_upper = r.requirement_name.upper()
+                combined = f"{req_id_upper} {req_name_upper}"
+
+                if is_pure_software and any(term in combined for term in [
+                    "FACTORY", "FACTORIES", "CONSENT TO ESTABLISH", "CONSENT TO OPERATE", "CTE", "CTO",
+                    "POLLUTION", "SPCB", "MPCB", "WBPCB", "GPCB", "CPCB", "BOILER"
+                ]):
+                    continue
+
+                if is_physical_mfg and any(term in combined for term in [
+                    "CERT-IN", "CERTIN", "CYBERSECURITY", "INCIDENT-REPORTING", "DPDP", "DATA FIDUCIARY"
+                ]):
+                    continue
+
+                canon = req_id_upper.replace("-", "").replace("_", "")
+                if canon in seen_canonical:
+                    continue
+                seen_canonical.add(canon)
+                cleaned_results.append(r)
+
+            results = cleaned_results
             req_ids = [r.requirement_id for r in results]
             req_defs = {
                 rd.requirement_id: rd
@@ -293,7 +335,7 @@ class BusinessRequirementDetailView(_BusinessScopedView):
                 run = assessment.decision_run
             elif assessment:
                 run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
-        if run is None:
+        if run is None and not assessment_id:
             run = (
                 DecisionRun.objects.filter(business=business)
                 .prefetch_related("results")

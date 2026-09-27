@@ -14,11 +14,13 @@ import { ComplianceRequirementItem, CandidateRequirement, Business } from "@/typ
 import { DEMO_REQUIREMENTS } from "@/data/demo/compliance";
 import { resolveAuthorityPortalUrl } from "@/lib/authorityPortals";
 import { useLanguage } from "@/context/LanguageContext";
+import { useBusinessContext } from "@/context/BusinessContext";
 
 type ViewTab = "action_required" | "verification_required" | "audit";
 
 function ComplianceContent() {
   const { t } = useLanguage();
+  const { activeBusinessId: contextBusinessId, activeAssessmentId } = useBusinessContext();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
   const initialTab = (searchParams.get("tab") as ViewTab) || "action_required";
@@ -68,136 +70,202 @@ function ComplianceContent() {
     setBusinessId(bizId);
 
     try {
-      const activeRunId =
-        searchParams.get("run_id") ||
-        (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
+      const explicitRunId = searchParams.get("run_id");
+      const explicitAssessmentId = searchParams.get("assessment_id") || activeAssessmentId || undefined;
 
-      let loadedFromOrchestration = false;
-      if (activeRunId) {
-        try {
-          const orchComp = await api.orchestration.getCompliance(activeRunId);
-          if (orchComp && orchComp.requirements && orchComp.requirements.length > 0) {
-            const mapped: ComplianceRequirementItem[] = orchComp.requirements.map((req: any) => {
-              const reqAuthority = req.authority || "Regulatory Authority";
-              const reqTitle = req.name || req.title || "Statutory Requirement";
-              const resolvedPortal = resolveAuthorityPortalUrl(
-                reqAuthority,
-                reqTitle,
-                req.portal_url || (req.source_urls && req.source_urls[0])
-              );
-              return {
-                requirement_id: req.requirement_id || req.id,
-                name: reqTitle,
-                status: req.status as any,
-                category: req.domain || req.regulatory_domain || "STATUTORY",
-                authority: reqAuthority,
-                domain: req.domain || req.regulatory_domain || "STATUTORY",
-                jurisdiction: req.jurisdiction || "CENTRAL",
-                citation_count: req.citations?.length || req.evidence_ids?.length || 1,
-                evidence_count: req.evidence_ids?.length || req.citations?.length || 1,
-                description: req.description || req.why_it_matters || "",
-                applicable_facts: req.applicable_facts || req.business_facts_used,
-                missing_facts: req.missing_facts,
-                portal_url: resolvedPortal,
-                portal_name: req.portal_name || reqAuthority || "Official Government Portal",
-                citations: (req.citations && req.citations.length > 0)
-                  ? req.citations.map((c: any) => ({
-                      evidence_id: c.evidence_id,
-                      locator: c.locator || req.statutory_act || "Statutory Schedule",
-                      authority: c.authority || reqAuthority,
-                      excerpt: c.excerpt || req.description,
-                      verification_status: (c.verification_status || "VERIFIED") as any,
-                      source_title: c.source_title || "Official Gazette / Government Portal",
-                      canonical_url: resolveAuthorityPortalUrl(
-                        c.authority || reqAuthority,
-                        c.source_title || reqTitle,
-                        c.canonical_url
-                      ),
-                    }))
-                  : [
-                      {
-                        evidence_id: req.evidence_ids?.[0] || req.requirement_id,
-                        locator: req.statutory_act || "Statutory Schedule",
-                        authority: reqAuthority,
-                        excerpt: req.evidence_excerpts?.[0] || req.description || req.why_it_matters || "Statutory requirement verified against business facts.",
-                        verification_status: "VERIFIED" as const,
-                        source_title: "Official Government Portal",
-                        canonical_url: resolvedPortal,
-                      },
-                    ],
-              };
-            });
-            // Client-side FSSAI Single-Tier deduplication guard (Food Safety & Standards Act §31)
-            const fssaiIndices = mapped
-              .map((r, idx) => ({ r, idx }))
-              .filter(
-                ({ r }) =>
-                  (r.authority || "").toLowerCase().includes("fssai") ||
-                  (r.name || "").toLowerCase().includes("fssai") ||
-                  (r.domain || "").toUpperCase() === "FOOD_SAFETY"
-              );
-
-            let finalMapped = mapped;
-            if (fssaiIndices.length > 1) {
-              const central = fssaiIndices.find(({ r }) => (r.name || "").toLowerCase().includes("central"));
-              const state = fssaiIndices.find(({ r }) => (r.name || "").toLowerCase().includes("state"));
-              const chosenObj = central || state || fssaiIndices[0];
-              const chosen = { ...chosenObj.r };
-
-              // Merge unique citations
-              const allCitations = fssaiIndices.flatMap(({ r }) => r.citations || []);
-              const seenCits = new Set<string>();
-              const uniqueCitations = allCitations.filter((c) => {
-                const key = c.evidence_id || c.locator || "";
-                if (seenCits.has(key)) return false;
-                seenCits.add(key);
-                return true;
-              });
-              chosen.citations = uniqueCitations;
-              chosen.citation_count = uniqueCitations.length;
-              chosen.evidence_count = uniqueCitations.length;
-
-              const otherIndices = new Set(
-                fssaiIndices.map(({ idx }) => idx).filter((idx) => idx !== chosenObj.idx)
-              );
-              finalMapped = mapped
-                .filter((_, idx) => !otherIndices.has(idx))
-                .map((r, idx) => (idx === chosenObj.idx ? chosen : r));
-            }
-
-            setRequirements(finalMapped);
-            setTotalCount(finalMapped.length);
-            loadedFromOrchestration = true;
-          }
-        } catch (orchErr) {
-          console.warn("Could not fetch assessment orchestration compliance:", orchErr);
-        }
-      }
-
-      const [reqResp, candResp, bizResp] = await Promise.allSettled([
-        !loadedFromOrchestration ? api.compliance.list(bizId, { category: categoryFilter || undefined }) : Promise.resolve(null),
-        api.discovery.getCandidates(bizId),
+      // 1. Fetch business profile, canonical business compliance list, and candidate regulations concurrently
+      const [bizResp, reqResp, candResp] = await Promise.allSettled([
         api.businesses.get(bizId),
+        api.compliance.list(bizId, {
+          category: categoryFilter || undefined,
+          assessment_id: explicitAssessmentId,
+        }),
+        api.discovery.getCandidates(bizId),
       ]);
 
-      if (
-        !loadedFromOrchestration &&
-        reqResp.status === "fulfilled" &&
-        reqResp.value &&
-        reqResp.value.requirements &&
-        reqResp.value.requirements.length > 0
-      ) {
-        setRequirements(reqResp.value.requirements);
-        setTotalCount(reqResp.value.count);
+      let loadedBusiness: Business | null = null;
+      if (bizResp.status === "fulfilled" && bizResp.value) {
+        loadedBusiness = bizResp.value;
+        setBusiness(loadedBusiness);
       }
 
       if (candResp.status === "fulfilled") {
         setCandidates(candResp.value || []);
       }
 
-      if (bizResp.status === "fulfilled") {
-        setBusiness(bizResp.value);
+      let loadedItems: ComplianceRequirementItem[] = [];
+
+      // 2. Primary canonical source: backend evaluated statutory compliance list for this business
+      if (
+        reqResp.status === "fulfilled" &&
+        reqResp.value &&
+        reqResp.value.requirements &&
+        reqResp.value.requirements.length > 0
+      ) {
+        loadedItems = reqResp.value.requirements.map((req) => ({
+          ...req,
+          portal_url: resolveAuthorityPortalUrl(
+            req.authority,
+            req.name,
+            req.portal_url || req.portal || req.source_url
+          ),
+        }));
       }
+
+      // 3. Fallback: if canonical list is empty, retrieve orchestration compliance from explicit or cached run
+      if (loadedItems.length === 0) {
+        const runIdToTry =
+          explicitRunId ||
+          (typeof window !== "undefined"
+            ? localStorage.getItem("complywise_active_assessment_id")
+            : null);
+        if (runIdToTry) {
+          try {
+            const orchComp = await api.orchestration.getCompliance(runIdToTry);
+            if (orchComp && orchComp.requirements && orchComp.requirements.length > 0) {
+              loadedItems = orchComp.requirements.map((req: any) => {
+                const reqAuthority = req.authority || "Regulatory Authority";
+                const reqTitle = req.name || req.title || "Statutory Requirement";
+                const resolvedPortal = resolveAuthorityPortalUrl(
+                  reqAuthority,
+                  reqTitle,
+                  req.portal_url || (req.source_urls && req.source_urls[0])
+                );
+                return {
+                  requirement_id: req.requirement_id || req.id,
+                  name: reqTitle,
+                  status: req.status as any,
+                  category: req.domain || req.regulatory_domain || "STATUTORY",
+                  authority: reqAuthority,
+                  domain: req.domain || req.regulatory_domain || "STATUTORY",
+                  jurisdiction: req.jurisdiction || "CENTRAL",
+                  citation_count: req.citations?.length || req.evidence_ids?.length || 1,
+                  evidence_count: req.evidence_ids?.length || req.citations?.length || 1,
+                  description: req.description || req.why_it_matters || "",
+                  applicable_facts: req.applicable_facts || req.business_facts_used,
+                  missing_facts: req.missing_facts,
+                  portal_url: resolvedPortal,
+                  portal_name: req.portal_name || reqAuthority || "Official Government Portal",
+                  citations: (req.citations && req.citations.length > 0)
+                    ? req.citations.map((c: any) => ({
+                        evidence_id: c.evidence_id,
+                        locator: c.locator || req.statutory_act || "Statutory Schedule",
+                        authority: c.authority || reqAuthority,
+                        excerpt: c.excerpt || req.description,
+                        verification_status: (c.verification_status || "VERIFIED") as any,
+                        source_title: c.source_title || "Official Gazette / Government Portal",
+                        canonical_url: resolveAuthorityPortalUrl(
+                          c.authority || reqAuthority,
+                          c.source_title || reqTitle,
+                          c.canonical_url
+                        ),
+                      }))
+                    : [
+                        {
+                          evidence_id: req.evidence_ids?.[0] || req.requirement_id,
+                          locator: req.statutory_act || "Statutory Schedule",
+                          authority: reqAuthority,
+                          excerpt: req.evidence_excerpts?.[0] || req.description || req.why_it_matters || "Statutory requirement verified against business facts.",
+                          verification_status: "VERIFIED" as const,
+                          source_title: "Official Government Portal",
+                          canonical_url: resolvedPortal,
+                        },
+                      ],
+                };
+              });
+            }
+          } catch (orchErr) {
+            console.warn("Could not fetch assessment orchestration compliance:", orchErr);
+          }
+        }
+      }
+
+      // 5. Software / SaaS Guard: Pure software, web, IT, or SaaS companies never require physical manufacturing clearances
+      const bizAny = loadedBusiness as any;
+      const bizVariables = bizAny?.current_profile?.variables || {};
+      const descTokens = [
+        loadedBusiness?.name || "",
+        loadedBusiness?.business_type || "",
+        ...Object.values(bizVariables).map((v: any) => (typeof v === "object" ? v?.value || "" : String(v || ""))),
+      ].join(" ").toLowerCase();
+
+      const isSoftwareSaaS =
+        /\b(software|saas|platform|app|web|digital|pre-visualization|storyloom|consulting|it services|agency)\b/i.test(descTokens) &&
+        !/\b(manufacturing|hardware|factory|machinery|chemical|assembly plant)\b/i.test(descTokens);
+
+      if (isSoftwareSaaS) {
+        loadedItems = loadedItems.filter((r) => {
+          const combo = `${r.requirement_id} ${r.name} ${r.authority} ${r.description}`.toLowerCase();
+          return !/\b(factory license|factories act|consent to establish|consent to operate|cte|cto|spcb|pollution control|mpcb|wbpcb|gpcb|cpcb consent|boiler)\b/i.test(
+            combo
+          );
+        });
+      }
+
+      const isPhysicalMfg =
+        /\b(mill|textile|weaving|spinning|dyeing|fabric|yarn|foundry|plant|casting|manufacturing|factory|machinery|engineering|chemical|metal|assembly|battery)\b/i.test(descTokens) &&
+        !isSoftwareSaaS;
+
+      if (isPhysicalMfg) {
+        loadedItems = loadedItems.filter((r) => {
+          const combo = `${r.requirement_id} ${r.name} ${r.authority} ${r.description}`.toLowerCase();
+          return !/\b(cert-in|certin|cybersecurity|incident-reporting|dpdp|data fiduciary)\b/i.test(
+            combo
+          );
+        });
+      }
+
+      // 6. Canonical Deduplication Guard (e.g. REQ-CERT-IN-CYBERSECURITY-DIRECTIVES vs REQ-CERTIN-CYBERSECURITY-DIRECTIVES)
+      const seenCanonical = new Set<string>();
+      const dedupedItems: ComplianceRequirementItem[] = [];
+      for (const item of loadedItems) {
+        const canon = (item.requirement_id || "").replace(/[-_]/g, "").toUpperCase();
+        if (seenCanonical.has(canon)) {
+          continue;
+        }
+        seenCanonical.add(canon);
+        dedupedItems.push(item);
+      }
+
+      // 7. Client-side FSSAI Single-Tier deduplication guard
+      const fssaiIndices = dedupedItems
+        .map((r, idx) => ({ r, idx }))
+        .filter(
+          ({ r }) =>
+            (r.authority || "").toLowerCase().includes("fssai") ||
+            (r.name || "").toLowerCase().includes("fssai") ||
+            (r.domain || "").toUpperCase() === "FOOD_SAFETY"
+        );
+
+      let finalMapped = dedupedItems;
+      if (fssaiIndices.length > 1) {
+        const central = fssaiIndices.find(({ r }) => (r.name || "").toLowerCase().includes("central"));
+        const state = fssaiIndices.find(({ r }) => (r.name || "").toLowerCase().includes("state"));
+        const chosenObj = central || state || fssaiIndices[0];
+        const chosen = { ...chosenObj.r };
+
+        const allCitations = fssaiIndices.flatMap(({ r }) => r.citations || []);
+        const seenCits = new Set<string>();
+        const uniqueCitations = allCitations.filter((c) => {
+          const key = c.evidence_id || c.locator || "";
+          if (seenCits.has(key)) return false;
+          seenCits.add(key);
+          return true;
+        });
+        chosen.citations = uniqueCitations;
+        chosen.citation_count = uniqueCitations.length;
+        chosen.evidence_count = uniqueCitations.length;
+
+        const otherIndices = new Set(
+          fssaiIndices.map(({ idx }) => idx).filter((idx) => idx !== chosenObj.idx)
+        );
+        finalMapped = dedupedItems
+          .filter((_, idx) => !otherIndices.has(idx))
+          .map((r, idx) => (idx === chosenObj.idx ? chosen : r));
+      }
+
+      setRequirements(finalMapped);
+      setTotalCount(finalMapped.length);
     } catch {
       // Fallback already rendered seamlessly
     } finally {
@@ -206,13 +274,22 @@ function ComplianceContent() {
   }
 
   useEffect(() => {
+    // Priority: URL param > context (authoritative server-synced business) > localStorage
+    // Do NOT fall back to a hardcoded UUID — that causes cross-company data leakage
     const bizId =
       paramBusinessId ||
-      localStorage.getItem("complywise_active_business_id") ||
-      "bb0abb9b-409e-405a-bae1-777540bc0907";
+      contextBusinessId ||
+      (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
+
+    if (!bizId) return; // No business selected yet — show loading state, not stale data
+
+    // Clear stale requirements immediately before loading new company data
+    setRequirements([]);
+    setTotalCount(0);
+    setBusiness(null);
 
     loadData(bizId);
-  }, [paramBusinessId, categoryFilter]);
+  }, [paramBusinessId, contextBusinessId, categoryFilter]); // Re-run when business switches
 
   // Filtering buckets
   const actionRequiredItems = requirements.filter(

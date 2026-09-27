@@ -147,6 +147,27 @@ def match_business_schemes(
         if not (is_central or is_state_match):
             continue
 
+        # 1a. Regional Scope Exclusion (UNNATI is strictly for North Eastern states)
+        if "UNNATI" in scheme.scheme_code or "NORTH_EAST" in (ver.title or "").upper():
+            ne_states = {
+                "ASSAM", "ARUNACHAL_PRADESH", "MANIPUR", "MEGHALAYA", "MIZORAM",
+                "NAGALAND", "TRIPURA", "SIKKIM", "AS", "AR", "MN", "ML", "MZ", "NL", "TR", "SK"
+            }
+            if raw_state not in ne_states:
+                continue
+
+        # 1b. Non-manufacturing service exclusions
+        if not context.is_manufacturing:
+            # Physical cluster programs and manufacturing certifications do not apply
+            if "CLUSTER" in ver.title.upper() or "MSE-CDP" in scheme.scheme_code or "ZED" in scheme.scheme_code:
+                continue
+            # Physical merchandise export duty drawback (RoDTEP) does not apply to software
+            if "RODTEP" in scheme.scheme_code:
+                continue
+            # PMEGP/CMEGP micro employment subsidies do not apply to software/SaaS
+            if "PMEGP" in scheme.scheme_code or "CMEGP" in scheme.scheme_code:
+                continue
+
         # 2. MSME Scale Match
         scheme_scales = ver.scale_match or []
         if scheme_scales and msme_scale != "UNKNOWN":
@@ -229,6 +250,41 @@ def match_business_schemes(
             "is_state_specific": not is_central,
             "is_active": ver.is_active,
         })
+
+    def _compute_relevance(s: dict[str, Any]) -> int:
+        code = s["scheme_code"].upper()
+        title = s["title"].lower()
+        score = 50
+        if not s["is_universal"]:
+            score += 20
+        if s.get("is_state_specific"):
+            score += 40
+        if not context.is_manufacturing:
+            if "STARTUP" in code or "SEED" in title or "SISFS" in code:
+                score += 45
+            elif "IPR" in code or "INTELLECTUAL PROPERTY" in title:
+                score += 40
+            elif "CGTMSE" in code or "CREDIT GUARANTEE" in title:
+                score += 35
+            elif "TREDS" in code or "FACTORING" in title:
+                score += 30
+            elif "SAMADHAAN" in code:
+                score += 25
+        else:
+            if "PSI" in code or "PACKAGE SCHEME" in title:
+                score += 40
+            elif "ZED" in code:
+                score += 35
+            elif "CGTMSE" in code:
+                score += 30
+            elif "CLUSTER" in title or "CDP" in code:
+                score += 25
+        return score
+
+    matched_schemes.sort(key=_compute_relevance, reverse=True)
+    if not context.is_manufacturing:
+        # Non-manufacturing / Software / SaaS: cap at top 5 high-impact tech & financial support schemes
+        matched_schemes = matched_schemes[:5]
 
     universal_count = sum(1 for s in matched_schemes if s["is_universal"])
     sector_specific_count = len(matched_schemes) - universal_count

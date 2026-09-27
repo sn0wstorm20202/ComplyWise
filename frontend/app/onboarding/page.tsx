@@ -858,16 +858,26 @@ function OnboardingContent() {
         false // carry_forward: false for initial profile submission
       );
 
-      // Ensure Assessment exists and save step 1 state
+      // Ensure Assessment exists and save step 1 state (IDEMPOTENT: reuse existing IN_PROGRESS assessment)
       let currAssessment = assessment;
       if (!currAssessment) {
         const existingList = await api.businesses.getAssessments(currentBiz.id).catch(() => []);
-        const nextNum = existingList.length + 1;
-        currAssessment = await api.businesses.createAssessment(currentBiz.id, {
-          title: `Assessment #${nextNum} — ${currentBiz.name}`,
-        });
-        setAssessment(currAssessment);
-        localStorage.setItem("complywise_active_assessment_id", currAssessment.id);
+        // Reuse an existing IN_PROGRESS or DRAFT assessment instead of creating a duplicate
+        const existingActive = (existingList as any[]).find(
+          (a: any) => a.status === "IN_PROGRESS" || a.status === "DRAFT"
+        );
+        if (existingActive) {
+          currAssessment = existingActive;
+        } else {
+          const nextNum = existingList.length + 1;
+          currAssessment = await api.businesses.createAssessment(currentBiz.id, {
+            title: `Assessment #${nextNum} — ${currentBiz.name}`,
+          });
+        }
+        if (currAssessment) {
+          setAssessment(currAssessment);
+          localStorage.setItem("complywise_active_assessment_id", currAssessment.id);
+        }
       }
 
       const profileState = {
@@ -882,15 +892,17 @@ function OnboardingContent() {
         employeeCount,
       };
 
-      const updatedStepState = {
-        ...(currAssessment.step_state || {}),
-        profile: profileState,
-      };
+      if (currAssessment) {
+        const updatedStepState = {
+          ...(currAssessment.step_state || {}),
+          profile: profileState,
+        };
 
-      const updatedAss = await api.businesses.updateAssessment(currentBiz.id, currAssessment.id, {
-        current_step: 2,
-        step_state: updatedStepState,
-      });
+        await api.businesses.updateAssessment(currentBiz.id, currAssessment.id, {
+          current_step: 2,
+          step_state: updatedStepState,
+        });
+      }
       updateProfile({
         businessName: trimmedName,
         businessType: legalConstitution || "Private Limited Company",
@@ -1889,7 +1901,45 @@ function OnboardingContent() {
                 setActiveQuestionIndex(14);
                 if (runId) {
                   try {
-                    await api.orchestration.submitAnswer(runId, { answers: preset.presetAnswers });
+                    // Build a type-safe answers dict keyed by actual question IDs, not profile
+                    // variable keys. This prevents the 'Invalid boolean value: 450' error caused
+                    // by submitting profile-variable-keyed numeric values against BOOLEAN questions.
+                    const typeSafeAnswers: Record<string, unknown> = {};
+                    // Use a snapshot of current questions from the already-updated state above
+                    const currentQs = orchestrationQuestions;
+                    currentQs.forEach((q, idx) => {
+                      const fallbackKey = `Q${String(idx + 1).padStart(2, "0")}`;
+                      let val: unknown =
+                        preset.presetAnswers[q.question_id] ??
+                        preset.presetAnswers[fallbackKey];
+
+                      // Coerce to the question's declared type
+                      if (q.answer_type === "BOOLEAN") {
+                        if (typeof val === "boolean") {
+                          // already correct
+                        } else if (typeof val === "number") {
+                          val = val !== 0;
+                        } else if (typeof val === "string") {
+                          val = ["true", "yes", "y", "1"].includes(val.toLowerCase());
+                        } else {
+                          val = true; // safe boolean default
+                        }
+                      } else if (q.answer_type === "NUMBER" || q.answer_type === "PERCENTAGE") {
+                        if (typeof val !== "number") {
+                          val = typeof val === "string" ? parseFloat(val) || 100 : 100;
+                        }
+                      } else if (val === undefined || val === null) {
+                        val = "Standard";
+                      }
+
+                      if (val !== undefined && val !== null) {
+                        typeSafeAnswers[q.question_id] = val;
+                      }
+                    });
+
+                    if (Object.keys(typeSafeAnswers).length > 0) {
+                      await api.orchestration.submitAnswer(runId, { answers: typeSafeAnswers });
+                    }
                   } catch (err) {
                     console.warn("Background prefill submission error:", err);
                   }

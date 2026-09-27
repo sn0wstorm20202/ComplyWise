@@ -1,0 +1,123 @@
+[
+  {
+    "evidence_id": "EVD-DISH-MH-FACTORIES-ACT",
+    "source_id": "SRC-DISH-MAHARASHTRA",
+    "locator": "Section 6, Factories Act, 1948 & Rules 3 to 5, Maharashtra Factories Rules, 1963",
+    "excerpt": "No site shall be used for the location of a factory and no building in a factory shall be constructed, extended or taken into use as a factory in Maharashtra employing 10 or more workers with power without prior approval of plans and grant of a factory licence from the Directorate of Industrial Safety & Health (DISH).",
+    "structured_fact": {
+      "act": "Factories Act, 1948",
+      "threshold_workers_with_power": 10,
+      "state": "MAHARASHTRA"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "1963-01-01",
+    "effective_until": null
+  },
+  {
+    "evidence_id": "EVD-MPCB-CTE-RED-TEXTILE",
+    "source_id": "SRC-MPCB-MAHARASHTRA",
+    "locator": "Section 25 of Water (P&CP) Act 1974 & Section 21 of Air (P&CP) Act 1981",
+    "excerpt": "No person shall, without the previous consent of the State Board (MPCB), establish or take any steps to establish any industry, operation or process, or any treatment and disposal system, or an extension or addition thereto, which is likely to discharge sewage or trade effluent into a stream or well or on land. Textile wet processing and dyeing is categorized as a RED category industrial activity.",
+    "structured_fact": {
+      "act": "Water Act 1974",
+      "pollution_category": "RED",
+      "state": "MAHARASHTRA"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "1981-05-16",
+    "effective_until": null
+  },
+  {
+    "evidence_id": "EVD-MPCB-CTO-TEXTILE",
+    "source_id": "SRC-MPCB-MAHARASHTRA",
+    "locator": "Section 25 & 26 of Water (P&CP) Act 1974",
+    "excerpt": "Any person operating an industrial plant discharging trade effluent must obtain Consent to Operate (CTO) from the Maharashtra Pollution Control Board prior to commissioning commercial manufacturing shifts and effluent discharge into CETP or dedicated ETP systems.",
+    "structured_fact": {
+      "act": "Water Act 1974",
+      "consent_type": "CTO",
+      "state": "MAHARASHTRA"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "1981-05-16",
+    "effective_until": null
+  },
+  {
+    "evidence_id": "EVD-MPCB-HAZARDOUS-WASTE",
+    "source_id": "SRC-MPCB-MAHARASHTRA",
+    "locator": "Rule 6, Hazardous and Other Wastes (Management and Transboundary Movement) Rules, 2016",
+    "excerpt": "Every occupier of the facility generating, handling, or storing hazardous waste, including chemical effluent treatment plant (ETP) sludge, spent chemical containers, and textile dye residues, shall make an application to the Maharashtra Pollution Control Board for grant of statutory authorization.",
+    "structured_fact": {
+      "act": "Hazardous Waste Rules 2016",
+      "schedule": "Schedule I, Category 35.3 and 33.1",
+      "state": "MAHARASHTRA"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "2016-04-04",
+    "effective_until": null
+  },
+  {
+    "evidence_id": "EVD-MH-STEAM-BOILERS-ACT",
+    "source_id": "SRC-BOILER-MAHARASHTRA",
+    "locator": "Section 7 & 8, The Indian Boilers Act, 1923 & Maharashtra Boiler Rules, 1962",
+    "excerpt": "The owner of any boiler used in industrial processing, fabric heating, or textile dyeing shall apply to the Chief Inspector of Steam Boilers, Maharashtra, to have the boiler registered and shall obtain a valid certificate authorising the use of such boiler after hydraulic pressure testing.",
+    "structured_fact": {
+      "act": "The Indian Boilers Act, 1923",
+      "state": "MAHARASHTRA"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "1924-01-01",
+    "effective_until": null
+  },
+  {
+    "evidence_id": "EVD-TEXTILES-COMMITTEE-CESS",
+    "source_id": "SRC-TEXTILES-COMMITTEE",
+    "locator": "Section 5A, Textiles Committee Act, 1963",
+    "excerpt": "There shall be levied and collected as a cess for the purposes of this Act a duty of excise on all textiles and textile machinery manufactured in India. Commercial spinning and weaving mills are mandated to submit monthly statistical returns and remit statutory cess to the Textiles Committee.",
+    "structured_fact": {
+      "act": "Textiles Committee Act, 1963",
+      "sector": "TEXTILE"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "1964-02-20",
+    "effective_until": null
+  },
+  {
+    "evidence_id": "EVD-EPFO-20-WORKERS",
+    "source_id": "SRC-EPFO-INDIA",
+    "locator": "Section 1(3)(a), Employees' Provident Funds and Miscellaneous Provisions Act, 1952",
+    "excerpt": "This Act applies to every establishment which is a factory engaged in any industry specified in Schedule I (including textiles, cotton, spinning and weaving) and in which twenty or more persons are employed.",
+    "structured_fact": {
+      "act": "EPF & MP Act, 1952",
+      "threshold_workers": 20
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "1952-11-01",
+    "effective_until": null
+  },
+  {
+    "evidence_id": "EVD-ESIC-10-WORKERS",
+    "source_id": "SRC-ESIC-INDIA",
+    "locator": "Section 2(12), Employees' State Insurance Act, 1948",
+    "excerpt": "Factory means any premises including the precincts thereof whereon ten or more persons are employed or were employed on any day of the preceding twelve months, and in any part of which a manufacturing process is being carried on with the aid of power.",
+    "structured_fact": {
+      "act": "ESI Act, 1948",
+      "threshold_workers_with_power": 10
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "1948-04-19",
+    "effective_until": null
+  },
+  {
+    "evidence_id": "EVD-CGWA-GROUNDWATER-NOC",
+    "source_id": "SRC-CGWA-INDIA",
+    "locator": "Item 1.0, Guidelines to Regulate and Control Ground Water Extraction in India (2020)",
+    "excerpt": "All industrial users extracting ground water for commercial manufacturing, wet processing, or cooling purposes must obtain prior No Objection Certificate (NOC) from the Central Ground Water Authority or State Ground Water Authority.",
+    "structured_fact": {
+      "act": "Environment (Protection) Act, 1986",
+      "regulatory_body": "CGWA"
+    },
+    "verification_status": "VERIFIED",
+    "effective_from": "2020-09-24",
+    "effective_until": null
+  }
+]

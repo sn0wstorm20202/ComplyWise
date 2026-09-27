@@ -101,7 +101,7 @@ def plan_regulatory_searches(
     is_battery = bool(re.search(r"\b(battery|bms|lithium|energy storage|cell manufacturing|bess)\b", cleaned_desc))
     is_cement = (not is_battery) and bool(re.search(r"\b(cement|clinker|portland)\b", cleaned_desc))
     is_ev = bool(re.search(r"\b(ev\b|electric vehicle|charging station|evse)", cleaned_desc))
-    is_electronics = bool(re.search(r"\b(charger|adapter|electronic|inverter|converter|hardware)\b", cleaned_desc))
+    is_electronics = bool(re.search(r"\b(chargers?|adapters?|electronics?|inverters?|converters?|hardware)\b", cleaned_desc))
     is_textile = bool(re.search(r"\b(textile|dye|yarn|fabric|garment)\b", cleaned_desc))
     is_food = bool(re.search(r"\b(food|fruit|juice|agro|dairy|bakery)\b", cleaned_desc))
 

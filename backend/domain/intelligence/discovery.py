@@ -31,6 +31,7 @@ from apps.businesses.models import Business
 from apps.evidence.models import Evidence, Source
 from apps.ingestion import firecrawl
 from apps.ingestion.models import CandidateRequirement, DiscoveryRun
+from domain.acquisition import get_web_acquisition_provider, WebAcquisitionResult
 from domain.context.business_context import DerivedBusinessContext
 from domain.intelligence.context_merge import EnrichedBusinessContext
 from domain.intelligence.official_sources import (
@@ -171,15 +172,16 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
             c_url = cand["url"]
             text_body = cand.get("markdown") or ""
 
-            # If markdown was not included in search or too short, scrape page directly
+            # If markdown was not included in search or too short, scrape page via Crawlee Web Acquisition Layer
             if len(text_body.strip()) < 150:
                 try:
-                    scrape_res = firecrawl.scrape(c_url)
-                    text_body = str(scrape_res.get("markdown") or "").strip()
-                    if scrape_res.get("title") and not cand.get("title"):
-                        cand["title"] = str(scrape_res.get("title"))[:250]
+                    acquisition_provider = get_web_acquisition_provider()
+                    acq_res = acquisition_provider.fetch_page(c_url)
+                    text_body = acq_res.text_content or acq_res.markdown_content
+                    if acq_res.title and not cand.get("title"):
+                        cand["title"] = str(acq_res.title)[:250]
                 except Exception as sc_exc:
-                    logger.debug("Firecrawl scrape failed for %s: %s", c_url, sc_exc)
+                    logger.debug("Crawlee acquisition scrape failed for %s: %s", c_url, sc_exc)
 
             clean_text = sanitize_scraped_text(text_body)
             if not clean_text:

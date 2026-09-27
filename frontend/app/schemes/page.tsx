@@ -11,6 +11,7 @@ import type { SchemeVersionHistoryResponse } from "@/lib/api/schemes";
 import type { SchemeItem, SchemePipelineStatus, SchemeVersionRecord } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
 import { useBusinessContext } from "@/context/BusinessContext";
+import { resolveAuthorityPortalUrl } from "@/lib/authorityPortals";
 
 // Filter Level 1: Jurisdiction
 type JurisdictionFilter = "ALL" | "CENTRAL" | "STATE";
@@ -844,9 +845,9 @@ function SchemesContent() {
                         </button>
                       </div>
 
-                      {sc.action_url && (
+                      {Boolean(sc.action_url || resolveAuthorityPortalUrl(sc.authority, sc.title || sc.name)) && (
                         <a
-                          href={sc.action_url}
+                          href={resolveAuthorityPortalUrl(sc.authority, sc.title || sc.name, sc.action_url)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"

@@ -918,9 +918,57 @@ STATUTORY_PORTAL_REGISTRY: dict[str, dict[str, str]] = {
 
     # Foreign Trade
     "DGFT": {
-        "name": "Directorate General of Foreign Trade (DGFT) Portal",
-        "url": "https://dgft.gov.in/",
-        "description": "Directorate General of Foreign Trade Importer-Exporter Code (IEC)",
+        "name": "DGFT IEC Online Service Portal",
+        "url": "https://www.dgft.gov.in/CP/?opt=iec-service",
+        "description": "Directorate General of Foreign Trade Online Importer-Exporter Code (IEC) System",
+    },
+
+    # Cybersecurity & IT Intermediaries
+    "CERT_IN": {
+        "name": "CERT-In Official Directives & Reporting Desk",
+        "url": "https://www.cert-in.org.in/directions2022.htm",
+        "description": "Indian Computer Emergency Response Team Directives & Incident Reporting",
+    },
+
+    # Digital Data Protection
+    "DPDP": {
+        "name": "MeitY Digital Personal Data Protection Act Portal",
+        "url": "https://www.meity.gov.in/content/digital-personal-data-protection-act-2023",
+        "description": "Ministry of Electronics & Information Technology DPDP Act 2023",
+    },
+
+    # POSH & Women Welfare
+    "POSH": {
+        "name": "Ministry of Women & Child Development (POSH Guidelines)",
+        "url": "https://wcd.nic.in/act/handbook-sexual-harassment-women-workplace",
+        "description": "Handbook on Sexual Harassment of Women at Workplace Act 2013",
+    },
+
+    # Tech Schemes & MSME Growth
+    "STARTUP_INDIA": {
+        "name": "Startup India Seed Fund Portal",
+        "url": "https://seedfund.startupindia.gov.in/",
+        "description": "DPIIT Startup India Seed Fund Scheme (SISFS)",
+    },
+    "MSME_IPR": {
+        "name": "MSME Innovative IPR Assistance Portal",
+        "url": "https://innovative.msme.gov.in/Home/Ipr",
+        "description": "Ministry of MSME Intellectual Property Rights (IPR) Portal",
+    },
+    "CGTMSE": {
+        "name": "Credit Guarantee Fund Trust for MSEs (CGTMSE)",
+        "url": "https://www.cgtmse.in/Default/ViewPage/?id=1&name=AboutUs",
+        "description": "Credit Guarantee Scheme for Micro & Small Enterprises",
+    },
+    "SAMADHAAN": {
+        "name": "MSME Samadhaan Delayed Payments Portal",
+        "url": "https://samadhaan.msme.gov.in/MyMsme/MSEFC/MSEFC_Welcome.aspx",
+        "description": "Delayed Payment Monitoring System (MSEFC)",
+    },
+    "TREDS": {
+        "name": "TReDS Institutional Factoring Exchange (RXIL)",
+        "url": "https://www.rxil.in/",
+        "description": "Trade Receivables Discounting System Portal",
     },
 
     # Labor, Factories & Safety (DISH)
@@ -967,7 +1015,7 @@ STATUTORY_PORTAL_REGISTRY: dict[str, dict[str, str]] = {
     },
     "UDYAM": {
         "name": "Udyam MSME Registration Portal",
-        "url": "https://udyamregistration.gov.in/",
+        "url": "https://udyamregistration.gov.in/Government-India/Ministry-MSME-registration.htm",
         "description": "Official Ministry of MSME Registration Portal",
     },
 }
@@ -1033,8 +1081,38 @@ def resolve_statutory_portal(
     if "BIS" in auth_upper or "CRS" in req_upper:
         return STATUTORY_PORTAL_REGISTRY["BIS_CRS"]
 
-    if "DGFT" in auth_upper or "IEC" in req_upper or "IMPORT" in req_upper:
+    if "DGFT" in auth_upper or "IEC" in req_upper or "IMPORT" in req_upper or "EXPORT" in req_upper:
         return STATUTORY_PORTAL_REGISTRY["DGFT"]
+
+    if "CERT" in auth_upper or "CERT-IN" in req_upper or "CERTIN" in req_upper or "CYBER" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["CERT_IN"]
+
+    if "DPDP" in req_upper or "DATA PRIVACY" in req_upper or "DATA PROTECTION" in req_upper or "DATA FIDUCIARY" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["DPDP"]
+
+    if "POSH" in req_upper or "SEXUAL HARASSMENT" in req_upper or "INTERNAL COMMITTEE" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["POSH"]
+
+    if "STARTUP" in req_upper or "SEED" in req_upper or "SISFS" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["STARTUP_INDIA"]
+
+    if "IPR" in req_upper or "PATENT" in req_upper or "TRADEMARK" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["MSME_IPR"]
+
+    if "CGTMSE" in req_upper or "CREDIT GUARANTEE" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["CGTMSE"]
+
+    if "SAMADHAAN" in req_upper or "DELAYED PAYMENT" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["SAMADHAAN"]
+
+    if "TREDS" in req_upper or "RXIL" in req_upper or "FACTORING" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["TREDS"]
+
+    if "UDYAM" in req_upper or "MSME REGISTRATION" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["UDYAM"]
+
+    if "MCA" in auth_upper or "MCA" in req_upper or "INCORPORATION" in req_upper or "ROC" in req_upper:
+        return STATUTORY_PORTAL_REGISTRY["MCA"]
 
     if "KSPCB" in auth_upper or ("KARNATAKA" in req_upper and "CONSENT" in req_upper):
         return STATUTORY_PORTAL_REGISTRY["KSPCB"]
@@ -1097,9 +1175,17 @@ STATUTORY_PORTALS["DISH_CENTRAL"] = "https://shramsuvidha.gov.in/"
 STATUTORY_PORTALS["WBPCB"] = "https://wbpcb.gov.in/"
 STATUTORY_PORTALS["WB_FACTORIES"] = "https://wbfactories.gov.in/"
 STATUTORY_PORTALS["CPCB"] = "https://cpcb.nic.in/"
-STATUTORY_PORTALS["DGFT"] = "https://dgft.gov.in/"
+STATUTORY_PORTALS["DGFT"] = "https://www.dgft.gov.in/CP/?opt=iec-service"
+STATUTORY_PORTALS["CERT_IN"] = "https://www.cert-in.org.in/directions2022.htm"
+STATUTORY_PORTALS["DPDP"] = "https://www.meity.gov.in/content/digital-personal-data-protection-act-2023"
+STATUTORY_PORTALS["POSH"] = "https://wcd.nic.in/act/handbook-sexual-harassment-women-workplace"
 STATUTORY_PORTALS["BIS"] = "https://bis.gov.in/"
-STATUTORY_PORTALS["MEITY_DPDP"] = "https://www.meity.gov.in/"
+STATUTORY_PORTALS["MEITY_DPDP"] = "https://www.meity.gov.in/content/digital-personal-data-protection-act-2023"
 STATUTORY_PORTALS["INDIA_GOV"] = "https://www.nsws.gov.in/"
+STATUTORY_PORTALS["NSWS"] = "https://www.nsws.gov.in/"
+STATUTORY_PORTALS["OCMMS"] = "https://ocmms.nic.in"
+STATUTORY_PORTALS["DISH"] = "https://dish.gov.in"
+STATUTORY_PORTALS["STARTUP_INDIA"] = "https://seedfund.startupindia.gov.in/"
+STATUTORY_PORTALS["CHAMPIONS"] = "https://champions.gov.in"
 
 

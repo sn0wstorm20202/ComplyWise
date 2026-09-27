@@ -1,0 +1,274 @@
+[
+  {
+    "requirement_id": "REQ-MH-FACTORY-LICENSE",
+    "name": "Factory License (Maharashtra)",
+    "category": "LICENCE",
+    "authority": "Directorate of Industrial Safety & Health (DISH Maharashtra)",
+    "jurisdiction": "MAHARASHTRA",
+    "domain": "LABOR",
+    "description": "Statutory occupational safety and factory licensing under Section 6 of Factories Act, 1948 and Maharashtra Factories Rules, 1963 for industrial premises employing 10 or more workers with power.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-DISH-MH-FACTORIES-ACT"],
+    "metadata": {
+      "portal": "https://mahakamgar.gov.in",
+      "portal_name": "DISH Maharashtra Single Window Portal",
+      "statutory_fee": "Rs. 10,000 to Rs. 40,000 based on worker count and installed electrical horsepower",
+      "validity_period": "1 to 10 years (renewable)",
+      "required_documents": [
+        "Form 1 Application for factory plan approval",
+        "Sectional elevation and machinery layout drawings signed by chartered structural engineer",
+        "Structural stability certificate signed by authorized competent person",
+        "MIDC land possession letter or registered industrial lease deed",
+        "MSEDCL industrial power sanction letter and connected load certificate",
+        "NOC from Directorate of Maharashtra Fire Services",
+        "List of plant directors/partners with identity and address proofs"
+      ],
+      "application_steps": [
+        "Register on Maharashtra Kamgar portal (mahakamgar.gov.in)",
+        "Submit factory plan approval dossier in Form 1 with chartered structural engineer stability certificate",
+        "Upon plan approval, complete plant machinery installation and safety perimeter guards",
+        "Submit Form 2 Notice of Occupation at least 15 days before commencement of manufacturing shifts",
+        "Pay statutory licensing fee via GRAS payment gateway",
+        "Joint inspection by DISH Factory Inspector and download digitally signed Factory License"
+      ]
+    }
+  },
+  {
+    "requirement_id": "REQ-MPCB-CTE",
+    "name": "MPCB Consent to Establish (CTE)",
+    "category": "CONSENT",
+    "authority": "Maharashtra Pollution Control Board (MPCB)",
+    "jurisdiction": "MAHARASHTRA",
+    "domain": "ENVIRONMENT",
+    "description": "Statutory environmental clearance under Section 25 of Water Act 1974 & Section 21 of Air Act 1981 prior to site construction, machinery installation, or effluent generation in Maharashtra.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-MPCB-CTE-RED-TEXTILE"],
+    "metadata": {
+      "portal": "https://ecmpcb.in",
+      "portal_name": "MPCB Electronic Consent Management System (e-CMP)",
+      "statutory_fee": "Rs. 25,000 to Rs. 1,00,000 based on gross capital investment",
+      "validity_period": "5 years or until commercial plant commissioning",
+      "required_documents": [
+        "Detailed Project Report (DPR) with industrial water balance diagram",
+        "Effluent Treatment Plant (ETP) engineering blueprint and chemical process flow chart",
+        "Chartered Accountant Gross Capital Investment Certificate",
+        "MIDC allotment letter / land title deed",
+        "Air pollution control equipment (APCM) design for boiler and generator stacks"
+      ],
+      "application_steps": [
+        "Log in to MPCB e-CMP portal (ecmpcb.in)",
+        "Select industrial classification (Red Category for textile dyeing/wet processing)",
+        "Upload DPR, water balance diagram, and ETP engineering design",
+        "Pay consent fees based on gross capital investment",
+        "Regional Officer conducts siting inspection and MPCB Member Secretary grants CTE"
+      ]
+    }
+  },
+  {
+    "requirement_id": "REQ-MPCB-CTO",
+    "name": "MPCB Consent to Operate (CTO)",
+    "category": "CONSENT",
+    "authority": "Maharashtra Pollution Control Board (MPCB)",
+    "jurisdiction": "MAHARASHTRA",
+    "domain": "ENVIRONMENT",
+    "description": "Mandatory operational environmental clearance under Section 25/26 of Water Act 1974 & Section 21 of Air Act 1981 required prior to commercial production shifts and trade effluent discharge.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-MPCB-CTO-TEXTILE"],
+    "metadata": {
+      "portal": "https://ecmpcb.in",
+      "portal_name": "MPCB Electronic Consent Management System (e-CMP)",
+      "statutory_fee": "Rs. 25,000 to Rs. 75,000 annually based on gross capital investment",
+      "validity_period": "1 to 5 years (renewable)",
+      "required_documents": [
+        "Copy of previously granted Consent to Establish (CTE)",
+        "Commissioning certificate of Effluent Treatment Plant (ETP) / CETP membership proof",
+        "NABL accredited treated effluent laboratory analysis report",
+        "Stack emission monitoring report from MPCB approved laboratory",
+        "Environmental audit statement (Form V)"
+      ],
+      "application_steps": [
+        "Apply for Consent to Operate in Form I on MPCB e-CMP portal 60 days prior to commissioning",
+        "Upload ETP commissioning certificate and CETP discharge agreement",
+        "Submit treated effluent and stack emission laboratory test results",
+        "MPCB Field Officer conducts compliance verification inspection",
+        "Receive digitally signed Consent to Operate order"
+      ]
+    }
+  },
+  {
+    "requirement_id": "REQ-MPCB-HAZARDOUS-WASTE",
+    "name": "MPCB Hazardous Waste Authorization",
+    "category": "AUTHORIZATION",
+    "authority": "Maharashtra Pollution Control Board (MPCB)",
+    "jurisdiction": "MAHARASHTRA",
+    "domain": "ENVIRONMENT",
+    "description": "Statutory authorization under Rule 6 of Hazardous and Other Wastes (Management & Transboundary Movement) Rules 2016 for generation, storage, and disposal of chemical sludge, spent dyes, and contaminated containers.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-MPCB-HAZARDOUS-WASTE"],
+    "metadata": {
+      "portal": "https://ecmpcb.in",
+      "portal_name": "MPCB e-CMP Portal (Hazardous Waste Management)",
+      "statutory_fee": "Rs. 7,500 to Rs. 20,000 co-terminus with Consent to Operate",
+      "validity_period": "5 years (renewable)",
+      "required_documents": [
+        "Form 1 Application for Hazardous Waste Authorization",
+        "Agreement with Common Hazardous Waste Treatment, Storage & Disposal Facility (CHWTSDF)",
+        "Layout drawing of hazardous waste storage shed with impervious flooring and leachate collection",
+        "Hazardous waste generation manifest and record register (Form 3)"
+      ],
+      "application_steps": [
+        "Execute agreement with authorized CHWTSDF operator (e.g. MEPL Ranjangaon/Taloja)",
+        "Submit Form 1 application for hazardous waste authorization concurrently with CTO on MPCB portal",
+        "Inspect storage shed and emergency spill kits",
+        "Obtain combined Consent to Operate and Hazardous Waste Authorization"
+      ]
+    }
+  },
+  {
+    "requirement_id": "REQ-MH-BOILER-REGISTRATION",
+    "name": "Industrial Steam Boiler Registration & Certificate",
+    "category": "LICENCE",
+    "authority": "Directorate of Steam Boilers, Government of Maharashtra",
+    "jurisdiction": "MAHARASHTRA",
+    "domain": "MANUFACTURING",
+    "description": "Statutory registration, inspection, and fitness certification under Section 7 & 8 of The Indian Boilers Act, 1923 and Maharashtra Boiler Rules for industrial steam boilers used in textile dyeing, drying, and wet processing.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-MH-STEAM-BOILERS-ACT"],
+    "metadata": {
+      "portal": "https://mahaboiler.gov.in",
+      "portal_name": "Maharashtra Directorate of Steam Boilers Portal",
+      "statutory_fee": "Rs. 3,500 to Rs. 15,000 depending on boiler heating surface area",
+      "validity_period": "12 months (requires annual hydraulic inspection)",
+      "required_documents": [
+        "Manufacturer Form II, Form III, and Form IV inspection certificates",
+        "Steam pipeline layout drawing and design approval from Chief Inspector of Boilers",
+        "Welder qualification certificates from accredited testing agency",
+        "Non-destructive testing (NDT) and radiography test reports",
+        "Boiler Operation Engineer (BOE) / certified boiler attendant appointment letters"
+      ],
+      "application_steps": [
+        "Submit steam piping drawings and boiler specifications on mahaboiler.gov.in portal",
+        "Erect boiler and steam piping through certified boiler erector",
+        "Inspector of Boilers conducts hydraulic pressure test at 1.5 times working pressure",
+        "Issue of Registry Number and provisional order for commercial operation",
+        "Issue of Certificate in Form VI for 12 months"
+      ]
+    }
+  },
+  {
+    "requirement_id": "REQ-TEXTILE-COMMITTEE-CESS",
+    "name": "Textiles Committee Statutory Cess & Inspection",
+    "category": "COMPLIANCE",
+    "authority": "Textiles Committee, Ministry of Textiles, Government of India",
+    "jurisdiction": "CENTRAL",
+    "domain": "MANUFACTURING",
+    "description": "Mandatory registration, monthly statistical production returns, and cess remittance under Section 5A of Textiles Committee Act, 1963 for commercial spinning and weaving mills.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-TEXTILES-COMMITTEE-CESS"],
+    "metadata": {
+      "portal": "https://textilescommittee.nic.in",
+      "portal_name": "Textiles Committee Official Portal",
+      "statutory_fee": "0.05% ad-valorem statutory cess on value of manufactured textiles",
+      "validity_period": "Continuous monthly statutory filing",
+      "required_documents": [
+        "Entity registration certificate / Udyam MSME certificate",
+        "Monthly production register of yarn spun and fabric woven",
+        "Monthly sales invoices and excise valuation records",
+        "Quarterly Textiles Committee Return in Form A"
+      ],
+      "application_steps": [
+        "Register mill with Regional Office of Textiles Committee (Ichalkaranji/Mumbai/Solapur)",
+        "Obtain mill registration code",
+        "Submit monthly production and dispatch returns online",
+        "Remit statutory cess through Bharatkosh electronic gateway"
+      ]
+    }
+  },
+  {
+    "requirement_id": "REQ-EPF-REGISTRATION",
+    "name": "Employees' Provident Fund (EPF) Registration",
+    "category": "REGISTRATION",
+    "authority": "Employees' Provident Fund Organisation (EPFO), Ministry of Labour and Employment",
+    "jurisdiction": "CENTRAL",
+    "domain": "LABOR",
+    "description": "Mandatory statutory registration and monthly provident fund contribution under Employees' Provident Funds and Miscellaneous Provisions Act, 1952 for factories employing 20 or more workers.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-EPFO-20-WORKERS"],
+    "metadata": {
+      "portal": "https://shramsuvidha.gov.in",
+      "portal_name": "Shram Suvidha Unified Portal / EPFO Unified Portal",
+      "statutory_fee": "Nil statutory filing fee; 12% employer + 12% employee statutory monthly contribution",
+      "validity_period": "Permanent registration",
+      "required_documents": [
+        "Entity PAN and Certificate of Incorporation / Partnership Deed",
+        "Factory License or Udyam Registration Certificate",
+        "Specimen signature of authorized signatory with digital signature certificate (DSC)",
+        "Employee wage register showing gross wages and bank details"
+      ],
+      "application_steps": [
+        "Apply for EPF establishment code on Shram Suvidha portal (shramsuvidha.gov.in)",
+        "Submit entity details and digital signature certificate (DSC)",
+        "Receive 15-digit alphanumeric EPF Establishment Code",
+        "Generate Universal Account Numbers (UAN) for all 180 factory workers",
+        "File monthly Electronic Challan cum Return (ECR) by the 15th of each month"
+      ]
+    }
+  },
+  {
+    "requirement_id": "REQ-ESI-REGISTRATION",
+    "name": "Employees' State Insurance (ESI) Registration",
+    "category": "REGISTRATION",
+    "authority": "Employees' State Insurance Corporation (ESIC), Ministry of Labour and Employment",
+    "jurisdiction": "CENTRAL",
+    "domain": "LABOR",
+    "description": "Mandatory medical insurance and social security registration under Employees' State Insurance Act, 1948 for factories employing 10 or more workers in implemented industrial areas.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-ESIC-10-WORKERS"],
+    "metadata": {
+      "portal": "https://shramsuvidha.gov.in",
+      "portal_name": "Shram Suvidha / ESIC Unified Portal",
+      "statutory_fee": "Nil statutory filing fee; 3.25% employer + 0.75% employee monthly contribution for wages <= Rs. 21,000",
+      "validity_period": "Permanent registration",
+      "required_documents": [
+        "Entity PAN, GSTIN, and Factory License",
+        "Proof of address of factory premises (electricity bill / lease deed)",
+        "List of all factory workers with date of appointment and monthly wages",
+        "Bank cancelled cheque of entity"
+      ],
+      "application_steps": [
+        "Apply for 17-digit ESIC Employer Code on Shram Suvidha portal",
+        "Register all eligible factory workers and issue e-Pehchan insurance cards",
+        "Deduct and remit monthly statutory contributions by the 15th of every month via SBI payment gateway"
+      ]
+    }
+  },
+  {
+    "requirement_id": "REQ-CGWA-NOC-WATER-EXTRACTION",
+    "name": "Central Ground Water Authority NOC for Ground Water Abstraction",
+    "category": "APPROVAL",
+    "authority": "Central Ground Water Authority (CGWA), Ministry of Jal Shakti",
+    "jurisdiction": "CENTRAL",
+    "domain": "ENVIRONMENT",
+    "description": "Mandatory prior No Objection Certificate (NOC) for industrial abstraction of groundwater via borewells or tubewells for textile dyeing, wet processing, and boiler feed water.",
+    "status": "PUBLISHED",
+    "evidence_refs": ["EVD-CGWA-GROUNDWATER-NOC"],
+    "metadata": {
+      "portal": "https://cgwa-noc.gov.in",
+      "portal_name": "CGWA NOC Portal for Ground Water Abstraction",
+      "statutory_fee": "Rs. 10,000 application fee plus ground water abstraction charges based on quantum (m3/day)",
+      "validity_period": "3 years (renewable)",
+      "required_documents": [
+        "Detailed hydrogeological report and industrial water balance flowchart",
+        "Piezometer borehole design and telemetry digital water flow meter specifications",
+        "Rainwater harvesting and artificial recharge proposal plan",
+        "Consent to Establish / Operate from Maharashtra Pollution Control Board"
+      ],
+      "application_steps": [
+        "Submit online application on CGWA portal (cgwa-noc.gov.in)",
+        "Upload hydrogeological report, water balance, and rainwater recharge plan",
+        "Install tamper-proof digital water flow meter with telemetry on all borewells",
+        "Pay ground water abstraction charges and receive CGWA NOC"
+      ]
+    }
+  }
+]

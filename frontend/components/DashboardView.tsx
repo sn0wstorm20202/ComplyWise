@@ -63,12 +63,12 @@ export function DashboardView({
   onNavigateToView,
   onOpenNewQuery,
 }: DashboardViewProps) {
-  const { profile, dashboardData, liveDashboardSummary } = useBusinessContext();
+  const { profile, dashboardData, liveDashboardSummary, isDemoMode } = useBusinessContext();
   const { user } = useAuth();
   const { t } = useLanguage();
 
-  const userName = user?.full_name || profile?.officer || "Somsubhra Dalui";
-  const activeCompanyName = profile?.businessName || "Eastern Smart Devices Private Limited";
+  const userName = user?.full_name || profile?.officer || "User";
+  const activeCompanyName = profile?.businessName || "Your Company";
   const certificateNumber = getStatutoryCertificate(activeCompanyName, profile?.bisRegistration);
 
   // Slide-over drawers & modal states
@@ -76,22 +76,75 @@ export function DashboardView({
   const [requirementsDrawerOpen, setRequirementsDrawerOpen] = useState(false);
   const [actionsDrawerOpen, setActionsDrawerOpen] = useState(false);
   const [dateRangeModalOpen, setDateRangeModalOpen] = useState(false);
-  const [selectedDateRange, setSelectedDateRange] = useState("20–27 Jan 2025");
+  const [selectedDateRange, setSelectedDateRange] = useState("Current Period");
+
+  // For live (non-demo) users, derive real or empty data from backend summary
+  // For demo users, use the rich demo dataset for exploration
+  const liveActivityData = useMemo(() => {
+    if (isDemoMode) return dashboardData.activity;
+    // Real user: show empty state — no fake Mon/Wed/Fri/Sat bars
+    return {
+      weeklyTasks: 0,
+      growthPercentage: "—",
+      maxTasks: 10,
+      daily: [
+        { day: "Mon", tasks: 0, isHighlight: false, dateStr: "" },
+        { day: "Tue", tasks: 0, isHighlight: false, dateStr: "" },
+        { day: "Wed", tasks: 0, isHighlight: false, dateStr: "" },
+        { day: "Thu", tasks: 0, isHighlight: false, dateStr: "" },
+        { day: "Fri", tasks: 0, isHighlight: false, dateStr: "" },
+        { day: "Sat", tasks: 0, isHighlight: false, dateStr: "" },
+        { day: "Sun", tasks: 0, isHighlight: false, dateStr: "" },
+      ],
+    };
+  }, [isDemoMode, dashboardData.activity]);
+
+  const liveDocumentsData = useMemo(() => {
+    if (isDemoMode) return dashboardData.documents;
+    // Real user: use backend summary data, or real zeros
+    return {
+      totalCount: liveDashboardSummary?.total_documents_needed ?? 0,
+      onTrackCount: 0,
+      changeThisWeek: "No uploads yet",
+      verifiedPercentage: 0,
+      underReviewPercentage: 0,
+    };
+  }, [isDemoMode, dashboardData.documents, liveDashboardSummary]);
+
+  const liveActionsData = useMemo(() => {
+    if (isDemoMode) return dashboardData.actions;
+    // Real user: derive from live backend summary
+    return {
+      openCount: liveDashboardSummary?.priority_actions?.length ?? 0,
+      changeFromLastWeek: "—",
+      highPriorityCount: 0,
+      totalCount: liveDashboardSummary?.priority_actions?.length ?? 0,
+      timeline: [],
+      items: [],
+    };
+  }, [isDemoMode, dashboardData.actions, liveDashboardSummary]);
 
   const dynamicCategoryBreakdown = useMemo(() => {
-    const breakdown = { ...dashboardData.categoryBreakdown };
-    if (
-      liveDashboardSummary?.compliance_readiness !== undefined &&
-      liveDashboardSummary?.compliance_readiness !== null &&
-      breakdown.Overall
-    ) {
-      breakdown.Overall = {
-        ...breakdown.Overall,
-        healthPercentage: liveDashboardSummary.compliance_readiness,
-      };
+    if (isDemoMode) {
+      return { ...dashboardData.categoryBreakdown };
     }
-    return breakdown;
-  }, [dashboardData.categoryBreakdown, liveDashboardSummary]);
+    const readiness =
+      liveDashboardSummary?.compliance_readiness !== undefined &&
+      liveDashboardSummary?.compliance_readiness !== null
+        ? liveDashboardSummary.compliance_readiness
+        : 0;
+    return {
+      Overall: {
+        category: "Overall",
+        healthPercentage: readiness,
+        compliantCount: liveDashboardSummary?.metrics?.applicable_count ?? 0,
+        inProgressCount: liveDashboardSummary?.metrics?.needs_information_count ?? 0,
+        overdueCount: 0,
+        inProgressPercentage: 0,
+        overduePercentage: 0,
+      },
+    };
+  }, [isDemoMode, dashboardData.categoryBreakdown, liveDashboardSummary]);
 
   const handleNavigate = (view: string) => onNavigateToView(view as NavView);
 
@@ -225,18 +278,18 @@ export function DashboardView({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
           <div className="md:col-span-12 lg:col-span-5 flex">
             <ComplianceActivityCard
-              activityData={dashboardData.activity}
+              activityData={liveActivityData}
               onExpand={() => setActionsDrawerOpen(true)}
             />
           </div>
           <div className="md:col-span-6 lg:col-span-4 flex">
             <DocumentsCard
               documentsData={{
-                totalCount: liveDashboardSummary?.total_documents_needed || dashboardData.documents.totalCount,
-                onTrackCount: dashboardData.documents.onTrackCount,
-                changeThisWeek: dashboardData.documents.changeThisWeek,
-                verifiedPercentage: dashboardData.documents.verifiedPercentage,
-                underReviewPercentage: dashboardData.documents.underReviewPercentage,
+                totalCount: liveDocumentsData.totalCount,
+                onTrackCount: liveDocumentsData.onTrackCount,
+                changeThisWeek: liveDocumentsData.changeThisWeek,
+                verifiedPercentage: liveDocumentsData.verifiedPercentage,
+                underReviewPercentage: liveDocumentsData.underReviewPercentage,
               }}
               onOpen={() => setDocumentsDrawerOpen(true)}
             />
@@ -244,8 +297,8 @@ export function DashboardView({
           <div className="md:col-span-6 lg:col-span-3 flex">
             <ApplicableRequirementsCard
               requirementsData={{
-                applicableCount: liveDashboardSummary?.metrics?.applicable_count ?? dashboardData.requirements.applicableCount,
-                isStandardsRatio: dashboardData.requirements.isStandardsRatio,
+                applicableCount: liveDashboardSummary?.metrics?.applicable_count ?? (isDemoMode ? dashboardData.requirements.applicableCount : 0),
+                isStandardsRatio: isDemoMode ? dashboardData.requirements.isStandardsRatio : "—",
               }}
               onOpen={() => setRequirementsDrawerOpen(true)}
             />
@@ -257,11 +310,11 @@ export function DashboardView({
           <div className="lg:col-span-7 flex">
             <ComplianceActionsCard
               actionsData={{
-                openCount: liveDashboardSummary?.priority_actions?.length ?? dashboardData.actions.openCount,
-                changeFromLastWeek: dashboardData.actions.changeFromLastWeek,
-                highPriorityCount: dashboardData.actions.highPriorityCount,
-                totalCount: dashboardData.actions.totalCount,
-                timeline: dashboardData.actions.timeline,
+                openCount: liveActionsData.openCount,
+                changeFromLastWeek: liveActionsData.changeFromLastWeek,
+                highPriorityCount: liveActionsData.highPriorityCount,
+                totalCount: liveActionsData.totalCount,
+                timeline: liveActionsData.timeline,
               }}
               onExpand={() => setActionsDrawerOpen(true)}
             />

@@ -71,6 +71,16 @@ class ApplicabilityEngine:
         for key, entry in profile_version.variables.items():
             context[key] = entry.get("value") if isinstance(entry, dict) else entry
 
+        # Generic aliases and derivations for robust knowledge evaluation
+        if not context.get("product_description"):
+            context["product_description"] = business.name
+        if "primary_activity" not in context or not context.get("primary_activity"):
+            context["primary_activity"] = context.get("product_description") or business.name
+        if "total_workforce" not in context and "total_worker_count" in context:
+            context["total_workforce"] = context["total_worker_count"]
+        if "total_worker_count" not in context and "total_workforce" in context:
+            context["total_worker_count"] = context["total_workforce"]
+
         # Jurisdiction resolution via data-driven knowledge registry (TRD_v2.0 §10, C4)
         raw_state = context.get("state")
         business_state: str | None = None

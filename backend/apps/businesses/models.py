@@ -70,25 +70,30 @@ class Business(BaseModel):
         return self.memberships.filter(user_id=user.id).exists()
 
     @classmethod
-    def accessible_to(cls, user) -> models.QuerySet[Business]:
+    def accessible_to(cls, user, include_archived: bool = False) -> models.QuerySet[Business]:
         """Queryset scoped to a user. Staff and superusers have platform-wide access."""
         if not user or not user.is_authenticated:
             return cls.objects.none()
         if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
-            return cls.objects.all()
-        return cls.objects.filter(
-            models.Q(owner=user) | models.Q(memberships__user=user)
-        ).distinct()
+            qs = cls.objects.all()
+        else:
+            qs = cls.objects.filter(
+                models.Q(owner=user) | models.Q(memberships__user=user)
+            )
+        if not include_archived:
+            qs = qs.filter(is_active=True)
+        return qs.distinct()
 
     @classmethod
     def resolve_safely(cls, business_id: Any, user=None) -> Business | None:
-        """Robustly resolve a business by UUID, string ID, slug, active workspace, or fallback."""
+        """Robustly resolve a business by UUID, string ID, slug, or active workspace strictly respecting tenancy."""
+        is_auth = user and getattr(user, "is_authenticated", False)
+        is_staff = user and (getattr(user, "is_staff", False) or getattr(user, "is_superuser", False))
+
         if not business_id:
-            if user and getattr(user, "is_authenticated", False):
-                b = cls.accessible_to(user).order_by("-created_at").first()
-                if b is not None:
-                    return b
-            return cls.objects.order_by("-created_at").first()
+            if is_auth:
+                return cls.accessible_to(user).order_by("-created_at").first()
+            return None if not is_staff else cls.objects.order_by("-created_at").first()
 
         uuid_obj = None
         try:
@@ -97,37 +102,28 @@ class Business(BaseModel):
             uuid_obj = None
 
         if uuid_obj:
-            if user and getattr(user, "is_authenticated", False):
-                b = cls.accessible_to(user).filter(pk=uuid_obj).first()
-                if b is not None:
-                    return b
-            b = cls.objects.filter(pk=uuid_obj).first()
-            if b is not None:
-                return b
+            if is_auth and not is_staff:
+                # Strictly scoped to user's accessible businesses
+                return cls.accessible_to(user).filter(pk=uuid_obj).first()
+            return cls.objects.filter(pk=uuid_obj).first()
 
         str_id = str(business_id).strip()
         if str_id and str_id.lower() not in ("current", "default", "active", "demo", "demo-voltpro-charger"):
-            if user and getattr(user, "is_authenticated", False):
-                b = cls.accessible_to(user).filter(models.Q(name__iexact=str_id)).first()
-                if b is not None:
-                    return b
-            b = cls.objects.filter(name__iexact=str_id).first()
-            if b is not None:
-                return b
+            if is_auth and not is_staff:
+                return cls.accessible_to(user).filter(models.Q(name__iexact=str_id)).first()
+            return cls.objects.filter(name__iexact=str_id).first()
 
-        if user and getattr(user, "is_authenticated", False):
+        if is_auth:
             try:
                 from .models import UserWorkspaceState
                 ws = UserWorkspaceState.objects.filter(user=user).first()
                 if ws and ws.active_business:
                     return ws.active_business
-                b = cls.accessible_to(user).order_by("-created_at").first()
-                if b is not None:
-                    return b
+                return cls.accessible_to(user).order_by("-created_at").first()
             except Exception:
-                pass
+                return cls.accessible_to(user).order_by("-created_at").first()
 
-        return cls.objects.order_by("-created_at").first()
+        return None if not is_staff else cls.objects.order_by("-created_at").first()
 
     # -- profile -----------------------------------------------------------
     @property

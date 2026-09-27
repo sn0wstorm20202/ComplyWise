@@ -255,6 +255,24 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
       if (!isValidUuid(bizId)) {
         bizId = null;
       }
+
+      // GUARD: Validate that the cached bizId belongs to this user's real businesses.
+      // If homeBusinesses is loaded and doesn't contain the cached bizId, the business
+      // was deleted or is inaccessible — clear the stale key and fall back gracefully.
+      if (bizId && homeBusinesses.length > 0) {
+        const isKnown = homeBusinesses.some((b) => b.id === bizId);
+        if (!isKnown) {
+          console.warn(
+            `[BusinessContext] Cached business ID ${bizId} not found in user's business list — clearing stale key.`
+          );
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("complywise_active_business_id");
+            localStorage.removeItem("complywise_active_assessment_id");
+          }
+          bizId = null;
+        }
+      }
+
       if (!bizId && homeBusinesses.length > 0) {
         const found = homeBusinesses.find((b) => isValidUuid(b.id));
         if (found) bizId = found.id;
@@ -490,6 +508,13 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     }
 
     // It's a real database business ID!
+    // CRITICAL: Clear stale assessment ID from old business before switching.
+    // Without this, compliance/documents/schemes pages show data from the previous business.
+    localStorage.removeItem("complywise_active_assessment_id");
+    setActiveAssessmentIdState(null);
+    // Clear any cached per-business data
+    localStorage.removeItem("complywise_compliance_cache");
+    localStorage.removeItem("complywise_documents_cache");
     localStorage.setItem("complywise_active_business_id", profileId);
     setActiveBusinessId(profileId);
     api.businesses.setWorkspace({ business_id: profileId }).catch(() => {});

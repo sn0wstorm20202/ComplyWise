@@ -23,6 +23,7 @@ from apps.knowledge.models import RequirementDefinition
 from apps.schemes.engine.matcher import match_business_schemes
 from apps.workflows.models import ComplianceCase
 from domain.context.business_context import DerivedBusinessContext, build_business_context
+from knowledge_packs.catalogs import STATUTORY_PORTALS
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 ENRICHED_WORKFLOW_TEMPLATES: dict[str, dict[str, Any]] = {
     "FOOD": {
         "portal_name": "FoSCoS (Food Safety Compliance System)",
-        "portal_url": "https://foscos.fssai.gov.in",
+        "portal_url": STATUTORY_PORTALS["FOSCOS"],
         "estimated_days": "30-45 Days",
         "required_documents": [
             "Food Safety Management System (FSMS) Plan",
@@ -83,7 +84,7 @@ ENRICHED_WORKFLOW_TEMPLATES: dict[str, dict[str, Any]] = {
     },
     "ENVIRONMENT": {
         "portal_name": "State Pollution Control Board OCMMS / XGN Portal",
-        "portal_url": "https://ocmms.nic.in",
+        "portal_url": STATUTORY_PORTALS["OCMMS"],
         "estimated_days": "45-60 Days",
         "required_documents": [
             "Detailed Project Report (DPR) with Capital Investment",
@@ -136,7 +137,7 @@ ENRICHED_WORKFLOW_TEMPLATES: dict[str, dict[str, Any]] = {
     },
     "LABOR": {
         "portal_name": "Directorate of Industrial Safety & Health (DISH) Single Window",
-        "portal_url": "https://dish.gov.in",
+        "portal_url": STATUTORY_PORTALS["DISH"],
         "estimated_days": "30-40 Days",
         "required_documents": [
             "Architectural Factory Building Plans (Signed by Draughtsman)",
@@ -190,36 +191,58 @@ ENRICHED_WORKFLOW_TEMPLATES: dict[str, dict[str, Any]] = {
         ],
     },
     "TRADE": {
-        "portal_name": "DGFT Directorate General of Foreign Trade Portal",
-        "portal_url": "https://www.dgft.gov.in",
-        "estimated_days": "1-3 Days",
+        "portal_name": "DGFT IEC Online Service Portal",
+        "portal_url": STATUTORY_PORTALS["DGFT"],
+        "estimated_days": "2-4 Days",
         "required_documents": [
             "Company PAN Card Copy",
-            "Certificate of Incorporation / Partnership Deed",
-            "Bank Certificate / Cancelled Cheque with Pre-printed Account Name",
-            "Director / Partner Aadhaar & DSC Credentials",
+            "Certificate of Incorporation / LLP Agreement",
+            "Pre-printed Bank Cancelled Cheque / Bank Certificate (PFMS Validated)",
+            "Director / Partner Aadhaar, PAN & Class 3 Digital Signature (DSC)",
+            "Registered Office Address Proof (Electricity Bill / Lease Agreement)",
         ],
         "steps": [
             {
                 "step_number": 1,
-                "title": "Digital Signature (DSC) & Entity PAN Validation",
-                "description": "Validate company PAN and registered authorized signatory credentials on the DGFT system.",
+                "title": "Digital Credentials & Entity Identity Validation",
+                "description": "Validate company PAN, corporate identification number (CIN/LLPIN), and Class 3 Digital Signature Certificate (DSC) credentials for designated authorized signatory.",
                 "duration": "1 Day",
-                "documents_required": ["Company PAN Card Copy", "Director Aadhaar & DSC"],
+                "documents_required": ["Company PAN Card Copy", "Director / Signatory DSC & Aadhaar"],
             },
             {
                 "step_number": 2,
-                "title": "Online Importer-Exporter Code (IEC) Application",
-                "description": "Complete electronic IEC application form, link bank account verification, and remit statutory processing fee.",
+                "title": "DGFT Single Sign-On (SSO) Portal Registration",
+                "description": "Create entity profile on DGFT unified portal, link authorized signatory email and mobile with OTP verification, and connect corporate PAN.",
                 "duration": "1 Day",
-                "documents_required": ["Pre-printed Bank Cancelled Cheque / Certificate"],
+                "documents_required": ["Certificate of Incorporation / LLP Agreement"],
             },
             {
                 "step_number": 3,
-                "title": "Instant Automatic Allotment of 10-Digit IEC",
-                "description": "System issues electronic IEC certificate automatically transmitted to ICEGATE for customs clearance.",
+                "title": "Electronic ANF-2A Application Filing & Bank Verification",
+                "description": "Complete electronic Importer-Exporter Code application form (ANF-2A), input IFSC & account number, and upload pre-printed cancelled cheque for automated bank account validation.",
+                "duration": "1 Day",
+                "documents_required": ["Pre-printed Bank Cancelled Cheque / Bank Certificate"],
+            },
+            {
+                "step_number": 4,
+                "title": "Statutory Processing Fee Remittance via Bharatkosh",
+                "description": "Remit statutory application fee of ₹500 via non-tax receipt portal (Bharatkosh payment gateway) and generate transaction confirmation.",
                 "duration": "Instant",
-                "documents_required": ["Electronic IEC Allotment Letter"],
+                "documents_required": ["Bharatkosh Payment Transaction Receipt"],
+            },
+            {
+                "step_number": 5,
+                "title": "Instant Electronic IEC Issuance & ICEGATE Integration",
+                "description": "System generates 10-digit alphanumeric e-IEC allotment letter and automatically transmits credentials to ICEGATE customs clearing servers.",
+                "duration": "Instant",
+                "documents_required": ["Official Electronic IEC Certificate"],
+            },
+            {
+                "step_number": 6,
+                "title": "Annual Mandatory IEC Status Verification",
+                "description": "Undertake mandatory electronic annual verification and confirmation of entity details on the DGFT dashboard between April and June as mandated under FTP Para 2.05.",
+                "duration": "Annual",
+                "documents_required": ["Annual IEC Electronic Confirmation Certificate"],
             },
         ],
     },
@@ -237,18 +260,25 @@ ENRICHED_WORKFLOW_TEMPLATES: dict[str, dict[str, Any]] = {
         "steps": [
             {
                 "step_number": 1,
-                "title": "Product Sample Testing at BIS-Recognized Laboratory",
+                "title": "Applicable Indian Standard Identification & Gap Analysis",
+                "description": "Determine applicable IS specification standard code, review technical parameters, and execute manufacturing quality control gap analysis.",
+                "duration": "7-10 Days",
+                "documents_required": ["Technical Product Specification Sheet"],
+            },
+            {
+                "step_number": 2,
+                "title": "Product Sample Testing at BIS-Recognized / NABL Laboratory",
                 "description": "Submit production samples to NABL-accredited BIS test laboratory for full parameter testing against applicable Indian Standard.",
                 "duration": "15-25 Days",
                 "documents_required": [
                     "NABL-Accredited Laboratory Test Reports",
-                    "Product Technical Specification Sheet",
+                    "Sample Dispatch Chain-of-Custody Record",
                 ],
             },
             {
-                "step_number": 2,
-                "title": "Online Registration Filing on Manakonline",
-                "description": "Upload test reports, factory profile, and authorized Indian representative undertaking via the BIS portal.",
+                "step_number": 3,
+                "title": "Online Registration Application Filing on Manakonline",
+                "description": "Upload test reports, factory profile, quality assurance manual, and authorized Indian representative undertaking via the BIS portal.",
                 "duration": "2-3 Days",
                 "documents_required": [
                     "Brand Name / Trademark Registration Certificate",
@@ -256,186 +286,247 @@ ENRICHED_WORKFLOW_TEMPLATES: dict[str, dict[str, Any]] = {
                 ],
             },
             {
-                "step_number": 3,
-                "title": "BIS Technical Scrutiny & Clarification",
-                "description": "BIS technical committee reviews test data and manufacturing quality control manual.",
+                "step_number": 4,
+                "title": "BIS Technical Scrutiny & Query Clarification",
+                "description": "BIS technical evaluation committee reviews test data, testing equipment calibration logs, and manufacturing quality control manual.",
                 "duration": "10-15 Days",
                 "documents_required": ["Quality Control Manual & Calibration Log"],
             },
             {
-                "step_number": 4,
+                "step_number": 5,
                 "title": "Grant of BIS Registration & Standard Mark Use",
-                "description": "Receive unique R-number granting authority to affix the BIS Standard Mark prior to commercial dispatch.",
+                "description": "Receive unique R-number / ISI license granting statutory authority to affix the BIS Standard Mark prior to commercial dispatch.",
                 "duration": "3-5 Days",
                 "documents_required": ["Official BIS Registration Grant Letter (R-Number)"],
             },
         ],
     },
     "CYBERSECURITY": {
-        "portal_name": "CERT-In Incident Reporting Portal",
-        "portal_url": "https://www.cert-in.org.in",
+        "portal_name": "CERT-In Official Directives & Reporting Desk",
+        "portal_url": "https://www.cert-in.org.in/directions2022.htm",
         "estimated_days": "15-25 Days",
         "required_documents": [
             "Information Security Policy & Incident Escalation Matrix",
             "System Architecture & Firewall Configuration Topology",
             "NTP Server Synchronization Architecture Certification",
             "180-Day System Log Retention Architecture Proof",
+            "Point of Contact (PoC) Nomination Undertaking to CERT-In",
         ],
         "steps": [
             {
                 "step_number": 1,
-                "title": "Log Architecture & 180-Day Secure Storage Setup",
-                "description": "Configure Indian jurisdiction synchronized NTP clock sources and implement 180-day tamper-evident security log storage.",
-                "duration": "5-7 Days",
-                "documents_required": ["System Architecture Topology", "Log Retention Proof"],
+                "title": "Mandatory NTP Clock Synchronization Setup",
+                "description": "Synchronize all ICT system clocks, routers, firewalls, and server infrastructure with National Physical Laboratory (NPL) or NIC Network Time Protocol (NTP) servers.",
+                "duration": "2-3 Days",
+                "documents_required": ["NTP Synchronization Architecture Verification Certificate"],
             },
             {
                 "step_number": 2,
-                "title": "Incident Escalation Plan & Point of Contact Designation",
-                "description": "Designate formal Point of Contact (PoC) and establish 6-hour mandatory cyber incident escalation procedure.",
-                "duration": "3-5 Days",
-                "documents_required": ["Information Security Policy & PoC Designation Letter"],
+                "title": "180-Day Secure & Tamper-Evident Log Storage Architecture",
+                "description": "Deploy immutable, domestic log retention pipeline maintaining system, firewall, database, and authentication logs securely within Indian jurisdiction for rolling 180 days.",
+                "duration": "5-7 Days",
+                "documents_required": ["System Architecture Topology", "Log Retention Pipeline Proof"],
             },
             {
                 "step_number": 3,
-                "title": "Mandatory Incident Reporting Configuration with CERT-In",
-                "description": "Register designated PoC details with CERT-In and establish authenticated API/reporting channel credentials.",
-                "duration": "1-2 Days",
-                "documents_required": ["CERT-In PoC Registration Undertaking"],
+                "title": "Information Security Policy & 6-Hour Escalation SOP",
+                "description": "Adopt internal cybersecurity policy, categorize 20 types of cybersecurity incidents specified under CERT-In directives, and codify mandatory 6-hour incident escalation SOP.",
+                "duration": "3-5 Days",
+                "documents_required": ["Information Security Policy Document", "6-Hour Incident Escalation SOP"],
             },
             {
                 "step_number": 4,
-                "title": "Annual Cybersecurity Compliance & Audit Log Signoff",
-                "description": "Conduct annual vulnerability assessment and maintain signed security audit records for regulatory inspection.",
+                "title": "Formal Point of Contact (PoC) Designation & CERT-In Registration",
+                "description": "Designate formal Point of Contact (Chief Information Security Officer / Legal Counsel) and submit registration details via the CERT-In reporting desk.",
+                "duration": "1-2 Days",
+                "documents_required": ["Point of Contact (PoC) Nomination Undertaking to CERT-In"],
+            },
+            {
+                "step_number": 5,
+                "title": "Incident Reporting Drills & Mock Response Verification",
+                "description": "Conduct mock incident reporting trial verifying reporting channels (incident@cert-in.org.in and online portal) and incident ticketing response.",
                 "duration": "2-3 Days",
+                "documents_required": ["Mock Incident Simulation & Incident Drill Report"],
+            },
+            {
+                "step_number": 6,
+                "title": "Annual Cybersecurity Vulnerability Assessment & Signoff",
+                "description": "Engage CERT-In empaneled security auditor to execute annual Vulnerability Assessment & Penetration Testing (VAPT) and archive signed audit certificates.",
+                "duration": "5-7 Days",
                 "documents_required": ["Annual Security Audit Signoff Certificate"],
             },
         ],
     },
     "DATA_PROTECTION": {
-        "portal_name": "Data Protection Board of India Portal",
-        "portal_url": "https://meity.gov.in/dpdp",
+        "portal_name": "MeitY Digital Personal Data Protection Act Portal",
+        "portal_url": STATUTORY_PORTALS["DPDP"],
         "estimated_days": "20-30 Days",
         "required_documents": [
             "Personal Data Inventory & Processing Records (RoPA)",
-            "Multilingual Privacy Notice & Consent Artifacts",
+            "Multilingual Itemized Privacy Notice & Consent Artifacts",
             "Data Protection Officer (DPO) Appointment Letter",
             "Grievance Redressal Architecture & 72-Hour Breach Escalation SOP",
+            "Data Processing Agreements (DPAs) with Sub-processors and Cloud Vendors",
         ],
         "steps": [
             {
                 "step_number": 1,
-                "title": "Data Mapping & Consent Management Architecture",
-                "description": "Inventory all personal data collected from users, identify lawful processing purposes, and map data flows.",
+                "title": "Data Inventory Mapping & RoPA Formulation",
+                "description": "Catalog all digital personal data collected across web, mobile, and API interfaces, specify lawful processing purpose, and formulate formal Record of Processing Activities (RoPA).",
                 "duration": "7-10 Days",
                 "documents_required": ["Record of Processing Activities (RoPA)"],
             },
             {
                 "step_number": 2,
-                "title": "Publish Multilingual Privacy Notices & Consent Workflows",
-                "description": "Deploy clear privacy notices in English and Constitution Schedule VIII languages with granular consent capture.",
+                "title": "Deploy Multilingual Itemized Privacy Notices",
+                "description": "Draft and publish clear, itemized privacy notices in English and Constitution Eighth Schedule languages detailing personal data categories, purposes, and user rights.",
                 "duration": "3-5 Days",
                 "documents_required": ["Multilingual Privacy Notice & Consent Drafts"],
             },
             {
                 "step_number": 3,
-                "title": "DPO Designation & Grievance Redressal Mechanism",
-                "description": "Establish accessible grievance redressal mechanism and appoint Data Protection Officer for India operations.",
+                "title": "Granular Consent Management & Withdrawal Mechanism",
+                "description": "Implement affirmative, verifiable consent capture workflows ensuring consent is free, specific, informed, unconditional, and unambiguous with easy withdrawal options.",
+                "duration": "5-7 Days",
+                "documents_required": ["Consent Flow Specification & User Opt-in Screenshots"],
+            },
+            {
+                "step_number": 4,
+                "title": "Designation of Data Protection Officer (DPO) & Redressal Mechanism",
+                "description": "Appoint Data Protection Officer based in India, publish official contact details, and establish accessible 72-hour grievance resolution mechanism for Data Principals.",
                 "duration": "2-4 Days",
                 "documents_required": ["DPO Appointment Letter & Redressal Matrix"],
             },
             {
-                "step_number": 4,
-                "title": "Statutory Data Fiduciary Readiness & Compliance Log",
-                "description": "Implement technical safeguards, reasonable security practices, and breach notification SOP to Data Protection Board.",
-                "duration": "2-3 Days",
-                "documents_required": ["DPDP Compliance Verification Signoff"],
+                "step_number": 5,
+                "title": "Data Security Safeguards & Breach Escalation SOP",
+                "description": "Enforce reasonable security safeguards including end-to-end encryption, role-based access control, and 72-hour mandatory breach notification SOP to Data Protection Board.",
+                "duration": "3-5 Days",
+                "documents_required": ["Technical Security Safeguards Audit & Breach SOP"],
+            },
+            {
+                "step_number": 6,
+                "title": "Sub-Processor Vendor Audits & Periodic DPIA Reviews",
+                "description": "Execute compliant Data Processing Agreements (DPAs) with third-party cloud infrastructure providers and conduct periodic Data Protection Impact Assessments (DPIA).",
+                "duration": "5-7 Days",
+                "documents_required": ["Executed Third-Party Data Processing Agreements (DPAs)"],
             },
         ],
     },
     "INTERNAL_COMMITTEE": {
-        "portal_name": "SHe-Box / Ministry of Women & Child Development",
-        "portal_url": "https://shebox.wcd.gov.in",
-        "estimated_days": "10-15 Days",
+        "portal_name": "Ministry of Women & Child Development (POSH Guidelines)",
+        "portal_url": STATUTORY_PORTALS["POSH"],
+        "estimated_days": "10-20 Days",
         "required_documents": [
             "Order of Constitution of Internal Committee (IC)",
             "External Member Bio & NGO / Legal Background Verification",
             "Internal POSH Policy Document & Code of Conduct",
-            "Employee Awareness Workshop Attendance Sheets",
+            "Employee Sensitization Workshop Attendance & Completion Logs",
+            "Annual POSH Compliance Return Form",
         ],
         "steps": [
             {
                 "step_number": 1,
-                "title": "Constitution of Internal Committee with External Expert",
-                "description": "Formally constitute Internal Committee (IC) with Presiding Woman Officer, 50% women members, and an external NGO/legal expert.",
+                "title": "Constitution of Internal Committee (IC) by Formal Board Order",
+                "description": "Pass formal Board resolution constituting Internal Committee with Presiding Officer woman at senior management level, at least 50% women members, and an independent external expert.",
                 "duration": "3-5 Days",
                 "documents_required": ["Order of Constitution of Internal Committee (IC)"],
             },
             {
                 "step_number": 2,
-                "title": "POSH Policy Adoption & Employee Sensitization",
-                "description": "Promulgate anti-harassment policy, display penal consequences prominently in premises, and conduct mandatory orientation.",
-                "duration": "5-7 Days",
-                "documents_required": ["POSH Policy Document & Employee Workshop Sheets"],
+                "title": "Promulgation of Gender-Neutral POSH Policy & Notice Displays",
+                "description": "Adopt workplace anti-harassment policy, document grievance procedures, and display penal consequences and IC member contacts prominently across premises and virtual channels.",
+                "duration": "3-5 Days",
+                "documents_required": ["POSH Policy Document & Code of Conduct"],
             },
             {
                 "step_number": 3,
-                "title": "Filing Annual Compliance Return with District Officer",
-                "description": "Submit annual return detailing number of cases filed, investigated, and disposed to the District Officer by December 31.",
+                "title": "Mandatory Employee Sensitization Workshops & Orientation",
+                "description": "Conduct structured orientation sessions for all employees on appropriate workplace behavior, rights, and redressal mechanisms, preserving signed attendance logs.",
+                "duration": "5-7 Days",
+                "documents_required": ["Employee Sensitization Workshop Attendance & Completion Logs"],
+            },
+            {
+                "step_number": 4,
+                "title": "IC Capacity Building & Inquiry Procedure Formalization",
+                "description": "Train IC members on principles of natural justice, 90-day time-bound inquiry procedures, confidentiality safeguards, and conciliation protocols.",
+                "duration": "3-5 Days",
+                "documents_required": ["IC Training Minutes & Inquiry Procedure Manual"],
+            },
+            {
+                "step_number": 5,
+                "title": "Annual Compliance Return Filing with District Officer",
+                "description": "Compile annual report detailing complaints received, investigated, and disposed, and submit official compliance return to District Officer (DO) by December 31.",
                 "duration": "2-3 Days",
                 "documents_required": ["Annual POSH Compliance Return Form"],
             },
         ],
     },
     "SCHEME": {
-        "portal_name": "National MSME Portal / Champions Single Window",
-        "portal_url": "https://champions.gov.in",
+        "portal_name": "Official Government Scheme Portal",
+        "portal_url": STATUTORY_PORTALS["STARTUP_INDIA"],
         "estimated_days": "20-35 Days",
         "required_documents": [
-            "Udyam Registration Certificate",
+            "Udyam Registration Certificate / DPIIT Recognition Certificate",
             "Audited Financial Statements (Last 2 Years) / Income Tax Returns",
-            "Detailed Project Report (DPR) / Machinery Quotations",
-            "Bank Account Proof & Cancelled Cheque",
-            "Promoter KYC & Category Endorsements",
+            "Detailed Project Report (DPR) / Technical Pitch Deck & Quotations",
+            "Bank Account Proof & Cancelled Cheque (PFMS Linked)",
+            "Promoter KYC & Shareholding Pattern Declaration",
         ],
         "steps": [
             {
                 "step_number": 1,
-                "title": "Eligibility Criteria & Documentation Audit",
-                "description": "Verify enterprise MSME categorization, compile Udyam Registration, project report, and financial statements.",
+                "title": "Scheme Eligibility Audit & Categorization Verification",
+                "description": "Verify enterprise categorization, validate DPIIT / Udyam registration credentials, and check scheme eligibility guidelines.",
                 "duration": "3-5 Days",
                 "documents_required": [
-                    "Udyam Registration Certificate",
+                    "Udyam Registration Certificate / DPIIT Recognition Certificate",
                     "Audited Financial Statements (Last 2 Years)",
-                    "Detailed Project Report (DPR)",
                 ],
             },
             {
                 "step_number": 2,
-                "title": "Online Scheme Application Submission on Official Portal",
-                "description": "Submit electronic application on official portal and generate unique scheme tracking acknowledgement number.",
-                "duration": "1-2 Days",
-                "documents_required": ["Official Application Form & Quotations"],
+                "title": "Detailed Project Report (DPR) & Budgetary Milestone Assembly",
+                "description": "Formulate comprehensive project proposal, milestone-based fund utilization projection, and itemized cost quotations for eligible expenditure.",
+                "duration": "5-7 Days",
+                "documents_required": [
+                    "Detailed Project Report (DPR) / Technical Pitch Deck & Quotations",
+                    "Promoter KYC & Shareholding Pattern Declaration",
+                ],
             },
             {
                 "step_number": 3,
-                "title": "Nodal Authority & Financial Appraisal",
-                "description": "Nodal department or scheduled commercial bank scrutinizes eligibility, project viability, and technical metrics.",
-                "duration": "10-15 Days",
-                "documents_required": ["Technical Feasibility & Bank Appraisal Notes"],
+                "title": "Online Scheme Application Submission on Official Portal",
+                "description": "Submit electronic application on designated ministry portal (e.g. Startup India Seed Fund, MSME Innovative, CGTMSE) and generate official tracking number.",
+                "duration": "1-2 Days",
+                "documents_required": ["Official Application Submission Acknowledgement"],
             },
             {
                 "step_number": 4,
-                "title": "Sanction Grant & Subsidy/Guarantee Issuance",
-                "description": "Receive official sanction letter; subsidy credited to loan escrow / guarantee coverage activated.",
+                "title": "Departmental Technical Screening & Presentation",
+                "description": "Present project roadmap before Technical Advisory Committee / Incubator Selection Committee and address queries regarding innovation and scalability.",
+                "duration": "10-15 Days",
+                "documents_required": ["Committee Presentation Deck & Query Clarifications"],
+            },
+            {
+                "step_number": 5,
+                "title": "In-Principle Sanction & Grant Agreement Execution",
+                "description": "Receive formal sanction order, execute grant/guarantee agreement, and link dedicated escrow bank account for milestone disbursements.",
                 "duration": "5-7 Days",
-                "documents_required": ["Official Sanction / Guarantee Coverage Certificate"],
+                "documents_required": ["Official Sanction Letter & Executed Grant Agreement"],
+            },
+            {
+                "step_number": 6,
+                "title": "Disbursement Tracking, Utilization Certification & Reporting",
+                "description": "Submit Chartered Accountant Utilization Certificate (UC) and project milestone progress reports to release disbursement tranches.",
+                "duration": "Ongoing",
+                "documents_required": ["CA Utilization Certificate & Milestone Progress Report"],
             },
         ],
     },
     "DEFAULT": {
         "portal_name": "National Single Window System (NSWS)",
-        "portal_url": "https://www.nsws.gov.in",
+        "portal_url": STATUTORY_PORTALS["NSWS"],
         "estimated_days": "15-30 Days",
         "required_documents": [
             "Proof of Entity Incorporation",
@@ -467,7 +558,14 @@ ENRICHED_WORKFLOW_TEMPLATES: dict[str, dict[str, Any]] = {
             },
             {
                 "step_number": 4,
-                "title": "Approval & Certificate Issuance",
+                "title": "Technical Inspection & Compliance Review",
+                "description": "Undergo statutory departmental review and resolve any operational compliance notes.",
+                "duration": "5-10 Days",
+                "documents_required": ["Inspection Compliance Report"],
+            },
+            {
+                "step_number": 5,
+                "title": "Approval & Clearance Certificate Issuance",
                 "description": "Download digitally authenticated approval certificate.",
                 "duration": "2-3 Days",
                 "documents_required": ["Statutory Clearance Certificate"],
@@ -497,7 +595,7 @@ def _match_workflow_template(req_def: RequirementDefinition) -> str:
         return "CYBERSECURITY"
     if "DPDP" in req_id or "DATA" in dom:
         return "DATA_PROTECTION"
-    if "POSH" in req_id or "SEXUAL" in req_id or "INTERNAL_COMMITTEE" in req_id:
+    if "POSH" in req_id or "SEXUAL" in req_id or "INTERNAL_COMMITTEE" in req_id or "INTERNAL COMMITTEE" in req_id:
         return "INTERNAL_COMMITTEE"
     return "DEFAULT"
 
@@ -512,6 +610,9 @@ def derive_business_workflows(
     Includes Compliance requirements, Standards, and Government Schemes.
     Synchronizes step completion and progress directly with the database.
     """
+    import re
+    from knowledge_packs.catalogs import resolve_statutory_portal
+
     if context is None:
         context = build_business_context(business)
 
@@ -543,11 +644,48 @@ def derive_business_workflows(
 
     # 1. Derive from Evaluated Applicable Results (Compliance & Standards)
     if latest_run is not None:
-        actionable_results = [
+        raw_results = [
             r
             for r in latest_run.results.all()
             if r.status in {ApplicabilityStatus.APPLICABLE, ApplicabilityStatus.NEEDS_INFORMATION}
         ]
+
+        # Non-manufacturing / Software / SaaS guard:
+        # Software companies never need factory licenses or pollution board consents
+        desc_parts = [business.name]
+        if business.current_profile and business.current_profile.variables:
+            vars_dict = business.current_profile.variables
+            for k in ["product_description", "sector", "nature_of_business", "primary_business_activity"]:
+                val = vars_dict.get(k)
+                if isinstance(val, dict):
+                    desc_parts.append(str(val.get("value") or ""))
+                elif val:
+                    desc_parts.append(str(val))
+        desc_lower = " ".join(desc_parts).lower()
+        is_pure_software = bool(re.search(r"\b(software|saas|platform|app|web|digital|pre-visualization|film pre-visualization|consulting|it services|agency)\b", desc_lower)) and not any(hw in desc_lower for hw in ["hardware manufacturing", "assembly plant", "fabrication plant", "physical manufacturing"])
+
+        seen_canonical = set()
+        actionable_results = []
+        for r in raw_results:
+            req_id_upper = r.requirement_id.upper()
+            req_name_upper = r.requirement_name.upper()
+            combined = f"{req_id_upper} {req_name_upper}"
+
+            # Prune industrial manufacturing requirements for pure software/SaaS
+            if is_pure_software and any(term in combined for term in [
+                "FACTORY", "FACTORIES", "CONSENT TO ESTABLISH", "CONSENT TO OPERATE", "CTE", "CTO",
+                "POLLUTION", "SPCB", "MPCB", "WBPCB", "GPCB", "CPCB", "BOILER"
+            ]):
+                logger.info("Software Guard pruned workflow requirement %s (%s) for %s", r.requirement_name, r.requirement_id, business.name)
+                continue
+
+            # Canonical deduplication (e.g. REQ-CERT-IN-CYBERSECURITY-DIRECTIVES vs REQ-CERTIN-CYBERSECURITY-DIRECTIVES)
+            canon = req_id_upper.replace("-", "").replace("_", "")
+            if canon in seen_canonical:
+                logger.info("Deduplication Guard pruned duplicate workflow requirement %s (%s)", r.requirement_name, r.requirement_id)
+                continue
+            seen_canonical.add(canon)
+            actionable_results.append(r)
 
         req_defs = {
             rd.requirement_id: rd
@@ -584,8 +722,15 @@ def derive_business_workflows(
             template_key = _match_workflow_template(req_def)
             tmpl = ENRICHED_WORKFLOW_TEMPLATES.get(template_key, ENRICHED_WORKFLOW_TEMPLATES["DEFAULT"])
 
-            portal_name = (req_def.metadata or {}).get("portal") or tmpl["portal_name"]
-            portal_url = (req_def.metadata or {}).get("portal_url") or tmpl.get("portal_url", "")
+            raw_portal = (req_def.metadata or {}).get("portal") or (req_def.metadata or {}).get("portal_url") or tmpl.get("portal_url", "")
+            resolved_portal = resolve_statutory_portal(
+                authority=req_def.authority or "",
+                requirement_name=result.requirement_name,
+                requirement_id=result.requirement_id,
+                raw_portal=raw_portal,
+            )
+            portal_name = resolved_portal["name"]
+            portal_url = resolved_portal["url"]
 
             # Check if this requirement belongs to STANDARDS category
             is_standard = (
@@ -702,8 +847,15 @@ def derive_business_workflows(
         wf_id = f"WF::{scheme_code}"
         scheme_title = s.get("title") or s.get("name") or "Government Incentive Scheme"
         authority_name = s.get("authority") or "Ministry of MSME / Government of India"
-        portal_url = s.get("portal_url") or s.get("action_url") or "https://champions.gov.in"
-        portal_name = s.get("portal_name") or "Official MSME Scheme Portal"
+        raw_portal = s.get("portal_url") or s.get("action_url") or STATUTORY_PORTALS["CHAMPIONS"]
+        resolved_scheme_portal = resolve_statutory_portal(
+            authority=authority_name,
+            requirement_name=scheme_title,
+            requirement_id=scheme_code,
+            raw_portal=raw_portal,
+        )
+        portal_url = resolved_scheme_portal["url"]
+        portal_name = resolved_scheme_portal["name"]
 
         case = cases_by_req.get(scheme_code)
         wf_state = case.metadata.get("workflow_state", {}) if case else {}

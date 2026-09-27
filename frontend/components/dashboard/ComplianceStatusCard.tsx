@@ -50,17 +50,32 @@ export function ComplianceStatusCard({
   },
   onExpand,
 }: ComplianceStatusCardProps) {
-  const categories = Object.keys(categoryBreakdown);
+  const defaultEmptyStats: ComplianceCategoryStats = {
+    category: "Overall",
+    healthPercentage: 0,
+    compliantCount: 0,
+    inProgressCount: 0,
+    overdueCount: 0,
+    inProgressPercentage: 0,
+    overduePercentage: 0,
+  };
+
+  const categories = Object.keys(categoryBreakdown).length > 0 ? Object.keys(categoryBreakdown) : ["Overall"];
   const [selectedCategory, setSelectedCategory] = useState<string>("Overall");
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
 
   React.useEffect(() => {
-    if (!categoryBreakdown[selectedCategory]) {
+    if (!categoryBreakdown || !categoryBreakdown[selectedCategory]) {
       setSelectedCategory("Overall");
     }
   }, [categoryBreakdown, selectedCategory]);
 
-  const stats = categoryBreakdown[selectedCategory] || categoryBreakdown["Overall"] || Object.values(categoryBreakdown)[0];
+  const stats =
+    (categoryBreakdown &&
+      (categoryBreakdown[selectedCategory] ||
+        categoryBreakdown["Overall"] ||
+        Object.values(categoryBreakdown)[0])) ||
+    defaultEmptyStats;
 
   return (
     <div className="bg-white rounded-[20px] p-5 sm:p-6 border border-[#E5E7EB] shadow-sm flex flex-col justify-between h-full min-h-[270px] relative select-none w-full">

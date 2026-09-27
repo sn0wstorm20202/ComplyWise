@@ -8,11 +8,17 @@ export function resolveAuthorityPortalUrl(
   titleOrDesc?: string,
   explicitUrl?: string
 ): string {
-  // If a specific, valid URL is provided (and not egazette), prefer it
+  // If a specific, valid deep URL is provided (and not egazette or root placeholders), prefer it
   if (
     explicitUrl &&
     explicitUrl.trim() !== "" &&
-    !explicitUrl.includes("egazette.gov.in")
+    !explicitUrl.includes("egazette.gov.in") &&
+    explicitUrl !== "https://dgft.gov.in" &&
+    explicitUrl !== "https://dgft.gov.in/" &&
+    explicitUrl !== "https://india.gov.in" &&
+    explicitUrl !== "https://india.gov.in/" &&
+    explicitUrl !== "https://www.nsws.gov.in" &&
+    explicitUrl !== "https://www.nsws.gov.in/"
   ) {
     return explicitUrl;
   }
@@ -20,7 +26,103 @@ export function resolveAuthorityPortalUrl(
   const authLower = (authority || "").toLowerCase();
   const descLower = (titleOrDesc || "").toLowerCase();
 
-  // 1. West Bengal Environmental & Factory Authorities
+  // 1. Cybersecurity & CERT-In Directives
+  if (
+    authLower.includes("cert") ||
+    descLower.includes("cert-in") ||
+    descLower.includes("certin") ||
+    descLower.includes("cybersecurity") ||
+    descLower.includes("cyber security") ||
+    descLower.includes("incident reporting") ||
+    descLower.includes("log retention")
+  ) {
+    return "https://www.cert-in.org.in/directions2022.htm";
+  }
+
+  // 2. Digital Personal Data Protection (DPDP Act 2023)
+  if (
+    descLower.includes("dpdp") ||
+    descLower.includes("data protection") ||
+    descLower.includes("data privacy") ||
+    descLower.includes("data fiduciary") ||
+    descLower.includes("digital personal data")
+  ) {
+    return "https://www.meity.gov.in/content/digital-personal-data-protection-act-2023";
+  }
+
+  // 3. POSH / Prevention of Sexual Harassment at Workplace
+  if (
+    descLower.includes("posh") ||
+    descLower.includes("sexual harassment") ||
+    descLower.includes("internal committee") ||
+    descLower.includes("internal complaints committee")
+  ) {
+    return "https://wcd.nic.in/act/handbook-sexual-harassment-women-workplace";
+  }
+
+  // 4. Foreign Trade & DGFT IEC (Direct Service Link)
+  if (
+    authLower.includes("dgft") ||
+    authLower.includes("foreign trade") ||
+    descLower.includes("iec") ||
+    descLower.includes("importer-exporter") ||
+    descLower.includes("import export") ||
+    descLower.includes("foreign trade policy")
+  ) {
+    return "https://www.dgft.gov.in/CP/?opt=iec-service";
+  }
+
+  // 5. Startup & Tech Schemes
+  if (
+    descLower.includes("seed fund") ||
+    descLower.includes("sisfs") ||
+    descLower.includes("startup india")
+  ) {
+    return "https://seedfund.startupindia.gov.in/";
+  }
+
+  if (
+    descLower.includes("ipr") ||
+    descLower.includes("intellectual property") ||
+    descLower.includes("patent") ||
+    descLower.includes("trademark")
+  ) {
+    return "https://innovative.msme.gov.in/Home/Ipr";
+  }
+
+  if (
+    descLower.includes("cgtmse") ||
+    descLower.includes("credit guarantee") ||
+    descLower.includes("collateral-free")
+  ) {
+    return "https://www.cgtmse.in/Default/ViewPage/?id=1&name=AboutUs";
+  }
+
+  if (
+    descLower.includes("samadhaan") ||
+    descLower.includes("delayed payment") ||
+    descLower.includes("msefc")
+  ) {
+    return "https://samadhaan.msme.gov.in/MyMsme/MSEFC/MSEFC_Welcome.aspx";
+  }
+
+  if (
+    descLower.includes("treds") ||
+    descLower.includes("rxil") ||
+    descLower.includes("factoring")
+  ) {
+    return "https://www.rxil.in/";
+  }
+
+  if (descLower.includes("udyam") || descLower.includes("msme registration")) {
+    return "https://udyamregistration.gov.in/Government-India/Ministry-MSME-registration.htm";
+  }
+
+  if (descLower.includes("mca") || descLower.includes("incorporation") || descLower.includes("roc")) {
+    return "https://www.mca.gov.in/content/mca/global/en/home.html";
+  }
+
+  // 6. West Bengal Environmental & Factory Authorities
   if (
     authLower.includes("wbpcb") ||
     (authLower.includes("west bengal") && (authLower.includes("pollution") || descLower.includes("cte") || descLower.includes("cto") || descLower.includes("consent to establish")))
@@ -35,7 +137,7 @@ export function resolveAuthorityPortalUrl(
     return "https://wbfactories.gov.in";
   }
 
-  // 2. Maharashtra State Authorities
+  // 7. Maharashtra State Authorities
   if (
     authLower.includes("mpcb") ||
     (authLower.includes("maharashtra") && authLower.includes("pollution"))
@@ -50,7 +152,7 @@ export function resolveAuthorityPortalUrl(
     return "https://mahakamgar.gov.in";
   }
 
-  // 3. E-Waste & Extended Producer Responsibility (CPCB)
+  // 8. E-Waste & Extended Producer Responsibility (CPCB)
   if (
     descLower.includes("e-waste") ||
     descLower.includes("epr") ||
@@ -60,7 +162,7 @@ export function resolveAuthorityPortalUrl(
     return "https://eprewastecpcb.in";
   }
 
-  // 4. Central Pollution Control Board
+  // 9. Central Pollution Control Board
   if (
     authLower.includes("cpcb") ||
     authLower.includes("central pollution")
@@ -68,7 +170,7 @@ export function resolveAuthorityPortalUrl(
     return "https://cpcb.nic.in";
   }
 
-  // 5. Bureau of Indian Standards (BIS) & Technical Standards
+  // 10. Bureau of Indian Standards (BIS) & Technical Standards
   if (
     authLower.includes("bis") ||
     authLower.includes("bureau of indian standards") ||
@@ -81,18 +183,7 @@ export function resolveAuthorityPortalUrl(
     return "https://bis.gov.in";
   }
 
-  // 6. Foreign Trade & DGFT
-  if (
-    authLower.includes("dgft") ||
-    authLower.includes("foreign trade") ||
-    descLower.includes("iec") ||
-    descLower.includes("importer-exporter") ||
-    descLower.includes("import export")
-  ) {
-    return "https://dgft.gov.in";
-  }
-
-  // 7. Food Safety & Standards (FSSAI)
+  // 11. Food Safety & Standards (FSSAI)
   if (
     authLower.includes("fssai") ||
     descLower.includes("fssai") ||
@@ -102,7 +193,7 @@ export function resolveAuthorityPortalUrl(
     return "https://foscos.fssai.gov.in";
   }
 
-  // 8. General Labour / Factory Safety
+  // 12. General Labour / Factory Safety
   if (descLower.includes("factory") || descLower.includes("labour")) {
     return "https://shramsuvidha.gov.in";
   }
@@ -112,5 +203,5 @@ export function resolveAuthorityPortalUrl(
     return explicitUrl;
   }
 
-  return "https://india.gov.in";
+  return "https://www.nsws.gov.in/";
 }

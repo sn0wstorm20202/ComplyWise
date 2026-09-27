@@ -51,13 +51,31 @@ class BusinessListCreateView(generics.ListCreateAPIView):
         )
 
 
-class BusinessDetailView(generics.RetrieveUpdateAPIView):
+class BusinessDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = BusinessSerializer
     permission_classes = [IsAuthenticated, IsBusinessMember]
     lookup_url_kwarg = "business_id"
 
     def get_queryset(self):
         return Business.accessible_to(self.request.user)
+
+    def perform_destroy(self, instance: Business) -> None:
+        """Safely archive (soft-delete) or permanently delete a business profile."""
+        if instance.owner_id != self.request.user.id and not (self.request.user.is_staff or self.request.user.is_superuser):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only the business owner may delete or archive this profile.")
+
+        hard = self.request.query_params.get("permanent") == "true"
+        if hard:
+            instance.delete()
+        else:
+            instance.is_active = False
+            instance.save(update_fields=["is_active"])
+
+        # Clean up UserWorkspaceState pointing to this business
+        UserWorkspaceState.objects.filter(user=self.request.user, active_business=instance).update(
+            active_business=None, active_assessment=None
+        )
 
 
 class _BusinessScopedView(APIView):
@@ -327,6 +345,31 @@ class BusinessAssessmentListCreateView(_BusinessScopedView):
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
+        # --- IDEMPOTENCY GUARD ---
+        # If there is already an IN_PROGRESS assessment for this business that
+        # has not yet been linked to an orchestration run, return it rather than
+        # creating a fresh empty one. This prevents duplicate empty assessments
+        # when the frontend retries or the onboarding flow restarts.
+        # Pass ?force_new=true to bypass this guard and create a new assessment.
+        force_new = request.query_params.get("force_new") == "true" or request.data.get("force_new") is True
+        if not force_new:
+            existing = (
+                business.assessments
+                .filter(status=AssessmentStatus.IN_PROGRESS)
+                .order_by("-created_at")
+                .first()
+            )
+            if existing is not None:
+                # Only reuse if no orchestration run has started (stage_metadata is empty
+                # or only has initial profile data — not a fully-committed run)
+                stage_keys = set((existing.stage_metadata or {}).keys())
+                heavy_stages = {"compliance_synthesis", "regulatory_discovery", "answer_interpretation"}
+                if not stage_keys.intersection(heavy_stages):
+                    return Response(
+                        envelope(AssessmentSerializer(existing).data),
+                        status=status.HTTP_200_OK,
+                    )
+
         latest = business.assessments.order_by("-assessment_number").first()
         next_num = (latest.assessment_number + 1) if latest else 1
 
@@ -362,6 +405,7 @@ class BusinessAssessmentListCreateView(_BusinessScopedView):
             envelope(AssessmentSerializer(assessment).data),
             status=status.HTTP_201_CREATED,
         )
+
 
 
 class BusinessAssessmentDetailView(_BusinessScopedView):

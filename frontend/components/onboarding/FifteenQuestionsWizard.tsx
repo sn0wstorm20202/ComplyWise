@@ -93,21 +93,28 @@ export default function FifteenQuestionsWizard({
       onCompleteQuestions();
       return;
     }
-    if (currentValue === null || currentValue === undefined || currentValue === "") {
+    const finalExplanation = currentExplanation.trim();
+    let effectiveValue = currentValue;
+
+    // If user provided custom explanation text, use it as answer even if no radio option was selected
+    if ((effectiveValue === null || effectiveValue === undefined || effectiveValue === "" || effectiveValue === "OTHER") && finalExplanation) {
+      effectiveValue = finalExplanation;
+    }
+
+    if (effectiveValue === null || effectiveValue === undefined || effectiveValue === "") {
       if (targetIdx !== undefined) {
         onSelectQuestionIndex(targetIdx);
         return;
       }
       if (currentQ.required) {
-        setError("Please provide an answer before advancing.");
+        setError("Please provide an answer or enter your custom response below before advancing.");
         return;
       }
     }
 
-    const finalExplanation = currentExplanation.trim();
     const submissionPayload = finalExplanation
-      ? { value: currentValue, explanation: finalExplanation }
-      : currentValue;
+      ? { value: effectiveValue, explanation: finalExplanation, custom_text: finalExplanation }
+      : effectiveValue;
 
     setSaving(true);
     try {
@@ -295,7 +302,12 @@ export default function FifteenQuestionsWizard({
           {/* TYPE: SINGLE_SELECT */}
           {currentQ.answer_type === "SINGLE_SELECT" && (
             <div className="space-y-2.5 max-w-xl">
-              {(currentQ.options || []).map((opt) => {
+              {[
+                ...(currentQ.options || []),
+                ...((currentQ.options || []).some((o) => o.value === "OTHER" || o.value.toLowerCase().includes("other"))
+                  ? []
+                  : [{ value: "OTHER", label: "Other / Custom Specification (describe below)" }]),
+              ].map((opt) => {
                 const isSelected = currentValue === opt.value;
                 return (
                   <button

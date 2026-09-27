@@ -37,30 +37,19 @@ from .verification import verify_document
 
 
 def _resolve_business(request: Request, business_id: Any) -> Business | None:
-    """Resolve a business by accessible user, pk, or default fallback."""
-    if request.user and request.user.is_authenticated:
-        b = Business.accessible_to(request.user).filter(pk=business_id).first()
-        if b is not None:
-            return b
-
-    try:
-        b = Business.objects.filter(pk=business_id).first()
-        if b is not None:
-            return b
-    except Exception:
-        pass
-
-    # Fallback to the primary active business in the system for testing
-    return Business.objects.first()
+    """Resolve a business strictly scoped to the authenticated user."""
+    if not request.user or not request.user.is_authenticated:
+        return None
+    return Business.accessible_to(request.user).filter(pk=business_id).first()
 
 
 class BusinessDocumentsListView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, business_id=None) -> Response:  # noqa: ANN001
         business = _resolve_business(request, business_id)
         if business is None:
-            return error_response("NOT_FOUND", "No business record found in system.", http_status=status.HTTP_404_NOT_FOUND)
+            return error_response("NOT_FOUND", "Business not found or access denied.", http_status=status.HTTP_404_NOT_FOUND)
 
         assessment_id = request.query_params.get("assessment_id")
         payload = derive_business_documents(business, assessment_id=assessment_id)

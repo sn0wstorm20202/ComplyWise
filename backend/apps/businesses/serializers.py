@@ -34,6 +34,10 @@ class BusinessSerializer(serializers.ModelSerializer):
     cases_count = serializers.SerializerMethodField()
     documents_count = serializers.SerializerMethodField()
     pending_reviews_count = serializers.SerializerMethodField()
+    active_profile_version_number = serializers.SerializerMethodField()
+    current_profile_version = serializers.SerializerMethodField()
+    legal_structure = serializers.SerializerMethodField()
+    business_type = serializers.SerializerMethodField()
 
     class Meta:
         model = Business
@@ -52,6 +56,10 @@ class BusinessSerializer(serializers.ModelSerializer):
             "cases_count",
             "documents_count",
             "pending_reviews_count",
+            "active_profile_version_number",
+            "current_profile_version",
+            "legal_structure",
+            "business_type",
         ]
         read_only_fields = ["id", "is_active", "created_at", "updated_at"]
 
@@ -92,6 +100,24 @@ class BusinessSerializer(serializers.ModelSerializer):
             return obj._cached_pending_reviews_count
         from common.enums import CaseStatus
         return obj.compliance_cases.filter(status_code=CaseStatus.HUMAN_REVIEW).count()
+
+    def get_active_profile_version_number(self, obj: Business) -> int | None:
+        return self.get_profile_version(obj)
+
+    def get_current_profile_version(self, obj: Business) -> int | None:
+        return self.get_profile_version(obj)
+
+    def get_legal_structure(self, obj: Business) -> str:
+        current = self._get_current_profile(obj)
+        if current and current.variables:
+            return current.raw_value("legal_structure") or current.raw_value("constitution") or "PRIVATE_LIMITED"
+        return "PRIVATE_LIMITED"
+
+    def get_business_type(self, obj: Business) -> str:
+        current = self._get_current_profile(obj)
+        if current and current.variables:
+            return current.raw_value("business_type") or current.raw_value("sector") or "Enterprise"
+        return "Enterprise"
 
     def validate_name(self, value: str) -> str:
         name = value.strip()

@@ -92,6 +92,37 @@ PROHIBITED_DOMAINS_BY_KEYWORD: dict[str, list[str]] = {
         "cement", "clinker", "quarry",
         "dairy processing", "slaughterhouse", "meat processing", "fssai", "foscos", "food safety",
         "packaged drinking water",
+        "cert-in", "certin", "cybersecurity", "incident reporting", "dpdp", "data fiduciary",
+    ],
+    "software": [
+        "factory license", "factories act", "consent to establish", "consent to operate",
+        "cte", "cto", "spcb", "mpcb", "wbpcb", "gpcb", "pollution control", "boiler",
+        "etp", "effluent", "hazardous waste", "fssai", "foscos", "food safety",
+        "cement", "textile", "mining", "quarry", "rotary kiln", "blast furnace",
+    ],
+    "saas": [
+        "factory license", "factories act", "consent to establish", "consent to operate",
+        "cte", "cto", "spcb", "mpcb", "wbpcb", "gpcb", "pollution control", "boiler",
+        "etp", "effluent", "hazardous waste", "fssai", "foscos", "food safety",
+        "cement", "textile", "mining", "quarry", "rotary kiln", "blast furnace",
+    ],
+    "platform": [
+        "factory license", "factories act", "consent to establish", "consent to operate",
+        "cte", "cto", "spcb", "mpcb", "wbpcb", "gpcb", "pollution control", "boiler",
+        "etp", "effluent", "hazardous waste", "fssai", "foscos", "food safety",
+        "cement", "textile", "mining", "quarry", "rotary kiln", "blast furnace",
+    ],
+    "pre-visualization": [
+        "factory license", "factories act", "consent to establish", "consent to operate",
+        "cte", "cto", "spcb", "mpcb", "wbpcb", "gpcb", "pollution control", "boiler",
+        "etp", "effluent", "hazardous waste", "fssai", "foscos", "food safety",
+        "cement", "textile", "mining", "quarry", "rotary kiln", "blast furnace",
+    ],
+    "storyloom": [
+        "factory license", "factories act", "consent to establish", "consent to operate",
+        "cte", "cto", "spcb", "mpcb", "wbpcb", "gpcb", "pollution control", "boiler",
+        "etp", "effluent", "hazardous waste", "fssai", "foscos", "food safety",
+        "cement", "textile", "mining", "quarry", "rotary kiln", "blast furnace",
     ],
 }
 
@@ -221,14 +252,36 @@ def _sanitize_and_prune_irrelevant_requirements(
                 if term not in cleaned_desc:
                     active_prohibitions.add(term.lower())
 
+    is_pure_software = bool(re.search(r"\b(software|saas|platform|app|web|digital|pre-visualization|film pre-visualization|consulting|it services|agency)\b", cleaned_desc)) and not any(hw in cleaned_desc for hw in ["hardware manufacturing", "assembly plant", "fabrication plant", "physical manufacturing"])
+    is_physical_mfg = bool(re.search(r"\b(mill|textile|weaving|spinning|dyeing|fabric|yarn|foundry|plant|casting|manufacturing|factory|machinery|engineering|chemical|metal|assembly|battery)\b", cleaned_desc)) and not is_pure_software
+
     seen_signatures: set[str] = set()
 
     for r in requirements:
         if not isinstance(r, dict):
             continue
-        title = str(r.get("title") or "")
+        title = str(r.get("title") or r.get("name") or "")
         desc = str(r.get("description") or "")
-        combined = f"{title} {desc}".lower()
+        req_id = str(r.get("requirement_id") or r.get("id") or "")
+        combined = f"{req_id} {title} {desc}".lower()
+
+        # Hard guard for pure software/SaaS: Never allow factory licenses or pollution board consents
+        if is_pure_software:
+            if any(term in combined for term in [
+                "factory license", "factory licence", "factories act",
+                "consent to establish", "consent to operate", "cte", "cto",
+                "pollution control board", "spcb", "mpcb", "wbpcb", "gpcb", "cpcb consent"
+            ]):
+                logger.info("Software Guard pruned industrial requirement '%s' (%s) for profile '%s'", title, req_id, product_desc[:50])
+                continue
+
+        # Hard guard for physical manufacturing: Never allow cyber/DPDP requirements meant for digital platforms
+        if is_physical_mfg:
+            if any(term in combined for term in [
+                "cert-in", "certin", "cybersecurity", "incident-reporting", "incident reporting", "dpdp", "data fiduciary"
+            ]):
+                logger.info("Physical Mfg Guard pruned digital requirement '%s' (%s) for profile '%s'", title, req_id, product_desc[:50])
+                continue
 
         # Check if violates active prohibitions
         is_prohibited = any(p in combined for p in active_prohibitions)
@@ -236,10 +289,15 @@ def _sanitize_and_prune_irrelevant_requirements(
             logger.info("Irrelevance Guard pruned requirement '%s' for profile '%s'", title, product_desc[:50])
             continue
 
-        # Deduplication signature
+        # CERT-In Deduplication Guard (prevent REQ-CERT-IN and REQ-CERTIN duplicates)
+        if "cert-in" in combined or "certin" in combined:
+            if "CERTIN_CYBER_MANDATE" in seen_signatures:
+                continue
+            seen_signatures.add("CERTIN_CYBER_MANDATE")
+
+        # General Deduplication signature
         auth = str(r.get("authority") or "").strip().lower()
         jur = str(r.get("jurisdiction") or "").strip().lower()
-        # Clean title key
         title_key = re.sub(r"[^a-z0-9]", "", title.lower())
         sig = f"{auth}::{jur}::{title_key}"
         if sig in seen_signatures:
@@ -509,6 +567,11 @@ def _validate_candidate_applicability_deterministically(
         trade_intent = context.answers.get("trade_intent") or ("EXPORT_ONLY" if is_cross_border else "DOMESTIC_ONLY")
         worker_count = context.operational_facts.get("total_worker_count")
 
+    desc_clean = strip_negations(desc)
+    is_software_or_services = bool(re.search(r"\b(software|saas|platform|app|web|digital|pre-visualization|film pre-visualization|consulting|it services|agency)\b", desc_clean))
+    if is_software_or_services and not any(hw in desc_clean for hw in ["hardware manufacturing", "assembly plant", "fabrication plant", "physical manufacturing"]):
+        is_mfg = False
+
     title_and_desc = f"{req.get('title', '')} {req.get('description', '')}".lower()
     req_jur = (req.get("jurisdiction") or "").strip().upper()
 
@@ -614,7 +677,7 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
             "total_workers": getattr(context, "total_worker_count", None),
             "annual_turnover": getattr(context, "annual_turnover", None),
         }
-        if isinstance(context, EnrichedBusinessContext) and context.interpreted_facts:
+        if isinstance(context, EnrichedBusinessContext) and getattr(context, "interpreted_facts", None):
             profile_json["interpreted_facts"] = [
                 {"key": f.key, "value": f.value} for f in context.interpreted_facts
             ]
@@ -828,10 +891,13 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
 
         # Enforce jurisdictional authority accuracy, environmental consent semantics, and IT CRS isolation
         state_name = ""
+        is_mfg = True
         if isinstance(context, EnrichedBusinessContext):
             state_name = context.state_name or context.state or ""
+            is_mfg = context.is_manufacturing
         elif isinstance(context, OrchestrationContext):
             state_name = context.geography.get("state_name") or context.geography.get("state") or ""
+            is_mfg = context.normalized_facts.get("is_manufacturing", True)
         state_str = (state_name or "").lower()
         for req in verified_requirements:
             r_title = (req.get("title") or "").lower()
@@ -850,12 +916,16 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                         req["status"] = "NEEDS_INFORMATION"
                         req["why_it_matters"] = "Categorization (Red/Orange/Green/White) determines clearance procedure under Water and Air Acts."
 
-            # Factory Licensing: In West Bengal, authority must be Directorate of Factories
+            # Factory Licensing: Deterministic check - non-manufacturing entities never need Factory License
             is_factory = any(kw in r_title or kw in r_desc for kw in ["factory license", "factory licence", "factories act"])
-            if is_factory and ("west bengal" in state_str or r_jur == "WEST_BENGAL"):
-                req["authority"] = "Directorate of Factories, Department of Labour, Government of West Bengal"
-                req["jurisdiction"] = "WEST_BENGAL"
-                req["source_urls"] = ["https://wbfactories.gov.in"]
+            if is_factory:
+                if not is_mfg:
+                    req["status"] = "NOT_APPLICABLE"
+                    req["why_it_matters"] = "Factories Act 1948 applies only to premises engaged in manufacturing processes; not applicable to non-manufacturing entities."
+                elif "west bengal" in state_str or r_jur == "WEST_BENGAL":
+                    req["authority"] = "Directorate of Factories, Department of Labour, Government of West Bengal"
+                    req["jurisdiction"] = "WEST_BENGAL"
+                    req["source_urls"] = ["https://wbfactories.gov.in"]
 
             # IT adapter CRS standard (IS 13252): Never apply to EV charging equipment
             if is_ev_mfg and ("13252" in r_title or "13252" in r_desc or "power adapter" in r_title):

@@ -95,7 +95,7 @@ class DerivedBusinessContext:
         if any(sw in desc for sw in service_words) and not any(hw in desc for hw in ["hardware manufacturing", "assembly plant", "fabrication plant", "physical manufacturing"]):
             return False
 
-        mfg_words = [r"\bmanufactur", r"\bassembl", r"\bfabricat", r"\bplant\b", r"\bfactory\b", r"\bboiler\b", r"\bfurnace\b"]
+        mfg_words = [r"\bmanufactur", r"\bassembl", r"\bfabricat", r"\bplant\b", r"\bfactory\b", r"\bboiler\b", r"\bfurnace\b", r"\bprocess", r"\bproduct", r"\bmachin"]
         return any(re.search(w, desc) for w in mfg_words)
 
     @property

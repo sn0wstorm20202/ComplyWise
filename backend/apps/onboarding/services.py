@@ -103,36 +103,63 @@ def save_smart_question_answers(
     """Save answered variables into a new immutable BusinessProfileVersion."""
     cleaned_entries: dict[str, dict[str, Any]] = {}
 
+    from django.db.models import Q
+
     for key, raw_value in answers.items():
         if raw_value is None or (isinstance(raw_value, str) and not raw_value.strip()):
             continue
+
+        # Extract scalar value and optional custom explanation
+        scalar_val = raw_value
+        custom_text = None
+        if isinstance(raw_value, dict):
+            scalar_val = raw_value.get("value")
+            if scalar_val is None:
+                scalar_val = raw_value.get("selected_option") or raw_value.get("custom_text")
+            custom_text = raw_value.get("explanation") or raw_value.get("custom_text")
+            if (scalar_val in (None, "", "OTHER", "CUSTOM")) and custom_text:
+                scalar_val = custom_text
+
         var_def = get_variable(key)
         if var_def is not None:
-            coerced = coerce_value(var_def, raw_value)
-            if coerced is None:
-                continue
-            if var_def.key == "state" and isinstance(coerced, str):
-                canonical = normalize_jurisdiction(coerced)
-                if canonical:
-                    coerced = canonical
+            coerced = None
+            try:
+                coerced = coerce_value(var_def, scalar_val)
+            except ValueError:
+                # Custom answer provided by user that doesn't strictly match canonical enum:
+                # Store user's custom text with USER_PROVIDED provenance instead of failing validation
+                coerced = str(scalar_val).strip() if scalar_val is not None else None
 
-            val_to_store = str(coerced) if var_def.data_type in {"DECIMAL", "CURRENCY_INR"} else coerced
-            cleaned_entries[var_def.key] = BusinessProfileVersion.build_entry(
-                value=val_to_store,
-                origin=VariableOrigin.USER_PROVIDED,
-            )
+            if coerced is None and scalar_val is not None:
+                coerced = str(scalar_val).strip()
+
+            if coerced is not None:
+                if var_def.key == "state" and isinstance(coerced, str):
+                    canonical = normalize_jurisdiction(coerced)
+                    if canonical:
+                        coerced = canonical
+
+                val_to_store = str(coerced) if var_def.data_type in {"DECIMAL", "CURRENCY_INR"} else coerced
+                entry = BusinessProfileVersion.build_entry(
+                    value=val_to_store,
+                    origin=VariableOrigin.USER_PROVIDED,
+                )
+                if custom_text:
+                    entry["custom_text"] = custom_text
+                cleaned_entries[var_def.key] = entry
         else:
             # Dynamic discovery context field (non-canonical)
             cleaned_entries[key] = BusinessProfileVersion.build_entry(
-                value=raw_value,
+                value=scalar_val if scalar_val is not None else raw_value,
                 origin=VariableOrigin.USER_PROVIDED,
             )
 
-        # Mark corresponding SmartQuestionInstance as answered
+        # Mark corresponding SmartQuestionInstance as answered (match by variable_key or question_id)
         SmartQuestionInstance.objects.filter(
             business=business,
-            variable_key=key,
             is_answered=False,
+        ).filter(
+            Q(variable_key=key) | Q(question_id=key) | Q(target_variable_id=key)
         ).update(is_answered=True, answer_value=raw_value)
 
     if not cleaned_entries:

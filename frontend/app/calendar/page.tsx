@@ -23,7 +23,7 @@ import {
 
 function CalendarContent() {
   const { t } = useLanguage();
-  const { activeBusinessId, profile } = useBusinessContext();
+  const { activeBusinessId, profile, isDemoMode } = useBusinessContext();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
 
@@ -136,16 +136,22 @@ function CalendarContent() {
     const bizId =
       paramBusinessId ||
       activeBusinessId ||
-      localStorage.getItem("complywise_active_business_id") ||
-      "bb0abb9b-409e-405a-bae1-777540bc0907";
+      (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
 
+    if (!bizId) return;
     setBusinessId(bizId);
+
+    if (!isDemoMode) {
+      setEvents([]);
+      setCoverage(null);
+    }
 
     async function loadCalendar(id: string) {
       setError(null);
+      setLoading(true);
       try {
         const resp = await api.calendar.list(id);
-        if (resp && resp.events && resp.events.length > 0) {
+        if (resp && resp.events) {
           setEvents(resp.events);
           setCoverage({
             not_covered: resp.not_covered,
@@ -153,12 +159,16 @@ function CalendarContent() {
           });
         }
       } catch {
-        // Fallback already rendered seamlessly
+        if (!isDemoMode) {
+          setEvents([]);
+        }
+      } finally {
+        setLoading(false);
       }
     }
 
     loadCalendar(bizId);
-  }, [paramBusinessId, activeBusinessId]);
+  }, [paramBusinessId, activeBusinessId, isDemoMode]);
 
   const handleConnectGoogle = async () => {
     setGoogleLoading(true);

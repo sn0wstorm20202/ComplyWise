@@ -123,6 +123,12 @@ export const businessesApi = {
   /** Get specific business details */
   get: (businessId: string) => request<Business>(`/businesses/${businessId}`),
 
+  /** Archive or delete a business profile */
+  delete: (businessId: string, permanent?: boolean) =>
+    request<void>(`/businesses/${businessId}${permanent ? "?permanent=true" : ""}`, {
+      method: "DELETE",
+    }),
+
   /** Get current business profile and schema */
   getProfile: (businessId: string) =>
     request<BusinessProfileData>(`/businesses/${businessId}/profile`),

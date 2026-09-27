@@ -8,6 +8,7 @@ import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import { api } from "@/lib/api";
 import type { WorkflowItem, WorkflowStep } from "@/types";
+import { resolveAuthorityPortalUrl } from "@/lib/authorityPortals";
 import {
   AlertTriangle,
   ArrowRight,
@@ -30,12 +31,14 @@ import {
   Zap,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useBusinessContext } from "@/context/BusinessContext";
 
 type CategoryFilter = "ALL" | "COMPLIANCE" | "STANDARD" | "SCHEME";
 type StatusFilter = "ALL" | "IN_PROGRESS" | "COMPLETED" | "NOT_STARTED";
 
 function WorkflowsContent() {
   const { t } = useLanguage();
+  const { activeBusinessId } = useBusinessContext();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
   const paramWorkflowId = searchParams.get("workflow_id");
@@ -64,12 +67,14 @@ function WorkflowsContent() {
   useEffect(() => {
     const bizId =
       paramBusinessId ||
-      (typeof window !== "undefined"
-        ? localStorage.getItem("complywise_active_business_id") || "05c1bf63-9d22-4d5e-9c73-8811492ab7e2"
-        : "05c1bf63-9d22-4d5e-9c73-8811492ab7e2");
+      activeBusinessId ||
+      (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
+
+    if (!bizId) return;
     setBusinessId(bizId);
+    setWorkflows([]); // clear old business workflows immediately
     loadWorkflows(bizId);
-  }, [paramBusinessId]);
+  }, [paramBusinessId, activeBusinessId]);
 
   async function loadWorkflows(bizId: string) {
     setLoading(true);
@@ -80,7 +85,16 @@ function WorkflowsContent() {
         if (res.business_name) {
           setBusinessName(res.business_name);
         }
-        const wfList = res.workflows || [];
+        const wfList = (res.workflows || []).map((w: WorkflowItem) => ({
+          ...w,
+          portal_url: resolveAuthorityPortalUrl(w.authority, w.title, w.portal_url),
+          steps: (w.steps || []).map((s: WorkflowStep) => ({
+            ...s,
+            portal_url: s.portal_url
+              ? resolveAuthorityPortalUrl(w.authority, s.title, s.portal_url)
+              : resolveAuthorityPortalUrl(w.authority, w.title, w.portal_url),
+          })),
+        }));
         setWorkflows(wfList);
 
         if (wfList.length > 0) {
@@ -565,9 +579,9 @@ function WorkflowsContent() {
                   {/* Right Header: Portal Link & Status Pill */}
                   <div className="flex flex-col sm:items-end gap-2.5 shrink-0">
                     <div className="flex items-center gap-3">
-                      {activeWf.portal_url && (
+                      {Boolean(activeWf.portal_url || resolveAuthorityPortalUrl(activeWf.authority, activeWf.title)) && (
                         <a
-                          href={activeWf.portal_url}
+                          href={activeWf.portal_url || resolveAuthorityPortalUrl(activeWf.authority, activeWf.title)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-colors"
@@ -732,9 +746,9 @@ function WorkflowsContent() {
                       </div>
 
                       {/* Official Portal Filing Action */}
-                      {(activeStep.portal_url || activeWf.portal_url) && (
+                      {Boolean(activeStep.portal_url || activeWf.portal_url || resolveAuthorityPortalUrl(activeWf.authority, activeStep.title || activeWf.title)) && (
                         <a
-                          href={activeStep.portal_url || activeWf.portal_url}
+                          href={activeStep.portal_url || activeWf.portal_url || resolveAuthorityPortalUrl(activeWf.authority, activeStep.title || activeWf.title)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[#CBD5E1] hover:border-purple-500 text-[#0F172A] text-xs font-bold transition-all shadow-2xs"

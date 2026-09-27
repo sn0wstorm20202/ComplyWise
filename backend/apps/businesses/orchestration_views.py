@@ -472,7 +472,12 @@ class AssessmentComplianceSynthesisView(APIView):
 
 
 class AssessmentComplianceView(APIView):
-    """Retrieve structured compliance requirements and executive summary."""
+    """Retrieve structured compliance requirements and executive summary.
+
+    Source priority (per audit mandate — RAG retrieves, rules decide, LLM explains):
+    1. Engine 2 DecisionResults linked via assessment.decision_run  ← canonical, always preferred
+    2. Orchestration compliance_synthesis cache                      ← LLM, only used as fallback
+    """
 
     permission_classes = [IsAuthenticated]
 
@@ -486,6 +491,134 @@ class AssessmentComplianceView(APIView):
             )
 
         try:
+            assessment = run.assessment
+            biz = assessment.business
+
+            # ----------------------------------------------------------------
+            # PRIORITY 1: Engine 2 DecisionResults (canonical, deterministic)
+            # ----------------------------------------------------------------
+            engine2_run = None
+            if assessment.decision_run_id:
+                engine2_run = assessment.decision_run
+            if engine2_run is None:
+                # Try the most recent DecisionRun for this assessment
+                from apps.applicability.models import DecisionRun as EngineDecisionRun
+                engine2_run = EngineDecisionRun.objects.filter(
+                    assessment=assessment
+                ).prefetch_related("results").order_by("-created_at").first()
+
+            if engine2_run and engine2_run.results.exists():
+                # Build response from Engine 2 DecisionResults
+                from apps.knowledge.models import RequirementDefinition
+                from apps.evidence.models import Evidence
+                from knowledge_packs.catalogs import resolve_statutory_portal
+                from apps.requirements.views import _why_summary, PORTAL_KEY
+
+                results = list(engine2_run.results.all())
+                req_ids = [r.requirement_id for r in results]
+                req_defs = {
+                    rd.requirement_id: rd
+                    for rd in RequirementDefinition.objects.filter(requirement_id__in=req_ids)
+                }
+
+                all_ev_ids: set[str] = set()
+                for r in results:
+                    for ref in (r.evidence_refs or []):
+                        ev_id = ref.get("evidence_id") if isinstance(ref, dict) else ref
+                        if ev_id:
+                            all_ev_ids.add(str(ev_id))
+                evidences_map = {
+                    ev.evidence_id: ev
+                    for ev in Evidence.objects.filter(evidence_id__in=all_ev_ids).select_related("source")
+                }
+
+                requirements = []
+                for r in results:
+                    req_def = req_defs.get(r.requirement_id)
+                    auth = req_def.authority if req_def else "Authority"
+                    cat = req_def.category if req_def else "GENERAL"
+                    jur = req_def.jurisdiction if req_def else "CENTRAL"
+                    metadata = (req_def.metadata or {}) if req_def else {}
+                    raw_portal = str(metadata.get(PORTAL_KEY) or "").strip()
+                    portal_info = resolve_statutory_portal(
+                        authority=auth,
+                        requirement_name=r.requirement_name,
+                        requirement_id=r.requirement_id,
+                        raw_portal=raw_portal,
+                    )
+                    canonical_source_url = portal_info["url"]
+                    portal_name = portal_info["name"]
+                    citations = []
+                    for ref in (r.evidence_refs or []):
+                        ev_id = ref.get("evidence_id") if isinstance(ref, dict) else ref
+                        ev_obj = evidences_map.get(str(ev_id))
+                        if ev_obj and ev_obj.source:
+                            citations.append({
+                                "evidence_id": ev_obj.evidence_id,
+                                "source_title": ev_obj.source.title,
+                                "authority": ev_obj.source.authority,
+                                "locator": ev_obj.locator,
+                                "excerpt": ev_obj.excerpt,
+                                "verification_status": ev_obj.verification_status,
+                                "canonical_url": ev_obj.source.canonical_url,
+                            })
+                    requirements.append({
+                        "requirement_id": r.requirement_id,
+                        "name": r.requirement_name,
+                        "title": r.requirement_name,
+                        "authority": auth,
+                        "category": cat,
+                        "jurisdiction": jur,
+                        "domain": req_def.domain if req_def else "GENERAL",
+                        "regulatory_domain": req_def.domain if req_def else "GENERAL",
+                        "description": req_def.description if req_def else "",
+                        "status": r.status,
+                        "matched_rule_id": r.explanation_trace.get("matched_rule_id"),
+                        "evidence_count": len(r.evidence_refs or []),
+                        "explanation_reason": r.explanation_trace.get("reason"),
+                        "reason_summary": _why_summary(r.explanation_trace, req_def) if req_def else "",
+                        "notes": r.explanation_trace.get("note", ""),
+                        "portal": canonical_source_url,
+                        "portal_url": canonical_source_url,
+                        "portal_name": portal_name,
+                        "source_url": canonical_source_url,
+                        "source_title": (citations[0]["source_title"] if citations else (req_def.name if req_def else auth)),
+                        "citations": citations,
+                        "citation_count": len(citations),
+                    })
+
+                applicable = [r for r in requirements if r["status"] == "APPLICABLE"]
+                needs_info = [r for r in requirements if r["status"] in {"NEEDS_INFORMATION", "NEEDS_VERIFICATION"}]
+                not_applicable = [r for r in requirements if r["status"] == "NOT_APPLICABLE"]
+                comp_data = {
+                    "requirements": requirements,
+                    "applicable_count": len(applicable),
+                    "source": "ENGINE2_DECISION_RESULTS",
+                    "executive_summary": {
+                        "total_evaluated": len(requirements),
+                        "applicable_count": len(applicable),
+                        "needs_information_count": len(needs_info),
+                        "not_applicable_count": len(not_applicable),
+                        "total_applicable": len(applicable),
+                        "total_needs_info": len(needs_info),
+                        "total_not_applicable": len(not_applicable),
+                        "high_priority_count": len(applicable),
+                    },
+                    "summary": {
+                        "total_applicable": len(applicable),
+                        "total_needs_info": len(needs_info),
+                        "total_not_applicable": len(not_applicable),
+                        "high_priority_count": len(applicable),
+                    },
+                }
+                return Response(
+                    envelope(comp_data, meta={"correlation_id": run.correlation_id, "source": "engine2"}),
+                    status=status.HTTP_200_OK,
+                )
+
+            # ----------------------------------------------------------------
+            # PRIORITY 2: Orchestration compliance_synthesis cache (LLM, fallback only)
+            # ----------------------------------------------------------------
             from domain.intelligence.orchestration import AssessmentStage
             if "compliance_synthesis" not in run.stage_metadata:
                 if "regulatory_discovery" not in run.stage_metadata:
@@ -501,6 +634,19 @@ class AssessmentComplianceView(APIView):
                     or "fssai" in (r.get("authority") or "").lower()
                     or (r.get("regulatory_domain") or "").upper() == "FOOD_SAFETY"
                 )
+                from domain.intelligence.synthesis import _sanitize_and_prune_irrelevant_requirements
+                profile_desc = ""
+                if biz and biz.current_profile:
+                    p_vars = biz.current_profile.variables or {}
+                    p_val = p_vars.get("product_description")
+                    profile_desc = p_val.get("value", "") if isinstance(p_val, dict) else str(p_val or "")
+                if not profile_desc and biz:
+                    profile_desc = biz.name
+
+                reqs = _sanitize_and_prune_irrelevant_requirements(reqs, profile_desc)
+                comp_data["requirements"] = reqs
+                comp_data["applicable_count"] = sum(1 for r in reqs if r.get("status") == "APPLICABLE")
+
                 if fssai_count > 1:
                     from domain.intelligence.synthesis import _consolidate_fssai_requirements
                     from domain.intelligence.orchestration import OrchestrationContext
@@ -512,18 +658,20 @@ class AssessmentComplianceView(APIView):
                     consolidated = _consolidate_fssai_requirements(ctx, reqs)
                     comp_data["requirements"] = consolidated
                     comp_data["applicable_count"] = sum(1 for r in consolidated if r.get("status") == "APPLICABLE")
-                    if isinstance(comp_data.get("executive_summary"), dict):
-                        comp_data["executive_summary"]["total_evaluated"] = len(consolidated)
-                        comp_data["executive_summary"]["applicable_count"] = comp_data["applicable_count"]
-                        comp_data["executive_summary"]["needs_information_count"] = sum(
-                            1 for r in consolidated if r.get("status") in {"NEEDS_INFORMATION", "NEEDS_VERIFICATION"}
-                        )
-                    state = dict(run.stage_metadata)
-                    state["compliance_synthesis"] = comp_data
-                    if "COMPLIANCE_SYNTHESIS" in state and isinstance(state["COMPLIANCE_SYNTHESIS"], dict):
-                        state["COMPLIANCE_SYNTHESIS"]["data"] = comp_data
-                    run.stage_metadata = state
-                    run.save()
+
+                if isinstance(comp_data.get("executive_summary"), dict):
+                    final_reqs = comp_data["requirements"]
+                    comp_data["executive_summary"]["total_evaluated"] = len(final_reqs)
+                    comp_data["executive_summary"]["applicable_count"] = sum(1 for r in final_reqs if r.get("status") == "APPLICABLE")
+                    comp_data["executive_summary"]["needs_information_count"] = sum(
+                        1 for r in final_reqs if r.get("status") in {"NEEDS_INFORMATION", "NEEDS_VERIFICATION"}
+                    )
+                state = dict(run.stage_metadata)
+                state["compliance_synthesis"] = comp_data
+                if "COMPLIANCE_SYNTHESIS" in state and isinstance(state["COMPLIANCE_SYNTHESIS"], dict):
+                    state["COMPLIANCE_SYNTHESIS"]["data"] = comp_data
+                run.stage_metadata = state
+                run.save()
 
             return Response(
                 envelope(comp_data, meta={"correlation_id": run.correlation_id}),
@@ -534,6 +682,7 @@ class AssessmentComplianceView(APIView):
         except Exception as exc:
             logger.exception("Error retrieving compliance requirements: %s", exc)
             return error_response("INTERNAL_ERROR", "Failed to retrieve compliance requirements.", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class AssessmentEvidenceView(APIView):

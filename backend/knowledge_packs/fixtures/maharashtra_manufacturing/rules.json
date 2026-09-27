@@ -1,0 +1,408 @@
+[
+  {
+    "rule_id": "RULE-MH-FACTORIES-01",
+    "version": 1,
+    "domain": "LABOR",
+    "jurisdiction": "MAHARASHTRA",
+    "requirement_id": "REQ-MH-FACTORY-LICENSE",
+    "status": "PUBLISHED",
+    "effective_from": "1963-01-01",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {
+          "op": "EQ",
+          "left": {
+            "var": "state"
+          },
+          "right": "MAHARASHTRA"
+        },
+        {
+          "op": "GTE",
+          "left": {
+            "var": "total_worker_count"
+          },
+          "right": 10
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-DISH-MH-FACTORIES-ACT"]
+  },
+  {
+    "rule_id": "RULE-MPCB-CTE-01",
+    "version": 1,
+    "domain": "ENVIRONMENT",
+    "jurisdiction": "MAHARASHTRA",
+    "requirement_id": "REQ-MPCB-CTE",
+    "status": "PUBLISHED",
+    "effective_from": "1981-05-16",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {
+          "op": "EQ",
+          "left": {
+            "var": "state"
+          },
+          "right": "MAHARASHTRA"
+        },
+        {
+          "op": "OR",
+          "args": [
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "dye"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "textile"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "weaving"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "spinning"
+            },
+            {
+              "op": "EQ",
+              "left": {
+                "var": "effluent_emission_generation"
+              },
+              "right": true
+            }
+          ]
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-MPCB-CTE-RED-TEXTILE"]
+  },
+  {
+    "rule_id": "RULE-MPCB-CTO-01",
+    "version": 1,
+    "domain": "ENVIRONMENT",
+    "jurisdiction": "MAHARASHTRA",
+    "requirement_id": "REQ-MPCB-CTO",
+    "status": "PUBLISHED",
+    "effective_from": "1981-05-16",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {
+          "op": "EQ",
+          "left": {
+            "var": "state"
+          },
+          "right": "MAHARASHTRA"
+        },
+        {
+          "op": "EQ",
+          "left": {
+            "var": "lifecycle_stage"
+          },
+          "right": "OPERATIONAL"
+        },
+        {
+          "op": "OR",
+          "args": [
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "dye"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "textile"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "weaving"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "spinning"
+            }
+          ]
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-MPCB-CTO-TEXTILE"]
+  },
+  {
+    "rule_id": "RULE-MPCB-HAZARDOUS-01",
+    "version": 1,
+    "domain": "ENVIRONMENT",
+    "jurisdiction": "MAHARASHTRA",
+    "requirement_id": "REQ-MPCB-HAZARDOUS-WASTE",
+    "status": "PUBLISHED",
+    "effective_from": "2016-04-04",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {
+          "op": "EQ",
+          "left": {
+            "var": "state"
+          },
+          "right": "MAHARASHTRA"
+        },
+        {
+          "op": "OR",
+          "args": [
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "dye"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "chemical"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "textile"
+            },
+            {
+              "op": "EQ",
+              "left": {
+                "var": "hazardous_waste_generation"
+              },
+              "right": true
+            }
+          ]
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-MPCB-HAZARDOUS-WASTE"]
+  },
+  {
+    "rule_id": "RULE-MH-BOILER-01",
+    "version": 1,
+    "domain": "MANUFACTURING",
+    "jurisdiction": "MAHARASHTRA",
+    "requirement_id": "REQ-MH-BOILER-REGISTRATION",
+    "status": "PUBLISHED",
+    "effective_from": "1924-01-01",
+    "condition_ast": {
+      "op": "AND",
+      "args": [
+        {
+          "op": "EQ",
+          "left": {
+            "var": "state"
+          },
+          "right": "MAHARASHTRA"
+        },
+        {
+          "op": "OR",
+          "args": [
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "dye"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "textile"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "weaving"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "steam"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "boiler"
+            }
+          ]
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-MH-STEAM-BOILERS-ACT"]
+  },
+  {
+    "rule_id": "RULE-TEXTILE-COMMITTEE-01",
+    "version": 1,
+    "domain": "MANUFACTURING",
+    "jurisdiction": "CENTRAL",
+    "requirement_id": "REQ-TEXTILE-COMMITTEE-CESS",
+    "status": "PUBLISHED",
+    "effective_from": "1964-02-20",
+    "condition_ast": {
+      "op": "OR",
+      "args": [
+        {
+          "op": "CONTAINS",
+          "left": {
+            "var": "product_description"
+          },
+          "right": "textile"
+        },
+        {
+          "op": "CONTAINS",
+          "left": {
+            "var": "product_description"
+          },
+          "right": "weaving"
+        },
+        {
+          "op": "CONTAINS",
+          "left": {
+            "var": "product_description"
+          },
+          "right": "spinning"
+        },
+        {
+          "op": "CONTAINS",
+          "left": {
+            "var": "product_description"
+          },
+          "right": "yarn"
+        },
+        {
+          "op": "CONTAINS",
+          "left": {
+            "var": "product_description"
+          },
+          "right": "cotton"
+        },
+        {
+          "op": "CONTAINS",
+          "left": {
+            "var": "product_description"
+          },
+          "right": "fabric"
+        },
+        {
+          "op": "CONTAINS",
+          "left": {
+            "var": "product_description"
+          },
+          "right": "denim"
+        }
+      ]
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-TEXTILES-COMMITTEE-CESS"]
+  },
+  {
+    "rule_id": "RULE-EPFO-01",
+    "version": 1,
+    "domain": "LABOR",
+    "jurisdiction": "CENTRAL",
+    "requirement_id": "REQ-EPF-REGISTRATION",
+    "status": "PUBLISHED",
+    "effective_from": "1952-11-01",
+    "condition_ast": {
+      "op": "GTE",
+      "left": {
+        "var": "total_worker_count"
+      },
+      "right": 20
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-EPFO-20-WORKERS"]
+  },
+  {
+    "rule_id": "RULE-ESIC-01",
+    "version": 1,
+    "domain": "LABOR",
+    "jurisdiction": "CENTRAL",
+    "requirement_id": "REQ-ESI-REGISTRATION",
+    "status": "PUBLISHED",
+    "effective_from": "1948-04-19",
+    "condition_ast": {
+      "op": "GTE",
+      "left": {
+        "var": "total_worker_count"
+      },
+      "right": 10
+    },
+    "result": "APPLICABLE",
+    "evidence_refs": ["EVD-ESIC-10-WORKERS"]
+  },
+  {
+    "rule_id": "RULE-CGWA-01",
+    "version": 1,
+    "domain": "ENVIRONMENT",
+    "jurisdiction": "CENTRAL",
+    "requirement_id": "REQ-CGWA-NOC-WATER-EXTRACTION",
+    "status": "PUBLISHED",
+    "effective_from": "2020-09-24",
+    "condition_ast": {
+      "op": "OR",
+      "args": [
+        {
+          "op": "CONTAINS",
+          "left": {
+            "var": "product_description"
+          },
+          "right": "dye"
+        },
+        {
+          "op": "CONTAINS",
+          "left": {
+            "var": "product_description"
+          },
+          "right": "wet processing"
+        }
+      ]
+    },
+    "result": "NEEDS_INFORMATION",
+    "evidence_refs": ["EVD-CGWA-GROUNDWATER-NOC"]
+  }
+]

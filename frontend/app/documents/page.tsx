@@ -32,9 +32,11 @@ import {
   type DocumentVerificationInput,
 } from "@/lib/verification/documentVerifier";
 import { useLanguage } from "@/context/LanguageContext";
+import { useBusinessContext } from "@/context/BusinessContext";
 
 function DocumentsContent() {
   const { t } = useLanguage();
+  const { activeBusinessId, isDemoMode } = useBusinessContext();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
 
@@ -112,18 +114,40 @@ function DocumentsContent() {
   const [savingKey, setSavingKey] = useState<boolean>(false);
   const [configFeedback, setConfigFeedback] = useState<string | null>(null);
 
-  // Load saved portal upload state & LLM config
+  // Load saved portal upload state & LLM config scoped to active business
   useEffect(() => {
     const bizId =
       paramBusinessId ||
-      localStorage.getItem("complywise_active_business_id") ||
-      "30ce1ab5-2347-46a9-b82b-b5e846a08e0b";
+      activeBusinessId ||
+      (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
+
+    if (!bizId) return;
     setBusinessId(bizId);
+
+    // Reset previous company's documents immediately
+    if (!isDemoMode) {
+      setResponse({
+        available: true,
+        capability: "DOCUMENT_REGISTRY",
+        upload_available: true,
+        business_id: bizId,
+        evaluated: true,
+        total_count: 0,
+        disclaimer: "",
+        checklist_source: "OFFICIAL_GAZETTE",
+        requirements_without_checklist: [],
+        prevalidation_available: true,
+        unavailable_reason: "",
+        documents: [],
+      } as any);
+    }
 
     try {
       const stored = localStorage.getItem(`complywise_portal_uploaded_${bizId}`);
       if (stored) {
         setPortalUploadedMap(JSON.parse(stored));
+      } else {
+        setPortalUploadedMap({});
       }
     } catch {
       // Ignore localStorage parse errors
@@ -135,7 +159,7 @@ function DocumentsContent() {
     api.documents.getLLMConfig()
       .then((cfg) => setLlmConfig(cfg))
       .catch(() => {});
-  }, [paramBusinessId]);
+  }, [paramBusinessId, activeBusinessId, isDemoMode]);
 
   async function handleSaveApiKey(e: React.FormEvent) {
     e.preventDefault();
@@ -168,11 +192,26 @@ function DocumentsContent() {
     setError(null);
     try {
       const resp = await api.documents.list(bizId);
-      if (resp && resp.documents && resp.documents.length > 0) {
+      if (resp && resp.documents) {
         setResponse(resp);
       }
     } catch {
-      // Fallback demo documents already set
+      if (!isDemoMode) {
+        setResponse({
+          available: true,
+          capability: "DOCUMENT_REGISTRY",
+          upload_available: true,
+          business_id: bizId,
+          evaluated: true,
+          total_count: 0,
+          disclaimer: "",
+          checklist_source: "OFFICIAL_GAZETTE",
+          requirements_without_checklist: [],
+          prevalidation_available: true,
+          unavailable_reason: "",
+          documents: [],
+        } as any);
+      }
     }
   }
 

@@ -23,6 +23,7 @@ import { regulatoryUpdatesApi } from "./regulatoryUpdates";
 import { assistantApi } from "./assistant";
 import { discoveryApi } from "./discovery";
 import { orchestrationApi } from "./orchestration";
+import { casesApi } from "./cases";
 
 export const api = {
   health: healthApi,
@@ -34,6 +35,7 @@ export const api = {
   compliance: complianceApi,
   documents: documentsApi,
   workflows: workflowsApi,
+  cases: casesApi,
   calendar: calendarApi,
   schemes: schemesApi,
   standards: standardsApi,
@@ -54,6 +56,7 @@ export * from "./dashboard";
 export * from "./compliance";
 export * from "./documents";
 export * from "./workflows";
+export * from "./cases";
 export * from "./calendar";
 export * from "./schemes";
 export * from "./standards";

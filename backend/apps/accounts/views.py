@@ -52,6 +52,28 @@ class LoginView(APIView):
         return Response(_auth_payload(user, token))
 
 
+class AdminLoginView(APIView):
+    """Dedicated login endpoint strictly for compliance officers and platform administrators."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+
+        if not (user.is_staff or user.is_superuser):
+            return Response(
+                {"error": {"code": "FORBIDDEN", "message": "Access denied: Compliance Officer or Administrator credentials required."}},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        token, _ = Token.objects.get_or_create(user=user)
+        django_login(request, user)
+        return Response(_auth_payload(user, token), status=status.HTTP_200_OK)
+
+
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 

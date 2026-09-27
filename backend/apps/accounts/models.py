@@ -44,11 +44,21 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra)
 
 
+from common.enums import AdminRole
+
+
 class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
     full_name = models.CharField(max_length=150, blank=True)
     phone_number = models.CharField(max_length=32, blank=True, default="")
+
+    role = models.CharField(
+        max_length=50,
+        choices=AdminRole.choices,
+        default=AdminRole.USER,
+        help_text="Operational role (COMPLIANCE_OFFICER, SENIOR_OFFICER, AUDITOR, SUPER_ADMIN, USER)",
+    )
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(
@@ -56,6 +66,18 @@ class User(AbstractBaseUser, PermissionsMixin):
         help_text="Django admin access. Not a compliance-knowledge reviewer role.",
     )
     date_joined = models.DateTimeField(default=timezone.now)
+
+    @property
+    def is_compliance_officer(self) -> bool:
+        return self.is_staff or self.is_superuser or self.role in (
+            AdminRole.COMPLIANCE_OFFICER,
+            AdminRole.SENIOR_OFFICER,
+            AdminRole.SUPER_ADMIN,
+        )
+
+    @property
+    def is_auditor(self) -> bool:
+        return self.role == AdminRole.AUDITOR
 
     objects = UserManager()
 

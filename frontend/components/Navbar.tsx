@@ -117,6 +117,14 @@ export function Navbar() {
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
               <Link
+                href="/admin"
+                className="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1 rounded-full transition-colors"
+                title="Compliance Officer Control Room"
+              >
+                <span>🛡️</span>
+                <span>Admin Portal</span>
+              </Link>
+              <Link
                 href="/profile"
                 className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] bg-[#F8FAFC] border border-[#E2E8F0] px-3 py-1 rounded-full transition-colors"
               >
@@ -132,12 +140,22 @@ export function Navbar() {
               </button>
             </div>
           ) : (
-            <Link
-              href="/auth/signin"
-              className="text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] bg-[#F8FAFC] border border-[#E2E8F0] px-3.5 py-1 rounded-full transition-colors"
-            >
-              Sign In
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/admin/login"
+                className="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1 rounded-full transition-colors"
+                title="Compliance Officer Login"
+              >
+                <span>🛡️</span>
+                <span>Admin Portal</span>
+              </Link>
+              <Link
+                href="/auth/signin"
+                className="text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] bg-[#F8FAFC] border border-[#E2E8F0] px-3.5 py-1 rounded-full transition-colors"
+              >
+                Sign In
+              </Link>
+            </div>
           )}
           <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1">
             <span

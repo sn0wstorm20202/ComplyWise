@@ -23,6 +23,18 @@ export const authApi = {
     return session;
   },
 
+  /** Dedicated login strictly for staff compliance officers and admins */
+  adminLogin: async (email: string, password: string): Promise<AuthSession> => {
+    const session = await request<AuthSession>("/auth/admin-login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    if (session?.token) {
+      setAuthToken(session.token);
+    }
+    return session;
+  },
+
   /** Register new user account */
   register: async (
     email: string,

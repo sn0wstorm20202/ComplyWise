@@ -136,4 +136,19 @@ export const documentsApi = {
       method: "POST",
       body: JSON.stringify({ openai_api_key: apiKey, model }),
     }),
+
+  getViewUrl: (documentVersionId: string): string => {
+    // In browser client
+    if (typeof window !== "undefined") {
+      const base = window.location.origin.includes("localhost") || window.location.origin.includes("127.0.0.1")
+        ? "http://127.0.0.1:8000/api/v1"
+        : `${window.location.origin}/api/v1`;
+      return `${base}/documents/${documentVersionId}/view`;
+    }
+    return `http://127.0.0.1:8000/api/v1/documents/${documentVersionId}/view`;
+  },
+
+  getMetadata: (documentVersionId: string): Promise<{ document: any }> =>
+    request<{ document: any }>(`/documents/${documentVersionId}/metadata`),
 };
+

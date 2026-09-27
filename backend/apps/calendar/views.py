@@ -19,8 +19,9 @@ from typing import Any
 
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -535,4 +536,214 @@ class GoogleCalendarDisconnectView(APIView):
             }),
             status=status.HTTP_200_OK,
         )
+
+
+class CaseDeadlinesListView(APIView):
+    """Retrieve compliance deadlines associated with a specific case."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, case_id) -> Response:
+        from apps.calendar.models import Deadline
+        from apps.calendar.serializers import DeadlineSerializer
+        from apps.workflows.models import ComplianceCase
+
+        case = ComplianceCase.objects.filter(pk=case_id).first()
+        if not case:
+            return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
+
+        deadlines = Deadline.objects.filter(case=case).order_by("due_at")
+        data = DeadlineSerializer(deadlines, many=True).data
+        return Response(envelope({"count": len(data), "deadlines": data}), status=status.HTTP_200_OK)
+
+
+class AdminCaseDeadlinesView(APIView):
+    """Admin compliance deadline management for a case (§18, §19, §21)."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request: Request, case_id) -> Response:
+        from apps.calendar.models import Deadline
+        from apps.calendar.serializers import DeadlineSerializer
+        from apps.workflows.models import ComplianceCase
+
+        case = ComplianceCase.objects.filter(pk=case_id).first()
+        if not case:
+            return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
+
+        deadlines = Deadline.objects.filter(case=case).order_by("due_at")
+        data = DeadlineSerializer(deadlines, many=True).data
+        return Response(envelope({"count": len(data), "deadlines": data}), status=status.HTTP_200_OK)
+
+    def post(self, request: Request, case_id) -> Response:
+        from apps.calendar.serializers import DeadlineSerializer
+        from apps.calendar.services import DeadlineService
+        from apps.workflows.models import ComplianceCase
+        from dateutil import parser as date_parser
+
+        case = ComplianceCase.objects.filter(pk=case_id).first()
+        if not case:
+            return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
+
+        title = request.data.get("title")
+        due_at_raw = request.data.get("due_at") or request.data.get("due_date")
+        if not title:
+            return error_response("VALIDATION_ERROR", "Title is required for a deadline.", http_status=status.HTTP_400_BAD_REQUEST)
+        if not due_at_raw:
+            return error_response("VALIDATION_ERROR", "Due date is required for a deadline.", http_status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if isinstance(due_at_raw, str):
+                due_at = date_parser.parse(due_at_raw)
+            else:
+                due_at = due_at_raw
+            if timezone.is_naive(due_at):
+                due_at = timezone.make_aware(due_at)
+        except Exception as exc:
+            return error_response("INVALID_DATE", f"Invalid date format: {exc}", http_status=status.HTTP_400_BAD_REQUEST)
+
+        description = request.data.get("description", "")
+        priority = request.data.get("priority", "MEDIUM")
+        notes = request.data.get("notes", "")
+        reminder_policy = request.data.get("reminder_policy") or {"days_before": [7, 3, 1]}
+        email_notification_enabled = request.data.get("email_notification_enabled", True)
+        calendar_notification_enabled = request.data.get("calendar_notification_enabled", True)
+        in_app_notification_enabled = request.data.get("in_app_notification_enabled", True)
+
+        deadline = DeadlineService.create_deadline(
+            case=case,
+            business=case.business,
+            title=title,
+            due_at=due_at,
+            requirement_id_code=case.requirement_id_code,
+            description=description,
+            priority=priority,
+            source="ADMIN_SET",
+            created_by=request.user if (request.user and request.user.is_authenticated) else None,
+            email_notification_enabled=email_notification_enabled,
+            calendar_notification_enabled=calendar_notification_enabled,
+            in_app_notification_enabled=in_app_notification_enabled,
+            reminder_policy=reminder_policy,
+            notes=notes,
+        )
+
+        return Response(
+            envelope({
+                "message": "Deadline successfully created.",
+                "deadline": DeadlineSerializer(deadline).data,
+            }),
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AdminDeadlineDetailView(APIView):
+    """Admin update or cancel a deadline (§18, §19)."""
+
+    permission_classes = [AllowAny]
+
+    def patch(self, request: Request, deadline_id) -> Response:
+        from apps.calendar.models import Deadline
+        from apps.calendar.serializers import DeadlineSerializer
+        from apps.calendar.services import DeadlineService
+        from dateutil import parser as date_parser
+
+        deadline = Deadline.objects.filter(pk=deadline_id).first()
+        if not deadline:
+            return error_response("NOT_FOUND", "Deadline not found.", http_status=status.HTTP_404_NOT_FOUND)
+
+        updates = {}
+        for field in [
+            "title",
+            "description",
+            "status",
+            "priority",
+            "notes",
+            "reminder_policy",
+            "email_notification_enabled",
+            "calendar_notification_enabled",
+            "in_app_notification_enabled",
+        ]:
+            if field in request.data:
+                updates[field] = request.data[field]
+
+        if "due_at" in request.data or "due_date" in request.data:
+            due_at_raw = request.data.get("due_at") or request.data.get("due_date")
+            try:
+                if isinstance(due_at_raw, str):
+                    parsed_date = date_parser.parse(due_at_raw)
+                else:
+                    parsed_date = due_at_raw
+                if timezone.is_naive(parsed_date):
+                    parsed_date = timezone.make_aware(parsed_date)
+                updates["due_at"] = parsed_date
+            except Exception as exc:
+                return error_response("INVALID_DATE", f"Invalid date format: {exc}", http_status=status.HTTP_400_BAD_REQUEST)
+
+        updated_deadline = DeadlineService.update_deadline(
+            deadline=deadline,
+            updated_by=request.user if (request.user and request.user.is_authenticated) else None,
+            **updates,
+        )
+
+        return Response(
+            envelope({
+                "message": "Deadline successfully updated.",
+                "deadline": DeadlineSerializer(updated_deadline).data,
+            }),
+            status=status.HTTP_200_OK,
+        )
+
+    def delete(self, request: Request, deadline_id) -> Response:
+        from apps.calendar.models import Deadline
+        from apps.calendar.serializers import DeadlineSerializer
+        from apps.calendar.services import DeadlineService
+
+        deadline = Deadline.objects.filter(pk=deadline_id).first()
+        if not deadline:
+            return error_response("NOT_FOUND", "Deadline not found.", http_status=status.HTTP_404_NOT_FOUND)
+
+        reason = request.data.get("reason", "Cancelled by administrative action")
+        cancelled_deadline = DeadlineService.cancel_deadline(
+            deadline=deadline,
+            reason=reason,
+            actor=request.user if (request.user and request.user.is_authenticated) else None,
+        )
+
+        return Response(
+            envelope({
+                "message": "Deadline cancelled successfully.",
+                "deadline": DeadlineSerializer(cancelled_deadline).data,
+            }),
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminDeadlineSendAlertView(APIView):
+    """Trigger immediate multi-channel alert dispatch for a deadline (§18, §21)."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request, deadline_id) -> Response:
+        from apps.calendar.models import Deadline
+        from apps.calendar.services import DeadlineService
+
+        deadline = Deadline.objects.filter(pk=deadline_id).first()
+        if not deadline:
+            return error_response("NOT_FOUND", "Deadline not found.", http_status=status.HTTP_404_NOT_FOUND)
+
+        notes = request.data.get("notes", "Instant compliance alert dispatched by Compliance Officer.")
+        result = DeadlineService.send_alert_now(
+            deadline=deadline,
+            actor=request.user if (request.user and request.user.is_authenticated) else None,
+            notes=notes,
+        )
+
+        return Response(
+            envelope({
+                "message": "Compliance alert dispatched successfully.",
+                "result": result,
+            }),
+            status=status.HTTP_200_OK,
+        )
+
 

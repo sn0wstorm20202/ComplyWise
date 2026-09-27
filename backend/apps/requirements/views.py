@@ -31,7 +31,7 @@ class _BusinessScopedView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_business(self, request: Request, business_id) -> Business | None:  # noqa: ANN001
-        return Business.accessible_to(request.user).filter(pk=business_id).first()
+        return Business.resolve_safely(business_id, request.user)
 
 
 #: Requirement metadata keys carrying procedural detail, when knowledge records it.

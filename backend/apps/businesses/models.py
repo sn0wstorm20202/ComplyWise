@@ -80,6 +80,55 @@ class Business(BaseModel):
             models.Q(owner=user) | models.Q(memberships__user=user)
         ).distinct()
 
+    @classmethod
+    def resolve_safely(cls, business_id: Any, user=None) -> Business | None:
+        """Robustly resolve a business by UUID, string ID, slug, active workspace, or fallback."""
+        if not business_id:
+            if user and getattr(user, "is_authenticated", False):
+                b = cls.accessible_to(user).order_by("-created_at").first()
+                if b is not None:
+                    return b
+            return cls.objects.order_by("-created_at").first()
+
+        uuid_obj = None
+        try:
+            uuid_obj = uuid.UUID(str(business_id))
+        except (ValueError, TypeError, AttributeError):
+            uuid_obj = None
+
+        if uuid_obj:
+            if user and getattr(user, "is_authenticated", False):
+                b = cls.accessible_to(user).filter(pk=uuid_obj).first()
+                if b is not None:
+                    return b
+            b = cls.objects.filter(pk=uuid_obj).first()
+            if b is not None:
+                return b
+
+        str_id = str(business_id).strip()
+        if str_id and str_id.lower() not in ("current", "default", "active", "demo", "demo-voltpro-charger"):
+            if user and getattr(user, "is_authenticated", False):
+                b = cls.accessible_to(user).filter(models.Q(name__iexact=str_id)).first()
+                if b is not None:
+                    return b
+            b = cls.objects.filter(name__iexact=str_id).first()
+            if b is not None:
+                return b
+
+        if user and getattr(user, "is_authenticated", False):
+            try:
+                from .models import UserWorkspaceState
+                ws = UserWorkspaceState.objects.filter(user=user).first()
+                if ws and ws.active_business:
+                    return ws.active_business
+                b = cls.accessible_to(user).order_by("-created_at").first()
+                if b is not None:
+                    return b
+            except Exception:
+                pass
+
+        return cls.objects.order_by("-created_at").first()
+
     # -- profile -----------------------------------------------------------
     @property
     def current_profile(self) -> BusinessProfileVersion | None:

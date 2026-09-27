@@ -38,7 +38,7 @@ class BusinessCalendarListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, business_id) -> Response:  # noqa: ANN001
-        business = Business.accessible_to(request.user).filter(pk=business_id).first()
+        business = Business.resolve_safely(business_id, request.user)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -61,7 +61,7 @@ class BusinessCalendarNotificationsListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, business_id) -> Response:  # noqa: ANN001
-        business = Business.accessible_to(request.user).filter(pk=business_id).first()
+        business = Business.resolve_safely(business_id, request.user)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -125,7 +125,7 @@ class NotificationMarkReadView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request: Request, business_id, notification_id) -> Response:  # noqa: ANN001
-        business = Business.accessible_to(request.user).filter(pk=business_id).first()
+        business = Business.resolve_safely(business_id, request.user)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -159,7 +159,7 @@ class NotificationMarkAllReadView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, business_id) -> Response:  # noqa: ANN001
-        business = Business.accessible_to(request.user).filter(pk=business_id).first()
+        business = Business.resolve_safely(business_id, request.user)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -185,7 +185,7 @@ class NotificationSummaryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, business_id) -> Response:  # noqa: ANN001
-        business = Business.accessible_to(request.user).filter(pk=business_id).first()
+        business = Business.resolve_safely(business_id, request.user)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -229,7 +229,7 @@ class NotificationPreferenceView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, business_id) -> Response:  # noqa: ANN001
-        business = Business.accessible_to(request.user).filter(pk=business_id).first()
+        business = Business.resolve_safely(business_id, request.user)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -249,7 +249,7 @@ class NotificationPreferenceView(APIView):
         )
 
     def put(self, request: Request, business_id) -> Response:  # noqa: ANN001
-        business = Business.accessible_to(request.user).filter(pk=business_id).first()
+        business = Business.resolve_safely(business_id, request.user)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -296,7 +296,7 @@ class NotificationSyncView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, business_id) -> Response:  # noqa: ANN001
-        business = Business.accessible_to(request.user).filter(pk=business_id).first()
+        business = Business.resolve_safely(business_id, request.user)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 

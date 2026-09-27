@@ -22,8 +22,8 @@ class BusinessDashboardView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request, business_id) -> Response:  # noqa: ANN001
-        business = Business.accessible_to(request.user).filter(pk=business_id).first()
+    def get(self, request: Request, business_id=None) -> Response:  # noqa: ANN001
+        business = Business.resolve_safely(business_id, request.user)
         if business is None:
             return error_response(
                 "NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND

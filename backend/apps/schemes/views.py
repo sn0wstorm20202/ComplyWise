@@ -27,35 +27,9 @@ class BusinessSchemesListView(APIView):
     """
     permission_classes = [AllowAny]
 
-    def get(self, request: Request, business_id) -> Response:  # noqa: ANN001
-        business = None
+    def get(self, request: Request, business_id=None) -> Response:  # noqa: ANN001
         user = request.user if (request.user and request.user.is_authenticated) else None
-
-        # 1. If explicit UUID or business ID provided (and not a keyword), search by ID
-        if business_id not in ("current", "default", "active", "demo"):
-            if user:
-                business = Business.accessible_to(user).filter(pk=business_id).first()
-            if business is None:
-                try:
-                    business = Business.objects.filter(pk=business_id).first()
-                except Exception:
-                    pass
-
-        # 2. If business not found by ID or keyword requested, check active workspace
-        if business is None and user:
-            from apps.businesses.models import UserWorkspaceState
-            ws = UserWorkspaceState.objects.filter(user=user).first()
-            if ws and ws.active_business:
-                business = ws.active_business
-
-        # 3. Fall back to user's most recently created business
-        if business is None and user:
-            business = Business.accessible_to(user).order_by("-created_at").first()
-
-        # 4. Fall back to the most recently created business in database
-        if business is None:
-            business = Business.objects.order_by("-created_at").first()
-
+        business = Business.resolve_safely(business_id, user)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 

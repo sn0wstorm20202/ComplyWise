@@ -1450,7 +1450,7 @@ function OnboardingContent() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans">
-      <Navbar />
+      <Navbar variant="onboarding" />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Stepper Header */}

@@ -9,7 +9,11 @@ import { HealthData } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 
-export function Navbar() {
+interface NavbarProps {
+  variant?: "default" | "onboarding";
+}
+
+export function Navbar({ variant = "default" }: NavbarProps = {}) {
   const { t } = useLanguage();
   const router = useRouter();
   const [health, setHealth] = useState<HealthData | null>(null);
@@ -85,48 +89,54 @@ export function Navbar() {
                 <span className="text-base font-bold tracking-tight text-[#0F172A]">
                   {t("common.appName")}
                 </span>
-                <span className="hidden sm:inline-flex items-center rounded-full bg-[#F1F5F9] px-2.5 py-0.5 text-[11px] font-semibold text-[#0F172A] border border-[#E2E8F0]">
-                  PS 26130
-                </span>
+                {variant !== "onboarding" && (
+                  <span className="hidden sm:inline-flex items-center rounded-full bg-[#F1F5F9] px-2.5 py-0.5 text-[11px] font-semibold text-[#0F172A] border border-[#E2E8F0]">
+                    PS 26130
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-[#64748B] hidden md:block">
-                {t("common.brandSubtitle")}
+                {variant === "onboarding" ? "Business Onboarding & Compliance Intake" : t("common.brandSubtitle")}
               </p>
             </div>
           </Link>
         </div>
 
-        {/* Navigation items */}
-        <nav className="hidden lg:flex items-center gap-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-full px-3 py-1.5 text-xs font-medium text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-colors"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        {/* Navigation items - Hidden on onboarding flow */}
+        {variant !== "onboarding" && (
+          <nav className="hidden lg:flex items-center gap-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-full px-3 py-1.5 text-xs font-medium text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         {/* Right side: Language Selector, Auth / User Action & Backend Connectivity Status */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden sm:block">
+          <div className="flex items-center">
             <LanguageSelector />
           </div>
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
-              <Link
-                href="/admin"
-                className="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1 rounded-full transition-colors"
-                title="Compliance Officer Control Room"
-              >
-                <span>🛡️</span>
-                <span>Admin Portal</span>
-              </Link>
+              {variant !== "onboarding" && (
+                <Link
+                  href="/admin"
+                  className="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1 rounded-full transition-colors"
+                  title="Compliance Officer Control Room"
+                >
+                  <span>🛡️</span>
+                  <span>Admin Portal</span>
+                </Link>
+              )}
               <Link
                 href="/profile"
-                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] bg-[#F8FAFC] border border-[#E2E8F0] px-3 py-1 rounded-full transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] bg-[#F8FAFC] border border-[#E2E8F0] px-3 py-1 rounded-full transition-colors"
               >
                 <span>👤</span>
                 <span>My Profile</span>
@@ -141,14 +151,16 @@ export function Navbar() {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Link
-                href="/admin/login"
-                className="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1 rounded-full transition-colors"
-                title="Compliance Officer Login"
-              >
-                <span>🛡️</span>
-                <span>Admin Portal</span>
-              </Link>
+              {variant !== "onboarding" && (
+                <Link
+                  href="/admin/login"
+                  className="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1 rounded-full transition-colors"
+                  title="Compliance Officer Login"
+                >
+                  <span>🛡️</span>
+                  <span>Admin Portal</span>
+                </Link>
+              )}
               <Link
                 href="/auth/signin"
                 className="text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] bg-[#F8FAFC] border border-[#E2E8F0] px-3.5 py-1 rounded-full transition-colors"
@@ -157,24 +169,26 @@ export function Navbar() {
               </Link>
             </div>
           )}
-          <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                checking
-                  ? "bg-amber-400 animate-pulse"
+          {variant !== "onboarding" && (
+            <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  checking
+                    ? "bg-amber-400 animate-pulse"
+                    : isOnline
+                    ? "bg-emerald-500"
+                    : "bg-rose-500"
+                }`}
+              />
+              <span className="text-xs font-medium text-[#0F172A]">
+                {checking
+                  ? t("common.loading")
                   : isOnline
-                  ? "bg-emerald-500"
-                  : "bg-rose-500"
-              }`}
-            />
-            <span className="text-xs font-medium text-[#0F172A]">
-              {checking
-                ? t("common.loading")
-                : isOnline
-                ? `API Online ${health?.api_version ? `(${health.api_version})` : ""}`
-                : "API Offline"}
-            </span>
-          </div>
+                  ? `API Online ${health?.api_version ? `(${health.api_version})` : ""}`
+                  : "API Offline"}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </header>

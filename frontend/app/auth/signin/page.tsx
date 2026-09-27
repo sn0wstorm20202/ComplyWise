@@ -48,25 +48,27 @@ export function SignInContent() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function resolveWorkspaceAndRedirect(fallbackUrl: string) {
+  async function resolveWorkspaceAndRedirect(fallbackUrl: string, isRegistration: boolean = false) {
+    if (isRegistration) {
+      router.push("/onboarding");
+      return;
+    }
+
     const target =
       fallbackUrl === "/auth/signin" || fallbackUrl === "/auth/sign-in"
         ? "/dashboard"
         : fallbackUrl;
+
     try {
       const ws = await Promise.race([
         businessesApi.getWorkspace(),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
       ]);
       if (ws?.active_business_id) {
         localStorage.setItem("complywise_active_business_id", ws.active_business_id);
       }
       if (ws?.active_assessment_id) {
         localStorage.setItem("complywise_active_assessment_id", ws.active_assessment_id);
-      }
-      if (ws?.redirect_url && (target === "/dashboard" || target === "/")) {
-        router.push(ws.redirect_url);
-        return;
       }
     } catch {
       // Non-blocking workspace restoration fallback
@@ -82,10 +84,10 @@ export function SignInContent() {
     try {
       if (mode === "signin") {
         await login(email, password);
-        await resolveWorkspaceAndRedirect(redirectTarget);
+        await resolveWorkspaceAndRedirect(redirectTarget, false);
       } else if (mode === "register") {
         await register(email, password, fullName, phoneNumber);
-        await resolveWorkspaceAndRedirect("/onboarding");
+        await resolveWorkspaceAndRedirect("/onboarding", true);
       } else if (mode === "officer") {
         await adminLogin(email, password);
         router.push("/admin");
@@ -106,7 +108,7 @@ export function SignInContent() {
     setError(null);
     try {
       await fastDemoLogin();
-      await resolveWorkspaceAndRedirect(redirectTarget);
+      await resolveWorkspaceAndRedirect(redirectTarget, false);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to authenticate demo user.";

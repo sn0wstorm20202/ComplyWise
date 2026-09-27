@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
@@ -35,11 +35,7 @@ export function AdminShell({ children, activeTab = "dashboard" }: AdminShellProp
   const [authChecked, setAuthChecked] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    checkAdminAuth();
-  }, []);
-
-  async function checkAdminAuth() {
+  const checkAdminAuth = useCallback(async () => {
     try {
       const user = await api.auth.me();
       if (!user || (!user.is_staff && !user.is_superuser)) {
@@ -52,7 +48,11 @@ export function AdminShell({ children, activeTab = "dashboard" }: AdminShellProp
     } finally {
       setAuthChecked(true);
     }
-  }
+  }, [router]);
+
+  useEffect(() => {
+    checkAdminAuth();
+  }, [checkAdminAuth]);
 
   async function handleLogout() {
     try {

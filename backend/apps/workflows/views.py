@@ -872,7 +872,23 @@ class AdminBusinessListView(APIView):
                 | Q(id__icontains=search)
             )
 
-        data = BusinessSerializer(qs, many=True).data
+        from django.db.models import Count
+        from apps.documents.models import DocumentSubmission
+        from common.enums import CaseStatus
+
+        biz_list = list(qs)
+        cases_by_biz = dict(ComplianceCase.objects.values_list('business_id').annotate(c=Count('id')).values_list('business_id', 'c'))
+        docs_by_biz = dict(DocumentSubmission.objects.values_list('document_requirement__case__business_id').annotate(c=Count('id')).values_list('document_requirement__case__business_id', 'c'))
+        pending_by_biz = dict(ComplianceCase.objects.filter(status_code=CaseStatus.HUMAN_REVIEW).values_list('business_id').annotate(c=Count('id')).values_list('business_id', 'c'))
+
+        for b in biz_list:
+            b._cached_cases_count = cases_by_biz.get(b.id, 0)
+            b._cached_documents_count = docs_by_biz.get(b.id, 0)
+            b._cached_pending_reviews_count = pending_by_biz.get(b.id, 0)
+            pvs = list(b.profile_versions.all())
+            b._cached_cp = max(pvs, key=lambda v: v.version) if pvs else None
+
+        data = BusinessSerializer(biz_list, many=True).data
         return Response(envelope({"total_count": len(data), "businesses": data}), status=status.HTTP_200_OK)
 
 

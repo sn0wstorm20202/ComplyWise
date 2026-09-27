@@ -760,17 +760,38 @@ export interface DocumentItem {
 
 export interface WorkflowStep {
   step: number;
+  step_number?: number;
   title: string;
-  status: WorkflowStatus;
+  description?: string;
+  duration?: string;
+  status: string;
+  documents_required?: string[];
+  portal_url?: string;
+  user_reference?: string;
+  notes?: string;
+  completed_at?: string | null;
 }
 
 export interface WorkflowItem {
   id: string;
+  requirement_id?: string;
+  case_id?: string | null;
+  case_number?: string | null;
+  category?: "COMPLIANCE" | "STANDARD" | "SCHEME" | string;
+  domain?: string;
   title: string;
   authority: string;
-  status: WorkflowStatus;
+  portal_name?: string;
+  portal_url?: string;
+  estimated_duration?: string;
+  status: string;
   current_step: number;
+  current_step_title?: string;
   total_steps: number;
+  progress_percent?: number;
+  documents_required?: string[];
+  prerequisites?: string;
+  updated_at?: string;
   steps: WorkflowStep[];
 }
 

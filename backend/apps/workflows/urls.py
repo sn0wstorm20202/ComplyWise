@@ -32,8 +32,10 @@ from .views import (
 app_name = "workflows"
 
 urlpatterns = [
-    # Backward compatibility
+    # Workflows list and interactive step progression
     path("workflows", BusinessWorkflowsListView.as_view(), name="workflows-list"),
+    path("workflows/step", BusinessWorkflowsListView.as_view(), name="workflows-step-update"),
+    path("workflows/<str:workflow_id>/step", BusinessWorkflowsListView.as_view(), name="workflows-step-update-with-id"),
 
     # Compliance Case Operations (User Site)
     path("cases", BusinessComplianceCasesView.as_view(), name="business-cases-list"),

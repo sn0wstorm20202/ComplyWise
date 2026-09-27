@@ -16,6 +16,7 @@ from typing import Any
 
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
@@ -651,13 +652,13 @@ class ComplianceCaseQueryRespondView(APIView):
         )
 
 
-# Backward compatibility view for Screen 11
+# Workflows View supporting retrieval and interactive step updates with DB synchronization
 class BusinessWorkflowsListView(APIView):
-    """Maintains backward compatibility with Screen 11 while enriching with real cases."""
+    """Retrieves business-wide clearance roadmaps and syncs step updates to the database."""
 
     permission_classes = [AllowAny]
 
-    def get(self, request: Request, business_id=None) -> Response:  # noqa: ANN001
+    def get(self, request: Request, business_id=None, workflow_id=None) -> Response:  # noqa: ANN001
         business = _resolve_business(request, business_id)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
@@ -665,6 +666,115 @@ class BusinessWorkflowsListView(APIView):
         assessment_id = request.query_params.get("assessment_id")
         payload = derive_business_workflows(business, assessment_id=assessment_id)
         return Response(envelope(payload), status=status.HTTP_200_OK)
+
+    def post(self, request: Request, business_id=None, workflow_id=None) -> Response:  # noqa: ANN001
+        return self._handle_step_update(request, business_id, workflow_id)
+
+    def patch(self, request: Request, business_id=None, workflow_id=None) -> Response:  # noqa: ANN001
+        return self._handle_step_update(request, business_id, workflow_id)
+
+    def _handle_step_update(self, request: Request, business_id=None, workflow_id=None) -> Response:  # noqa: ANN001
+        business = _resolve_business(request, business_id)
+        if business is None:
+            return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
+
+        wf_id = workflow_id or request.data.get("workflow_id")
+        step_number = request.data.get("step_number")
+        status_val = request.data.get("status")
+        user_reference = request.data.get("user_reference", "")
+        notes = request.data.get("notes", "")
+
+        if not wf_id or step_number is None or not status_val:
+            return error_response(
+                "BAD_REQUEST",
+                "workflow_id, step_number, and status are required fields.",
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            step_num = int(step_number)
+        except (ValueError, TypeError):
+            return error_response(
+                "BAD_REQUEST",
+                "step_number must be an integer.",
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        req_code = wf_id.replace("WF::", "")
+
+        # Find or create ComplianceCase for this workflow
+        case = ComplianceCase.objects.filter(business=business, requirement_id_code=req_code).first()
+        if not case:
+            case = ComplianceCase.objects.filter(business=business, case_number=req_code).first()
+        if not case:
+            try:
+                case = ComplianceCase.objects.filter(business=business, pk=req_code).first()
+            except Exception:
+                pass
+
+        if not case:
+            case_seq = ComplianceCase.objects.count() + 10001
+            case = ComplianceCase.objects.create(
+                business=business,
+                case_number=f"CASE-{case_seq}",
+                requirement_id_code=req_code,
+                status_code=CaseStatus.IN_PROGRESS if status_val == "COMPLETED" else CaseStatus.OPEN,
+                metadata={
+                    "requirement_name": request.data.get("title") or req_code,
+                    "authority": request.data.get("authority") or "Statutory Authority",
+                    "category": request.data.get("category") or "COMPLIANCE",
+                },
+            )
+
+        wf_state = case.metadata.get("workflow_state", {})
+        steps_dict = wf_state.get("steps", {})
+
+        step_data = steps_dict.get(str(step_num), {})
+        step_data["status"] = status_val
+        if user_reference is not None:
+            step_data["user_reference"] = user_reference
+        if notes is not None:
+            step_data["notes"] = notes
+        if status_val == "COMPLETED":
+            step_data["completed_at"] = timezone.now().isoformat()
+        elif status_val == "IN_PROGRESS" and "started_at" not in step_data:
+            step_data["started_at"] = timezone.now().isoformat()
+
+        steps_dict[str(step_num)] = step_data
+        wf_state["steps"] = steps_dict
+
+        total_steps = int(request.data.get("total_steps") or 5)
+        completed_steps = sum(1 for s in steps_dict.values() if s.get("status") == "COMPLETED")
+        progress = int((completed_steps / max(total_steps, 1)) * 100)
+        wf_state["progress_percent"] = progress
+
+        if completed_steps >= total_steps:
+            wf_state["status"] = "COMPLETED"
+            case.status_code = CaseStatus.COMPLETED
+            case.completed_at = timezone.now()
+        elif completed_steps > 0 or status_val == "IN_PROGRESS":
+            wf_state["status"] = "IN_PROGRESS"
+            case.status_code = CaseStatus.IN_PROGRESS
+
+        next_step = step_num + 1 if status_val == "COMPLETED" and step_num < total_steps else step_num
+        wf_state["current_step"] = next_step
+
+        case.metadata["workflow_state"] = wf_state
+        case.save(update_fields=["metadata", "status_code", "completed_at", "updated_at"])
+
+        return Response(
+            envelope({
+                "message": f"Step {step_num} successfully updated to {status_val}.",
+                "workflow_id": wf_id,
+                "step_number": step_num,
+                "status": status_val,
+                "progress_percent": progress,
+                "current_step": next_step,
+                "case_number": case.case_number,
+                "workflow_state": wf_state,
+            }),
+            status=status.HTTP_200_OK,
+        )
 
 
 class AdminBusinessOverviewView(APIView):

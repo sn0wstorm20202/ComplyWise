@@ -488,10 +488,17 @@ function ComplianceContent() {
                           })()}
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/workflows?business_id=${businessId || ""}&requirement_id=${req.requirement_id}`}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition-colors shadow-2xs"
+                          >
+                            <span>⚡ Execute Workflow</span>
+                            <span>→</span>
+                          </Link>
                           <Link
                             href={`/compliance/${req.requirement_id}?business_id=${businessId}`}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[#18181B] px-5 py-2 text-xs font-semibold text-white hover:bg-[#27272A] transition-colors shadow-2xs"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-[#18181B] px-4 py-2 text-xs font-semibold text-white hover:bg-[#27272A] transition-colors shadow-2xs"
                           >
                             <span>{t("common.viewDetails")}</span>
                             <span>→</span>
@@ -557,12 +564,21 @@ function ComplianceContent() {
                           );
                         })()}
                       </div>
-                      <Link
-                        href={`/compliance/${req.requirement_id}?business_id=${businessId}`}
-                        className="text-xs font-semibold text-[#0F172A] hover:underline"
-                      >
-                        {t("common.viewDetails")} →
-                      </Link>
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href={`/workflows?business_id=${businessId || ""}&requirement_id=${req.requirement_id}`}
+                          className="text-xs font-semibold text-blue-600 hover:underline inline-flex items-center gap-1"
+                        >
+                          <span>⚡ Execute Workflow</span>
+                          <span>→</span>
+                        </Link>
+                        <Link
+                          href={`/compliance/${req.requirement_id}?business_id=${businessId}`}
+                          className="text-xs font-semibold text-[#0F172A] hover:underline"
+                        >
+                          {t("common.viewDetails")} →
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 ))}

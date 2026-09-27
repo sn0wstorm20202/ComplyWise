@@ -176,6 +176,13 @@ function RequirementDetailContent({ params }: PageProps) {
                 </div>
 
                 <div className="shrink-0 flex items-center gap-2">
+                  <Link
+                    href={`/workflows?business_id=${businessId}&requirement_id=${detail.requirement_id}`}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors shadow-2xs"
+                  >
+                    <span>⚡ Clearance Workflow</span>
+                    <span>→</span>
+                  </Link>
                   {(() => {
                     const heroUrl = sanitizeExternalUrl(
                       detail.what_to_do_next.portal_url ||
@@ -357,6 +364,24 @@ function RequirementDetailContent({ params }: PageProps) {
                       </div>
                     );
                   })()}
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-indigo-200 bg-indigo-50/50 text-xs">
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="font-bold text-indigo-950 block">
+                        Interactive Clearance Workflow:
+                      </span>
+                      <span className="text-[#64748B] font-medium block">
+                        Track stage-by-stage statutory clearances, required documents, reference numbers, and DB sync.
+                      </span>
+                    </div>
+                    <Link
+                      href={`/workflows?business_id=${businessId}&requirement_id=${detail.requirement_id}`}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 font-semibold text-white hover:bg-indigo-700 transition shadow-2xs shrink-0 self-start sm:self-auto cursor-pointer"
+                    >
+                      <span>Open Interactive Workflow</span>
+                      <span>→</span>
+                    </Link>
+                  </div>
                 </div>
               </div>
 

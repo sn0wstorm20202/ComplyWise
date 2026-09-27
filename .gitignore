@@ -68,3 +68,7 @@ Thumbs.db
 tests/artifacts/*.png
 .chrome-temp/*.png
 screenshots/*.png
+/businesses/
+/backend/businesses/
+!backend/apps/businesses/
+

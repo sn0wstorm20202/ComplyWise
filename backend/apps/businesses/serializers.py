@@ -55,30 +55,41 @@ class BusinessSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "is_active", "created_at", "updated_at"]
 
+    def _get_current_profile(self, obj: Business) -> BusinessProfileVersion | None:
+        if not hasattr(obj, "_cached_cp"):
+            obj._cached_cp = obj.current_profile
+        return obj._cached_cp
+
     def get_profile_version(self, obj: Business) -> int | None:
-        current = obj.current_profile
+        current = self._get_current_profile(obj)
         return current.version if current else None
 
     def get_state(self, obj: Business) -> str:
-        current = obj.current_profile
+        current = self._get_current_profile(obj)
         if current and current.variables:
             return current.raw_value("state") or current.raw_value("operating_state") or getattr(obj, "state", "Maharashtra")
         return getattr(obj, "state", "Maharashtra")
 
     def get_district(self, obj: Business) -> str:
-        current = obj.current_profile
+        current = self._get_current_profile(obj)
         if current and current.variables:
             return current.raw_value("district") or getattr(obj, "district", "Pune")
         return getattr(obj, "district", "Pune")
 
     def get_cases_count(self, obj: Business) -> int:
+        if hasattr(obj, "_cached_cases_count"):
+            return obj._cached_cases_count
         return obj.compliance_cases.count()
 
     def get_documents_count(self, obj: Business) -> int:
+        if hasattr(obj, "_cached_documents_count"):
+            return obj._cached_documents_count
         from apps.documents.models import DocumentSubmission
         return DocumentSubmission.objects.filter(document_requirement__case__business=obj).count()
 
     def get_pending_reviews_count(self, obj: Business) -> int:
+        if hasattr(obj, "_cached_pending_reviews_count"):
+            return obj._cached_pending_reviews_count
         from common.enums import CaseStatus
         return obj.compliance_cases.filter(status_code=CaseStatus.HUMAN_REVIEW).count()
 

@@ -33,7 +33,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-export default function AdminBusinessesDirectoryPage() {
+function AdminBusinessesDirectoryContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -507,5 +507,19 @@ export default function AdminBusinessesDirectoryPage() {
         )}
       </div>
     </AdminShell>
+  );
+}
+
+export default function AdminBusinessesDirectoryPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center text-sm font-mono">
+          Loading Directory...
+        </div>
+      }
+    >
+      <AdminBusinessesDirectoryContent />
+    </React.Suspense>
   );
 }

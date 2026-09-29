@@ -49,7 +49,15 @@ interface AdminShellProps {
   currentBusinessName?: string | null;
 }
 
-export function AdminShell({
+export function AdminShell(props: AdminShellProps) {
+  return (
+    <React.Suspense fallback={<div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center text-sm font-mono">Loading Control Room...</div>}>
+      <AdminShellInner {...props} />
+    </React.Suspense>
+  );
+}
+
+function AdminShellInner({
   children,
   activeBusinessId: controlledBusinessId,
   activeAssessmentId: controlledAssessmentId,

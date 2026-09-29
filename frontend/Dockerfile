@@ -13,12 +13,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build arguments for Next.js public environment variables
-ARG NEXT_PUBLIC_API_BASE_URL=""
-ARG BACKEND_INTERNAL_URL=""
-ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
-ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
-ENV NEXT_TELEMETRY_DISABLED=1
+ARG BACKEND_INTERNAL_URL="https://complywise-backend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io"
+ARG NEXT_PUBLIC_API_BASE_URL="https://complywise-backend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io/api/v1"
+ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL \
+    NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
+    NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
 
@@ -26,8 +25,6 @@ RUN npm run build
 FROM node:22-alpine AS runner
 WORKDIR /app
 
-ARG BACKEND_INTERNAL_URL=""
-ARG NEXT_PUBLIC_API_BASE_URL=""
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \

@@ -412,7 +412,7 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "compliance-alerts@complywi
 # ---------------------------------------------------------------------------
 
 if not DEBUG and not RUNNING_TESTS:
-    SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
+    SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", default=False)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_SECURE_HSTS_SECONDS", "31536000"))
@@ -444,3 +444,7 @@ LOGGING = {
 
 # Demo Mode Configuration (ComplyWise Demo Architecture)
 COMPLYWISE_DEMO_MODE = os.getenv("COMPLYWISE_DEMO_MODE", "true").lower() in ("true", "1", "yes")
+
+# ComplianceRag Microservice (08_RAG_SERVICE_CONTRACT.md)
+COMPLIANCERAG_URL = os.getenv("COMPLIANCERAG_URL", "").strip()
+COMPLIANCERAG_KEY = os.getenv("COMPLIANCERAG_KEY", "complywise-internal-secret").strip()

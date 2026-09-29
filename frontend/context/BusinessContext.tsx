@@ -18,7 +18,6 @@ import {
 import { api } from "@/lib/api";
 import { DashboardSummary, Business, BusinessSummary, AssessmentSummary } from "@/types";
 import { getAuthToken } from "@/lib/api/client";
-import { INITIAL_DATABASE_BUSINESSES, INITIAL_DATABASE_ASSESSMENTS } from "@/data/userProfileHomeData";
 
 interface BusinessContextValue {
   profile: BusinessProfile;
@@ -149,7 +148,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         }
       } catch {}
     }
-    return INITIAL_DATABASE_BUSINESSES;
+    return [];
   });
 
   const [recentAssessments, setRecentAssessments] = useState<AssessmentSummary[]>(() => {
@@ -162,7 +161,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         }
       } catch {}
     }
-    return INITIAL_DATABASE_ASSESSMENTS;
+    return [];
   });
 
   const setActiveAssessmentId = useCallback((id: string | null) => {
@@ -234,7 +233,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (homeBusinesses.length === 0) {
-        homeBusinesses = userBusinesses.length > 0 ? userBusinesses : INITIAL_DATABASE_BUSINESSES;
+        homeBusinesses = userBusinesses.length > 0 ? userBusinesses : [];
       }
 
       const isValidUuid = (id: string | null | undefined): boolean =>
@@ -285,7 +284,10 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!bizId) {
-        setIsDemoMode(true);
+        setActiveBusinessId(null);
+        setActiveAssessmentIdState(null);
+        setLiveDashboardSummary(null);
+        setIsDemoMode(false);
         return;
       }
 
@@ -403,9 +405,9 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
                 business_id: bizId,
                 business_name: bizName,
                 status: "ACTIVE",
-                total_documents_needed: 6,
+                total_documents_needed: 0,
                 priority_actions: [],
-                compliance_readiness: 75,
+                compliance_readiness: 0,
                 metrics: {
                   applicable_count: comp.summary.total_applicable,
                   needs_information_count: comp.summary.total_needs_info,
@@ -467,6 +469,26 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
 
     fetchBackendData();
   }, [fetchBackendData]);
+
+  // Listen for logout event to completely reset tenant state
+  useEffect(() => {
+    const handleLogout = () => {
+      setActiveBusinessId(null);
+      setActiveAssessmentIdState(null);
+      setUserBusinesses([]);
+      setRecentAssessments([]);
+      setLiveDashboardSummary(null);
+      setProfileState(DEFAULT_BUSINESS_PROFILE);
+      setIsDemoMode(false);
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("complywise_auth_logged_out", handleLogout);
+      return () => {
+        window.removeEventListener("complywise_auth_logged_out", handleLogout);
+      };
+    }
+  }, []);
 
   // Persist whenever profile changes after initial load
   useEffect(() => {

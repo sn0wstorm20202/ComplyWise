@@ -33,10 +33,11 @@ MAX_PROMPT_LENGTH = 2000
 class AssistantChatView(APIView):
     """Source-grounded regulatory copilot answering questions with statutory citations."""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
-        prompt = str(request.data.get("prompt", "") or "").strip()
+        import uuid
+        prompt = str(request.data.get("prompt") or request.data.get("message") or "").strip()
         if not prompt:
             return error_response(
                 "VALIDATION_ERROR", "Prompt is required.", http_status=status.HTTP_400_BAD_REQUEST
@@ -48,38 +49,34 @@ class AssistantChatView(APIView):
                 http_status=status.HTTP_400_BAD_REQUEST,
             )
 
-        business = None
         business_id = request.data.get("business_id")
+        if not business_id:
+            return error_response(
+                "VALIDATION_ERROR",
+                "business_id is required.",
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+
         from apps.businesses.models import Business
-        import uuid
-        from django.core.exceptions import ValidationError
+        from rest_framework.exceptions import NotFound, ValidationError as DRFValidationError
 
-        if business_id:
-            try:
-                uuid_obj = uuid.UUID(str(business_id))
-                if request.user and request.user.is_authenticated:
-                    business = Business.accessible_to(request.user).filter(pk=uuid_obj).first()
-                if not business:
-                    business = Business.objects.filter(pk=uuid_obj, is_active=True).first()
-            except (ValueError, TypeError, ValidationError):
-                clean_term = str(business_id).replace("biz-", "").replace("-", " ")
-                if request.user and request.user.is_authenticated:
-                    business = Business.accessible_to(request.user).filter(name__icontains=clean_term).first()
-                if not business:
-                    business = Business.objects.filter(name__icontains=clean_term, is_active=True).first()
-
-        if not business:
-            if request.user and request.user.is_authenticated:
-                business = Business.accessible_to(request.user).first()
-            if not business:
-                business = Business.objects.filter(is_active=True).first()
+        try:
+            business = Business.resolve_authorized(request.user, business_id)
+        except NotFound:
+            return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
+        except DRFValidationError as err:
+            msg = err.detail[0] if isinstance(err.detail, list) and err.detail else str(err.detail)
+            return error_response("VALIDATION_ERROR", msg, http_status=status.HTTP_400_BAD_REQUEST)
 
         assessment_id = request.data.get("assessment_id")
         if assessment_id:
             try:
-                uuid.UUID(str(assessment_id))
-            except (ValueError, TypeError, ValidationError):
-                assessment_id = None
+                ass_uuid = uuid.UUID(str(assessment_id))
+                assessment = business.assessments.filter(pk=ass_uuid).first()
+                if not assessment:
+                    return error_response("NOT_FOUND", "Assessment not found.", http_status=status.HTTP_404_NOT_FOUND)
+            except (ValueError, TypeError, AttributeError):
+                return error_response("VALIDATION_ERROR", f"Invalid assessment UUID: {assessment_id}", http_status=status.HTTP_400_BAD_REQUEST)
 
         language = str(request.data.get("language", "en") or "en").strip().lower()
         if language not in ("en", "hi", "bn"):

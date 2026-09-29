@@ -84,7 +84,7 @@ class _BusinessScopedView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_business(self, request: Request, business_id) -> Business | None:  # noqa: ANN001
-        return Business.accessible_to(request.user).filter(pk=business_id).first()
+        return Business.resolve_safely(business_id, request.user)
 
 
 class BusinessProfileView(_BusinessScopedView):
@@ -280,13 +280,13 @@ class UserWorkspaceView(APIView):
         if biz_id:
             biz = Business.accessible_to(user).filter(pk=biz_id).first()
             if not biz:
-                return error_response("FORBIDDEN", "Business not found or not accessible.", http_status=status.HTTP_403_FORBIDDEN)
+                return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
             ws.active_business = biz
 
         if ass_id:
             ass = Assessment.accessible_to(user).filter(pk=ass_id).first()
             if not ass:
-                return error_response("FORBIDDEN", "Assessment not found or not accessible.", http_status=status.HTTP_403_FORBIDDEN)
+                return error_response("NOT_FOUND", "Assessment not found.", http_status=status.HTTP_404_NOT_FOUND)
             if ws.active_business and ass.business_id != ws.active_business.id:
                 return error_response("INVALID_REQUEST", "Assessment does not belong to active business.", http_status=status.HTTP_400_BAD_REQUEST)
             ws.active_assessment = ass

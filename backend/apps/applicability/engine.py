@@ -104,6 +104,23 @@ class ApplicabilityEngine:
             run.save()
 
         try:
+            # Check Demo Mode Resolution (TRD SELECTION DEMO SPECIFICATION)
+            from demo.resolver import DemoScenarioResolver
+            if DemoScenarioResolver.is_demo_mode():
+                matched_scenario = DemoScenarioResolver.resolve_scenario(business.name, context)
+                if matched_scenario:
+                    results_to_create = DemoScenarioResolver.generate_decision_results(
+                        decision_run=run,
+                        scenario=matched_scenario,
+                        context=context,
+                    )
+                    if save_run and results_to_create:
+                        DecisionResult.objects.bulk_create(results_to_create)
+                    run.status = DecisionRunStatus.COMPLETED
+                    if save_run:
+                        run.save(update_fields=["status"])
+                    return run
+
             # 1. Fetch ALL published requirements (TRD_v2.0 §25, C3, C5)
             all_published_reqs = list(
                 RequirementDefinition.objects.filter(

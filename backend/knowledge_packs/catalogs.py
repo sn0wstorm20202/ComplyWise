@@ -1048,6 +1048,19 @@ def resolve_statutory_portal(
     req_upper = f"{requirement_id} {requirement_name}".upper()
     raw_str = (raw_portal or "").strip()
 
+    try:
+        from demo.destinations import DEMO_DESTINATIONS
+        if requirement_id and requirement_id in DEMO_DESTINATIONS:
+            dest = DEMO_DESTINATIONS[requirement_id]
+            return {
+                "name": dest.display_label,
+                "url": dest.url,
+                "category": dest.destination_type.value,
+                "description": dest.notes or "Official statutory service",
+            }
+    except Exception:
+        pass
+
     # Specific requirement keyword matching
     if "ETA" in req_upper or "WPC" in req_upper or "WIRELESS" in req_upper:
         return STATUTORY_PORTAL_REGISTRY["WPC"]

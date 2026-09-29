@@ -119,6 +119,9 @@ class VariableOrigin(models.TextChoices):
     USER_PROVIDED = "USER_PROVIDED", "Provided by you"
     DERIVED = "DERIVED", "Derived"
     LOOKUP = "LOOKUP", "Looked up"
+    LLM_EXTRACTED = "LLM_EXTRACTED", "Extracted by AI"
+    QUESTIONNAIRE_ANSWER = "QUESTIONNAIRE_ANSWER", "Answered in questionnaire"
+    ADMIN_OVERRIDE = "ADMIN_OVERRIDE", "Admin override"
 
 
 class VariableRelevance(models.TextChoices):

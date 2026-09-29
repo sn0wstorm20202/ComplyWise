@@ -209,4 +209,21 @@ export const calendarApi = {
     request<{ connected: boolean; message: string }>("/calendar/google/disconnect", {
       method: "POST",
     }),
+
+  /** Create an administrative/statutory deadline directly for a business (§16) */
+  createAdminBusinessDeadline: (
+    businessId: string,
+    data: {
+      title: string;
+      due_at: string;
+      requirement_id_code?: string;
+      description?: string;
+      priority?: string;
+      notes?: string;
+    }
+  ) =>
+    request<{ message: string; deadline: any }>(`/admin/businesses/${businessId}/deadlines`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };

@@ -31,6 +31,21 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function clearTenantLocalStorage() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("complywise_active_business_id");
+    localStorage.removeItem("complywise_active_business_name");
+    localStorage.removeItem("complywise_active_assessment_id");
+    localStorage.removeItem("complywise_cached_businesses");
+    localStorage.removeItem("complywise_cached_assessments");
+    localStorage.removeItem("complywise_business_profile_v2");
+    localStorage.removeItem("complywise_admin_token");
+    localStorage.removeItem("complywise_compliance_cache");
+    localStorage.removeItem("complywise_documents_cache");
+    window.dispatchEvent(new CustomEvent("complywise_auth_logged_out"));
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setTokenState] = useState<string | null>(null);
@@ -63,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuthToken(null);
         setUser(null);
         setTokenState(null);
+        clearTenantLocalStorage();
       }
       setLoading(false);
       return false;
@@ -173,6 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthToken(null);
       setUser(null);
       setTokenState(null);
+      clearTenantLocalStorage();
       setLoading(false);
     }
   };

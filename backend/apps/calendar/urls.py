@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.urls import path
 
 from .views import (
+    AdminBusinessDeadlinesView,
     AdminCaseDeadlinesView,
     AdminDeadlineDetailView,
     AdminDeadlineSendAlertView,
@@ -47,5 +48,7 @@ urlpatterns = [
     path("admin/deadlines/<str:deadline_id>", AdminDeadlineDetailView.as_view(), name="admin-deadline-detail-str"),
     path("admin/deadlines/<uuid:deadline_id>/send-alert", AdminDeadlineSendAlertView.as_view(), name="admin-deadline-send-alert"),
     path("admin/deadlines/<str:deadline_id>/send-alert", AdminDeadlineSendAlertView.as_view(), name="admin-deadline-send-alert-str"),
+    path("admin/businesses/<uuid:business_id>/deadlines", AdminBusinessDeadlinesView.as_view(), name="admin-business-deadlines"),
+    path("admin/businesses/<str:business_id>/deadlines", AdminBusinessDeadlinesView.as_view(), name="admin-business-deadlines-str"),
 ]
 

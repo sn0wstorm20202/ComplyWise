@@ -38,7 +38,7 @@ def test_adaptive_question_count_fresh_businesses(db, make_business, user):
         )
         plan_res = plan_adaptive_smart_questions(biz, round_number=1)
         questions = plan_res.get('questions', [])
-        assert len(questions) >= 15, f'Expected >= 15 questions for {biz_name}, got {len(questions)}'
+        assert len(questions) <= 4, f'Expected <= 4 adaptive questions for {biz_name}, got {len(questions)}'
         
         for q in questions:
             assert 'question_id' in q

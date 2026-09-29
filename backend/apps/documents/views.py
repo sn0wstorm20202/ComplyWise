@@ -22,7 +22,7 @@ from typing import Any
 
 from django.conf import settings
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -38,9 +38,7 @@ from .verification import verify_document
 
 def _resolve_business(request: Request, business_id: Any) -> Business | None:
     """Resolve a business strictly scoped to the authenticated user."""
-    if not request.user or not request.user.is_authenticated:
-        return None
-    return Business.accessible_to(request.user).filter(pk=business_id).first()
+    return Business.resolve_safely(business_id, request.user)
 
 
 class BusinessDocumentsListView(APIView):
@@ -92,9 +90,14 @@ class DocumentScanView(APIView):
     and has the LLM evaluate whether the document is necessary and correct for compliance.
     """
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, business_id=None) -> Response:  # noqa: ANN001
+        if business_id:
+            business = _resolve_business(request, business_id)
+            if not business:
+                return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
+
         data = _extract_request_data(request)
 
         uploaded_file = None
@@ -113,9 +116,14 @@ class DocumentVerifyView(APIView):
     Verifies a document's file extension, field completeness, and statutory compliance alignment.
     """
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, business_id=None) -> Response:  # noqa: ANN001
+        if business_id:
+            business = _resolve_business(request, business_id)
+            if not business:
+                return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
+
         data = _extract_request_data(request)
 
         uploaded_file = None
@@ -137,9 +145,14 @@ class DocumentUploadView(APIView):
     3. Alignment to the requirements of the specific compliance.
     """
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, business_id=None) -> Response:  # noqa: ANN001
+        if business_id:
+            business = _resolve_business(request, business_id)
+            if not business:
+                return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
+
         data = _extract_request_data(request)
 
         uploaded_file = None
@@ -195,7 +208,7 @@ class DocumentPortalStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, business_id) -> Response:  # noqa: ANN001
-        business = Business.accessible_to(request.user).filter(pk=business_id).first()
+        business = _resolve_business(request, business_id)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -219,7 +232,7 @@ class DocumentPortalStatusView(APIView):
 class DocumentConfigLLMView(APIView):
     """Inspect and configure LLM provider settings (OpenAI)."""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
 
     def get(self, request: Request) -> Response:
         key = (getattr(settings, "OPENAI_API_KEY", "") or os.getenv("OPENAI_API_KEY", "") or "").strip()
@@ -274,7 +287,7 @@ class CaseDocumentUploadView(APIView):
     and DocumentReview records, and triggers workflow transitions.
     """
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, case_id, document_requirement_id) -> Response:  # noqa: ANN001
         from apps.documents.models import DocumentRequirement
@@ -287,8 +300,8 @@ class CaseDocumentUploadView(APIView):
         from apps.workflows.models import ComplianceCase
         from apps.workflows.serializers import ComplianceCaseDetailSerializer
 
-        case = ComplianceCase.objects.filter(pk=case_id).first()
-        if not case:
+        case = ComplianceCase.objects.filter(pk=case_id).select_related("business").first()
+        if not case or not Business.resolve_safely(case.business_id, request.user):
             return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
 
         doc_req = DocumentRequirement.objects.filter(pk=document_requirement_id, case=case).first()
@@ -320,7 +333,7 @@ class CaseDocumentUploadView(APIView):
             uploaded_file=uploaded_file,
             file_bytes=file_bytes,
             file_name=file_name,
-            uploaded_by=request.user if (request.user and request.user.is_authenticated) else None,
+            uploaded_by=request.user,
             extra_metadata=clean_meta,
         )
 
@@ -349,7 +362,7 @@ class DocumentSubmissionReviewView(APIView):
     - REJECT: Marks review INTERNAL_HUMAN_REJECTED -> Triggers REVIEW_REJECTED.
     """
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
 
     def post(self, request: Request, submission_id) -> Response:  # noqa: ANN001
         from common.enums import ActorType, CaseStatus, DocumentReviewStatus, ReviewType
@@ -485,9 +498,9 @@ class DocumentViewEndpoint(APIView):
 
         if not is_authorized:
             return error_response(
-                "FORBIDDEN",
-                "You are not authorized to view this compliance document.",
-                http_status=status.HTTP_403_FORBIDDEN,
+                "NOT_FOUND",
+                f"Document submission {document_version_id} not found.",
+                http_status=status.HTTP_404_NOT_FOUND,
             )
 
         # 2. Record security audit log
@@ -542,7 +555,7 @@ class DocumentViewEndpoint(APIView):
 class DocumentMetadataEndpoint(APIView):
     """Retrieve document metadata, AI findings, and signed access URL."""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, document_version_id) -> Response:  # noqa: ANN001
         from apps.documents.models import DocumentSubmission
@@ -562,9 +575,9 @@ class DocumentMetadataEndpoint(APIView):
 
         if not DocumentStorageService.check_document_access(request.user, submission):
             return error_response(
-                "FORBIDDEN",
-                "You are not authorized to access metadata for this compliance document.",
-                http_status=status.HTTP_403_FORBIDDEN,
+                "NOT_FOUND",
+                f"Document submission {document_version_id} not found.",
+                http_status=status.HTTP_404_NOT_FOUND,
             )
 
         signed_url = DocumentStorageService.generate_signed_access_url(submission)

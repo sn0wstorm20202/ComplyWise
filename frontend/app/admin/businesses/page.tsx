@@ -253,17 +253,17 @@ export default function AdminBusinessesDirectoryPage() {
                     <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
                       <button
                         onClick={() => handleOpenQuickView(b.id)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-purple-700 dark:text-purple-300 hover:text-purple-900 hover:underline"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:underline"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         Quick Drawer
                       </button>
 
                       <Link
-                        href={`/admin/businesses/${b.id}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-sm transition-colors"
+                        href={`/admin?business_id=${b.id}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-semibold shadow-sm transition-colors"
                       >
-                        <span>Command Desk</span>
+                        <span>Scrutiny Cockpit</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
                     </div>
@@ -298,10 +298,10 @@ export default function AdminBusinessesDirectoryPage() {
 
                 <div className="flex items-center gap-2">
                   <Link
-                    href={`/admin/businesses/${selectedBusinessId}`}
-                    className="px-3 py-1 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700"
+                    href={`/admin?business_id=${selectedBusinessId}`}
+                    className="px-3.5 py-1.5 bg-[#18181B] text-white text-xs font-semibold rounded-xl hover:bg-[#27272A] shadow-sm transition-colors"
                   >
-                    Open Full Desk &rarr;
+                    Open Scrutiny Cockpit &rarr;
                   </Link>
                   <button
                     onClick={() => setSelectedBusinessId(null)}

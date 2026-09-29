@@ -121,6 +121,7 @@ COMPLYWISE_APPS = [
     "apps.regulatory_updates",
     "apps.assistant",
     "apps.ingestion",
+    "apps.acquisition",
     "apps.dashboard",
 ]
 
@@ -166,7 +167,7 @@ TEMPLATES = [
 
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
-if DATABASE_URL and not (RUNNING_TESTS and not env_bool("FORCE_POSTGRES_TESTS", default=False)):
+if DATABASE_URL and not env_bool("USE_LOCAL_SQLITE", default=False) and not (RUNNING_TESTS and not env_bool("FORCE_POSTGRES_TESTS", default=False)):
     is_pooler = ":6543" in DATABASE_URL or "pooler.supabase.com" in DATABASE_URL.lower()
     default_conn_max_age = "0" if is_pooler else "600"
     db_config = dj_database_url.parse(
@@ -440,3 +441,6 @@ LOGGING = {
         "complywise": {"level": os.getenv("LOG_LEVEL", "INFO"), "handlers": ["console"], "propagate": False},
     },
 }
+
+# Demo Mode Configuration (ComplyWise Demo Architecture)
+COMPLYWISE_DEMO_MODE = os.getenv("COMPLYWISE_DEMO_MODE", "true").lower() in ("true", "1", "yes")

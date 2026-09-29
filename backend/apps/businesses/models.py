@@ -85,45 +85,102 @@ class Business(BaseModel):
         return qs.distinct()
 
     @classmethod
-    def resolve_safely(cls, business_id: Any, user=None) -> Business | None:
-        """Robustly resolve a business by UUID, string ID, slug, or active workspace strictly respecting tenancy."""
-        is_auth = user and getattr(user, "is_authenticated", False)
-        is_staff = user and (getattr(user, "is_staff", False) or getattr(user, "is_superuser", False))
+    def resolve_authorized(cls, identifier_or_user: Any, user_or_identifier: Any = None) -> Business:
+        """Resolve a business strictly respecting tenant isolation.
+
+        Authority: ADR-003, Phase 2 Engineering Constitution §1, §3.
+        Invariants:
+        1. IF user is None or not user.is_authenticated: AuthenticationFailed (HTTP 401).
+        2. IF business_id is missing: DRFValidationError (HTTP 400).
+        3. IF malformed UUID: DRFValidationError (HTTP 400).
+        4. IF authenticated regular user: resolve ONLY through authorized membership.
+           If not found: NotFound (HTTP 404 - never reveal business exists).
+        5. IF authenticated staff/superuser: explicit get/DoesNotExist path, audit logged.
+        """
+        # Flexible argument order: support both (business_id, user) and (user, business_id)
+        if hasattr(identifier_or_user, "is_authenticated"):
+            user = identifier_or_user
+            business_id = user_or_identifier
+        else:
+            business_id = identifier_or_user
+            user = user_or_identifier
+
+        if user is None or not getattr(user, "is_authenticated", False):
+            from rest_framework.exceptions import AuthenticationFailed
+            raise AuthenticationFailed("Authentication credentials were not provided.")
 
         if not business_id:
-            if is_auth:
-                return cls.accessible_to(user).order_by("-created_at").first()
-            return None if not is_staff else cls.objects.order_by("-created_at").first()
+            from rest_framework.exceptions import ValidationError as DRFValidationError
+            raise DRFValidationError("business_id is required.")
 
-        uuid_obj = None
         try:
             uuid_obj = uuid.UUID(str(business_id))
         except (ValueError, TypeError, AttributeError):
-            uuid_obj = None
+            from rest_framework.exceptions import ValidationError as DRFValidationError
+            raise DRFValidationError(f"Invalid business UUID: {business_id}")
 
-        if uuid_obj:
-            if is_auth and not is_staff:
-                # Strictly scoped to user's accessible businesses
-                return cls.accessible_to(user).filter(pk=uuid_obj).first()
-            return cls.objects.filter(pk=uuid_obj).first()
+        is_staff = getattr(user, "is_staff", False) or getattr(user, "is_superuser", False)
 
-        str_id = str(business_id).strip()
-        if str_id and str_id.lower() not in ("current", "default", "active", "demo", "demo-voltpro-charger"):
-            if is_auth and not is_staff:
-                return cls.accessible_to(user).filter(models.Q(name__iexact=str_id)).first()
-            return cls.objects.filter(name__iexact=str_id).first()
-
-        if is_auth:
+        if is_staff:
             try:
-                from .models import UserWorkspaceState
-                ws = UserWorkspaceState.objects.filter(user=user).first()
-                if ws and ws.active_business:
-                    return ws.active_business
-                return cls.accessible_to(user).order_by("-created_at").first()
-            except Exception:
-                return cls.accessible_to(user).order_by("-created_at").first()
+                biz = cls.objects.get(pk=uuid_obj)
+                import logging
+                logging.getLogger(__name__).info(
+                    "AUDIT: Staff user %s accessed business %s (%s)",
+                    getattr(user, "id", None),
+                    biz.id,
+                    biz.name,
+                )
+                return biz
+            except cls.DoesNotExist:
+                from rest_framework.exceptions import NotFound
+                raise NotFound("Business not found.")
 
-        return None if not is_staff else cls.objects.order_by("-created_at").first()
+        # Regular user: resolve strictly through authorized membership
+        biz = cls.accessible_to(user).filter(pk=uuid_obj).first()
+        if not biz:
+            from rest_framework.exceptions import NotFound
+            raise NotFound("Business not found.")
+        return biz
+
+    @classmethod
+    def resolve_safely(cls, business_id: Any, user=None) -> Business | None:
+        """Safely resolve a business by ID scoped to the authenticated user.
+
+        Deprecated legacy adapter: returns None instead of raising exceptions.
+        Guarantees ZERO unauthenticated access, ZERO global fallback.
+        """
+        # Flexible argument order
+        if hasattr(business_id, "is_authenticated"):
+            user, business_id = business_id, user
+
+        if user is None or not getattr(user, "is_authenticated", False):
+            return None
+
+        if not business_id:
+            return None
+
+        try:
+            uuid_obj = uuid.UUID(str(business_id))
+        except (ValueError, TypeError, AttributeError):
+            return None
+
+        is_staff = getattr(user, "is_staff", False) or getattr(user, "is_superuser", False)
+        if is_staff:
+            try:
+                biz = cls.objects.get(pk=uuid_obj)
+                import logging
+                logging.getLogger(__name__).info(
+                    "AUDIT: Staff user %s accessed business %s (%s) via resolve_safely",
+                    getattr(user, "id", None),
+                    biz.id,
+                    biz.name,
+                )
+                return biz
+            except cls.DoesNotExist:
+                return None
+
+        return cls.accessible_to(user).filter(pk=uuid_obj).first()
 
     # -- profile -----------------------------------------------------------
     @property

@@ -18,6 +18,13 @@
           "right": "MAHARASHTRA"
         },
         {
+          "op": "EQ",
+          "left": {
+            "var": "is_manufacturing"
+          },
+          "right": true
+        },
+        {
           "op": "GTE",
           "left": {
             "var": "total_worker_count"

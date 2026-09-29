@@ -54,9 +54,9 @@ from apps.onboarding.models import SmartQuestionInstance, SmartQuestionPlan
 
 logger = logging.getLogger(__name__)
 
-TARGET_QUESTIONS_COUNT = 16
-MIN_QUESTIONS_PER_ROUND = 12
-MAX_QUESTIONS_PER_ROUND = 20
+TARGET_QUESTIONS_COUNT = 4
+MIN_QUESTIONS_PER_ROUND = 0
+MAX_QUESTIONS_PER_ROUND = 4
 MAX_ROUNDS = 2
 
 
@@ -109,7 +109,7 @@ Your goal is to:
 1. UNDERSTAND THE BUSINESS: Analyze what the company actually manufactures, formulates, processes, stores, provides, sells, imports, exports, or operates under Indian law.
 2. DETECT CONFLICTS & DIVERGENCES: If the business name (e.g. 'BluePeak MedTech Devices') and product/activity description (e.g. 'collect waste and convert into pesticides') appear divergent or contradictory, ask a high-priority clarification question to establish the real operational scope being assessed.
 3. IDENTIFY REGULATORY DISCOVERY GAPS: Formulate DiscoveryInformationGap objects for operational facts that are currently unknown or ambiguous, where knowing the answer materially changes which official portals, gazettes, acts, approvals, registrations, or standards (e.g., CIBRC, SPCB, CDSCO, FSSAI, PESO, DGFT, BIS, etc.) must be searched.
-4. GENERATE EXACTLY 15 HIGH-VALUE QUESTIONS: Convert the most valuable information gaps into clear, professional, founder-friendly questions. The interview questionnaire must be standardized to exactly 15 dynamic questions tailored to the business profile, manufacturing scale, and state jurisdiction.
+4. GENERATE 3 TO 4 HIGH-VALUE QUESTIONS: Convert the most valuable information gaps into clear, professional, founder-friendly questions. The interview questionnaire should be tailored to the business profile, manufacturing scale, and state jurisdiction.
 
 CANONICAL VARIABLES vs DYNAMIC FIELDS:
 You are provided with a catalog of platform canonical variables (CANONICAL_VARIABLE_CATALOG) for reference mapping.
@@ -210,6 +210,11 @@ def _build_context_driven_fallback_questions(
     desc_has_pesticide = any(w in desc for w in ["pesticide", "waste", "fertilizer", "crop", "biomass", "recycle"])
     desc_has_saas = bool(re.search(r"\b(software|saas|cloud|platform|digital|apps?)\b", desc))
     desc_has_food = any(w in desc for w in ["food", "fruit", "beverage", "snack", "bakery", "dairy"])
+    desc_has_ev = any(w in desc for w in ["ev charging", "electric vehicle", "charging station", "charging infrastructure", "dc fast charger", "charging point", "evse"]) or any(w in name_lower for w in ["voltgrid", "ev charge", "mobility services"])
+    desc_has_construction = any(w in desc for w in ["construction", "civil engineering", "infrastructure contractor", "building contractor", "highways", "earthmoving", "bocw"]) or any(w in name_lower for w in ["apexbuild", "construction", "infra"])
+    desc_has_textile_export = any(w in desc for w in ["textile", "apparel export", "garment export", "finished garments", "merchant exporter"]) or any(w in name_lower for w in ["silkroute", "textile export", "apparel export"])
+    desc_has_data_centre = any(w in desc for w in ["data centre", "data center", "colocation", "hyperscale", "server hall"]) or any(w in name_lower for w in ["cloudaxis", "data centre", "data center"])
+    desc_has_microfinance = any(w in desc for w in ["microfinance", "micro-credit", "joint liability", "nbfc-mfi", "lending", "credit facility", "mfi"]) or any(w in name_lower for w in ["sahaya", "microfinance", "mfi", "finances"])
 
     if name_has_med and desc_has_pesticide:
         q_id = "scope_activity_clarification"
@@ -541,8 +546,370 @@ def _build_context_driven_fallback_questions(
                 "domain": "FOOD_SAFETY",
             })
 
+    elif desc_has_ev:
+        search_topics.extend([
+            "Central Electricity Authority Technical Standards for Connectivity of Distributed Generation Regulations",
+            f"{state_name} DISCOM EV charging tariff and consumer electrical connection guidelines",
+            "MOP Guidelines for Installation and Operation of Electric Vehicle Charging Infrastructure",
+        ])
+        if "ev_charging_land_type" not in known_keys:
+            questions.append({
+                "question_id": "Q_ev_charging_land_type",
+                "target_variable_id": "ev_charging_land_type",
+                "is_canonical": False,
+                "question_text": "Are charging stations installed on public land or private premises?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "Public Land / Municipal Concession",
+                    "Private Premises / Commercial Real Estate",
+                    "Both Public and Private Sites",
+                ],
+                "priority": 1,
+                "reason": "Determines municipal right-of-way permissions, municipal advertising guidelines, and DISCOM commercial consumer tariff classification.",
+                "expected_discovery_impact": "Directs regulatory harvesting to municipal right-of-way permissions and DISCOM public EV charging tariffs.",
+                "domain": "ENERGY_INFRASTRUCTURE",
+            })
+        if "ev_connected_capacity" not in known_keys:
+            questions.append({
+                "question_id": "Q_ev_connected_capacity",
+                "target_variable_id": "ev_connected_capacity",
+                "is_canonical": False,
+                "question_text": "What electrical connection capacity is used?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "High Tension (HT >= 33kV)",
+                    "Medium Tension (11kV)",
+                    "Low Tension (LT 415V)",
+                ],
+                "priority": 1,
+                "reason": "Determines whether CEA Electrical Safety Inspections (Regulation 43) and dedicated step-down substations are mandated.",
+                "expected_discovery_impact": "Refines search to Chief Electrical Inspectorate (CEI) approval threshold rules.",
+                "domain": "ELECTRICAL_SAFETY",
+            })
+        if "owns_operates_transformers" not in known_keys:
+            questions.append({
+                "question_id": "Q_owns_operates_transformers",
+                "target_variable_id": "owns_operates_transformers",
+                "is_canonical": False,
+                "question_text": "Do you own or operate transformers/substations?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 1,
+                "reason": "Determines CEA safety inspection certificates and substation clearance requirements prior to energization.",
+                "expected_discovery_impact": "Directs discovery to CEA safety standards and DISCOM technical connection schedules.",
+                "domain": "ELECTRICAL_SAFETY",
+            })
+        if "operates_payment_functions" not in known_keys:
+            questions.append({
+                "question_id": "Q_operates_payment_functions",
+                "target_variable_id": "operates_payment_functions",
+                "is_canonical": False,
+                "question_text": "Are payment functions directly operated by you?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines RBI Payment Aggregator directives and digital tariff metering compliances.",
+                "expected_discovery_impact": "Focuses discovery on RBI digital payment aggregator and consumer protection guidelines.",
+                "domain": "DIGITAL_COMPLIANCE",
+            })
+
+    elif desc_has_construction:
+        search_topics.extend([
+            f"{state_name} Building and Other Construction Workers Welfare Cess Act rules and registration",
+            "Contract Labour Regulation and Abolition Act contractor licensing State Labour Dept",
+            "Petroleum Rules bulk diesel storage consumer pump PESO guidelines",
+        ])
+        if "direct_site_employment" not in known_keys:
+            questions.append({
+                "question_id": "Q_direct_site_employment",
+                "target_variable_id": "direct_site_employment",
+                "is_canonical": False,
+                "question_text": "Does the company directly employ workers at sites?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "Direct Company Employment",
+                    "Subcontractor / Labour Contractor Only",
+                    "Hybrid (Both Direct and Contract)",
+                ],
+                "priority": 1,
+                "reason": "Determines principal employer registration under CLRA 1970 vs direct employer BOCW liability.",
+                "expected_discovery_impact": "Directs discovery to State Labour Commissioner CLRA vs BOCW establishment registration.",
+                "domain": "CONSTRUCTION_LABOUR",
+            })
+        if "site_diesel_storage" not in known_keys:
+            questions.append({
+                "question_id": "Q_site_diesel_storage",
+                "target_variable_id": "site_diesel_storage",
+                "is_canonical": False,
+                "question_text": "Is diesel stored at active sites?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 1,
+                "reason": "Determines PESO petroleum storage licensing thresholds under Petroleum Rules 2002.",
+                "expected_discovery_impact": "Refines search to PESO Form XIV site fuel storage authorization rules.",
+                "domain": "PETROLEUM_SAFETY",
+            })
+        if "peak_site_workforce" not in known_keys:
+            questions.append({
+                "question_id": "Q_peak_site_workforce",
+                "target_variable_id": "peak_site_workforce",
+                "is_canonical": False,
+                "question_text": "What is the maximum workforce at each site?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "Under 10 workers",
+                    "10 to 49 workers",
+                    "50 or more workers",
+                ],
+                "priority": 1,
+                "reason": "Determines mandatory BOCW Act Section 7 establishment registration threshold (10+ workers).",
+                "expected_discovery_impact": "Focuses discovery on BOCW registration and 1% welfare cess assessment.",
+                "domain": "CONSTRUCTION_LABOUR",
+            })
+        if "company_controlled_temp_electrical" not in known_keys:
+            questions.append({
+                "question_id": "Q_company_controlled_temp_electrical",
+                "target_variable_id": "company_controlled_temp_electrical",
+                "is_canonical": False,
+                "question_text": "Are temporary electrical installations company-controlled?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines Central Electricity Authority construction safety compliance and temporary CEI permits.",
+                "expected_discovery_impact": "Directs discovery to state electrical inspectorate temporary installation clearances.",
+                "domain": "ELECTRICAL_SAFETY",
+            })
+
+    elif desc_has_textile_export:
+        search_topics.extend([
+            "Directorate General of Foreign Trade DGFT Importer Exporter Code guidelines",
+            "Apparel Export Promotion Council AEPC RCMC registration procedures",
+            "Customs ICEGATE registration and electronic shipping bill procedures",
+        ])
+        if "performs_manufacturing_processing" not in known_keys:
+            questions.append({
+                "question_id": "Q_performs_manufacturing_processing",
+                "target_variable_id": "performs_manufacturing_processing",
+                "is_canonical": False,
+                "question_text": "Do you perform any manufacturing/processing?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "Pure Merchant Exporter (Zero Manufacturing/Wet Processing)",
+                    "Contract Cutting & Packing Only",
+                    "In-house Manufacturing & Processing",
+                ],
+                "priority": 1,
+                "reason": "Decisive differentiator: Pure merchant exporters are exempt from Factories Act and SPCB effluent treatment mandates under Section 2(m).",
+                "expected_discovery_impact": "Directs regulatory harvesting to trade export procedures while explicitly suppressing industrial factory licensing.",
+                "domain": "TRADE_COMPLIANCE",
+            })
+        if "direct_import_goods" not in known_keys:
+            questions.append({
+                "question_id": "Q_direct_import_goods",
+                "target_variable_id": "direct_import_goods",
+                "is_canonical": False,
+                "question_text": "Do you directly import any goods?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 1,
+                "reason": "Determines Customs Bill of Entry filings, Customs Bonded Warehouse compliances, and IGST import deferrals.",
+                "expected_discovery_impact": "Refines search to ICEGATE import documentation and customs clearing schedules.",
+                "domain": "TRADE_COMPLIANCE",
+            })
+        if "operates_own_warehouse" not in known_keys:
+            questions.append({
+                "question_id": "Q_operates_own_warehouse",
+                "target_variable_id": "operates_own_warehouse",
+                "is_canonical": False,
+                "question_text": "Do you operate the warehouse yourself?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "Self-operated Warehouse",
+                    "Third-party Logistics (3PL)",
+                    "Direct Shipments from Vendors",
+                ],
+                "priority": 2,
+                "reason": "Determines municipal commercial trade license and commercial premises fire NOC obligations.",
+                "expected_discovery_impact": "Focuses discovery on local municipal commercial warehousing regulations.",
+                "domain": "COMMERCIAL_OPERATIONS",
+            })
+        if "packages_goods_for_export" not in known_keys:
+            questions.append({
+                "question_id": "Q_packages_goods_for_export",
+                "target_variable_id": "packages_goods_for_export",
+                "is_canonical": False,
+                "question_text": "Do you package goods for export?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines Legal Metrology (Packaged Commodities) export labeling exemptions and EPR plastic obligations.",
+                "expected_discovery_impact": "Directs discovery to Legal Metrology export packaging rules and CPCB EPR registrations.",
+                "domain": "TRADE_COMPLIANCE",
+            })
+
+    elif desc_has_data_centre:
+        search_topics.extend([
+            "CEA Technical Standards for Connectivity to the Grid and CEI inspection guidelines data centres",
+            "SPCB Consent to Establish standby diesel generator sets emission standards",
+            "Petroleum Rules PESO bulk diesel storage class B license server farm",
+        ])
+        if "facility_building_ownership" not in known_keys:
+            questions.append({
+                "question_id": "Q_facility_building_ownership",
+                "target_variable_id": "facility_building_ownership",
+                "is_canonical": False,
+                "question_text": "Who owns the building?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "Company-owned Freehold Building",
+                    "Long-term Facility Lease (Commercial Landlord)",
+                    "Shared IT Park Tenancy",
+                ],
+                "priority": 1,
+                "reason": "Determines whether primary structural approvals, municipal occupancy certificates, and substation clearances fall directly on the enterprise.",
+                "expected_discovery_impact": "Separates building landlord structural compliances from data centre tenant operational authorizations.",
+                "domain": "INFRASTRUCTURE_GOVERNANCE",
+            })
+        if "dg_set_operator" not in known_keys:
+            questions.append({
+                "question_id": "Q_dg_set_operator",
+                "target_variable_id": "dg_set_operator",
+                "is_canonical": False,
+                "question_text": "Who operates the DG sets?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "Company In-house Engineering Team",
+                    "Building Facility Management / Landlord",
+                    "Third-party Operations Contractor",
+                ],
+                "priority": 1,
+                "reason": "Determines statutory responsibility for SPCB Air Act CTO and acoustic emission compliance.",
+                "expected_discovery_impact": "Directs discovery to SPCB DG set operational consent schedules.",
+                "domain": "ENVIRONMENTAL_SAFETY",
+            })
+        if "diesel_storage_capacity" not in known_keys:
+            questions.append({
+                "question_id": "Q_diesel_storage_capacity",
+                "target_variable_id": "diesel_storage_capacity",
+                "is_canonical": False,
+                "question_text": "What diesel storage capacity exists?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "Below 1,000 Litres",
+                    "1,000 to 4,999 Litres",
+                    "5,000 Litres or above (Bulk PESO Storage)",
+                ],
+                "priority": 1,
+                "reason": "Storage exceeding 2,500 L (or 5,000 L combined) mandates a PESO Form XIV Petroleum Class B Storage License.",
+                "expected_discovery_impact": "Refines search to PESO Petroleum Rules storage license brackets.",
+                "domain": "PETROLEUM_SAFETY",
+            })
+        if "groundwater_extracted" not in known_keys:
+            questions.append({
+                "question_id": "Q_groundwater_extracted",
+                "target_variable_id": "groundwater_extracted",
+                "is_canonical": False,
+                "question_text": "Is groundwater extracted?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 2,
+                "reason": "Determines Central Ground Water Authority (CGWA) or State Ground Water Authority NOC mandates.",
+                "expected_discovery_impact": "Focuses discovery on CGWA industrial groundwater abstraction guidelines.",
+                "domain": "ENVIRONMENTAL_SAFETY",
+            })
+        if "fire_approval_status" not in known_keys:
+            questions.append({
+                "question_id": "Q_fire_approval_status",
+                "target_variable_id": "fire_approval_status",
+                "is_canonical": False,
+                "question_text": "What fire approval currently exists?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "State Fire Services NOC Obtained",
+                    "Gas Suppression System Under Approval",
+                    "Provisional / Landlord Campus NOC Only",
+                ],
+                "priority": 2,
+                "reason": "Critical infrastructure with clean agent gas fire suppression requires specialized State Fire Department clearance.",
+                "expected_discovery_impact": "Directs discovery to State Fire Prevention and Life Safety measures rules.",
+                "domain": "FIRE_SAFETY",
+            })
+
+    elif desc_has_microfinance:
+        search_topics.extend([
+            "RBI Master Direction Non-Banking Financial Company - Systemically Important Non-Deposit taking Company and Deposit taking Company",
+            "Financial Intelligence Unit India FIU-IND PMLA reporting entity registration guidelines",
+            "Central Registry of Securitisation Asset Reconstruction and Security Interest CERSAI guidelines",
+        ])
+        if "regulated_entity_category" not in known_keys:
+            questions.append({
+                "question_id": "Q_regulated_entity_category",
+                "target_variable_id": "regulated_entity_category",
+                "is_canonical": False,
+                "question_text": "What is the company's exact regulated entity/category?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "RBI Registered NBFC-MFI",
+                    "Section 8 Non-Profit Microfinance",
+                    "Business Correspondent (BC) Partner",
+                    "Unregistered / Application Pending",
+                ],
+                "priority": 1,
+                "reason": "Crucial statutory boundary: NBFC-MFIs require RBI Certificate of Registration (CoR) and Net Owned Fund of Rs 10 Crore, whereas Section 8 entities and BCs operate under distinct exemptions.",
+                "expected_discovery_impact": "Separates RBI NBFC Master Direction compliance from Section 8 MCA non-profit governance.",
+                "domain": "FINANCIAL_REGULATION",
+            })
+        if "balance_sheet_lending" not in known_keys:
+            questions.append({
+                "question_id": "Q_balance_sheet_lending",
+                "target_variable_id": "balance_sheet_lending",
+                "is_canonical": False,
+                "question_text": "Are loans funded directly from company balance sheet?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "Direct Balance Sheet Lending",
+                    "Business Correspondent (BC) Origination",
+                    "Co-lending Model",
+                ],
+                "priority": 1,
+                "reason": "Determines capital adequacy ratio (CRAR 15%), provisioning norms, and RBI asset classification mandates.",
+                "expected_discovery_impact": "Focuses discovery on RBI prudential norms and capital adequacy requirements.",
+                "domain": "FINANCIAL_REGULATION",
+            })
+        if "accepts_deposits" not in known_keys:
+            questions.append({
+                "question_id": "Q_accepts_deposits",
+                "target_variable_id": "accepts_deposits",
+                "is_canonical": False,
+                "question_text": "Are deposits accepted?",
+                "answer_type": "BOOLEAN",
+                "allowed_values": ["true", "false"],
+                "priority": 1,
+                "reason": "Strict legal boundary: NBFC-MFIs are strictly prohibited from accepting public deposits under RBI directions.",
+                "expected_discovery_impact": "Directs discovery to RBI deposit-taking prohibitions and statutory disclosure rules.",
+                "domain": "FINANCIAL_REGULATION",
+            })
+        if "digital_payment_integrations" not in known_keys:
+            questions.append({
+                "question_id": "Q_digital_payment_integrations",
+                "target_variable_id": "digital_payment_integrations",
+                "is_canonical": False,
+                "question_text": "Which digital payment/account integrations are used?",
+                "answer_type": "SINGLE_CHOICE",
+                "allowed_values": [
+                    "UPI & NACH / e-Mandate",
+                    "Aadhaar Enabled Payment System (AePS)",
+                    "Cash Collections Only",
+                    "Multi-channel (UPI, NACH, AePS, Cash)",
+                ],
+                "priority": 2,
+                "reason": "Determines NPCI e-Mandate compliances, RBI Digital Lending Guidelines 2022, and Aadhaar Act Section 7 requirements.",
+                "expected_discovery_impact": "Refines search to RBI Digital Lending Directions and CIC reporting integrations.",
+                "domain": "FINANCIAL_REGULATION",
+            })
+
     desc_has_mfg = any(w in desc for w in ["manufactur", "machin", "metal", "component", "fabricat", "cnc", "tool", "assembl", "industrial", "pack", "produc", "precis"])
-    if desc_has_mfg and not (desc_has_food or desc_has_saas or desc_has_pesticide or name_has_med):
+    if desc_has_mfg and not (desc_has_food or desc_has_saas or desc_has_pesticide or name_has_med or desc_has_ev or desc_has_construction or desc_has_textile_export or desc_has_data_centre or desc_has_microfinance):
         search_topics.extend([
             f"{state_name} Factories Act registration threshold with power guidelines",
             f"{state_name} pollution control board consent to establish engineering industry",
@@ -1246,7 +1613,7 @@ MSME Scale: {context.msme_scale}"""
                     ChatMessage(role="user", content=prompt),
                 ],
                 temperature=0.1,
-                max_output_tokens=1000,
+                max_output_tokens=2500,
                 reasoning_effort="none",
                 workflow="smart_questions_planner",
                 assessment_id=str(assessment.id) if assessment else None,
@@ -1337,7 +1704,7 @@ MSME Scale: {context.msme_scale}"""
                     "information_gain": float(item.get("information_gain", 0.90)),
                 })
 
-            if len(planned_items) >= MIN_QUESTIONS_PER_ROUND:
+            if len(planned_items) > 0 or (parsed.get("questions") is not None and len(parsed.get("questions", [])) == 0):
                 llm_succeeded = True
         except Exception as exc:
             logger.warning("LLM question planning failed, using dynamic context fallback: %s", exc)
@@ -1345,14 +1712,15 @@ MSME Scale: {context.msme_scale}"""
     # --------------------------------------------------------------------------
     # Fallback to Deterministic Context-Driven Extraction if LLM Failed
     # --------------------------------------------------------------------------
-    if not llm_succeeded and (batch_size is None or not candidate_rules):
+    if not llm_succeeded or len(planned_items) == 0:
         fb_intent, fb_gaps, fb_questions = _build_context_driven_fallback_questions(
             context,
             business.name,
             known_keys,
         )
-        discovery_intent = fb_intent
-        information_gaps_list = fb_gaps
+        if not llm_succeeded:
+            discovery_intent = fb_intent
+            information_gaps_list = fb_gaps
         existing_keys = {item["variable_key"] for item in planned_items}
         for q in fb_questions:
             k = q["target_variable_id"]
@@ -1369,6 +1737,11 @@ MSME Scale: {context.msme_scale}"""
     is_saas = bool(re.search(r"\b(software|saas|cloud|platform|digital|apps?)\b", desc_lower))
     is_med = any(w in desc_lower or w in name_lower for w in ["medtech", "medical", "device", "surgical", "diagnostic", "implant", "catheter"])
     is_pesticide = any(w in desc_lower for w in ["pesticide", "waste", "fertilizer", "crop", "biomass", "recycle"])
+    is_ev = any(w in desc_lower for w in ["ev charging", "electric vehicle", "charging station", "charging infrastructure", "dc fast charger", "charging point", "evse"]) or any(w in name_lower for w in ["voltgrid", "ev charge", "mobility services"])
+    is_construction = any(w in desc_lower for w in ["construction", "civil engineering", "infrastructure contractor", "building contractor", "highways", "earthmoving", "bocw"]) or any(w in name_lower for w in ["apexbuild", "construction", "infra"])
+    is_textile_export = any(w in desc_lower for w in ["textile", "apparel export", "garment export", "finished garments", "merchant exporter"]) or any(w in name_lower for w in ["silkroute", "textile export", "apparel export"])
+    is_data_centre = any(w in desc_lower for w in ["data centre", "data center", "colocation", "hyperscale", "server hall"]) or any(w in name_lower for w in ["cloudaxis", "data centre", "data center"])
+    is_microfinance = any(w in desc_lower for w in ["microfinance", "micro-credit", "joint liability", "nbfc-mfi", "lending", "credit facility", "mfi"]) or any(w in name_lower for w in ["sahaya", "microfinance", "mfi", "finances"])
 
     if is_food and not is_pesticide:
         planned_items = [
@@ -1399,6 +1772,51 @@ MSME Scale: {context.msme_scale}"""
                 "processes_personal_data", "cloud_hosting_location", "critical_cyber_services",
                 "cross_border_data_transfer", "export_of_software_services",
                 "cold_chain_storage", "epr_target_obligation", "wireless_rf_features",
+            }
+        ]
+    elif is_textile_export:
+        planned_items = [
+            q for q in planned_items
+            if q["variable_key"] not in {
+                "connected_power_load", "boiler_installed", "effluent_emission_generation", "hazardous_waste_generation",
+                "dynamic_machining_process_type", "dynamic_surface_treatment_finish", "cdsco_device_risk_class",
+                "is_sterile_at_supply", "cleanroom_iso_class", "processes_personal_data", "cloud_hosting_location",
+                "critical_cyber_services", "daily_processing_capacity", "food_contact_packaging",
+            }
+        ]
+    elif is_microfinance:
+        planned_items = [
+            q for q in planned_items
+            if q["variable_key"] not in {
+                "connected_power_load", "boiler_installed", "effluent_emission_generation", "hazardous_waste_generation",
+                "dynamic_machining_process_type", "dynamic_surface_treatment_finish", "cdsco_device_risk_class",
+                "is_sterile_at_supply", "cleanroom_iso_class", "daily_processing_capacity", "food_contact_packaging",
+                "cold_chain_storage", "organic_claim",
+            }
+        ]
+    elif is_ev:
+        planned_items = [
+            q for q in planned_items
+            if q["variable_key"] not in {
+                "cdsco_device_risk_class", "is_sterile_at_supply", "cleanroom_iso_class", "daily_processing_capacity",
+                "food_contact_packaging", "cold_chain_storage", "organic_claim", "biocompatibility_tested", "active_or_implantable",
+            }
+        ]
+    elif is_construction:
+        planned_items = [
+            q for q in planned_items
+            if q["variable_key"] not in {
+                "connected_power_load", "cdsco_device_risk_class", "is_sterile_at_supply", "cleanroom_iso_class",
+                "daily_processing_capacity", "food_contact_packaging", "cold_chain_storage", "organic_claim",
+                "processes_personal_data", "cloud_hosting_location",
+            }
+        ]
+    elif is_data_centre:
+        planned_items = [
+            q for q in planned_items
+            if q["variable_key"] not in {
+                "daily_processing_capacity", "food_contact_packaging", "cleanroom_iso_class", "cdsco_device_risk_class",
+                "is_sterile_at_supply", "organic_claim",
             }
         ]
 
@@ -1513,6 +1931,51 @@ MSME Scale: {context.msme_scale}"""
         combined_items = [q for q in combined_items if q["variable_key"] not in saas_forbidden]
     elif is_med and not is_pesticide:
         combined_items = [q for q in combined_items if q["variable_key"] not in med_forbidden]
+    elif is_textile_export:
+        combined_items = [
+            q for q in combined_items
+            if q["variable_key"] not in {
+                "connected_power_load", "boiler_installed", "effluent_emission_generation", "hazardous_waste_generation",
+                "dynamic_machining_process_type", "dynamic_surface_treatment_finish", "cdsco_device_risk_class",
+                "is_sterile_at_supply", "cleanroom_iso_class", "processes_personal_data", "cloud_hosting_location",
+                "critical_cyber_services", "daily_processing_capacity", "food_contact_packaging",
+            }
+        ]
+    elif is_microfinance:
+        combined_items = [
+            q for q in combined_items
+            if q["variable_key"] not in {
+                "connected_power_load", "boiler_installed", "effluent_emission_generation", "hazardous_waste_generation",
+                "dynamic_machining_process_type", "dynamic_surface_treatment_finish", "cdsco_device_risk_class",
+                "is_sterile_at_supply", "cleanroom_iso_class", "daily_processing_capacity", "food_contact_packaging",
+                "cold_chain_storage", "organic_claim",
+            }
+        ]
+    elif is_ev:
+        combined_items = [
+            q for q in combined_items
+            if q["variable_key"] not in {
+                "cdsco_device_risk_class", "is_sterile_at_supply", "cleanroom_iso_class", "daily_processing_capacity",
+                "food_contact_packaging", "cold_chain_storage", "organic_claim", "biocompatibility_tested", "active_or_implantable",
+            }
+        ]
+    elif is_construction:
+        combined_items = [
+            q for q in combined_items
+            if q["variable_key"] not in {
+                "connected_power_load", "cdsco_device_risk_class", "is_sterile_at_supply", "cleanroom_iso_class",
+                "daily_processing_capacity", "food_contact_packaging", "cold_chain_storage", "organic_claim",
+                "processes_personal_data", "cloud_hosting_location",
+            }
+        ]
+    elif is_data_centre:
+        combined_items = [
+            q for q in combined_items
+            if q["variable_key"] not in {
+                "daily_processing_capacity", "food_contact_packaging", "cleanroom_iso_class", "cdsco_device_risk_class",
+                "is_sterile_at_supply", "organic_claim",
+            }
+        ]
 
     if batch_size is not None:
         # Pure sequential adaptive mode: driven strictly by unresolved rules
@@ -1526,36 +1989,16 @@ MSME Scale: {context.msme_scale}"""
             relevant_items = [q for q in combined_items if not candidate_rules or q["variable_key"] in rule_vars]
             planned_items = relevant_items[:max(1, batch_size)]
     else:
-        # Standard batch mode:
-        if round_number > 1 and candidate_rules and kb_analysis.unresolved_count == 0:
-            planned_items = []
-        elif round_number > 1 and not kb_analysis.ranked_variables:
+        # Standard adaptive mode: driven strictly by unresolved rules and genuine gaps (0-4 questions)
+        if candidate_rules and (kb_analysis.unresolved_count == 0 or not kb_analysis.ranked_variables):
             planned_items = []
         else:
-            # If intake questionnaire needs more items for fresh business pre-discovery, pad with context fallback
-            if len(combined_items) < TARGET_QUESTIONS_COUNT and round_number == 1:
-                _, _, fb_questions = _build_context_driven_fallback_questions(
-                    context,
-                    business.name,
-                    known_keys,
-                )
-                if is_food and not is_pesticide:
-                    fb_questions = [q for q in fb_questions if q["target_variable_id"] not in food_forbidden]
-                elif is_saas:
-                    fb_questions = [q for q in fb_questions if q["target_variable_id"] not in saas_forbidden]
-                elif is_med and not is_pesticide:
-                    fb_questions = [q for q in fb_questions if q["target_variable_id"] not in med_forbidden]
-
-                existing_keys = {item["variable_key"] for item in combined_items}
-                for q in fb_questions:
-                    k = q.get("variable_key") or q.get("target_variable_id")
-                    if k and k not in existing_keys and k not in known_keys:
-                        existing_keys.add(k)
-                        combined_items.append(q)
-                        if len(combined_items) >= TARGET_QUESTIONS_COUNT:
-                            break
-
-            planned_items = combined_items[:TARGET_QUESTIONS_COUNT]
+            rule_vars = set(kb_analysis.ranked_variables) if candidate_rules else set()
+            if rule_vars:
+                relevant_items = [q for q in combined_items if q["variable_key"] in rule_vars]
+                planned_items = relevant_items[:TARGET_QUESTIONS_COUNT]
+            else:
+                planned_items = combined_items[:TARGET_QUESTIONS_COUNT]
 
     # Stopping condition: If no questions remain
     if not planned_items:

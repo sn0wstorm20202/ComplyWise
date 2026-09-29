@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -25,11 +25,10 @@ class BusinessSchemesListView(APIView):
 
     Matches verified, active schemes against the specific business's derived context.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, business_id=None) -> Response:  # noqa: ANN001
-        user = request.user if (request.user and request.user.is_authenticated) else None
-        business = Business.resolve_safely(business_id, user)
+        business = Business.resolve_authorized(request.user, business_id)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -298,7 +297,7 @@ class SchemePipelineRunView(APIView):
     Triggers ingestion across official portals, computes content hashes,
     diffs against existing records, and publishes new immutable versions when updated.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
 
     def post(self, request: Request) -> Response:
         source_keys = request.data.get("source_keys")
@@ -313,7 +312,7 @@ class SchemePipelineStatusView(APIView):
 
     Audit overview: total schemes, state breakdown, recent snapshots, and verification dates.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
 
     def get(self, request: Request) -> Response:
         service = SchemePipelineService()
@@ -326,7 +325,7 @@ class SchemeRollbackView(APIView):
 
     Rolls back a scheme to an earlier immutable version.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
 
     def post(self, request: Request, scheme_code: str) -> Response:
         target_version = request.data.get("target_version")
@@ -353,7 +352,7 @@ class SchemeUpdatePublishView(APIView):
     Dynamically publishes an updated version of a scheme, demonstrating
     cryptographic content hashing, field-by-field diff generation, and version incrementation.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
 
     def post(self, request: Request, scheme_code: str) -> Response:
         scheme = Scheme.objects.filter(scheme_code=scheme_code).first()

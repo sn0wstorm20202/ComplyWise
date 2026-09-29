@@ -47,60 +47,59 @@ class StandardsSearchView(APIView):
         assessment_id = request.query_params.get("assessment_id", "").strip() or None
 
         if business_id:
-            business = Business.objects.filter(pk=business_id).first()
-            if business:
-                disc_result = discover_business_standards(business, assessment_id=assessment_id)
-                items = disc_result.get("standards", [])
-                if query:
-                    needle = query.lower()
-                    items = [
-                        s
-                        for s in items
-                        if needle in s["title"].lower()
-                        or needle in s["standard_code"].lower()
-                        or needle in s["why_it_matters"].lower()
-                    ]
-                formatted_items = []
-                for s in items:
-                    citations = []
-                    if s.get("source_url"):
-                        citations.append({
-                            "evidence_id": f"EVID::{s['standard_code']}",
-                            "authority": s["authority"],
-                            "locator": s["standard_code"],
-                            "verification_status": "VERIFIED",
-                            "excerpt": s["why_it_matters"],
-                            "source_title": f"BIS Official Standard: {s['standard_code']}",
-                            "canonical_url": s["source_url"],
-                        })
-                    formatted_items.append({
-                        "requirement_id": s["standard_code"],
-                        "standard_code": s["standard_code"],
-                        "title": f"{s['standard_code']} — {s['title']}",
+            business = Business.resolve_authorized(request.user, business_id)
+            disc_result = discover_business_standards(business, assessment_id=assessment_id)
+            items = disc_result.get("standards", [])
+            if query:
+                needle = query.lower()
+                items = [
+                    s
+                    for s in items
+                    if needle in s["title"].lower()
+                    or needle in s["standard_code"].lower()
+                    or needle in s["why_it_matters"].lower()
+                ]
+            formatted_items = []
+            for s in items:
+                citations = []
+                if s.get("source_url"):
+                    citations.append({
+                        "evidence_id": f"EVID::{s['standard_code']}",
                         "authority": s["authority"],
-                        "jurisdiction": "CENTRAL",
-                        "domain": "STANDARDS & QUALITY",
-                        "description": f"{s['why_it_matters']} Testing requirements: {s.get('testing_requirements', 'Standard laboratory compliance testing.')}",
-                        "category": s.get("nature", "MANDATORY_STANDARD"),
-                        "citations": citations,
-                        "citation_count": len(citations),
-                        "is_mandatory": s.get("is_mandatory", True),
-                        "next_step": s.get("next_step", ""),
+                        "locator": s["standard_code"],
+                        "verification_status": "VERIFIED",
+                        "excerpt": s["why_it_matters"],
+                        "source_title": f"BIS Official Standard: {s['standard_code']}",
+                        "canonical_url": s["source_url"],
                     })
+                formatted_items.append({
+                    "requirement_id": s["standard_code"],
+                    "standard_code": s["standard_code"],
+                    "title": f"{s['standard_code']} — {s['title']}",
+                    "authority": s["authority"],
+                    "jurisdiction": "CENTRAL",
+                    "domain": "STANDARDS & QUALITY",
+                    "description": f"{s['why_it_matters']} Testing requirements: {s.get('testing_requirements', 'Standard laboratory compliance testing.')}",
+                    "category": s.get("nature", "MANDATORY_STANDARD"),
+                    "citations": citations,
+                    "citation_count": len(citations),
+                    "is_mandatory": s.get("is_mandatory", True),
+                    "next_step": s.get("next_step", ""),
+                })
 
-                return Response(
-                    envelope(
-                        {
-                            "business_id": business_id,
-                            "query": query,
-                            "count": len(formatted_items),
-                            "standards": formatted_items,
-                            "catalogue_available": True,
-                            "catalogue_note": disc_result.get("disclaimer", ""),
-                        }
-                    ),
-                    status=status.HTTP_200_OK,
-                )
+            return Response(
+                envelope(
+                    {
+                        "business_id": business_id,
+                        "query": query,
+                        "count": len(formatted_items),
+                        "standards": formatted_items,
+                        "catalogue_available": True,
+                        "catalogue_note": disc_result.get("disclaimer", ""),
+                    }
+                ),
+                status=status.HTTP_200_OK,
+            )
 
         qs = RequirementDefinition.objects.filter(
             category__iexact=STANDARD_CATEGORY,

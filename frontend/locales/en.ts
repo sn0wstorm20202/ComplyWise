@@ -120,7 +120,7 @@ export const en = {
 
   compliance: {
     title: "Statutory Requirements & Clearances",
-    subtitle: "Applicable Bureau of Indian Standards (BIS) mandates, licenses, and statutory registrations.",
+    subtitle: "Applicable industrial clearances, statutory operating licenses, and environmental mandates.",
     requirement: "Statutory Requirement",
     action: "Mandatory Action",
     deadline: "Statutory Deadline",

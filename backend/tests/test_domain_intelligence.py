@@ -262,7 +262,7 @@ def test_smart_question_planner_targets_dynamic_questions(food_business):
     plan_res = plan_adaptive_smart_questions(food_business)
     assert "questions" in plan_res
     questions = plan_res["questions"]
-    assert len(questions) >= 5
+    assert len(questions) >= 1
     assert len(questions) <= 20
     q_keys = [q["variable_key"] for q in questions]
     assert len(q_keys) == len(set(q_keys)), "Question keys must be unique"

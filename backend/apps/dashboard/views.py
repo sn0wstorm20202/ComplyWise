@@ -39,7 +39,7 @@ class BusinessDashboardView(APIView):
                 ws.active_business = business
                 aid = data.get("assessment_id")
                 if aid:
-                    ass = Assessment.objects.filter(pk=aid).first()
+                    ass = business.assessments.filter(pk=aid).first()
                     if ass:
                         ws.active_assessment = ass
                 ws.save()

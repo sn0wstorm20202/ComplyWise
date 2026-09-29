@@ -71,7 +71,7 @@ function ComplianceContent() {
 
     try {
       const explicitRunId = searchParams.get("run_id");
-      const explicitAssessmentId = searchParams.get("assessment_id") || activeAssessmentId || undefined;
+      const explicitAssessmentId = searchParams.get("assessment_id") || undefined;
 
       // 1. Fetch business profile, canonical business compliance list, and candidate regulations concurrently
       const [bizResp, reqResp, candResp] = await Promise.allSettled([
@@ -189,8 +189,12 @@ function ComplianceContent() {
         ...Object.values(bizVariables).map((v: any) => (typeof v === "object" ? v?.value || "" : String(v || ""))),
       ].join(" ").toLowerCase();
 
+      const isInfraOrTech =
+        /\b(data centre|datacenter|colocation|server|ev charging|charging station|electric vehicle|fintech|banking|microfinance)\b/i.test(descTokens);
+
       const isSoftwareSaaS =
         /\b(software|saas|platform|app|web|digital|pre-visualization|storyloom|consulting|it services|agency)\b/i.test(descTokens) &&
+        !isInfraOrTech &&
         !/\b(manufacturing|hardware|factory|machinery|chemical|assembly plant)\b/i.test(descTokens);
 
       if (isSoftwareSaaS) {
@@ -203,8 +207,9 @@ function ComplianceContent() {
       }
 
       const isPhysicalMfg =
-        /\b(mill|textile|weaving|spinning|dyeing|fabric|yarn|foundry|plant|casting|manufacturing|factory|machinery|engineering|chemical|metal|assembly|battery)\b/i.test(descTokens) &&
-        !isSoftwareSaaS;
+        /\b(mill|textile|weaving|spinning|dyeing|fabric|yarn|foundry|plant|casting|manufacturing|factory|machinery|engineering|chemical|metal|assembly)\b/i.test(descTokens) &&
+        !isSoftwareSaaS &&
+        !isInfraOrTech;
 
       if (isPhysicalMfg) {
         loadedItems = loadedItems.filter((r) => {
@@ -503,15 +508,25 @@ function ComplianceContent() {
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 text-xs">
                         <div>
                           <span className="text-[#64748B] text-[10px] block uppercase font-bold">Required Documents</span>
-                          <span className="font-semibold text-[#0F172A]">4-6 Documents</span>
+                          <span className="font-semibold text-[#0F172A]">
+                            {req.required_documents && req.required_documents.length > 0
+                              ? `${req.required_documents.length} Documents`
+                              : "Needs verification"}
+                          </span>
                         </div>
                         <div>
                           <span className="text-[#64748B] text-[10px] block uppercase font-bold">Estimated Steps</span>
-                          <span className="font-semibold text-[#0F172A]">4-5 Steps</span>
+                          <span className="font-semibold text-[#0F172A]">
+                            {req.application_steps && req.application_steps.length > 0
+                              ? `${req.application_steps.length} Steps`
+                              : "Needs verification"}
+                          </span>
                         </div>
                         <div>
                           <span className="text-[#64748B] text-[10px] block uppercase font-bold">Timeline / Due Date</span>
-                          <span className="font-semibold text-[#0F172A]">Prior to Operations</span>
+                          <span className="font-semibold text-[#0F172A] truncate block" title={req.timeline || "Needs verification"}>
+                            {req.timeline ? req.timeline : "Needs verification"}
+                          </span>
                         </div>
                         <div>
                           <span className="text-[#64748B] text-[10px] block uppercase font-bold">Submission Route</span>

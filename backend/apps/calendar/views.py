@@ -19,7 +19,7 @@ from typing import Any
 
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.request import Request
 
 from rest_framework.response import Response
@@ -548,8 +548,8 @@ class CaseDeadlinesListView(APIView):
         from apps.calendar.serializers import DeadlineSerializer
         from apps.workflows.models import ComplianceCase
 
-        case = ComplianceCase.objects.filter(pk=case_id).first()
-        if not case:
+        case = ComplianceCase.objects.filter(pk=case_id).select_related("business").first()
+        if not case or not Business.resolve_safely(case.business_id, request.user):
             return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
 
         deadlines = Deadline.objects.filter(case=case).order_by("due_at")
@@ -560,7 +560,7 @@ class CaseDeadlinesListView(APIView):
 class AdminCaseDeadlinesView(APIView):
     """Admin compliance deadline management for a case (§18, §19, §21)."""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
 
     def get(self, request: Request, case_id) -> Response:
         from apps.calendar.models import Deadline
@@ -639,7 +639,7 @@ class AdminCaseDeadlinesView(APIView):
 class AdminDeadlineDetailView(APIView):
     """Admin update or cancel a deadline (§18, §19)."""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
 
     def patch(self, request: Request, deadline_id) -> Response:
         from apps.calendar.models import Deadline
@@ -721,7 +721,7 @@ class AdminDeadlineDetailView(APIView):
 class AdminDeadlineSendAlertView(APIView):
     """Trigger immediate multi-channel alert dispatch for a deadline (§18, §21)."""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
 
     def post(self, request: Request, deadline_id) -> Response:
         from apps.calendar.models import Deadline
@@ -745,5 +745,87 @@ class AdminDeadlineSendAlertView(APIView):
             }),
             status=status.HTTP_200_OK,
         )
+
+
+class AdminBusinessDeadlinesView(APIView):
+    """Admin compliance deadline management directly by business (§18, §19, §21)."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request, business_id) -> Response:  # noqa: ANN001
+        from apps.calendar.models import Deadline
+        from apps.calendar.serializers import DeadlineSerializer
+
+        deadlines = Deadline.objects.filter(business_id=business_id).order_by("due_at")
+        data = DeadlineSerializer(deadlines, many=True).data
+        return Response(envelope({"count": len(data), "deadlines": data}), status=status.HTTP_200_OK)
+
+    def post(self, request: Request, business_id) -> Response:  # noqa: ANN001
+        from apps.calendar.serializers import DeadlineSerializer
+        from apps.calendar.services import DeadlineService
+        from apps.businesses.models import Business
+        from django.utils.dateparse import parse_datetime
+        import datetime
+
+        business = Business.objects.filter(pk=business_id).first()
+        if not business:
+            return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
+
+        title = request.data.get("title")
+        due_at_raw = request.data.get("due_at") or request.data.get("due_date")
+        if not title:
+            return error_response("VALIDATION_ERROR", "Title is required for a deadline.", http_status=status.HTTP_400_BAD_REQUEST)
+        if not due_at_raw:
+            return error_response("VALIDATION_ERROR", "Due date is required for a deadline.", http_status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if isinstance(due_at_raw, str):
+                parsed = parse_datetime(due_at_raw)
+                if parsed is None:
+                    # Try datetime.fromisoformat or date parse
+                    try:
+                        clean_str = due_at_raw.replace("Z", "+00:00")
+                        parsed = datetime.datetime.fromisoformat(clean_str)
+                    except Exception:
+                        from django.utils.dateparse import parse_date
+                        p_date = parse_date(due_at_raw)
+                        if p_date:
+                            parsed = datetime.datetime.combine(p_date, datetime.time(23, 59, 59))
+                due_at = parsed
+            else:
+                due_at = due_at_raw
+            if not due_at:
+                raise ValueError("Could not parse due date.")
+            if timezone.is_naive(due_at):
+                due_at = timezone.make_aware(due_at)
+        except Exception as exc:
+            return error_response("INVALID_DATE", f"Invalid date format: {exc}", http_status=status.HTTP_400_BAD_REQUEST)
+
+        req_code = request.data.get("requirement_id_code") or request.data.get("requirement_id") or "GENERAL"
+        description = request.data.get("description", "")
+        priority = request.data.get("priority", "MEDIUM")
+        notes = request.data.get("notes", "")
+
+        deadline = DeadlineService.create_deadline(
+            case=None,
+            business=business,
+            title=title,
+            due_at=due_at,
+            requirement_id_code=req_code,
+            description=description,
+            priority=priority,
+            source="ADMIN_SET",
+            created_by=request.user if (request.user and request.user.is_authenticated) else None,
+            notes=notes,
+        )
+
+        return Response(
+            envelope({
+                "message": "Statutory deadline successfully created.",
+                "deadline": DeadlineSerializer(deadline).data,
+            }),
+            status=status.HTTP_201_CREATED,
+        )
+
 
 

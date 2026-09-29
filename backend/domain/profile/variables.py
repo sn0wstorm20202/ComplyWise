@@ -523,6 +523,44 @@ PROFILE_VARIABLES: tuple[ProfileVariable, ...] = (
         data_type=VariableDataType.BOOLEAN,
         why_it_matters="Pressurized gas storage triggers industrial safety container approvals.",
     ),
+    ProfileVariable(
+        code="V44",
+        key="is_manufacturing",
+        label="Manufacturing activity status",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Manufacturing operations determine whether factory registrations and industrial safety norms apply.",
+    ),
+    ProfileVariable(
+        code="V45",
+        key="dyeing_activity",
+        label="Textile dyeing or wet chemical processing",
+        data_type=VariableDataType.BOOLEAN,
+        why_it_matters="Dyeing and wet processing determine water consent and trade effluent treatment obligations.",
+    ),
+    ProfileVariable(
+        code="V46",
+        key="boiler_capacity_tph",
+        label="Boiler steam generation capacity",
+        data_type=VariableDataType.DECIMAL,
+        unit="TPH",
+        why_it_matters="Boiler capacity determines inspection frequencies and statutory certificate requirements.",
+    ),
+    ProfileVariable(
+        code="V47",
+        key="facility_area",
+        label="Built-up facility area",
+        data_type=VariableDataType.DECIMAL,
+        unit="sqft",
+        why_it_matters="Facility floor area is an input to fire safety clearances and building plan approvals.",
+    ),
+    ProfileVariable(
+        code="V48",
+        key="shifts_count",
+        label="Daily operational shifts",
+        data_type=VariableDataType.INTEGER,
+        unit="shifts",
+        why_it_matters="Working shift count affects labour scheduling and night shift permissions.",
+    ),
 )
 
 VARIABLES_BY_KEY: dict[str, ProfileVariable] = {v.key: v for v in PROFILE_VARIABLES}

@@ -11,6 +11,7 @@ Authority: Milestone Task — Part A, Part B; PRD_v2.0 §10.3, §10.4, §11; TRD
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from common.enums import KnowledgeStatus, VariableOrigin
@@ -109,12 +110,24 @@ def save_smart_question_answers(
         if raw_value is None or (isinstance(raw_value, str) and not raw_value.strip()):
             continue
 
-        # Extract scalar value and optional custom explanation
+        # Extract scalar value, provenance, and optional custom explanation
         scalar_val = raw_value
         custom_text = None
+        origin = VariableOrigin.USER_PROVIDED
+        confidence = None
+        source_excerpt = None
+        raw_unit = None
+        canonical_unit = None
+
         if isinstance(raw_value, dict):
             scalar_val = raw_value.get("value")
-            if scalar_val is None:
+            if "origin" in raw_value and raw_value["origin"] in VariableOrigin.values:
+                origin = raw_value["origin"]
+                confidence = raw_value.get("confidence")
+                source_excerpt = raw_value.get("source_excerpt")
+                raw_unit = raw_value.get("raw_unit")
+                canonical_unit = raw_value.get("canonical_unit")
+            elif scalar_val is None:
                 scalar_val = raw_value.get("selected_option") or raw_value.get("custom_text")
             custom_text = raw_value.get("explanation") or raw_value.get("custom_text")
             if (scalar_val in (None, "", "OTHER", "CUSTOM")) and custom_text:
@@ -127,7 +140,7 @@ def save_smart_question_answers(
                 coerced = coerce_value(var_def, scalar_val)
             except ValueError:
                 # Custom answer provided by user that doesn't strictly match canonical enum:
-                # Store user's custom text with USER_PROVIDED provenance instead of failing validation
+                # Store user's custom text with provenance instead of failing validation
                 coerced = str(scalar_val).strip() if scalar_val is not None else None
 
             if coerced is None and scalar_val is not None:
@@ -142,17 +155,32 @@ def save_smart_question_answers(
                 val_to_store = str(coerced) if var_def.data_type in {"DECIMAL", "CURRENCY_INR"} else coerced
                 entry = BusinessProfileVersion.build_entry(
                     value=val_to_store,
-                    origin=VariableOrigin.USER_PROVIDED,
+                    origin=origin,
+                    confidence=confidence if origin != VariableOrigin.USER_PROVIDED else None,
                 )
                 if custom_text:
                     entry["custom_text"] = custom_text
+                if source_excerpt:
+                    entry["source_excerpt"] = source_excerpt
+                if raw_unit:
+                    entry["raw_unit"] = raw_unit
+                if canonical_unit:
+                    entry["canonical_unit"] = canonical_unit
                 cleaned_entries[var_def.key] = entry
         else:
             # Dynamic discovery context field (non-canonical)
-            cleaned_entries[key] = BusinessProfileVersion.build_entry(
+            entry = BusinessProfileVersion.build_entry(
                 value=scalar_val if scalar_val is not None else raw_value,
-                origin=VariableOrigin.USER_PROVIDED,
+                origin=origin,
+                confidence=confidence if origin != VariableOrigin.USER_PROVIDED else None,
             )
+            if source_excerpt:
+                entry["source_excerpt"] = source_excerpt
+            if raw_unit:
+                entry["raw_unit"] = raw_unit
+            if canonical_unit:
+                entry["canonical_unit"] = canonical_unit
+            cleaned_entries[key] = entry
 
         # Mark corresponding SmartQuestionInstance as answered (match by variable_key or question_id)
         SmartQuestionInstance.objects.filter(
@@ -261,28 +289,60 @@ def save_products_and_activities(
     assessment_id: str | None = None,
 ) -> dict[str, Any]:
     """Persist user's natural-language product/activity input and return detected hints."""
+    from domain.intelligence.business_understanding import (
+        BusinessUnderstandingEngine,
+        extract_canonical_facts_from_understanding,
+        generate_emergency_business_understanding,
+    )
+    from domain.intelligence.orchestration import OrchestrationContext
+
     answers: dict[str, Any] = {
         "product_description": product_description.strip(),
     }
     if import_export_intent:
         answers["import_export_intent"] = import_export_intent.strip()
 
+    # Extract structured operational facts with provenance from product description
+    current_profile = business.current_profile
+    curr_vars = current_profile.variables if current_profile else {}
+    geography = {
+        "state": (curr_vars.get("state") or {}).get("value") or "",
+        "district": (curr_vars.get("district") or {}).get("value") or "",
+    }
+    context = OrchestrationContext(
+        business_id=str(business.id),
+        business_name=business.name,
+        raw_business_description=product_description,
+        product=product_description,
+        geography=geography,
+    )
+    try:
+        engine = BusinessUnderstandingEngine()
+        understanding = engine.analyze_business(context, assessment_id=assessment_id)
+    except Exception as exc:
+        logging.getLogger(__name__).warning("BusinessUnderstandingEngine failed, using emergency understanding: %s", exc)
+        understanding = generate_emergency_business_understanding(context)
+
+    extracted_facts = extract_canonical_facts_from_understanding(understanding, raw_text=product_description)
+    answers.update(extracted_facts)
+
     new_profile = save_smart_question_answers(
         business=business,
         answers=answers,
         user=user,
         assessment_id=assessment_id,
-        change_note="Products and activities updated",
+        change_note="Products and activities updated with canonical fact extraction",
     )
     detected_tags = detect_activity_keywords(product_description)
 
     if assessment_id:
         assessment = business.assessments.filter(pk=assessment_id).first()
         if assessment:
-            state = dict(assessment.step_state)
+            state = dict(assessment.step_state or {})
             state["product_description"] = product_description.strip()
             if import_export_intent:
                 state["import_export_intent"] = import_export_intent.strip()
+            state["understanding"] = understanding.to_clean_dict()
             assessment.step_state = state
             if assessment.current_step < 4:
                 assessment.current_step = 4
@@ -293,4 +353,6 @@ def save_products_and_activities(
         "product_description": product_description.strip(),
         "import_export_intent": import_export_intent,
         "detected_activities": detected_tags,
+        "extracted_facts": {k: v.get("value") for k, v in extracted_facts.items()},
+        "understanding": understanding.to_clean_dict(),
     }

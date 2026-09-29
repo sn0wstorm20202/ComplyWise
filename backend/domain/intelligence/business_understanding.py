@@ -48,12 +48,14 @@ CRITICAL INSTRUCTIONS:
 2. Identify operational characteristics (e.g. connected power load, boiler/furnace, chemical storage, effluent discharge, hazardous waste, contract workforce, packaging/plastics).
 3. Identify likely regulatory domains that typically govern such businesses in India (e.g. "State Pollution Control Board (Consent to Establish/Operate)", "Factories Act & DISH (Factory License)", "Central Ground Water Authority (CGWA)", "BIS Quality Control Orders", "FSSAI Food Safety", "PESO Explosives/Petroleum", "DGFT Import-Export Code", "Plastic/E-Waste Management Rules").
 4. Identify critical missing unknowns ("important_unknowns") that downstream stages must ask the business owner to determine statutory applicability.
-5. STRICT RULE: DO NOT declare final legal applicability, statutory approvals, exemptions, or compliance clearances. You only structure facts and flag likely regulatory domains.
+5. Extract structured operational facts for statutory decision rules (workers, power load in HP/kW, boiler status/capacity, trade effluent, dyeing, hazardous materials, shifts).
+6. STRICT RULE: DO NOT declare final legal applicability, statutory approvals, exemptions, or compliance clearances. You only structure facts and flag likely regulatory domains.
 
 You must output a strictly valid JSON object conforming exactly to this schema:
 {
   "business_type": "string (e.g. Manufacturing, Services, Trading, Hybrid)",
   "primary_activity": "string (concise descriptive statement of main business activity)",
+  "secondary_activities": ["string", "..."],
   "products": ["string", "..."],
   "manufacturing_or_service": "MANUFACTURING" | "SERVICE" | "TRADING" | "HYBRID",
   "market": "DOMESTIC" | "EXPORT" | "DOMESTIC_AND_EXPORT" | "GLOBAL",
@@ -66,12 +68,29 @@ You must output a strictly valid JSON object conforming exactly to this schema:
   "operational_characteristics": ["string", "..."],
   "likely_regulatory_domains": ["string", "..."],
   "important_unknowns": ["string", "..."],
+  "canonical_operational_facts": {
+    "total_worker_count": integer or null,
+    "connected_power_load": float or null,
+    "connected_power_unit": "HP" | "KW" | "KVA" | null,
+    "facility_area": float or null,
+    "facility_area_unit": "SQFT" | "SQM" | null,
+    "dyeing_activity": boolean or null,
+    "boiler_installed": boolean or null,
+    "boiler_capacity_tph": float or null,
+    "effluent_emission_generation": boolean or null,
+    "shifts_count": integer or null,
+    "hazardous_waste_generation": boolean or null,
+    "hazardous_goods_handling": boolean or null,
+    "is_manufacturing": boolean or null
+  },
   "normalized_facts": [
     {
       "key": "string",
       "value": "string or number or boolean",
       "source": "LLM_BUSINESS_UNDERSTANDING",
-      "confidence": "INFERRED"
+      "confidence": "INFERRED",
+      "raw_unit": "string or null",
+      "source_excerpt": "string or null"
     }
   ]
 }
@@ -91,6 +110,8 @@ class BusinessUnderstandingResult:
     likely_regulatory_domains: list[str]
     important_unknowns: list[str]
     normalized_facts: list[dict[str, Any]]
+    secondary_activities: list[str] = field(default_factory=list)
+    canonical_operational_facts: dict[str, Any] = field(default_factory=dict)
     raw_response: dict[str, Any] = field(default_factory=dict)
     duration_ms: float = 0.0
 
@@ -102,6 +123,7 @@ class BusinessUnderstandingResult:
         return {
             "business_type": self.business_type,
             "primary_activity": self.primary_activity,
+            "secondary_activities": self.secondary_activities,
             "products": self.products,
             "manufacturing_or_service": self.manufacturing_or_service,
             "market": self.market,
@@ -110,6 +132,7 @@ class BusinessUnderstandingResult:
             "operational_characteristics": self.operational_characteristics,
             "likely_regulatory_domains": self.likely_regulatory_domains,
             "important_unknowns": self.important_unknowns,
+            "canonical_operational_facts": self.canonical_operational_facts,
             "normalized_facts": self.normalized_facts,
         }
 
@@ -178,6 +201,13 @@ def validate_business_understanding_schema(data: dict[str, Any]) -> BusinessUnde
                     "confidence": "INFERRED",
                 })
 
+    raw_secondary = data.get("secondary_activities", [])
+    secondary_activities = [str(s).strip() for s in raw_secondary if str(s).strip()] if isinstance(raw_secondary, list) else []
+
+    canonical_op_facts = data.get("canonical_operational_facts")
+    if not isinstance(canonical_op_facts, dict):
+        canonical_op_facts = {}
+
     return BusinessUnderstandingResult(
         business_type=business_type,
         primary_activity=primary_activity,
@@ -190,8 +220,265 @@ def validate_business_understanding_schema(data: dict[str, Any]) -> BusinessUnde
         likely_regulatory_domains=likely_regulatory_domains,
         important_unknowns=important_unknowns,
         normalized_facts=normalized_facts,
+        secondary_activities=secondary_activities,
+        canonical_operational_facts=canonical_op_facts,
         raw_response=data,
     )
+
+
+def extract_canonical_facts_from_understanding(
+    understanding: BusinessUnderstandingResult,
+    raw_text: str = "",
+) -> dict[str, dict[str, Any]]:
+    """Extract and validate canonical operational facts with forensic provenance.
+
+    Produces typed profile version variables matching CanonicalFact & BusinessProfileVersion schema.
+    Includes unit conversions (kW -> HP), numeric bounds, and explicit source excerpts.
+    Never invents unstated facts.
+    """
+    from apps.businesses.models import BusinessProfileVersion
+    from common.enums import VariableOrigin
+    from domain.jurisdictions.resolver import normalize_jurisdiction
+
+    facts: dict[str, dict[str, Any]] = {}
+    combined_text = f"{raw_text} {understanding.primary_activity} {' '.join(understanding.operational_characteristics)}".lower()
+
+    # 1. Establishment / Manufacturing Status
+    mfg_status = understanding.manufacturing_or_service
+    is_mfg = mfg_status in {"MANUFACTURING", "HYBRID"}
+    if "software" in combined_text or "saas" in combined_text or "cloud platform" in combined_text:
+        if not any(w in combined_text for w in ["hardware", "plant", "factory", "assembly"]):
+            is_mfg = False
+
+    facts["is_manufacturing"] = BusinessProfileVersion.build_entry(
+        value=is_mfg,
+        origin=VariableOrigin.LLM_EXTRACTED,
+        confidence=0.95,
+        derived_from=["manufacturing_or_service"],
+    )
+
+    # 2. Jurisdiction (State & District)
+    state_val = understanding.geography.get("state")
+    if state_val:
+        norm_state = normalize_jurisdiction(state_val)
+        if norm_state:
+            facts["state"] = BusinessProfileVersion.build_entry(
+                value=norm_state,
+                origin=VariableOrigin.LLM_EXTRACTED,
+                confidence=0.99,
+            )
+
+    dist_val = understanding.geography.get("district")
+    if dist_val:
+        facts["district"] = BusinessProfileVersion.build_entry(
+            value=str(dist_val).strip(),
+            origin=VariableOrigin.LLM_EXTRACTED,
+            confidence=0.90,
+        )
+
+    # 3. Product Description / Primary Activity
+    activity_val = understanding.primary_activity or raw_text
+    if activity_val:
+        facts["product_description"] = BusinessProfileVersion.build_entry(
+            value=activity_val[:500],
+            origin=VariableOrigin.LLM_EXTRACTED,
+            confidence=0.98,
+        )
+
+    # 4. Trade / Import-Export Intent
+    trade_val = understanding.trade_intent
+    if trade_val:
+        ti_map = {
+            "DOMESTIC_ONLY": "DOMESTIC_ONLY",
+            "IMPORT_ONLY": "IMPORT_ONLY",
+            "EXPORT_ONLY": "EXPORT_ONLY",
+            "IMPORT_AND_EXPORT": "BOTH",
+            "NONE": "DOMESTIC_ONLY",
+        }
+        ti_canonical = ti_map.get(trade_val, "DOMESTIC_ONLY")
+        facts["import_export_intent"] = BusinessProfileVersion.build_entry(
+            value=ti_canonical,
+            origin=VariableOrigin.LLM_EXTRACTED,
+            confidence=0.92,
+        )
+
+    # 5. Extract structured facts from LLM canonical_operational_facts
+    op_facts = understanding.canonical_operational_facts or {}
+
+    # Total Worker Count
+    workers = op_facts.get("total_worker_count")
+    worker_excerpt = None
+    if raw_text:
+        m = re.search(r"\b(\d+)\s*(?:workers?|employees?|staff|personnel|workforce)\b", raw_text, re.IGNORECASE)
+        if m:
+            if workers is None:
+                workers = int(m.group(1))
+            worker_excerpt = m.group(0)
+    if workers is not None:
+        facts["total_worker_count"] = BusinessProfileVersion.build_entry(
+            value=int(workers),
+            origin=VariableOrigin.LLM_EXTRACTED,
+            confidence=0.95,
+        )
+        if worker_excerpt:
+            facts["total_worker_count"]["source_excerpt"] = worker_excerpt
+
+    # Connected Power Load
+    power = op_facts.get("connected_power_load")
+    power_unit = op_facts.get("connected_power_unit") or "HP"
+    power_excerpt = None
+    if power is None:
+        m = re.search(r"\b(\d+(?:\.\d+)?)\s*(hp|kw|kva)\b", raw_text, re.IGNORECASE)
+        if m:
+            power = float(m.group(1))
+            power_unit = m.group(2).upper()
+            power_excerpt = m.group(0)
+    if power is not None:
+        canon_power = float(power)
+        if power_unit in {"KW", "KVA"}:
+            canon_power = round(canon_power * 1.34102, 2)
+        facts["connected_power_load"] = BusinessProfileVersion.build_entry(
+            value=str(round(canon_power, 2)),
+            origin=VariableOrigin.LLM_EXTRACTED,
+            confidence=0.95,
+        )
+        facts["connected_power_load"]["raw_value"] = power
+        facts["connected_power_load"]["raw_unit"] = power_unit
+        facts["connected_power_load"]["canonical_unit"] = "HP"
+        if power_excerpt:
+            facts["connected_power_load"]["source_excerpt"] = power_excerpt
+
+    # Boiler Installed & Capacity
+    has_boiler = op_facts.get("boiler_installed")
+    boiler_excerpt = None
+    if has_boiler is None:
+        if re.search(r"\b(no boiler|without boiler)\b", raw_text, re.IGNORECASE):
+            has_boiler = False
+        elif re.search(r"\b(steam boiler|industrial boiler|boiler)\b", raw_text, re.IGNORECASE):
+            has_boiler = True
+            boiler_excerpt = "steam boiler"
+    if has_boiler is not None:
+        facts["boiler_installed"] = BusinessProfileVersion.build_entry(
+            value=bool(has_boiler),
+            origin=VariableOrigin.LLM_EXTRACTED,
+            confidence=0.95,
+        )
+        if boiler_excerpt:
+            facts["boiler_installed"]["source_excerpt"] = boiler_excerpt
+
+    boiler_cap = op_facts.get("boiler_capacity_tph")
+    if boiler_cap is None and has_boiler:
+        m = re.search(r"\b(\d+(?:\.\d+)?)\s*(?:tph|tonnes?/hr|tons?/hr)\b", raw_text, re.IGNORECASE)
+        if m:
+            boiler_cap = float(m.group(1))
+    if boiler_cap is not None:
+        facts["boiler_capacity_tph"] = BusinessProfileVersion.build_entry(
+            value=str(round(float(boiler_cap), 2)),
+            origin=VariableOrigin.LLM_EXTRACTED,
+            confidence=0.95,
+        )
+        facts["boiler_capacity_tph"]["canonical_unit"] = "TPH"
+
+    # Effluent / Emission Generation
+    effluent = op_facts.get("effluent_emission_generation")
+    effluent_excerpt = None
+    if effluent is None:
+        m = re.search(r"\b(trade effluent|wastewater|toxic discharge|effluent|air emissions)\b", raw_text, re.IGNORECASE)
+        if m:
+            effluent = True
+            effluent_excerpt = m.group(0)
+    if effluent is not None:
+        facts["effluent_emission_generation"] = BusinessProfileVersion.build_entry(
+            value=bool(effluent),
+            origin=VariableOrigin.LLM_EXTRACTED,
+            confidence=0.95,
+        )
+        if effluent_excerpt:
+            facts["effluent_emission_generation"]["source_excerpt"] = effluent_excerpt
+
+    # Dyeing Activity
+    dyeing = op_facts.get("dyeing_activity")
+    dyeing_excerpt = None
+    if dyeing is None:
+        m = re.search(r"\b(dyeing|bleaching|textile printing|wet chemical processing)\b", raw_text, re.IGNORECASE)
+        if m:
+            dyeing = True
+            dyeing_excerpt = m.group(0)
+    if dyeing is not None:
+        facts["dyeing_activity"] = BusinessProfileVersion.build_entry(
+            value=bool(dyeing),
+            origin=VariableOrigin.LLM_EXTRACTED,
+            confidence=0.95,
+        )
+        if dyeing_excerpt:
+            facts["dyeing_activity"]["source_excerpt"] = dyeing_excerpt
+
+    # Hazardous Waste / Materials
+    haz_waste = op_facts.get("hazardous_waste_generation")
+    if haz_waste is None and re.search(r"\b(hazardous waste|toxic waste|chemical sludge)\b", raw_text, re.IGNORECASE):
+        haz_waste = True
+    if haz_waste is not None:
+        facts["hazardous_waste_generation"] = BusinessProfileVersion.build_entry(
+            value=bool(haz_waste),
+            origin=VariableOrigin.LLM_EXTRACTED,
+            confidence=0.95,
+        )
+
+    haz_goods = op_facts.get("hazardous_goods_handling")
+    if haz_goods is None and re.search(r"\b(flammable|toxic chemical|explosive|hazardous substance)\b", raw_text, re.IGNORECASE):
+        haz_goods = True
+    if haz_goods is not None:
+        facts["hazardous_goods_handling"] = BusinessProfileVersion.build_entry(
+            value=bool(haz_goods),
+            origin=VariableOrigin.LLM_EXTRACTED,
+            confidence=0.95,
+        )
+
+    # Shifts Count
+    shifts = op_facts.get("shifts_count")
+    if shifts is None:
+        m = re.search(r"\b(\d+)\s*shifts?\b", raw_text, re.IGNORECASE)
+        if m:
+            shifts = int(m.group(1))
+        elif re.search(r"\btriple shift\b", raw_text, re.IGNORECASE):
+            shifts = 3
+        elif re.search(r"\bdouble shift\b", raw_text, re.IGNORECASE):
+            shifts = 2
+    if shifts is not None:
+        facts["shifts_count"] = BusinessProfileVersion.build_entry(
+            value=int(shifts),
+            origin=VariableOrigin.LLM_EXTRACTED,
+            confidence=0.90,
+        )
+
+    # Facility Area
+    area = op_facts.get("facility_area")
+    if area is None:
+        m = re.search(r"\b(\d+(?:,\d+)*(?:\.\d+)?)\s*(sq\.?\s*ft|sqft|square feet|sqm)\b", raw_text, re.IGNORECASE)
+        if m:
+            raw_str = m.group(1).replace(",", "")
+            area = float(raw_str)
+            unit_str = m.group(2).lower()
+            if "sqm" in unit_str:
+                area = area * 10.7639
+    if area is not None:
+        facts["facility_area"] = BusinessProfileVersion.build_entry(
+            value=str(round(float(area), 2)),
+            origin=VariableOrigin.LLM_EXTRACTED,
+            confidence=0.90,
+        )
+        facts["facility_area"]["canonical_unit"] = "sqft"
+
+    # Software / Personal Data
+    if not is_mfg and any(w in combined_text for w in ["software", "saas", "app", "cloud"]):
+        if re.search(r"\b(personal data|customer data|user data|pii|employee records|payroll)\b", combined_text):
+            facts["processes_personal_data"] = BusinessProfileVersion.build_entry(
+                value=True,
+                origin=VariableOrigin.LLM_EXTRACTED,
+                confidence=0.95,
+            )
+
+    return facts
 
 
 def generate_emergency_business_understanding(context: OrchestrationContext) -> BusinessUnderstandingResult:
@@ -251,6 +538,8 @@ def generate_emergency_business_understanding(context: OrchestrationContext) -> 
             {"key": "is_manufacturing", "value": is_mfg, "source": "LLM_BUSINESS_UNDERSTANDING", "confidence": "INFERRED"},
             {"key": "trade_intent", "value": trade_intent, "source": "LLM_BUSINESS_UNDERSTANDING", "confidence": "INFERRED"},
         ],
+        secondary_activities=["Cross-border trade"] if (is_export or is_import) else ["Domestic distribution"],
+        canonical_operational_facts={},
         raw_response={"fallback": True},
     )
 

@@ -8,6 +8,7 @@ from .views import (
     AdminAddRequirementView,
     AdminBusinessListView,
     AdminBusinessOverviewView,
+    AdminBusinessRequirementDispositionView,
     AdminCaseApproveView,
     AdminCaseAssignView,
     AdminCaseListView,
@@ -80,10 +81,12 @@ urlpatterns = [
     path("admin/cases/<uuid:case_id>/requirements/add", AdminAddRequirementView.as_view(), name="admin-case-req-add"),
     path("admin/cases/<str:case_id>/requirements/add", AdminAddRequirementView.as_view(), name="admin-case-req-add-str"),
 
-    # Admin Business 360-View
+    # Admin Business 360-View & Scrutiny
     path("admin/businesses", AdminBusinessListView.as_view(), name="admin-businesses-list"),
     path("admin/businesses/<uuid:business_id>", AdminBusinessOverviewView.as_view(), name="admin-business-overview"),
     path("admin/businesses/<str:business_id>", AdminBusinessOverviewView.as_view(), name="admin-business-overview-str"),
+    path("admin/businesses/<uuid:business_id>/requirements/<str:requirement_code>/disposition", AdminBusinessRequirementDispositionView.as_view(), name="admin-business-req-disposition"),
+    path("admin/businesses/<str:business_id>/requirements/<str:requirement_code>/disposition", AdminBusinessRequirementDispositionView.as_view(), name="admin-business-req-disposition-str"),
 ]
 
 

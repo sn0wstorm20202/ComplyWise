@@ -80,6 +80,7 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
             "recent_updates_available": False,
             # Coverage is meaningful before any run exists.
             "coverage": assess_knowledge_coverage(business),
+            "cir": None,
         }
 
     results = list(latest_run.results.all())
@@ -139,6 +140,23 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
             )
             source_url = portal_info["url"]
 
+            # Action destination resolution for applicable items
+            action_destination = None
+            if r.status == ApplicabilityStatus.APPLICABLE:
+                from apps.acquisition.services import resolve_action_for_requirement
+                state_val = getattr(business, "primary_state", "")
+                if not state_val and latest_run.profile_version:
+                    s_entry = latest_run.profile_version.variables.get("state")
+                    state_val = s_entry.get("value") if isinstance(s_entry, dict) else s_entry
+                act_dest = resolve_action_for_requirement(
+                    requirement_id=r.requirement_id,
+                    requirement_name=r.requirement_name,
+                    authority=req_def.authority if req_def else "",
+                    state_code=str(state_val or ""),
+                    authoritative_url=source_url,
+                )
+                action_destination = act_dest.to_dict()
+
             priority_actions.append(
                 {
                     "requirement_id": r.requirement_id,
@@ -151,6 +169,7 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
                     "source_url": source_url,
                     "portal_url": portal_info["url"],
                     "portal_name": portal_info["name"],
+                    "action_destination": action_destination,
                 }
             )
 
@@ -196,6 +215,8 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
     wf_data = derive_business_workflows(business, assessment_id=aid)
     scheme_data = discover_business_schemes(business, assessment_id=aid)
     std_data = discover_business_standards(business, assessment_id=aid)
+    from apps.applicability.services import build_compliance_intelligence_record
+    cir = build_compliance_intelligence_record(latest_run, assessment_id=aid)
 
     return {
         "business_id": str(business.id),
@@ -247,6 +268,7 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
         "recent_updates": [],
         "recent_updates_available": False,
         "coverage": coverage,
+        "cir": cir,
     }
 
 

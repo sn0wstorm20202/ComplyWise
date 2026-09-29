@@ -149,7 +149,7 @@ class BusinessComplianceListView(_BusinessScopedView):
                 run = assessment.decision_run
             elif assessment:
                 run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
-        if run is None and not assessment_id:
+        if run is None:
             run = (
                 DecisionRun.objects.filter(business=business)
                 .prefetch_related("results")
@@ -180,11 +180,12 @@ class BusinessComplianceListView(_BusinessScopedView):
                     elif val:
                         desc_parts.append(str(val))
             desc_lower = " ".join(desc_parts).lower()
-            is_pure_software = bool(re.search(r"\b(software|saas|platform|app|web|digital|pre-visualization|film pre-visualization|consulting|it services|agency)\b", desc_lower)) and not any(hw in desc_lower for hw in ["hardware manufacturing", "assembly plant", "fabrication plant", "physical manufacturing"])
+            is_infra_or_tech = bool(re.search(r"\b(data centre|datacenter|colocation|server|ev charging|charging station|electric vehicle|fintech|banking|microfinance)\b", desc_lower))
+            is_pure_software = bool(re.search(r"\b(software|saas|platform|app|web|digital|pre-visualization|film pre-visualization|consulting|it services|agency)\b", desc_lower)) and not is_infra_or_tech and not any(hw in desc_lower for hw in ["hardware manufacturing", "assembly plant", "fabrication plant", "physical manufacturing"])
             is_physical_mfg = any(mfg_kw in desc_lower for mfg_kw in [
                 "mill", "textile", "weaving", "spinning", "dyeing", "fabric", "yarn", "foundry", "plant", "casting",
-                "manufacturing", "factory", "machinery", "engineering", "chemical", "metal", "assembly", "battery"
-            ]) and not is_pure_software
+                "manufacturing", "factory", "machinery", "engineering", "chemical", "metal", "assembly"
+            ]) and not is_pure_software and not is_infra_or_tech
 
             seen_canonical = set()
             cleaned_results = []
@@ -288,11 +289,17 @@ class BusinessComplianceListView(_BusinessScopedView):
                         "portal": canonical_source_url,
                         "portal_url": canonical_source_url,
                         "portal_name": portal_name,
+                        "portal_category": portal_info.get("category"),
+                        "action_destination": portal_info.get("category"),
                         "source_url": canonical_source_url,
                         "source_title": (citations[0]["source_title"] if citations else (req_def.name if req_def else auth)),
                         "statutory_act": statutory_act or (citations[0]["locator"] if citations else ""),
                         "citations": citations,
                         "citation_count": len(citations),
+                        "required_documents": _str_list(metadata.get(DOCUMENTS_KEY)),
+                        "application_steps": _str_list(metadata.get(STEPS_KEY)),
+                        "timeline": str(metadata.get("timeline") or metadata.get(VALIDITY_KEY) or "").strip(),
+                        "statutory_fee": str(metadata.get(FEE_KEY) or "").strip(),
                     }
                 )
 
@@ -400,6 +407,8 @@ class BusinessRequirementDetailView(_BusinessScopedView):
             "portal": portal_info["url"],
             "portal_url": portal_info["url"],
             "portal_name": portal_info["name"],
+            "portal_category": portal_info.get("category"),
+            "action_destination": portal_info.get("category"),
             "source_url": portal_info["url"],
             # Question 1: Why does this apply? — read from the recorded trace.
             "why_it_applies": {

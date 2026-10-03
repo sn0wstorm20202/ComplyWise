@@ -3,23 +3,18 @@
 import React from "react";
 import Link from "next/link";
 import {
-  Shield,
   ShieldCheck,
   CheckCircle2,
-  AlertCircle,
   Clock,
-  Search,
-  ExternalLink,
-  Layers,
-  ChevronRight,
+  ArrowUpRight,
   Lock,
 } from "lucide-react";
 
 export function HeroProductPreview() {
   return (
-    <div className="relative mx-auto max-w-5xl rounded-2xl border border-[#E2E8F0] bg-white shadow-xl overflow-hidden transition-all group">
-      {/* Browser Window Chrome */}
-      <div className="flex items-center justify-between border-b border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2.5">
+    <div className="relative mx-auto w-full bg-white select-none">
+      {/* Hardware Chrome Topbar */}
+      <div className="flex items-center justify-between border-b border-slate-200/70 bg-slate-50/80 px-4 sm:px-6 py-3">
         <div className="flex items-center gap-2">
           <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
           <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
@@ -27,150 +22,111 @@ export function HeroProductPreview() {
         </div>
 
         {/* Browser URL Bar */}
-        <div className="flex items-center gap-1.5 rounded-md border border-[#E2E8F0] bg-white px-3 py-1 text-[11px] font-mono text-[#64748B] max-w-md w-full mx-4 shadow-2xs">
-          <Lock className="h-3 w-3 text-[#94A3B8] shrink-0" />
-          <span className="text-[#94A3B8]">https://</span>
-          <span className="text-[#0F172A] font-medium">app.complywise.in</span>
-          <span className="text-[#94A3B8]">/dashboard</span>
+        <div className="flex items-center justify-center gap-2 rounded-full border border-slate-200/80 bg-white px-4 py-1 text-[11px] font-mono text-slate-500 max-w-sm w-full mx-2 shadow-2xs">
+          <Lock className="h-3 w-3 text-slate-400 shrink-0" strokeWidth={1.5} />
+          <span className="text-slate-400">https://</span>
+          <span className="text-slate-900 font-medium">app.complywise.in</span>
+          <span className="text-slate-400">/workspace</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="hidden sm:inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-[#64748B] border border-[#E2E8F0]">
-            Platform Artifact · Active Build
-          </span>
           <Link
             href="/dashboard"
-            className="text-[11px] font-semibold text-[#0F172A] hover:underline inline-flex items-center gap-1"
+            className="text-[11px] font-medium text-slate-700 hover:text-slate-950 inline-flex items-center gap-1 transition-colors"
           >
-            <span>Open Workspace</span>
-            <ExternalLink className="h-3 w-3" />
+            <span>Live System</span>
+            <ArrowUpRight className="h-3.5 w-3.5 text-slate-400" strokeWidth={1.5} />
           </Link>
         </div>
       </div>
 
-      {/* Simulated Application Surface */}
-      <div className="p-4 sm:p-6 bg-[#F8FAFC]/70 space-y-4 text-xs select-none">
+      {/* Simulated Application Workspace */}
+      <div className="p-5 sm:p-8 bg-slate-50/50 space-y-5 text-xs">
         {/* Workspace Mini-Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-[#E2E8F0] shadow-2xs">
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-[#0F172A] text-white font-bold text-xs flex items-center justify-center">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-[#0F172A] text-white font-mono font-bold text-xs flex items-center justify-center shadow-xs">
               CW
             </div>
             <div>
-              <div className="font-bold text-slate-950 text-xs flex items-center gap-1.5">
+              <div className="font-semibold text-slate-950 text-xs sm:text-sm flex items-center gap-2">
                 <span>Apex Industrial Electro-Mechanicals Ltd.</span>
-                <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1 rounded">
+                <span className="font-mono text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-md border border-slate-200/60">
                   CM/L-8492019
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-[11px] text-slate-500 mt-0.5">
                 Deterministic Regulatory Matrix · 18 Applicable Standards Evaluated
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200">
+            <span className="font-mono text-[10px] text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200/70">
               Surveillance: 14 Jun 2026 (96d)
             </span>
           </div>
         </div>
 
         {/* Primary Health Module Simulation */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
           {/* Health Index Card */}
-          <div className="md:col-span-7 bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs space-y-3">
+          <div className="md:col-span-7 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-900 text-xs">Compliance Health Index</span>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              <span className="font-semibold text-slate-900 text-xs">Compliance Health Index</span>
+              <span className="text-[10px] font-mono font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/80">
                 82% Good Standing
               </span>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-full border-4 border-blue-900 border-t-blue-200 flex items-center justify-center font-bold text-slate-950 text-base">
+            <div className="flex items-center gap-5">
+              <div className="h-16 w-16 rounded-full border-[3px] border-[#0F172A] border-t-emerald-500 flex items-center justify-center font-bold text-slate-950 text-base font-mono shrink-0">
                 82%
               </div>
-              <div className="space-y-1 text-[11px] text-slate-600">
+              <div className="space-y-1 text-xs text-slate-600">
                 <div>
-                  <span className="font-bold text-slate-900">15 of 18 Mandates</span> in full conformance.
+                  <span className="font-semibold text-slate-900">15 of 18 Mandates</span> in full statutory conformance.
                 </div>
-                <div className="text-[10px] text-slate-500">
-                  3 obligations require documentation renewal before surveillance audit.
+                <div className="text-[11px] text-slate-500">
+                  3 obligations require documentation renewal before scheduled surveillance audit.
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-100 text-[10px]">
-              <div className="p-1.5 rounded bg-slate-50 border border-slate-200 text-center">
-                <span className="text-slate-400 block font-semibold">APPLICABLE</span>
-                <span className="font-bold text-slate-900 text-xs">18</span>
-              </div>
-              <div className="p-1.5 rounded bg-amber-50 border border-amber-200 text-center text-amber-900">
-                <span className="text-amber-600 block font-semibold">ACTION REQ.</span>
-                <span className="font-bold text-xs">3</span>
-              </div>
-              <div className="p-1.5 rounded bg-slate-50 border border-slate-200 text-center">
-                <span className="text-slate-400 block font-semibold">DOCUMENTS</span>
-                <span className="font-bold text-slate-900 text-xs">11</span>
-              </div>
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono text-slate-500">
+              <span>Next BIS Audit Window: Q3 2026</span>
+              <span className="text-emerald-700 font-medium">Deterministic Rule Run: Complete</span>
             </div>
           </div>
 
-          {/* Upcoming Deadlines Mini Preview */}
-          <div className="md:col-span-5 bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs space-y-2.5">
+          {/* Urgent Actions Card */}
+          <div className="md:col-span-5 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3.5">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-900 text-xs">Upcoming Deadlines</span>
-              <span className="text-[10px] text-slate-400 font-mono">4 Total</span>
+              <span className="font-semibold text-slate-900 text-xs">Priority Actions</span>
+              <span className="text-[10px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                3 Pending
+              </span>
             </div>
 
-            <div className="space-y-1.5">
-              <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-[11px]">
-                <div className="min-w-0">
-                  <div className="font-bold text-slate-900 truncate">IS 1293 Type-Test Renewal</div>
-                  <div className="text-[10px] text-slate-500 font-mono">BIS Scheme I</div>
+            <div className="space-y-2">
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 flex items-start gap-2.5">
+                <Clock className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" strokeWidth={1.5} />
+                <div className="text-[11px]">
+                  <div className="font-medium text-slate-900">High-Voltage Calibration Rig</div>
+                  <div className="text-slate-500 text-[10px]">Renewal certificate due in 14 days</div>
                 </div>
-                <span className="font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded text-[10px]">
-                  14d left
-                </span>
               </div>
 
-              <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-[11px]">
-                <div className="min-w-0">
-                  <div className="font-bold text-slate-900 truncate">QCO S.O. 1421(E) Dossier</div>
-                  <div className="text-[10px] text-slate-500 font-mono">DPIIT Mandate</div>
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 flex items-start gap-2.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" strokeWidth={1.5} />
+                <div className="text-[11px]">
+                  <div className="font-medium text-slate-900">IS 1293:2019 Clause 18 Dossier</div>
+                  <div className="text-slate-500 text-[10px]">NABL laboratory report verified</div>
                 </div>
-                <span className="font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[10px]">
-                  28d left
-                </span>
               </div>
             </div>
           </div>
         </div>
-
-        {/* BIS Agent Bar Preview */}
-        <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-slate-400 text-xs flex-1">
-            <Search className="h-3.5 w-3.5 text-slate-400" />
-            <span className="text-slate-500 italic">
-              Ask BIS Agent: &quot;Which clause covers calibration accuracy under IS 3055:2024?&quot;
-            </span>
-          </div>
-          <span className="text-[10px] font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-            Source-Grounded Retrieval
-          </span>
-        </div>
-      </div>
-
-      {/* Floating Hover CTA Badge */}
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/80 to-transparent py-4 text-center pointer-events-none">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1.5 rounded-full bg-[#0F172A] text-white px-4 py-1.5 text-xs font-semibold shadow-md pointer-events-auto hover:bg-slate-800 transition-colors"
-        >
-          <span>Launch Interactive Platform Demo</span>
-          <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
       </div>
     </div>
   );

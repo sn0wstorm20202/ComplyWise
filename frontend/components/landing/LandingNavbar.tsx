@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { LanguageSelector } from "../LanguageSelector";
 
@@ -11,119 +11,70 @@ interface LandingNavbarProps {
 }
 
 export function LandingNavbar({ onRequestDemo }: LandingNavbarProps) {
+  const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useLanguage();
 
-  const navLinks = [
-    { label: "Product", href: "#product" },
-    { label: "How It Works", href: "#how-it-works" },
-    { label: "Standards", href: "#standards" },
-    { label: "Intelligence", href: "#intelligence" },
-  ];
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[#E2E8F0] bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Brand */}
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0F172A] text-white font-bold text-xs shadow-xs transition-transform group-hover:scale-105">
+    <>
+      {/* Floating Glass Pill — detached from top */}
+      <header
+        className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          scrolled
+            ? "w-[88%] max-w-xl shadow-[0_8px_32px_rgba(15,23,42,0.08)]"
+            : "w-[92%] max-w-md shadow-[0_4px_20px_rgba(15,23,42,0.04)]"
+        }`}
+      >
+        <div
+          className={`rounded-full backdrop-blur-2xl border transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] px-3 sm:px-5 py-2 flex items-center justify-between ${
+            scrolled
+              ? "bg-white/90 border-slate-200/80"
+              : "bg-white/80 border-slate-200/50"
+          }`}
+        >
+          {/* Brand */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0F172A] text-white font-mono font-semibold text-[10px] tracking-wider transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-110">
               CW
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-sans text-sm font-bold tracking-tight text-[#0F172A]">
-                {t("common.appName")}
-              </span>
-              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-mono font-medium bg-amber-50 text-amber-800 border border-amber-200">
-                BIS
-              </span>
-            </div>
+            <span className="font-sans text-[13px] font-semibold tracking-tight text-[#0F172A] hidden sm:inline">
+              {t("common.appName")}
+            </span>
           </Link>
 
-          {/* Subtle Development Status Signal */}
-          <div className="hidden xl:inline-flex items-center gap-2 rounded-full bg-slate-50 border border-slate-200 px-3 py-0.5 text-[11px] font-medium text-slate-600">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{t("header.problemStatement")}</span>
-          </div>
-        </div>
+          {/* Right: Sign In + CTA */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
+            <LanguageSelector compact={true} />
 
-        {/* Center Nav Links (Desktop) */}
-        <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-slate-600">
-          {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className="hover:text-[#0F172A] transition-colors"
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
-
-        {/* Right CTA Actions */}
-        <div className="hidden sm:flex items-center gap-2.5">
-          <LanguageSelector compact={true} />
-
-          <Link
-            href="/auth/signin"
-            className="text-xs font-medium text-slate-600 hover:text-[#0F172A] px-2.5 py-1.5 transition-colors"
-          >
-            {t("navigation.signIn")}
-          </Link>
-
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#0F172A] hover:bg-slate-800 text-white px-3.5 py-1.5 text-xs font-semibold shadow-xs transition-all"
-          >
-            <span>{t("header.exploreWorkspace")}</span>
-            <ArrowRight className="h-3 w-3" />
-          </Link>
-        </div>
-
-        {/* Mobile Hamburger Toggle */}
-        <div className="md:hidden flex items-center gap-2">
-          <LanguageSelector compact={true} />
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            type="button"
-            aria-label="Toggle navigation menu"
-            className="p-1.5 text-slate-600 hover:text-[#0F172A] rounded-md cursor-pointer"
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Dropdown */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-b border-[#E2E8F0] bg-white px-4 py-3 space-y-2 text-xs">
-          {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-slate-600 font-medium hover:text-[#0F172A]"
-            >
-              {link.label}
-            </a>
-          ))}
-          <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between">
             <Link
               href="/auth/signin"
-              className="font-semibold text-slate-600 hover:text-[#0F172A]"
+              className="text-[11px] sm:text-xs font-medium text-slate-500 hover:text-[#0F172A] px-2 py-1 transition-colors duration-300"
             >
               {t("navigation.signIn")}
             </Link>
+
+            {/* Island Button-in-Button CTA */}
             <Link
               href="/dashboard"
-              className="rounded-full bg-[#0F172A] text-white px-4 py-1.5 font-semibold text-xs"
+              className="group inline-flex items-center gap-1.5 rounded-full bg-[#0F172A] hover:bg-slate-800 text-white pl-3.5 pr-1.5 py-1.5 text-[11px] sm:text-xs font-medium shadow-sm transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97]"
             >
-              {t("header.exploreWorkspace")}
+              <span>{t("header.exploreWorkspace")}</span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-white transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-[1px] group-hover:scale-105">
+                <ArrowUpRight className="h-3 w-3" strokeWidth={1.5} />
+              </span>
             </Link>
           </div>
         </div>
-      )}
-    </header>
+      </header>
+
+      {/* Mobile menu is unnecessary with this minimal nav */}
+    </>
   );
 }
 

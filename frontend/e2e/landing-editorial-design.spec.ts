@@ -1,0 +1,115 @@
+import { test, expect } from '@playwright/test';
+
+const headlines = ['Start with what you do.', 'Only answer what changes the answer.', 'Find the rules that belong to you.', 'See why it applies.', 'Every decision has a trail.', 'The rules decide. The AI explains.', 'Turn requirements into next steps.', 'Built around the way your business operates.', 'Built to be clear about what we know.', 'Frequently Asked Questions', 'Know what applies. Know what to do next.'];
+
+test('desktop preserves styled chapters and connects facts, answer, evidence and workspace', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', e => errors.push(e.message));
+  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await expect(page.locator('h1')).toHaveText(/Behind every\s*business is a\s*rulebook\./);
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(247, 245, 239)');
+  await expect(page.locator('header')).toHaveCSS('position', 'fixed');
+  await expect(page.locator('h1')).toHaveCSS('font-family', /Playfair Display/);
+  await expect(page.locator('.constellation-node')).toHaveCount(8);
+  await expect(page.locator('main h2')).toHaveText(headlines);
+  await expect(page.getByText('ComplyWise helps you understand what applies to your business — and what to do next.')).toBeVisible();
+  await page.waitForTimeout(2200);
+  await page.screenshot({ path: 'test-results/landing-desktop.png' });
+  await page.locator('#story').evaluate(node => {
+    const spacer = node.closest('.pin-spacer') || node;
+    window.scrollTo(0, spacer.getBoundingClientRect().top + window.scrollY + window.innerHeight * .55);
+  });
+  const location = page.getByRole('button', { name: 'LOCATION Maharashtra' });
+  await expect(location).toBeVisible();
+  await location.hover();
+  await expect(page.locator('.fact-statement span').filter({ hasText: 'Maharashtra' })).toHaveAttribute('data-active', 'true');
+  await page.screenshot({ path: 'test-results/landing-business.png' });
+  const answer = page.locator('.answer-story-card button');
+  await answer.scrollIntoViewIfNeeded();
+  await answer.click();
+  await expect(answer).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.answer-connector')).toHaveClass(/is-selected/);
+  await page.locator('#evidence').scrollIntoViewIfNeeded();
+  const passage = page.locator('.evidence-passage');
+  await passage.hover();
+  await expect(passage.locator('mark')).toHaveCSS('background-color', 'rgb(220, 234, 226)');
+  await page.screenshot({ path: 'test-results/landing-evidence.png' });
+  const workspace = page.locator('#workspace');
+  await workspace.scrollIntoViewIfNeeded();
+  await workspace.getByRole('tab', { name: 'Documents' }).click();
+  await expect(workspace.getByRole('tabpanel')).toContainText('Business profile & workshop layout');
+  await workspace.getByRole('tab', { name: 'Documents' }).press('ArrowRight');
+  await expect(workspace.getByRole('tab', { name: 'Workflows' })).toHaveAttribute('aria-selected', 'true');
+  await workspace.getByRole('tab', { name: 'Calendar' }).click();
+  await expect(workspace.getByRole('tabpanel')).toContainText('Team reminder • example date');
+  await page.screenshot({ path: 'test-results/landing-workspace.png' });
+  expect(await page.locator('a[href^="#"]').evaluateAll(links => links.map(link => link.getAttribute('href')).filter(href => href && !document.querySelector(href)))).toEqual([]);
+  await expect(page.locator('header').getByRole('link', { name: 'Explore Workspace' })).toHaveAttribute('href', '/dashboard');
+  await expect(page.locator('header').getByRole('link', { name: 'Sign In', exact: true })).toHaveAttribute('href', '/auth/signin');
+  expect(errors).toEqual([]);
+});
+
+test('mobile uses stacked states, touch navigation and readable panels', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.locator('.pin-spacer')).toHaveCount(0);
+  await expect(page.locator('.custom-story-cursor')).toBeHidden();
+  await expect(page.locator('.business-state')).toHaveCount(3);
+  for (const state of await page.locator('.business-state').all()) await expect(state).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  await page.screenshot({ path: 'test-results/landing-mobile.png' });
+  const menu = page.getByRole('button', { name: 'Toggle navigation menu' });
+  await menu.click();
+  await expect(menu).toHaveAttribute('aria-expanded', 'true');
+  await page.getByRole('navigation', { name: 'Mobile navigation' }).getByRole('link', { name: 'Evidence', exact: true }).click();
+  await expect(menu).toHaveAttribute('aria-expanded', 'false');
+  await page.locator('#workspace').getByRole('tab', { name: 'Calendar' }).click();
+  await expect(page.getByRole('tabpanel')).toContainText('Check progress with your team');
+  await page.screenshot({ path: 'test-results/landing-mobile-calendar.png' });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+});
+
+test('reduced motion keeps the sequence and supports keyboard FAQ and local preview', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.locator('.pin-spacer')).toHaveCount(0);
+  await expect(page.locator('.story-status-dot')).toHaveCSS('animation-name', 'none');
+  for (const state of await page.locator('.business-state').all()) await expect(state).toHaveCSS('visibility', 'visible');
+  await page.getByRole('button', { name: 'Go to step 5' }).click();
+  await expect(page.getByText('A result with its source and next step.')).toBeVisible();
+  const question = page.getByRole('button', { name: 'Can I see where a requirement came from?' });
+  await question.focus();
+  await question.press('Enter');
+  await expect(question).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#faq-answer-2')).toBeVisible();
+  const trigger = page.getByRole('button', { name: /See what applies to your business/i });
+  await trigger.click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Close modal' })).toBeFocused();
+  await page.getByLabel('Full Name').fill('Asha Shah');
+  await page.getByLabel('Work email').fill('asha@example.com');
+  await page.getByLabel('Business name').fill('Example Manufacturing');
+  await page.getByRole('button', { name: 'Preview business details' }).click();
+  await expect(page.getByText('Your business details are ready')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test('mobile motion stays sequential without desktop pinning or pointer effects', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.locator('#story').scrollIntoViewIfNeeded();
+  await expect(page.locator('.business-state').last()).toBeVisible();
+  await expect(page.locator('.pin-spacer')).toHaveCount(0);
+  await expect(page.locator('.custom-story-cursor')).toBeHidden();
+  await page.getByRole('button', { name: 'Select example: ₹18 Cr' }).click();
+  await expect(page.locator('.answer-story-card')).toHaveClass(/is-selected/);
+  await page.locator('#workspace').getByRole('tab', { name: 'Documents' }).click();
+  await expect(page.getByRole('tabpanel')).toContainText('Supporting records');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+});

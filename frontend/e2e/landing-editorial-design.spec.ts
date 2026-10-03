@@ -1,89 +1,153 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
-const headlines = ['Start with what you do.', 'Only answer what changes the answer.', 'Find the rules that belong to you.', 'See why it applies.', 'Every decision has a trail.', 'The rules decide. The AI explains.', 'Turn requirements into next steps.', 'Built around the way your business operates.', 'Built to be clear about what we know.', 'Frequently Asked Questions', 'Know what applies. Know what to do next.'];
-
-test('desktop preserves styled chapters and connects facts, answer, evidence and workspace', async ({ page }) => {
+function collectErrors(page: Page) {
   const errors: string[] = [];
-  page.on('pageerror', e => errors.push(e.message));
-  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  return errors;
+}
+
+async function chapter(page: Page, index: number) {
+  await page.evaluate(i => {
+    const film = document.querySelector<HTMLElement>('.product-film')!;
+    window.scrollTo(0, film.getBoundingClientRect().top + scrollY + (film.offsetHeight - innerHeight) * (i + .28) / 18);
+  }, index);
+  await expect(page.locator('.product-film')).toHaveAttribute('data-phase', String(index));
+  await page.waitForTimeout(1500); // Allow the scrub to settle before measuring.
+}
+
+test('desktop film retains objects through facts, evaluation, evidence and workspace', async ({ page }) => {
+  const errors = collectErrors(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await expect(page.locator('h1')).toHaveText(/Behind every\s*business is a\s*rulebook\./);
+  await expect(page.locator('.product-film')).toBeVisible();
   await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(247, 245, 239)');
-  await expect(page.locator('header')).toHaveCSS('position', 'fixed');
+  await expect(page.locator('h1')).toHaveText(/Behind every\s*business is a\s*rulebook\./);
   await expect(page.locator('h1')).toHaveCSS('font-family', /Playfair Display/);
-  await expect(page.locator('.constellation-node')).toHaveCount(8);
-  await expect(page.locator('main h2')).toHaveText(headlines);
-  await expect(page.getByText('ComplyWise helps you understand what applies to your business — and what to do next.')).toBeVisible();
-  await page.waitForTimeout(2200);
-  await page.screenshot({ path: 'test-results/landing-desktop.png' });
-  await page.locator('#story').evaluate(node => {
-    const spacer = node.closest('.pin-spacer') || node;
-    window.scrollTo(0, spacer.getBoundingClientRect().top + window.scrollY + window.innerHeight * .55);
-  });
-  const location = page.getByRole('button', { name: 'LOCATION Maharashtra' });
-  await expect(location).toBeVisible();
-  await location.hover();
-  await expect(page.locator('.fact-statement span').filter({ hasText: 'Maharashtra' })).toHaveAttribute('data-active', 'true');
-  await page.screenshot({ path: 'test-results/landing-business.png' });
-  const answer = page.locator('.answer-story-card button');
-  await answer.scrollIntoViewIfNeeded();
+  await expect(page.locator('.pin-spacer')).toHaveCount(1);
+  await page.waitForTimeout(1800);
+  await page.screenshot({ path: 'test-results/physical-hero.png' });
+  const dossier = await page.locator('[data-world-object="business"]').elementHandle();
+  const passage = await page.locator('[data-world-object="clause-rule"]').elementHandle();
+  const decision = await page.locator('[data-world-object="decision-task"]').elementHandle();
+  await chapter(page, 2);
+  await page.getByRole('button', { name: 'LOCATION Maharashtra' }).hover();
+  await expect(page.locator('.film-extracted-word').filter({ hasText: 'Maharashtra' })).toHaveAttribute('data-highlighted', 'true');
+  const aligned = await page.locator('.film-extracted-word').evaluateAll(words => words.every(word => {
+    const text = word.textContent || '';
+    const label = text.includes('Maharashtra') ? '0' : text.includes('manufacture') ? '1' : text.includes('private') ? '2' : '3';
+    const target = document.querySelector(`[data-fact="${label}"]`)!.getBoundingClientRect();
+    const rect = word.getBoundingClientRect();
+    return rect.left >= target.left - 2 && rect.right <= target.right + 8 && rect.top >= target.top && rect.bottom <= target.bottom;
+  }));
+  expect(aligned).toBe(true);
+  await page.screenshot({ path: 'test-results/physical-facts.png' });
+  await chapter(page, 4);
+  const answer = page.locator('.film-answer');
   await answer.click();
   await expect(answer).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.answer-connector')).toHaveClass(/is-selected/);
-  await page.locator('#evidence').scrollIntoViewIfNeeded();
-  const passage = page.locator('.evidence-passage');
-  await passage.hover();
-  await expect(passage.locator('mark')).toHaveCSS('background-color', 'rgb(220, 234, 226)');
-  await page.screenshot({ path: 'test-results/landing-evidence.png' });
-  const workspace = page.locator('#workspace');
-  await workspace.scrollIntoViewIfNeeded();
-  await workspace.getByRole('tab', { name: 'Documents' }).click();
-  await expect(workspace.getByRole('tabpanel')).toContainText('Business profile & workshop layout');
-  await workspace.getByRole('tab', { name: 'Documents' }).press('ArrowRight');
-  await expect(workspace.getByRole('tab', { name: 'Workflows' })).toHaveAttribute('aria-selected', 'true');
-  await workspace.getByRole('tab', { name: 'Calendar' }).click();
-  await expect(workspace.getByRole('tabpanel')).toContainText('Team reminder • example date');
-  await page.screenshot({ path: 'test-results/landing-workspace.png' });
+  await expect(page.getByText('Business profile updated', { exact: true })).toBeVisible();
+  await chapter(page, 5);
+  await expect(page.locator('.film-question')).toBeHidden();
+  await chapter(page, 6);
+  await expect(page.locator('.document-flap')).toBeHidden();
+  await chapter(page, 7);
+  expect(await passage!.evaluate(node => node.isConnected)).toBe(true);
+  expect(await page.locator('.film-rule-card').evaluate(node => node.getBoundingClientRect().height)).toBeGreaterThan(400);
+  await chapter(page, 8);
+  for (const check of await page.locator('.condition-check').all()) await expect(check).toHaveCSS('opacity', '1');
+  await expect(page.locator('.film-decision-label')).toBeVisible();
+  await page.screenshot({ path: 'test-results/physical-decision.png' });
+  await chapter(page, 9);
+  await page.locator('.film-evidence-sheet').hover();
+  await expect(page.locator('.film-evidence-sheet mark').first()).toHaveCSS('background-color', 'rgb(220, 234, 226)');
+  await page.screenshot({ path: 'test-results/physical-evidence.png' });
+  await chapter(page, 11);
+  expect(await decision!.evaluate(node => node.isConnected)).toBe(true);
+  await expect(page.getByRole('tab', { name: 'Compliance', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('.film-task-details')).toBeVisible();
+  const docked = await page.locator('.film-task').evaluate(node => {
+    const task = node.getBoundingClientRect(), slot = document.querySelector('.film-task-dock')!.getBoundingClientRect();
+    return Math.abs(task.top + task.height / 2 - slot.top - slot.height / 2) < 5;
+  });
+  expect(docked).toBe(true);
+  await page.screenshot({ path: 'test-results/physical-workspace.png' });
+  await chapter(page, 12);
+  await expect(page.getByRole('tabpanel')).toContainText('Business profile & workshop layout');
+  await page.getByRole('tab', { name: 'Documents', exact: true }).press('ArrowRight');
+  await expect(page.getByRole('tab', { name: 'Workflows', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await chapter(page, 14);
+  await expect(page.getByRole('tab', { name: 'Calendar', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await chapter(page, 15);
+  await page.getByRole('tab', { name: 'Standards', exact: true }).click();
+  await expect(page.getByRole('tabpanel')).toContainText(/standards/i);
+  await chapter(page, 16);
+  await expect(page.getByRole('heading', { name: 'The rules decide. The AI explains.' })).toBeVisible();
+  await chapter(page, 0);
+  expect(await dossier!.evaluate(node => node.isConnected)).toBe(true);
+  await expect(page.locator('.film-dossier')).toHaveCSS('height', '355px');
   expect(await page.locator('a[href^="#"]').evaluateAll(links => links.map(link => link.getAttribute('href')).filter(href => href && !document.querySelector(href)))).toEqual([]);
   await expect(page.locator('header').getByRole('link', { name: 'Explore Workspace' })).toHaveAttribute('href', '/dashboard');
   await expect(page.locator('header').getByRole('link', { name: 'Sign In', exact: true })).toHaveAttribute('href', '/auth/signin');
   expect(errors).toEqual([]);
 });
 
-test('mobile uses stacked states, touch navigation and readable panels', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.emulateMedia({ reducedMotion: 'reduce' });
+test('keyboard chapters and motion changes cleanly replace the pinned scene', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
+  await expect(page.locator('.product-film')).toBeVisible();
+  const next = page.getByRole('button', { name: 'NEXT CHAPTER' });
+  await next.focus(); await next.press('Enter');
+  await expect(page.locator('.product-film')).toHaveAttribute('data-phase', '1');
+  await expect(next).toBeFocused();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(page.locator('.film-static')).toBeVisible();
+  await expect(page.locator('.pin-spacer')).toHaveCount(0);
+  await expect(page.locator('#story .film-dossier')).toBeVisible();
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await expect(page.locator('.pin-spacer')).toHaveCount(1);
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await expect(page.locator('.film-static')).toBeVisible();
+  await expect(page.locator('.pin-spacer')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('mobile keeps the story, touch controls and workspace without pinning', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect(page.locator('.film-static')).toBeVisible();
   await expect(page.locator('.pin-spacer')).toHaveCount(0);
   await expect(page.locator('.custom-story-cursor')).toBeHidden();
-  await expect(page.locator('.business-state')).toHaveCount(3);
-  for (const state of await page.locator('.business-state').all()) await expect(state).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
-  await page.screenshot({ path: 'test-results/landing-mobile.png' });
+  await page.screenshot({ path: 'test-results/physical-mobile.png' });
   const menu = page.getByRole('button', { name: 'Toggle navigation menu' });
   await menu.click();
   await expect(menu).toHaveAttribute('aria-expanded', 'true');
   await page.getByRole('navigation', { name: 'Mobile navigation' }).getByRole('link', { name: 'Evidence', exact: true }).click();
   await expect(menu).toHaveAttribute('aria-expanded', 'false');
-  await page.locator('#workspace').getByRole('tab', { name: 'Calendar' }).click();
+  await page.getByRole('button', { name: 'Select example: ₹18 Cr' }).click();
+  await expect(page.locator('.film-answer')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#workspace').getByRole('tab', { name: 'Calendar', exact: true }).click();
   await expect(page.getByRole('tabpanel')).toContainText('Check progress with your team');
-  await page.screenshot({ path: 'test-results/landing-mobile-calendar.png' });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  await page.screenshot({ path: 'test-results/physical-mobile-workspace.png' });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(errors).toEqual([]);
 });
 
-test('reduced motion keeps the sequence and supports keyboard FAQ and local preview', async ({ page }) => {
+test('reduced motion keeps evidence, keyboard FAQ and the local business preview', async ({ page }) => {
+  const errors = collectErrors(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await expect(page.locator('.pin-spacer')).toHaveCount(0);
   await expect(page.locator('.story-status-dot')).toHaveCSS('animation-name', 'none');
-  for (const state of await page.locator('.business-state').all()) await expect(state).toHaveCSS('visibility', 'visible');
-  await page.getByRole('button', { name: 'Go to step 5' }).click();
-  await expect(page.getByText('A result with its source and next step.')).toBeVisible();
+  const headings = page.locator('.film-static h2');
+  expect(await headings.count()).toBeGreaterThanOrEqual(10);
+  for (const heading of await headings.all()) await expect(heading).toBeVisible();
+  await expect(page.locator('#evidence .film-evidence-sheet')).toBeVisible();
   const question = page.getByRole('button', { name: 'Can I see where a requirement came from?' });
-  await question.focus();
-  await question.press('Enter');
+  await question.focus(); await question.press('Enter');
   await expect(question).toHaveAttribute('aria-expanded', 'true');
   await expect(page.locator('#faq-answer-2')).toBeVisible();
   const trigger = page.getByRole('button', { name: /See what applies to your business/i });
@@ -98,18 +162,5 @@ test('reduced motion keeps the sequence and supports keyboard FAQ and local prev
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(trigger).toBeFocused();
-});
-
-test('mobile motion stays sequential without desktop pinning or pointer effects', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
-  await page.locator('#story').scrollIntoViewIfNeeded();
-  await expect(page.locator('.business-state').last()).toBeVisible();
-  await expect(page.locator('.pin-spacer')).toHaveCount(0);
-  await expect(page.locator('.custom-story-cursor')).toBeHidden();
-  await page.getByRole('button', { name: 'Select example: ₹18 Cr' }).click();
-  await expect(page.locator('.answer-story-card')).toHaveClass(/is-selected/);
-  await page.locator('#workspace').getByRole('tab', { name: 'Documents' }).click();
-  await expect(page.getByRole('tabpanel')).toContainText('Supporting records');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  expect(errors).toEqual([]);
 });

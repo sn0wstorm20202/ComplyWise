@@ -15,10 +15,17 @@ import {
   Clock,
 } from "lucide-react";
 
-export function WorkspaceStoryScene() {
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "compliance" | "documents" | "workflows" | "calendar" | "schemes" | "standards"
-  >("overview");
+export type WorkspaceTab = "overview" | "compliance" | "documents" | "workflows" | "calendar" | "schemes" | "standards";
+
+interface WorkspaceStoryProps {
+  embedded?: boolean;
+  scrollTab?: WorkspaceTab;
+  taskSlot?: React.ReactNode;
+}
+
+export function WorkspaceStoryScene({ embedded = false, scrollTab, taskSlot }: WorkspaceStoryProps = {}) {
+  const [manualTab, setActiveTab] = useState<{ id: WorkspaceTab; at: WorkspaceTab | undefined } | null>(null);
+  const activeTab = manualTab && manualTab.at === scrollTab ? manualTab.id : scrollTab ?? "overview";
   const panelRef = useRef<HTMLDivElement>(null);
   const tabListRef = useRef<HTMLDivElement>(null);
 
@@ -30,14 +37,14 @@ export function WorkspaceStoryScene() {
     return () => ctx.revert();
   }, [activeTab]);
 
-  const selectTab = (id: typeof activeTab) => {
+  const selectTab = (id: WorkspaceTab) => {
     if (id === activeTab) return;
     gsap.killTweensOf(panelRef.current);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setActiveTab(id);
+      setActiveTab({ id, at: scrollTab });
       return;
     }
-    gsap.to(panelRef.current, { opacity: 0, x: -12, duration: 0.18, ease: "power2.in", onComplete: () => setActiveTab(id) });
+    gsap.to(panelRef.current, { opacity: 0, x: -12, duration: 0.18, ease: "power2.in", onComplete: () => setActiveTab({ id, at: scrollTab }) });
   };
 
   const tabs = [
@@ -52,12 +59,13 @@ export function WorkspaceStoryScene() {
 
   return (
     <section
-      id="workspace"
-      className="py-32 md:py-48 bg-[#EFEEE7] border-t border-[rgba(23,23,20,0.06)]"
+      id={embedded ? undefined : "workspace"}
+      data-active-tab={activeTab}
+      className={embedded ? "film-workspace-inner" : "py-32 md:py-48 bg-[#EFEEE7] border-t border-[rgba(23,23,20,0.06)]"}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
         {/* Chapter Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        {!embedded && <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="max-w-2xl space-y-4">
             <div className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[#96938A] px-3.5 py-1 rounded-full bg-[#F7F5EF] border border-[rgba(23,23,20,0.06)]">
               <Layers className="h-3.5 w-3.5 text-[#557D6B]" />
@@ -80,12 +88,12 @@ export function WorkspaceStoryScene() {
             <span>Explore Workspace</span>
             <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </Link>
-        </div>
+        </div>}
 
         {/* Real Interactive React Workspace Window Frame */}
-        <div className="rounded-[32px] bg-[#F7F5EF] border border-[rgba(23,23,20,0.1)] p-6 sm:p-9 shadow-[0_28px_80px_rgba(23,23,20,0.06)] space-y-8">
+        <div className="workspace-frame rounded-[32px] bg-[#F7F5EF] border border-[rgba(23,23,20,0.1)] p-6 sm:p-9 shadow-[0_28px_80px_rgba(23,23,20,0.06)] space-y-8">
           {/* Workspace Shell Top Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[rgba(23,23,20,0.08)] pb-5">
+          <div className="workspace-browser-top flex flex-wrap items-center justify-between gap-4 border-b border-[rgba(23,23,20,0.08)] pb-5">
             <div className="flex items-center gap-3">
               <div className="flex gap-1.5">
                 <span className="h-3 w-3 rounded-full bg-[rgba(23,23,20,0.12)]" />
@@ -138,6 +146,7 @@ export function WorkspaceStoryScene() {
             })}
           </div>
 
+          {taskSlot}
           {/* Tab Views */}
           <div ref={panelRef} id="workspace-panel" role="tabpanel" aria-labelledby={`workspace-tab-${activeTab}`} tabIndex={0} className="workspace-panel min-h-[280px]">
             {activeTab === "overview" && (
@@ -164,7 +173,7 @@ export function WorkspaceStoryScene() {
                   <span>REVIEW &amp; ACT</span>
                 </div>
 
-                <div tabIndex={0} className="workspace-item p-5 rounded-2xl bg-[#EFEEE7] border border-[rgba(23,23,20,0.06)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {taskSlot ? <div className="film-task-dock" aria-hidden="true" /> : <div tabIndex={0} className="workspace-item p-5 rounded-2xl bg-[#EFEEE7] border border-[rgba(23,23,20,0.06)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 font-mono text-[11px]">
                       <span className="px-2 py-0.5 rounded bg-[#DCEAE2] text-[#557D6B] font-semibold">
@@ -189,7 +198,7 @@ export function WorkspaceStoryScene() {
                       <ArrowUpRight className="h-4 w-4" />
                     </Link>
                   </div>
-                </div>
+                </div>}
 
                 <div tabIndex={0} className="workspace-item p-5 rounded-2xl bg-[#EFEEE7] border border-[rgba(23,23,20,0.06)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 opacity-80">
                   <div className="space-y-1">
@@ -296,7 +305,7 @@ export function WorkspaceStoryScene() {
                       <p className="font-sans text-[11px] text-[#557D6B]">Source and conditions reviewed</p>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-[#F7F5EF] border border-[#557D6B] space-y-1">
+                    <div className="workspace-current-step p-4 rounded-xl bg-[#F7F5EF] border border-[#557D6B] space-y-1">
                       <div className="flex items-center gap-2 text-[#171714] font-bold">
                         <Clock className="h-4 w-4 text-[#557D6B]" />
                         <span>2. GATHER DOCUMENTS</span>
@@ -304,7 +313,7 @@ export function WorkspaceStoryScene() {
                       <p className="font-sans text-[11px] text-[#6F6D66]">Assigned to your team</p>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-[#F7F5EF] border border-[rgba(23,23,20,0.06)] opacity-60 space-y-1">
+                    <div className="workspace-next-step p-4 rounded-xl bg-[#F7F5EF] border border-[rgba(23,23,20,0.06)] opacity-60 space-y-1">
                       <div className="flex items-center gap-2 text-[#96938A] font-bold">
                         <span>3. COMPLETE REVIEW</span>
                       </div>

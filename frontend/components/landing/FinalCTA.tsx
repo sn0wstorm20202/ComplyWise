@@ -18,6 +18,8 @@ export function FinalCTA({ onSeeWhatApplies }: FinalCTAProps) {
   const containerRef = useRef<HTMLElement>(null);
   const circleRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
+  const linkRef = useRef<HTMLAnchorElement>(null);
+  const fillRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const mm = gsap.matchMedia();
@@ -54,6 +56,34 @@ export function FinalCTA({ onSeeWhatApplies }: FinalCTAProps) {
           },
         });
       }
+
+      const link = linkRef.current;
+      if (!link || !fillRef.current) return;
+      gsap.set(fillRef.current, { scale: 0 });
+      const expand = () => gsap.to(fillRef.current, { scale: 1, duration: .65, ease: "power3.out", overwrite: true });
+      const contract = () => gsap.to(fillRef.current, { scale: 0, duration: .55, ease: "power3.out", overwrite: true });
+      const moveX = gsap.quickTo(link, "x", { duration: .5, ease: "power3.out" });
+      const moveY = gsap.quickTo(link, "y", { duration: .5, ease: "power3.out" });
+      const move = (event: PointerEvent) => {
+        if (event.pointerType !== "mouse") return;
+        const bounds = circleRef.current!.getBoundingClientRect();
+        moveX((event.clientX - bounds.left - bounds.width / 2) * .025);
+        moveY((event.clientY - bounds.top - bounds.height / 2) * .08);
+      };
+      const leave = () => { if (!link.matches(":focus-visible")) contract(); moveX(0); moveY(0); };
+      link.addEventListener("pointerenter", expand);
+      link.addEventListener("pointerleave", leave);
+      link.addEventListener("pointermove", move);
+      link.addEventListener("focus", expand);
+      link.addEventListener("blur", contract);
+      return () => {
+        link.removeEventListener("pointerenter", expand);
+        link.removeEventListener("pointerleave", leave);
+        link.removeEventListener("pointermove", move);
+        link.removeEventListener("focus", expand);
+        link.removeEventListener("blur", contract);
+        gsap.killTweensOf([link, fillRef.current]);
+      };
     }, containerRef);
 
     return () => mm.revert();
@@ -90,11 +120,12 @@ export function FinalCTA({ onSeeWhatApplies }: FinalCTAProps) {
         {/* Signature Circular Expanding Magnetic CTA (design.md Section 21 & Signature 8) */}
         <div ref={circleRef} className="flex justify-center pt-2">
           <Link
+            ref={linkRef}
             href="/dashboard"
-            className="group relative flex h-44 w-44 sm:h-52 sm:w-52 flex-col items-center justify-center rounded-full bg-[#EFEEE7] border border-[rgba(23,23,20,0.12)] p-6 text-center shadow-[0_12px_40px_rgba(23,23,20,0.06)] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-105 active:scale-95 overflow-hidden"
+            className="film-final-circle group relative flex h-44 w-44 sm:h-52 sm:w-52 flex-col items-center justify-center rounded-full bg-[#EFEEE7] border border-[rgba(23,23,20,0.12)] p-6 text-center shadow-[0_12px_40px_rgba(23,23,20,0.06)] active:scale-95 overflow-hidden"
           >
             {/* Sage circle expansion effect from center */}
-            <div className="pointer-events-none absolute inset-0 rounded-full bg-[#557D6B] scale-0 transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-100" />
+            <div ref={fillRef} className="film-final-fill pointer-events-none absolute inset-0 rounded-full bg-[#557D6B] scale-0" />
 
             {/* Inner Content */}
             <div className="relative z-10 flex flex-col items-center gap-2">
@@ -104,7 +135,7 @@ export function FinalCTA({ onSeeWhatApplies }: FinalCTAProps) {
                 Workspace
               </span>
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#171714] group-hover:bg-[#F7F5EF] text-[#F7F5EF] group-hover:text-[#171714] transition-all duration-500">
-                <ArrowUpRight className="h-4 w-4" strokeWidth={2} />
+                <ArrowUpRight className="h-4 w-4 transition-transform duration-500 group-hover:rotate-45 group-focus-visible:rotate-45" strokeWidth={2} />
               </div>
             </div>
           </Link>

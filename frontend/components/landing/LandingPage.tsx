@@ -5,14 +5,7 @@ import "./landing-interactions.css";
 import ScrollManager from "./ScrollManager";
 import CustomCursor from "./CustomCursor";
 import FloatingNav from "./FloatingNav";
-import HeroStory from "./HeroStory";
-import BusinessStoryScene from "./BusinessStoryScene";
-import AdaptiveQuestionScene from "./AdaptiveQuestionScene";
-import RegulatoryDiscoveryScene from "./RegulatoryDiscoveryScene";
-import RuleDecisionScene from "./RuleDecisionScene";
-import EvidenceStoryScene from "./EvidenceStoryScene";
-import TrustPrincipleScene from "./TrustPrincipleScene";
-import WorkspaceStoryScene from "./WorkspaceStoryScene";
+import PhysicalProductStory from "./PhysicalProductStory";
 import CoverageScene from "./CoverageScene";
 import VerificationScene from "./VerificationScene";
 import FAQSection from "./FAQSection";
@@ -36,29 +29,8 @@ export function LandingPage() {
 
       <a className="story-skip-link" href="#story-main">Skip to content</a>
       <main id="story-main" tabIndex={-1}>
-        {/* 4. Hero Section: "Behind every business is a rulebook." + Living State Preview */}
-        <HeroStory />
-
-        {/* 5. Chapter 01: Business description → details → missing fact */}
-        <BusinessStoryScene />
-
-        {/* 6. Chapter 02: Adaptive Question -> Answer Recorded -> Rule Path Updated */}
-        <AdaptiveQuestionScene />
-
-        {/* 7. Chapter 03: Sources → relevant requirements */}
-        <RegulatoryDiscoveryScene />
-
-        {/* 8. Chapter 04: Conditions → result */}
-        <RuleDecisionScene />
-
-        {/* 9. Chapter 05: Source → reason → next step */}
-        <EvidenceStoryScene />
-
-        {/* 10. Trust principle ("The rules decide. The AI explains.") */}
-        <TrustPrincipleScene />
-
-        {/* 11. Chapter 06: Interactive workspace */}
-        <WorkspaceStoryScene />
+        {/* One persistent world: business → source → rule → evidence → action. */}
+        <PhysicalProductStory />
 
         {/* 12. Chapter 08: Jurisdictions and business context */}
         <CoverageScene />

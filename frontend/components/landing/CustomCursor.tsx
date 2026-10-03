@@ -59,7 +59,7 @@ export function CustomCursor() {
       if (!target) return;
 
       const interactive = target.closest(
-        "a, button, [role='button'], input, textarea, select, [data-cursor='interactive']"
+        "a, button, [role='button'], input, textarea, select, [data-cursor='interactive'], [data-inspect]"
       );
 
       if (interactive && !isHovering) {

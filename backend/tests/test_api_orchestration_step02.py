@@ -303,7 +303,7 @@ def test_electronics_profile_questions_bis():
 
 @pytest.mark.django_db
 def test_questionnaire_persistence_and_idempotency(test_business, auth_user):
-    """Questionnaire generates exactly 15 questions, persists in DB, and reuses on repeat call."""
+    """The compact decision-critical interview persists and reuses identical questions."""
     run = assessment_orchestrator.create_run(
         business=test_business,
         user=auth_user,
@@ -313,18 +313,18 @@ def test_questionnaire_persistence_and_idempotency(test_business, auth_user):
 
     engine = QuestionnaireEngine()
     q_list_1 = engine.generate_questionnaire(context, run)
-    assert len(q_list_1) == 15
+    assert 1 <= len(q_list_1) <= 5
 
     # Verify DB persistence
     plan = SmartQuestionPlan.objects.filter(assessment=run.assessment).first()
     assert plan is not None
-    assert plan.questions.count() == 15
+    assert plan.questions.count() == len(q_list_1)
 
-    # Verify idempotency: second call returns the same 15 questions without calling LLM
+    # Verify idempotency: second call returns the same compact questions without calling LLM
     with patch.object(engine, "get_provider") as mock_get_prov:
         q_list_2 = engine.generate_questionnaire(context, run)
         mock_get_prov.assert_not_called()
-        assert len(q_list_2) == 15
+        assert len(q_list_2) == len(q_list_1)
         assert q_list_1[0].question_id == q_list_2[0].question_id
 
 
@@ -354,24 +354,25 @@ def test_answer_recording_without_llm(test_business, auth_user):
     )
     context = OrchestrationContext.from_business(test_business)
     engine = QuestionnaireEngine()
-    engine.generate_questionnaire(context, run)
-
+    generated = engine.generate_questionnaire(context, run)
+    question = next(q for q in generated if q.answer_type == "BOOLEAN")
+    qid = question.question_id
     interpreter = AnswerInterpreter()
-    res = interpreter.record_answer(run, "Q01", "75")
+    res = interpreter.record_answer(run, qid, True)
 
-    assert res["question_id"] == "Q01"
-    assert res["saved_value"] == 75
+    assert res["question_id"] == qid
+    assert res["saved_value"] is True
     assert res["answered_count"] == 1
     assert res["is_complete"] is False
 
     # Check run stage metadata
-    assert run.stage_metadata["answers"]["Q01"] == 75
+    assert run.stage_metadata["answers"][qid] is True
 
     # Check SmartQuestionInstance
-    inst = SmartQuestionInstance.objects.filter(question_id="Q01").first()
+    inst = SmartQuestionInstance.objects.filter(plan__assessment=run.assessment, question_id=qid).first()
     assert inst is not None
     assert inst.is_answered is True
-    assert inst.answer_value == 75
+    assert inst.answer_value is True
 
 
 def test_structured_answer_interpretation_facts():
@@ -465,7 +466,7 @@ def test_api_business_understanding_endpoint(auth_client, test_business):
 
 @pytest.mark.django_db
 def test_api_question_generation_endpoint(auth_client, test_business):
-    """POST /api/v1/assessments/{id}/questions/generate/ produces 15 questions."""
+    """POST /api/v1/assessments/{id}/questions/generate/ produces at most five decision-critical questions."""
     create_res = auth_client.post(
         "/api/v1/assessments/",
         data={"business_id": str(test_business.id)},
@@ -476,8 +477,8 @@ def test_api_question_generation_endpoint(auth_client, test_business):
     res = auth_client.post(f"/api/v1/assessments/{run_id}/questions/generate/")
     assert res.status_code == status.HTTP_200_OK
     data = res.json()["data"]
-    assert data["total_questions"] == 15
-    assert len(data["questions"]) == 15
+    assert 1 <= data["total_questions"] <= 5
+    assert len(data["questions"]) == data["total_questions"]
     first_q = data["questions"][0]
     assert "question_id" in first_q
     assert "question" in first_q
@@ -498,12 +499,13 @@ def test_api_answer_submission_and_context(auth_client, test_business):
     run_id = create_res.json()["data"]["run_id"]
 
     # Generate questions first
-    auth_client.post(f"/api/v1/assessments/{run_id}/questions/generate/")
+    generated = auth_client.post(f"/api/v1/assessments/{run_id}/questions/generate/").json()["data"]["questions"]
+    question = next(q for q in generated if q["answer_type"] == "BOOLEAN")
 
     # Submit answer
     ans_res = auth_client.post(
         f"/api/v1/assessments/{run_id}/answers/",
-        data={"question_id": "Q01", "value": "60"},
+        data={"question_id": question["question_id"], "value": True},
         format="json",
     )
     assert ans_res.status_code == status.HTTP_200_OK
@@ -513,7 +515,7 @@ def test_api_answer_submission_and_context(auth_client, test_business):
     list_res = auth_client.get(f"/api/v1/assessments/{run_id}/questions/")
     assert list_res.status_code == status.HTTP_200_OK
     list_data = list_res.json()["data"]
-    assert list_data["total_questions"] == 15
+    assert list_data["total_questions"] == len(generated)
     assert list_data["answered_count"] == 1
 
     # Get enriched context

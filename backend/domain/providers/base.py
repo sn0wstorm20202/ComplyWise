@@ -21,6 +21,18 @@ Role = Literal["system", "user", "assistant"]
 class ProviderError(RuntimeError):
     """Base class for provider failures."""
 
+    def __init__(self, message: str, *, failure_type: str = "provider_unavailable", status_code: int | None = None):
+        self.failure_type = failure_type
+        self.status_code = status_code
+        super().__init__(message)
+
+
+class ProviderResponseError(ProviderError):
+    """Transport succeeded, but the response is malformed, refused or unusable."""
+
+    def __init__(self, message: str):
+        super().__init__(message, failure_type="malformed_response")
+
 
 class ProviderNotConfigured(ProviderError):
     """Raised when a provider is selected but its credentials are absent.

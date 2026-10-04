@@ -1,0 +1,84 @@
+{
+  "kind": "REAL_PROVIDER_RUNTIME_POSTGRESQL_API",
+  "cases": [
+    {
+      "business": "Precision Workshop QA",
+      "type": "Manufacturing",
+      "stages": [
+        {
+          "stage": "businesses",
+          "status": 201,
+          "seconds": 0.513
+        }
+      ],
+      "failures": [],
+      "failure_class": "KeyError",
+      "seconds": 0.513,
+      "providers": []
+    },
+    {
+      "business": "Neighbourhood Kitchen QA",
+      "type": "Restaurant",
+      "stages": [
+        {
+          "stage": "businesses",
+          "status": 201,
+          "seconds": 0.794
+        }
+      ],
+      "failures": [],
+      "failure_class": "KeyError",
+      "seconds": 0.794,
+      "providers": []
+    },
+    {
+      "business": "Clearpath Digital QA",
+      "type": "IT",
+      "stages": [
+        {
+          "stage": "businesses",
+          "status": 201,
+          "seconds": 0.498
+        }
+      ],
+      "failures": [],
+      "failure_class": "KeyError",
+      "seconds": 0.498,
+      "providers": []
+    },
+    {
+      "business": "City Storage QA",
+      "type": "Warehouse",
+      "stages": [
+        {
+          "stage": "businesses",
+          "status": 201,
+          "seconds": 1.085
+        }
+      ],
+      "failures": [],
+      "failure_class": "KeyError",
+      "seconds": 1.085,
+      "providers": []
+    },
+    {
+      "business": "Community Clinic QA",
+      "type": "Healthcare",
+      "stages": [
+        {
+          "stage": "businesses",
+          "status": 201,
+          "seconds": 1.307
+        }
+      ],
+      "failures": [],
+      "failure_class": "KeyError",
+      "seconds": 1.307,
+      "providers": []
+    }
+  ],
+  "limitations": [
+    "Temporary synthetic business facts/answers; actual runtime published knowledge and real external providers. Not an expert legal benchmark."
+  ],
+  "temporary_identities_removed": true
+}

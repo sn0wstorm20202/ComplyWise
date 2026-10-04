@@ -227,7 +227,7 @@ class AssessmentBusinessUnderstandingView(APIView):
 
 
 class AssessmentQuestionGenerateView(APIView):
-    """Generate exactly 15 intelligent compliance questions in a single LLM call."""
+    """Generate up to five decision-critical questions."""
 
     permission_classes = [IsAuthenticated]
 
@@ -255,7 +255,7 @@ class AssessmentQuestionGenerateView(APIView):
 
 
 class AssessmentQuestionsListView(APIView):
-    """List the 15 questions and user completion status for an assessment."""
+    """List saved adaptive questions and completion status."""
 
     permission_classes = [IsAuthenticated]
 
@@ -272,7 +272,7 @@ class AssessmentQuestionsListView(APIView):
         answers = run.stage_metadata.get("answers", {})
 
         # If questions not yet generated, attempt to generate or load them
-        if not q_meta:
+        if "question_generation" not in run.stage_metadata:
             from domain.intelligence.orchestration import AssessmentStage
             res = assessment_orchestrator.execute_stage(run, AssessmentStage.QUESTION_GENERATION)
             run = assessment_orchestrator.get_run(run.run_id) or run
@@ -286,6 +286,8 @@ class AssessmentQuestionsListView(APIView):
             qid = q.get("question_id")
             clean_q = {
                 "question_id": qid,
+                "variable_key": q.get("variable_key", ""),
+                "affected_rules": q.get("affected_rules", []),
                 "question": q.get("question"),
                 "category": q.get("category"),
                 "answer_type": q.get("answer_type"),
@@ -297,6 +299,7 @@ class AssessmentQuestionsListView(APIView):
                 "order": q.get("order"),
                 "is_answered": qid in answers,
                 "current_value": answers.get(qid),
+                **{key:q.get(key) for key in ("fact_key", "reason_code", "source_decision_refs", "already_known", "suggested_answer", "suggested_answer_origin")},
             }
             enriched_questions.append(clean_q)
 
@@ -306,7 +309,7 @@ class AssessmentQuestionsListView(APIView):
             "questions": enriched_questions,
             "total_questions": len(enriched_questions),
             "answered_count": len(answers),
-            "is_complete": len(answers) >= len(enriched_questions) and len(enriched_questions) >= 4,
+            "is_complete": len(answers) >= len(enriched_questions),
             "next_question": next_q,
         }
         return Response(
@@ -468,6 +471,9 @@ class AssessmentComplianceSynthesisView(APIView):
             return error_response(o_exc.code, o_exc.message_safe, http_status=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             logger.exception("Error in compliance synthesis endpoint: %s", exc)
+            from domain.providers.base import ProviderError
+            if isinstance(exc, ProviderError):
+                return error_response("PROVIDER_UNAVAILABLE", "Your details are saved. Please retry preparing your workspace.", http_status=503)
             return error_response("INTERNAL_ERROR", "Failed to synthesize compliance requirements.", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -587,6 +593,8 @@ class AssessmentComplianceView(APIView):
                         "citation_count": len(citations),
                     })
 
+                from domain.intelligence.workspace_guidance import compliance_rows
+                requirements.extend(compliance_rows(biz, assessment.id))
                 applicable = [r for r in requirements if r["status"] == "APPLICABLE"]
                 needs_info = [r for r in requirements if r["status"] in {"NEEDS_INFORMATION", "NEEDS_VERIFICATION"}]
                 not_applicable = [r for r in requirements if r["status"] == "NOT_APPLICABLE"]

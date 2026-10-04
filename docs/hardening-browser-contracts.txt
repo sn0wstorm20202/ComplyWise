@@ -1,0 +1,21 @@
+
+Running 12 tests using 1 worker
+
+(node:14672) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › e2e\compliance-workflows-sync.spec.ts:5:6 › Assessment-scoped compliance/workflow synchronization › Compliance renders the persisted result without adding industrial requirements (2.0s)
+  ✘   2 [chromium] › e2e\compliance-workflows-sync.spec.ts:12:6 › Assessment-scoped compliance/workflow synchronization › Workflow stays linked to its requirement and empty schemes never become fabricated incentives (1.6s)
+(node:15200) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   3 [chromium] › e2e\demo-profiles.spec.ts:6:6 › Starter and arbitrary business regression � explicit browser fixtures › Five business starters remain editable and do not auto-submit (2.4s)
+  ✘   4 [chromium] › e2e\demo-profiles.spec.ts:16:6 › Starter and arbitrary business regression � explicit browser fixtures › Heavy manufacturing context never acquires unrelated seeded results (1.5m)
+(node:18964) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   5 [chromium] › e2e\demo-profiles.spec.ts:22:6 › Starter and arbitrary business regression � explicit browser fixtures › Own business completes the real frontend state machine with a compact editable interview (1.5m)
+(node:15576) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   6 [chromium] › e2e\easternvolt-ev.spec.ts:3:5 › EV equipment standards distinguish contextual quality guidance from reviewed mandatory standards (1.6s)
+  ✘   7 [chromium] › e2e\primary-journey.spec.ts:3:5 › Manual auth to starter, compact questions, saved workspace, evidence and all sections (1.5m)
+(node:7164) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   8 [chromium] › e2e\ux-security-resilience.spec.ts:7:7 › UX Quality, Security, Resilience & Policy Invariants › Public UI Leaks Zero Internal Implementation Details or Model Secrets (6.7s)

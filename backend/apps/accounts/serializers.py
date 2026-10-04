@@ -17,7 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "full_name", "phone_number", "is_staff", "is_superuser", "date_joined"]
+        fields = ["id", "email", "full_name", "phone_number", "is_staff", "is_superuser", "role", "is_compliance_officer", "date_joined"]
         read_only_fields = fields
 
 
@@ -29,8 +29,8 @@ class RegisterSerializer(serializers.Serializer):
 
     def validate_email(self, value: str) -> str:
         normalised = value.strip().lower()
-        if User.objects.filter(email=normalised).exists():
-            raise serializers.ValidationError("An account with this email already exists.")
+        if User.objects.filter(email__iexact=normalised).exists():
+            raise serializers.ValidationError("The user already exists. Please sign in.")
         return normalised
 
     def validate_password(self, value: str) -> str:
@@ -50,12 +50,18 @@ class RegisterSerializer(serializers.Serializer):
         return clean
 
     def create(self, validated_data: dict) -> User:
-        return User.objects.create_user(
+        from django.db import IntegrityError, transaction
+        try:
+            with transaction.atomic():
+                return User.objects.create_user(
             email=validated_data["email"],
             password=validated_data["password"],
             full_name=validated_data.get("full_name", ""),
             phone_number=validated_data.get("phone_number", ""),
         )
+        except IntegrityError:
+            raise serializers.ValidationError({"email": "The user already exists. Please sign in."}) from None
+
 
 
 class LoginSerializer(serializers.Serializer):

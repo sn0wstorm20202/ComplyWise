@@ -29,6 +29,8 @@ export interface DocumentsListResponse {
 }
 
 export interface DocumentUploadPayload {
+  document_id?: string;
+  assessment_id?: string;
   name: string;
   document_type?: string;
   category?: string;
@@ -106,13 +108,14 @@ export const documentsApi = {
   updatePortalStatus: (
     businessId: string,
     documentId: string,
-    portalUploaded: boolean
+    portalUploaded: boolean,
+    assessmentId?: string
   ): Promise<{ document_id: string; portal_uploaded: boolean; status: string }> =>
     request<{ document_id: string; portal_uploaded: boolean; status: string }>(
       `/businesses/${businessId}/documents/portal-status`,
       {
         method: "POST",
-        body: JSON.stringify({ document_id: documentId, portal_uploaded: portalUploaded }),
+        body: JSON.stringify({ document_id: documentId, portal_uploaded: portalUploaded, assessment_id: assessmentId }),
       }
     ),
 

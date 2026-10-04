@@ -18,6 +18,8 @@ export type ApplicabilityStatus =
   | "CONFLICT_REVIEW"
   | "UNVERIFIED";
 
+export type WorkspaceRequirementStatus = ApplicabilityStatus | "SUGGESTED";
+
 export type WorkflowStatus =
   | "NOT_STARTED"
   | "IN_PROGRESS"
@@ -231,6 +233,8 @@ export interface ReadinessData {
 // ---------------------------------------------------------------------------
 
 export interface User {
+  is_compliance_officer?: boolean;
+  role?: string;
   id: string;
   email: string;
   full_name: string;
@@ -345,6 +349,7 @@ export interface Assessment extends AssessmentSummary {
   created_by_email?: string | null;
   profile_version_id: string | null;
   profile_version_number: number | null;
+  profile_variables?: Record<string, { value: unknown; origin?: string }>;
   decision_run_id: string | null;
   discovery_run_id: string | null;
   question_plan_id: string | null;
@@ -543,7 +548,7 @@ export interface PriorityAction {
   requirement_id: string;
   requirement_name: string;
   authority: string;
-  status: ApplicabilityStatus;
+  status: WorkspaceRequirementStatus;
   category: string;
   /** Derived from `status`, not a separate severity judgement. */
   action_type: string;
@@ -571,6 +576,12 @@ export interface StatutoryDeadline {
 }
 
 export interface DashboardSummary {
+  widgets?: {
+    activity: { weeklyTasks: number; growthPercentage: string; maxTasks: number; daily: Array<{day: string; tasks: number; isHighlight: boolean; dateStr: string}> };
+    documents: { totalCount: number; onTrackCount: number; changeThisWeek: string; verifiedPercentage: number; underReviewPercentage: number };
+    cases: Record<string, { category: string; healthPercentage: number; compliantCount: number; inProgressCount: number; overdueCount: number; inProgressPercentage: number; overduePercentage: number }>;
+    recent_activity: Array<{id: string; event: string; case: string; recorded_at: string}>;
+  };
   business_id: string;
   business_name: string;
   assessment_id?: string | null;
@@ -627,12 +638,17 @@ export interface CapabilityUnavailable {
 // ---------------------------------------------------------------------------
 
 export interface ComplianceRequirementItem {
+  user_action_required?: boolean;
+  admin_disposition?: string;
+  review_reason?: string;
+  result_origin?: "DETERMINISTIC_KB_RESULT" | "LLM_FALLBACK_RESULT" | "HUMAN_REVIEW_RESULT";
+  source_reference?: string;
   requirement_id: string;
   name: string;
   authority: string;
   category: string;
   jurisdiction: string;
-  status: ApplicabilityStatus;
+  status: WorkspaceRequirementStatus;
   matched_rule_id?: string | null;
   matched_rule_type?: string | null;
   evidence_count: number;
@@ -672,6 +688,9 @@ export interface RuleEvaluationTrace {
 }
 
 export interface RequirementDetail {
+  user_action_required?: boolean;
+  admin_disposition?: string;
+  review_reason?: string;
   requirement_id: string;
   name: string;
   authority: string;
@@ -679,7 +698,7 @@ export interface RequirementDetail {
   jurisdiction: string;
   domain: string;
   description: string;
-  status: ApplicabilityStatus;
+  status: WorkspaceRequirementStatus;
   /** False when no decision run has covered this requirement yet. */
   evaluated: boolean;
   evaluation_date: string | null;
@@ -773,6 +792,7 @@ export interface WorkflowStep {
 }
 
 export interface WorkflowItem {
+  result_origin?: "DETERMINISTIC_KB_RESULT" | "LLM_FALLBACK_RESULT" | "HUMAN_REVIEW_RESULT";
   id: string;
   requirement_id?: string;
   case_id?: string | null;
@@ -1198,6 +1218,7 @@ export interface CalendarEvent {
 
 export interface SchemeItem {
   id: string;
+  result_origin?: "DETERMINISTIC_KB_RESULT" | "LLM_FALLBACK_RESULT" | "HUMAN_REVIEW_RESULT";
   scheme_code?: string;
   title: string;
   name?: string;
@@ -1293,6 +1314,12 @@ export interface SchemePipelineStatus {
  * scopes and testing parameters are not ingested, so they are not fields here.
  */
 export interface StandardItem {
+  source_reference?: string;
+  source_url?: string | null;
+  why_it_matters?: string;
+  is_mandatory?: boolean | null;
+  rule_version_id?: string | null;
+  result_origin?: "DETERMINISTIC_KB_RESULT" | "LLM_FALLBACK_RESULT" | "HUMAN_REVIEW_RESULT";
   requirement_id: string;
   title: string;
   authority: string;

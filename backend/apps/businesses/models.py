@@ -63,7 +63,7 @@ class Business(BaseModel):
         """Single place that answers "may this user see this business?"."""
         if not user or not user.is_authenticated:
             return False
-        if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
+        if getattr(user, "is_compliance_officer", False):
             return True
         if self.owner_id == user.id:
             return True
@@ -74,7 +74,7 @@ class Business(BaseModel):
         """Queryset scoped to a user. Staff and superusers have platform-wide access."""
         if not user or not user.is_authenticated:
             return cls.objects.none()
-        if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
+        if getattr(user, "is_compliance_officer", False):
             qs = cls.objects.all()
         else:
             qs = cls.objects.filter(
@@ -88,7 +88,9 @@ class Business(BaseModel):
     def resolve_safely(cls, business_id: Any, user=None) -> Business | None:
         """Robustly resolve a business by UUID, string ID, slug, or active workspace strictly respecting tenancy."""
         is_auth = user and getattr(user, "is_authenticated", False)
-        is_staff = user and (getattr(user, "is_staff", False) or getattr(user, "is_superuser", False))
+        is_staff = user and (getattr(user, "is_compliance_officer", False))
+        if not is_auth:
+            return None
 
         if not business_id:
             if is_auth:
@@ -117,7 +119,7 @@ class Business(BaseModel):
             try:
                 from .models import UserWorkspaceState
                 ws = UserWorkspaceState.objects.filter(user=user).first()
-                if ws and ws.active_business:
+                if ws and ws.active_business and ws.active_business.is_accessible_by(user):
                     return ws.active_business
                 return cls.accessible_to(user).order_by("-created_at").first()
             except Exception:
@@ -312,6 +314,17 @@ class BusinessProfileVersion(AppendOnlyModel):
         return super().save(*args, **kwargs)
 
 
+class WorkspaceGuidance(BaseModel):
+    """Contextual interpretation, separate from authoritative rule decisions."""
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="workspace_guidance")
+    assessment = models.OneToOneField("Assessment", on_delete=models.CASCADE, related_name="guidance")
+    profile_version = models.ForeignKey(BusinessProfileVersion, on_delete=models.PROTECT)
+    payload = models.JSONField(default=dict)
+    generation_key = models.CharField(max_length=64)
+    provider_metadata = models.JSONField(default=dict)
+
+
 class Assessment(BaseModel):
     """An assessment session/version for a business.
 
@@ -484,9 +497,8 @@ class UserWorkspaceState(models.Model):
         if not user or not user.is_authenticated:
             raise PermissionError("User is not authenticated.")
 
-        ws = cls.objects.select_related("active_business", "active_assessment").filter(user=user).first()
-        if not ws:
-            ws = cls.objects.create(user=user)
+        # Concurrent login/profile restoration must share one workspace record.
+        ws, _ = cls.objects.select_related("active_business", "active_assessment").get_or_create(user=user)
 
         # 1. Validate currently stored active_assessment
         if ws.active_assessment:

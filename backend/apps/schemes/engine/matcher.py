@@ -115,10 +115,6 @@ def match_business_schemes(
     if context is None:
         context = build_business_context(business)
 
-    # Ensure pipeline database has records; auto-run once if empty
-    if Scheme.objects.count() == 0:
-        SchemePipelineService().run_pipeline(force=True)
-
     raw_state = (context.state or "").upper()
     state_code = "MH" if raw_state in ["MH", "MAHARASHTRA"] else ("GJ" if raw_state in ["GJ", "GUJARAT"] else raw_state)
     state_name = context.state_name or ("Maharashtra" if state_code == "MH" else ("Gujarat" if state_code == "GJ" else state_code))

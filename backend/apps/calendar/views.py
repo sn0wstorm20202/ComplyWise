@@ -25,6 +25,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from common.permissions import IsComplianceReviewer
 from common.envelope import envelope, error_response
 from apps.businesses.models import Business
 from apps.calendar.models import (
@@ -560,7 +561,7 @@ class CaseDeadlinesListView(APIView):
 class AdminCaseDeadlinesView(APIView):
     """Admin compliance deadline management for a case (§18, §19, §21)."""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsComplianceReviewer]
 
     def get(self, request: Request, case_id) -> Response:
         from apps.calendar.models import Deadline
@@ -639,7 +640,7 @@ class AdminCaseDeadlinesView(APIView):
 class AdminDeadlineDetailView(APIView):
     """Admin update or cancel a deadline (§18, §19)."""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsComplianceReviewer]
 
     def patch(self, request: Request, deadline_id) -> Response:
         from apps.calendar.models import Deadline
@@ -721,7 +722,7 @@ class AdminDeadlineDetailView(APIView):
 class AdminDeadlineSendAlertView(APIView):
     """Trigger immediate multi-channel alert dispatch for a deadline (§18, §21)."""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request, deadline_id) -> Response:
         from apps.calendar.models import Deadline

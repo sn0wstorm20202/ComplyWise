@@ -352,7 +352,7 @@ class BusinessAssessmentListCreateView(_BusinessScopedView):
         # when the frontend retries or the onboarding flow restarts.
         # Pass ?force_new=true to bypass this guard and create a new assessment.
         force_new = request.query_params.get("force_new") == "true" or request.data.get("force_new") is True
-        if not force_new:
+        if not force_new and not request.data.get("title"):
             existing = (
                 business.assessments
                 .filter(status=AssessmentStatus.IN_PROGRESS)
@@ -362,7 +362,7 @@ class BusinessAssessmentListCreateView(_BusinessScopedView):
             if existing is not None:
                 # Only reuse if no orchestration run has started (stage_metadata is empty
                 # or only has initial profile data — not a fully-committed run)
-                stage_keys = set((existing.stage_metadata or {}).keys())
+                stage_keys = set(((existing.step_state or {}).get("stage_metadata", {})).keys())
                 heavy_stages = {"compliance_synthesis", "regulatory_discovery", "answer_interpretation"}
                 if not stage_keys.intersection(heavy_stages):
                     return Response(

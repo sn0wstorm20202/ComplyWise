@@ -63,7 +63,7 @@ class AdminLoginView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
 
-        if not (user.is_staff or user.is_superuser):
+        if not user.is_compliance_officer:
             return Response(
                 {"error": {"code": "FORBIDDEN", "message": "Access denied: Compliance Officer or Administrator credentials required."}},
                 status=status.HTTP_403_FORBIDDEN,

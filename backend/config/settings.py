@@ -321,7 +321,7 @@ DOCUMENT_MAX_UPLOAD_BYTES = int(os.getenv("DOCUMENT_MAX_UPLOAD_BYTES", str(20 * 
 # ---------------------------------------------------------------------------
 
 #: Active provider for text generation: gemini | openai | grok.
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini")
 #: Active provider for embeddings: gemini | openai. (xAI has no embeddings API.)
 EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "openai")
 
@@ -330,6 +330,19 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+# Optional ordered pool; the existing single-key setting remains supported.
+# Numbered environment entries are discovered dynamically, never capped at N.
+_gemini_slots = sorted(
+    (int(name[len(prefix):]), value)
+    for name, value in os.environ.items()
+    for prefix in ("GEMINI_API_KEY_", "GEMINI_API")
+    if name.startswith(prefix) and name[len(prefix):].isdigit() and value.strip()
+)
+GEMINI_API_KEYS = list(dict.fromkeys(
+    key.strip() for key in [*os.getenv("GEMINI_API_KEYS", "").split(","),
+                           *(value for _, value in _gemini_slots)] if key.strip()
+))
+GEMINI_KEY_COOLDOWN_SECONDS = int(os.getenv("GEMINI_KEY_COOLDOWN_SECONDS", "60"))
 # Defaults must be models a freshly-issued AI Studio key can actually call
 # (verified live 2026-03: gemini-2.5-pro/gemini-2.5-flash answer HTTP 404 for new
 # accounts and text-embedding-004 is retired; gemini-3.1-flash-lite and
@@ -357,7 +370,9 @@ ASSESSMENT_STRATEGY = os.getenv("ASSESSMENT_STRATEGY", "LLM_FIRST").strip().uppe
 
 # Server-side only. Never sent to the frontend and never included in an API
 # response: this key is billable and grants crawling on our account (§13).
-FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY", "")
+SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY", "") or os.getenv("SERP_API", "")
+SEARCH_TIMEOUT_SECONDS = int(os.getenv("SEARCH_TIMEOUT_SECONDS", "20"))
+ACQUISITION_TIMEOUT_SECONDS = int(os.getenv("ACQUISITION_TIMEOUT_SECONDS", "30"))
 
 # Discovery orchestration bounds (apps/ingestion). Discovery is OPTIONAL: without
 # a key the app runs in knowledge-only mode and reports discovery as unavailable.
@@ -373,6 +388,10 @@ DISCOVERY_TRUSTED_HOST_SUFFIXES = env_list(
 # ---------------------------------------------------------------------------
 # Knowledge layer
 # ---------------------------------------------------------------------------
+
+# Existing deployed retrieval service; backend-only and optional.
+COMPLIANCERAG_URL = os.getenv("COMPLIANCERAG_URL", "").strip().rstrip("/")
+COMPLIANCERAG_TIMEOUT_SECONDS = int(os.getenv("COMPLIANCERAG_TIMEOUT_SECONDS", "8"))
 
 KNOWLEDGE_PACKS_DIR = Path(os.getenv("KNOWLEDGE_PACKS_DIR", BASE_DIR / "knowledge_packs"))
 
@@ -440,3 +459,9 @@ LOGGING = {
         "complywise": {"level": os.getenv("LOG_LEVEL", "INFO"), "handlers": ["console"], "propagate": False},
     },
 }
+
+# Google sign-in (separate from Calendar authorization).
+GOOGLE_AUTH_CLIENT_ID = os.getenv("GOOGLE_AUTH_CLIENT_ID", "").strip()
+GOOGLE_AUTH_CLIENT_SECRET = os.getenv("GOOGLE_AUTH_CLIENT_SECRET", "").strip()
+GOOGLE_AUTH_REDIRECT_URI = os.getenv("GOOGLE_AUTH_REDIRECT_URI", "http://127.0.0.1:8000/api/v1/auth/google/callback").strip()
+GOOGLE_AUTH_FRONTEND_CALLBACK_URL = os.getenv("GOOGLE_AUTH_FRONTEND_CALLBACK_URL", "http://localhost:3000/auth/google/callback").strip()

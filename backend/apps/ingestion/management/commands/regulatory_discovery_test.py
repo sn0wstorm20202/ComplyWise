@@ -71,7 +71,7 @@ class Command(BaseCommand):
         self.stdout.write(f"  - Matched Terms:   {', '.join(coverage['activity_terms_matched'] or ['None'])}")
 
         # 3. Dynamic Discovery Execution
-        self.stdout.write(self.style.SUCCESS("\n[3] Executing Regulatory Discovery (Firecrawl):"))
+        self.stdout.write(self.style.SUCCESS("\n[3] Executing Regulatory Discovery (SerpApi / Crawlee):"))
         discovery_res = run_discovery(business, force_refresh=force, max_scrape=max_scrape)
         self.stdout.write(f"  - Status:          {discovery_res.get('status')}")
         self.stdout.write(f"  - Cached Run:      {discovery_res.get('cached', False)}")

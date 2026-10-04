@@ -1,0 +1,27 @@
+[
+  {
+    "name": "static_html",
+    "url": "https://www.bis.gov.in/?lang=en",
+    "browser": false
+  },
+  {
+    "name": "official_pdf",
+    "url": "https://msmedi-chennai.gov.in/GARMS_Admin/basictools/images/MSME%20GazetteNotification-S.O-no-1364-E-dated-21.03.2025-Revised-Definition.pdf",
+    "browser": false
+  },
+  {
+    "name": "failed_source",
+    "url": "https://www.bis.gov.in/complywise-missing-probe-2026",
+    "browser": false
+  },
+  {
+    "name": "unofficial_destination",
+    "url": "https://example.com",
+    "browser": false
+  },
+  {
+    "name": "js_official_page",
+    "url": "https://www.crsbis.in/BIS/products-bis.do",
+    "browser": true
+  }
+]

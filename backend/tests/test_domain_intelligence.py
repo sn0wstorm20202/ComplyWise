@@ -61,7 +61,7 @@ def food_business(db, make_business, user):
             "domain": "FOOD_PROCESSING",
             "category": "LICENCE",
             "status": KnowledgeStatus.PUBLISHED,
-            "metadata": {"renewal_period_years": 1, "portal": "FoSCoS"},
+            "metadata": {"renewal_period_years": 1, "portal": "FoSCoS", "required_documents": ["Synthetic Food Safety Plan", "Synthetic Layout"]},
         },
     )
     RequirementDefinition.objects.get_or_create(
@@ -208,29 +208,21 @@ def test_scheme_discovery_sector_and_state(food_business, precision_business):
     """Schemes must match sector (Food vs Automotive) and jurisdiction (Maharashtra vs Odisha)."""
     food_schemes = discover_business_schemes(food_business)
     assert food_schemes["available"] is True
-    assert food_schemes["total_schemes_found"] > 0
-
-    food_titles = [s["title"] for s in food_schemes["schemes"]]
-    assert any("PMFME" in t or "Maharashtra" in t or "CGTMSE" in t for t in food_titles)
-
+    # No recorded scheme versions exist in this fixture: never populate with a static catalogue.
+    assert food_schemes["schemes"] == []
     precision_schemes = discover_business_schemes(precision_business)
     assert precision_schemes["available"] is True
-    assert precision_schemes["total_schemes_found"] > 0
-
-    precision_titles = [s["title"] for s in precision_schemes["schemes"]]
-    assert any("ZED" in t or "Odisha" in t or "CGTMSE" in t for t in precision_titles)
+    assert precision_schemes["schemes"] == []
 
 
 @pytest.mark.django_db
 def test_standards_discovery(food_business, precision_business):
     """Standards discovery must match IS 2491/ISO 22000 for food and IATF/IS 1367 for machining."""
     food_stds = discover_business_standards(food_business)
-    food_codes = [s["standard_code"] for s in food_stds["standards"]]
-    assert any("2491" in c or "22000" in c or "10500" in c for c in food_codes)
-
     machining_stds = discover_business_standards(precision_business)
-    machining_codes = [s["standard_code"] for s in machining_stds["standards"]]
-    assert any("16949" in c or "1367" in c or "9001" in c for c in machining_codes)
+    # These saved decisions contain no STANDARD requirement with verified evidence.
+    assert food_stds["standards"] == []
+    assert machining_stds["standards"] == []
 
 
 @pytest.mark.django_db
@@ -262,8 +254,7 @@ def test_smart_question_planner_targets_dynamic_questions(food_business):
     plan_res = plan_adaptive_smart_questions(food_business)
     assert "questions" in plan_res
     questions = plan_res["questions"]
-    assert len(questions) >= 5
-    assert len(questions) <= 20
+    assert 1 <= len(questions) <= 5
     q_keys = [q["variable_key"] for q in questions]
     assert len(q_keys) == len(set(q_keys)), "Question keys must be unique"
     assert all("question_text" in q and "why_it_matters" in q for q in questions)
@@ -285,5 +276,7 @@ def test_business_aware_assistant(food_business):
     # Verify mock provider received the business-aware prompt
     call_args = mock_provider.complete.call_args[0][0]
     sys_msg = next(m.content for m in call_args if m.role == "system")
-    assert food_business.name in sys_msg
-    assert "CENTRAL_FSSAI_STATE_LICENSE" in sys_msg
+    combined = " ".join(m.content for m in call_args)
+    assert food_business.name in combined
+    assert "Processing dehydrated" in combined
+    assert res["citations"] == []

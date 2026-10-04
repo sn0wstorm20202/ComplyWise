@@ -1,0 +1,91 @@
+flowchart TD
+  Browser[Next.js 16 React authenticated workspace] --> API[Django 6 DRF tenant scoped API]
+  API --> Auth[Password token auth / configured Google OAuth PKCE handoff]
+  Auth --> Business[Business + membership + editable starter profile]
+  Business --> Profile[Immutable BusinessProfileVersion]
+  Profile --> Assessment[Assessment reuse under business lock]
+  Assessment --> Orchestrator[AssessmentOrchestrator / LLMFirstStrategy / completion facade]
+  Orchestrator --> Understand[Business understanding]
+  Understand --> Known[Requested assessment snapshot / description / saved answers / canonical aliases]
+  Known --> RuleGaps[Published rule AST missing facts / contextual source discovery gaps]
+  Knowledge --> RuleGaps
+  RuleGaps --> QuestionPolicy[question_policy v4: identity dedup / known False and zero preserved / impact ranking]
+  QuestionPolicy --> Questions[Saved assessment scoped plan: zero to five questions / deferred gaps]
+  StarterSuggestions[Editable starter suggestions / not confirmed facts] --> Questions
+  Questions --> Answers[Validated confirmed answers / selected snapshot only / HP unit]
+  Answers --> Context[Canonical enriched context]
+  Context --> Remote[Existing ComplianceRAG POST retrieval/search]
+  Remote --> Filter[Validate metadata / official source / jurisdiction]
+  Filter --> Retrieved[External excerpts retained as context]
+  Remote -->|empty or failed| Available[Business facts + persisted context]
+  Context --> Query[RegulatoryQueryPlanner]
+  Query --> Search[SerpApi Google search.json / SEARCH_API]
+  Search --> URLs[Candidate URLs: snippets are not evidence]
+  URLs --> Policy[Official domain + DNS + redirects + destination checks]
+  Policy --> Crawlee[Crawlee 1.7.2 acquisition router]
+  Crawlee --> HTTP[HttpCrawler HTTPX / CRAWLEE_HTTP]
+  HTTP -->|thin HTML only / remaining budget| BrowserAcquire[PlaywrightCrawler Chromium / CRAWLEE_BROWSER]
+  Crawlee -->|explicit browser| BrowserAcquire
+  HTTP --> Capture[Validate MIME / text / blocked pages / title / hashes]
+  BrowserAcquire --> Capture
+  Capture --> Persisted[Source + RetrievedDocument / normalized text + capture metadata]
+  Crawlee -->|failure| Recovery[Same profile persisted capture recovery]
+  Recovery --> Available
+  Persisted --> Extract[LLM extraction: exact quotes / supported procedure detail]
+  Extract --> Quarantine[CandidateRequirement + UNVERIFIED Evidence]
+  Quarantine --> Review[Authorized reviewer / AST validation / audit]
+  Review --> Knowledge[Published RequirementDefinition + RuleVersion + VERIFIED Evidence]
+  Knowledge --> Local[Preserved verified evidence token overlap retrieval]
+  Local --> Coverage{Sufficient published rule coverage?}
+  Coverage -->|yes| Engine[Deterministic AST applicability / jurisdiction / evidence / precedence]
+  Coverage -->|insufficient or partial| Guidance[Structured contextual LLM guidance]
+  Profile --> Engine
+  Engine --> Decisions[DecisionRun + DecisionResult]
+  Retrieved --> Guidance
+  Persisted --> Guidance
+  Available --> Guidance
+  Decisions --> Guidance
+  Decisions --> Workspace[Normal assessment workspace]
+  Guidance --> Schema[Schema + evidence constraints validated inside provider attempts]
+  Schema --> Saved[WorkspaceGuidance / LLM_FALLBACK_RESULT / no legal publication]
+  Saved --> Workspace
+  Review --> Reevaluate[Reevaluate linked assessments on publication]
+  Reevaluate --> Decisions
+  Workspace --> Compliance[Compliance: decisions + contextual suggestions]
+  Workspace --> Documents[Preparation checklist / real versioned uploads / human review]
+  Workspace --> Workflow[Persisted steps / cases / reviewer treatment]
+  Workspace --> Support[Recorded schemes + contextual support / standards + quality planning]
+  Workspace --> Dates[Calendar / alerts only from recorded dates]
+  Workspace --> Dashboard[Data driven metrics / actions / no made up readiness]
+  Workspace --> DB[(Runtime PostgreSQL / assessment scope / tenant permissions)]
+  Auth --> WorkspaceState[Race safe UserWorkspaceState get_or_create / business selection]
+  WorkspaceState --> Workspace
+  Persisted --> DB
+  Decisions --> DB
+  Saved --> DB
+
+  Understand --> Providers[Existing LLM provider registry]
+  Questions --> Providers
+  Extract --> Providers
+  Guidance --> Providers
+  Providers --> Pool[Gemini primary / healthy round robin cursor / process local cooldown]
+  Pool -->|request starts at next eligible slot| G1[Gemini Provider 1]
+  Pool -->|request starts at next eligible slot| G2[Gemini Provider 2]
+  Pool -->|request starts at next eligible slot| G3[Gemini Provider 3]
+  G1 -->|failure or quota / next eligible| G2
+  G2 -->|failure or quota / next eligible| G3
+  G3 -->|failure / untried eligible slots in bounded rotated order| Remaining[Finish each eligible Gemini slot once]
+  Remaining -->|all unavailable or exhausted| OpenAI[OpenAI final fallback / reverse loop disabled]
+  G1 --> Valid[Validated completion returned to application]
+  G2 --> Valid
+  G3 --> Valid
+  OpenAI --> Valid
+  OpenAI -->|failure| Error[Controlled final failure / inputs retained / retry]
+  Error -->|understanding only| Heuristic[Local description heuristic / no invented geography or legal applicability]
+  Providers --> Telemetry[Safe provider / slot / model / attempt / latency / token / failure telemetry]
+  Valid --> Orchestrator
+  API --> Admin[Superuser atomic user and business creation / same starter selector]
+  Admin --> Business
+  API --> CaseReview[Assigned reviewer operational decisions / saved audit]
+  CaseReview --> Workflow
+  Embedding[Existing embedding interfaces + pgvector extension] -. no local vector index implied .-> Local

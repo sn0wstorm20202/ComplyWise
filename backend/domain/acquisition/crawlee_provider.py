@@ -1,259 +1,220 @@
-"""Crawlee Web Acquisition Provider for ComplyWise.
+"""Official-source Crawlee acquisition with explicit HTTP/browser modes.
 
-Authority: Implementation Prompt §14; Audit Instruction §16; TRD_v2.0 §11A.
-
-Guarantees:
-1. Implements BaseWebAcquisitionLayer using Crawlee Python.
-2. Supports fast HTTP crawling for simple pages and PlaywrightCrawler when browser rendering is requested.
-3. Normalizes all crawled content into WebAcquisitionResult.
-4. Robust asyncio management that handles both sync and async Django thread contexts.
+Crawlee owns fetching; SerpApi owns discovery. Captures never publish rules.
 """
-
 from __future__ import annotations
 
 import asyncio
 import concurrent.futures
-from datetime import datetime, timezone
 import hashlib
-import logging
+import html
+import io
+import ipaddress
 import re
-import urllib.request
-from typing import Any
+import socket
+import time
+import uuid
+from datetime import datetime, timezone, timedelta
 from urllib.parse import urljoin, urlparse
+from typing import Any
 
-from .base import (
-    AcquisitionError,
-    AcquisitionRateLimited,
-    AcquisitionTimeout,
-    BaseWebAcquisitionLayer,
-    WebAcquisitionResult,
-)
+from django.conf import settings
+from .base import AcquisitionError, BaseWebAcquisitionLayer, WebAcquisitionResult
 
-logger = logging.getLogger(__name__)
-
-DEFAULT_TIMEOUT_SECONDS = 30
 MAX_CONTENT_CHARS = 50000
+MAX_BYTES = 5_000_000
 
 
-def _clean_text(html: str) -> str:
-    """Extract readable text from HTML markup without heavy third-party parsers."""
-    if not html:
-        return ""
-    text = re.sub(r"<(script|style|nav|footer|header|iframe|noscript)[^>]*>.*?</\1>", " ", html, flags=re.DOTALL | re.IGNORECASE)
-    text = re.sub(r"<[^>]+>", " ", text)
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()[:MAX_CONTENT_CHARS]
+def validate_destination(url: str, *, official: bool = True) -> None:
+    from domain.intelligence.official_sources import is_primary_official_source
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username or parsed.password:
+        raise AcquisitionError("Rejected destination URL.")
+    if parsed.port not in {None, 80, 443}:
+        raise AcquisitionError("Rejected destination port.")
+    if official and not is_primary_official_source(url):
+        raise AcquisitionError("Rejected unofficial source or redirect.")
+    try:
+        addresses = socket.getaddrinfo(parsed.hostname, parsed.port or (443 if parsed.scheme == "https" else 80))
+    except OSError:
+        raise AcquisitionError("Source DNS resolution failed.") from None
+    if not addresses or any(not ipaddress.ip_address(row[4][0]).is_global for row in addresses):
+        raise AcquisitionError("Rejected private or reserved destination.")
 
 
-def _extract_title(html: str) -> str:
-    match = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    return ""
+def _clean_text(markup: str) -> str:
+    markup = re.sub(r"<(script|style|nav|footer|header|iframe|noscript)[^>]*>.*?</\1>", " ", markup, flags=re.S | re.I)
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", markup))).strip()[:MAX_CONTENT_CHARS]
 
 
-def _extract_links(html: str, base_url: str) -> list[str]:
-    links = []
-    for match in re.finditer(r'href=["\'](.*?)["\']', html, re.IGNORECASE):
-        href = match.group(1).strip()
-        if href and not href.startswith(("#", "javascript:", "mailto:", "tel:")):
-            resolved = urljoin(base_url, href)
-            if resolved.startswith(("http://", "https://")):
-                links.append(resolved)
-    # Deduplicate while preserving order
-    seen = set()
-    deduped = []
-    for link in links:
-        if link not in seen:
-            seen.add(link)
-            deduped.append(link)
-    return deduped[:25]
+def _extract_title(markup: str) -> str:
+    match = re.search(r"<title[^>]*>(.*?)</title>", markup, re.S | re.I)
+    return _clean_text(match.group(1)) if match else ""
+
+
+def _extract_links(markup: str, base_url: str) -> list[str]:
+    return list(dict.fromkeys(urljoin(base_url, link) for link in re.findall(r"href=[\"'](.*?)[\"']", markup, re.I)
+                            if link and not link.startswith(("#", "javascript:", "mailto:", "tel:"))))[:25]
+
+
+def normalize_capture(url, final_url, body, mime, status, *, mode, metadata=None):
+    if not 200 <= status < 300:
+        raise AcquisitionError(f"Source returned HTTP {status}.")
+    if not body or len(body) > MAX_BYTES:
+        raise AcquisitionError("Source was empty or exceeded the capture byte limit.")
+    metadata = dict(metadata or {})
+    metadata.update(raw_content_hash=hashlib.sha256(body).hexdigest(), content_length_bytes=len(body), mime_type=mime)
+    if body.startswith(b"%PDF") or mime == "application/pdf":
+        from pypdf import PdfReader
+        try:
+            reader = PdfReader(io.BytesIO(body))
+            if len(reader.pages) > 150:
+                raise AcquisitionError("PDF exceeded page limit.")
+            text = "\n".join(page.extract_text() or "" for page in reader.pages)[:MAX_CONTENT_CHARS]
+            title = str((reader.metadata or {}).get("/Title") or "")
+        except AcquisitionError:
+            raise
+        except Exception:
+            raise AcquisitionError("PDF parsing failed; no usable capture.") from None
+        mime = "application/pdf"
+    elif mime in {"text/html", "application/xhtml+xml", "text/plain"}:
+        markup = body.decode("utf-8", errors="replace")
+        title = _extract_title(markup)
+        text = _clean_text(markup)
+    else:
+        raise AcquisitionError("Unsupported source MIME type.")
+    if len(text.strip()) < 80:
+        raise AcquisitionError("Empty, boilerplate, or non-text source; review required.")
+    blocked = ("access denied", "captcha", "just a moment", "sign in", "log in", "403 forbidden", "404 not found")
+    if any(word in title.casefold() for word in blocked) or (len(text) < 1500 and any(word in text.casefold() for word in blocked)):
+        raise AcquisitionError("Blocked, login, CAPTCHA, or error page rejected.")
+    metadata["normalized_text_hash"] = hashlib.sha256(text.encode()).hexdigest()
+    # Dates are retained only if supplied by the source; never guessed.
+    return WebAcquisitionResult(source_url=url, resolved_url=final_url, domain=urlparse(final_url).hostname or "",
+        title=title, retrieved_at=datetime.now(timezone.utc).isoformat(), http_status=status,
+        content_format=mime, content_hash=metadata["normalized_text_hash"], acquisition_engine=mode,
+        acquisition_tier="BROWSER" if mode == "CRAWLEE_BROWSER" else "HTTP", text_content=text,
+        markdown_content=text, crawl_metadata=metadata)
 
 
 class CrawleeAcquisitionProvider(BaseWebAcquisitionLayer):
-    """Web acquisition provider backed by Crawlee Python."""
-
-    def __init__(
-        self,
-        timeout: int = DEFAULT_TIMEOUT_SECONDS,
-        user_agent: str = "ComplyWise-Regulatory-Auditor/2.0 (Statutory Compliance Verification)",
-    ) -> None:
-        self.timeout = timeout
+    def __init__(self, timeout=None, user_agent="ComplyWise/2.0 Regulatory Research"):
+        self.timeout = timeout or getattr(settings, "ACQUISITION_TIMEOUT_SECONDS", 30)
         self.user_agent = user_agent
 
-    def fetch_page(
-        self,
-        url: str,
-        context: dict[str, Any] | None = None,
-    ) -> WebAcquisitionResult:
-        """Fetch a single URL using Crawlee or resilient HTTP fallback."""
-        ctx = context or {}
-        use_browser = ctx.get("use_browser", False)
-        retrieved_at = datetime.now(timezone.utc).isoformat()
-        domain = urlparse(url).netloc.lower()
-
+    def fetch_page(self, url, context=None):
+        started = time.perf_counter()
         try:
-            return self._fetch_via_crawlee(url, use_browser=use_browser)
+            validate_destination(url)
+            use_browser = bool((context or {}).get("use_browser"))
+            try:
+                result = self._fetch_via_crawlee(url, use_browser=use_browser)
+            except AcquisitionError as exc:
+                # A thin HTML shell can require rendering. Do not retry blocked,
+                # authentication, destination or timeout failures in a browser.
+                elapsed = time.perf_counter() - started
+                if use_browser or "Empty, boilerplate, or non-text source" not in str(exc) or elapsed >= self.timeout - 3:
+                    raise
+                browser_provider = CrawleeAcquisitionProvider(timeout=max(3, self.timeout - elapsed))
+                result = browser_provider._fetch_via_crawlee(url, use_browser=True)
+                result.crawl_metadata["render_reason"] = "HTTP_THIN_CONTENT"
+
+            result.crawl_metadata["latency_ms"] = round((time.perf_counter() - started) * 1000, 2)
+            return result
         except Exception as exc:
-            logger.info("Crawlee async engine deferred (%s), executing direct HTTP acquisition for %s", exc, url)
-            return self._fetch_via_http(url)
+            # No hidden vendor/direct HTTP fallback. Persisted recovery is owned
+            # by discovery, which can still continue into contextual planning.
+            return WebAcquisitionResult(source_url=url, resolved_url=url, domain=urlparse(url).hostname or "",
+                title="", retrieved_at="", http_status=0, acquisition_engine="FAILED_ACQUISITION",
+                errors=[str(exc) if isinstance(exc, AcquisitionError) else f"Acquisition failed ({type(exc).__name__})."],
+                crawl_metadata={"latency_ms": round((time.perf_counter()-started)*1000, 2)})
 
-    def crawl(
-        self,
-        seed_urls: list[str],
-        max_depth: int = 1,
-        max_pages: int = 5,
-        context: dict[str, Any] | None = None,
-    ) -> list[WebAcquisitionResult]:
-        """Crawl from seed URLs and return evidence records."""
-        results: list[WebAcquisitionResult] = []
-        seen: set[str] = set()
-        queue: list[tuple[str, int]] = [(u, 0) for u in seed_urls]
-
+    def crawl(self, seed_urls, max_depth=1, max_pages=5, context=None):
+        # Links must pass the exact same destination policy as initial seeds.
+        queue = [(url, 0) for url in seed_urls]; seen = set(); results = []
         while queue and len(results) < max_pages:
-            current_url, depth = queue.pop(0)
-            if current_url in seen:
-                continue
-            seen.add(current_url)
-
-            result = self.fetch_page(current_url, context)
-            results.append(result)
-
-            if depth < max_depth and len(results) < max_pages:
-                for link in result.discovered_links:
-                    if link not in seen:
-                        queue.append((link, depth + 1))
-
+            url, depth = queue.pop(0)
+            if url in seen: continue
+            seen.add(url); result = self.fetch_page(url, context); results.append(result)
+            if not result.errors and depth < max_depth:
+                queue.extend((link, depth+1) for link in result.discovered_links if link not in seen)
         return results
 
-    def _fetch_via_crawlee(self, url: str, use_browser: bool = False) -> WebAcquisitionResult:
-        """Execute acquisition using Crawlee's BeautifulSoupCrawler or PlaywrightCrawler."""
+    def _fetch_via_crawlee(self, url, use_browser=False):
         try:
-            import crawlee
-            from crawlee.crawlers import BeautifulSoupCrawler
-        except ImportError as err:
-            raise AcquisitionError("crawlee is not installed") from err
+            from crawlee.crawlers import HttpCrawler, PlaywrightCrawler
+            from crawlee.http_clients import HttpxHttpClient
+            from crawlee.storage_clients import MemoryStorageClient
+            from crawlee.storages import RequestQueue
+        except ImportError:
+            raise AcquisitionError("Crawlee runtime is not installed.") from None
 
-        crawled_data: dict[str, Any] = {}
+        async def capture():
+            redirects = []; current = url
+            for hop in range(6):
+                validate_destination(current)
+                captured = {}
+                storage = MemoryStorageClient()
+                queue = await RequestQueue.open(name="capture-" + uuid.uuid4().hex, storage_client=storage)
+                options = dict(max_requests_per_crawl=1, max_request_retries=0, max_session_rotations=0,
+                    use_session_pool=False, retry_on_blocked=False, configure_logging=False,
+                    request_handler_timeout=timedelta(seconds=self.timeout), storage_client=storage, request_manager=queue)
+                if use_browser:
+                    crawler = PlaywrightCrawler(**options, headless=True, navigation_timeout=timedelta(seconds=self.timeout))
+                    @crawler.pre_navigation_hook
+                    async def guard(ctx):
+                        async def route_guard(route):
+                            try:
+                                validate_destination(route.request.url, official=route.request.is_navigation_request() and route.request.frame == ctx.page.main_frame)
+                            except (AcquisitionError, ValueError):
+                                await route.abort(); return
+                            await route.continue_()
+                        await ctx.page.route("**/*", route_guard)
+                else:
+                    # Disable automatic redirects: each hop is checked before fetching.
+                    crawler = HttpCrawler(**options, http_client=HttpxHttpClient(follow_redirects=False))
+                @crawler.router.default_handler
+                async def handler(ctx):
+                    if use_browser:
+                        body = (await ctx.page.content()).encode()
+                        response = ctx.response
+                        final = ctx.page.url
+                        validate_destination(final)
+                        request = response.request if response else None
+                        chain = []
+                        while request is not None:
+                            chain.append(request.url); request = request.redirected_from
+                        captured.update(body=body, mime="text/html", status=response.status if response else 0,
+                                        final=final, location="", browser_redirect_chain=list(reversed(chain)))
+                    else:
+                        headers = ctx.http_response.headers
+                        captured.update(body=await ctx.http_response.read(), mime=headers.get("content-type", "").split(";")[0].lower(),
+                                        status=ctx.http_response.status_code, final=ctx.request.loaded_url or current,
+                                        location=headers.get("location", ""), source_last_modified=headers.get("last-modified"))
+                try:
+                    await crawler.run([current])
+                finally:
+                    await queue.drop()
+                if not captured:
+                    raise AcquisitionError("Crawlee produced no usable capture; blocked or failed source.")
+                if not use_browser and 300 <= captured["status"] < 400 and captured["location"]:
+                    redirects.append(current); current = urljoin(current, captured["location"]); continue
+                validate_destination(captured["final"])
+                if urlparse(url).path.strip("/") and not urlparse(captured["final"]).path.strip("/"):
+                    raise AcquisitionError("Requested document redirected to an unrelated portal homepage.")
+                result = normalize_capture(url, captured["final"], captured["body"], captured["mime"], captured["status"],
+                    mode="CRAWLEE_BROWSER" if use_browser else "CRAWLEE_HTTP",
+                    metadata={"redirect_chain": captured.get("browser_redirect_chain") or [*redirects, captured["final"]],
+                              "source_last_modified": captured.get("source_last_modified"), "extractor_version": "cw-crawlee-1",
+                              "engine_version": "1.7.2", "http_backend": "httpx" if not use_browser else None})
+                if result.content_format == "text/html":
+                    result.discovered_links = _extract_links(captured["body"].decode("utf-8", errors="replace"), captured["final"])
+                return result
+            raise AcquisitionError("Source exceeded redirect limit.")
+        return self._run_async(asyncio.wait_for(capture(), timeout=self.timeout))
 
-        async def _run_crawlee() -> None:
-            crawler = BeautifulSoupCrawler(
-                max_requests_per_crawl=1,
-                request_handler_timeout=asyncio.timeout(self.timeout) if hasattr(asyncio, "timeout") else None,
-            )
-
-            @crawler.router.default_handler
-            async def request_handler(ctx: Any) -> None:
-                content = ctx.http_response.text if hasattr(ctx, "http_response") else ""
-                crawled_data["status"] = getattr(ctx.http_response, "status_code", 200)
-                crawled_data["text"] = _clean_text(content)
-                crawled_data["title"] = _extract_title(content)
-                crawled_data["links"] = _extract_links(content, url)
-                crawled_data["url"] = str(ctx.request.url)
-
-            await crawler.run([url])
-
-        # Safely run in new loop or thread to prevent conflict with running async loops
-        self._run_async(_run_crawlee())
-
-        if not crawled_data:
-            raise AcquisitionError(f"Crawlee produced no output for {url}")
-
-        retrieved_at = datetime.now(timezone.utc).isoformat()
-        text_content = crawled_data.get("text", "")
-        content_hash = hashlib.sha256(text_content.encode("utf-8")).hexdigest()
-
-        return WebAcquisitionResult(
-            source_url=url,
-            resolved_url=crawled_data.get("url", url),
-            domain=urlparse(url).netloc.lower(),
-            title=crawled_data.get("title", ""),
-            retrieved_at=retrieved_at,
-            http_status=crawled_data.get("status", 200),
-            content_format="text/html",
-            content_hash=content_hash,
-            acquisition_engine="crawlee",
-            acquisition_tier="BROWSER" if use_browser else "HTTP",
-            text_content=text_content,
-            markdown_content=text_content,
-            discovered_links=crawled_data.get("links", []),
-            crawl_metadata={
-                "crawler": "Crawlee/BeautifulSoupCrawler",
-                "engine_version": getattr(crawlee, "__version__", "1.10.2"),
-            },
-        )
-
-    def _fetch_via_http(self, url: str) -> WebAcquisitionResult:
-        """Fast HTTP fallback using urllib."""
-        retrieved_at = datetime.now(timezone.utc).isoformat()
-        domain = urlparse(url).netloc.lower()
-        req = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": self.user_agent,
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            },
-        )
-
-        try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as response:
-                status = response.status
-                resolved_url = response.geturl()
-                raw_bytes = response.read(MAX_CONTENT_CHARS * 2)
-                charset = response.headers.get_content_charset() or "utf-8"
-                html = raw_bytes.decode(charset, errors="replace")
-
-                text_content = _clean_text(html)
-                title = _extract_title(html)
-                links = _extract_links(html, resolved_url)
-                content_hash = hashlib.sha256(text_content.encode("utf-8")).hexdigest()
-
-                return WebAcquisitionResult(
-                    source_url=url,
-                    resolved_url=resolved_url,
-                    domain=urlparse(resolved_url).netloc.lower(),
-                    title=title,
-                    retrieved_at=retrieved_at,
-                    http_status=status,
-                    content_format="text/html",
-                    content_hash=content_hash,
-                    acquisition_engine="crawlee_http",
-                    acquisition_tier="HTTP",
-                    text_content=text_content,
-                    markdown_content=text_content,
-                    discovered_links=links,
-                    crawl_metadata={"method": "urllib.request", "timeout": self.timeout},
-                )
-        except urllib.error.HTTPError as exc:
-            return WebAcquisitionResult(
-                source_url=url,
-                resolved_url=url,
-                domain=domain,
-                title="",
-                retrieved_at=retrieved_at,
-                http_status=exc.code,
-                errors=[f"HTTP {exc.code}: {exc.reason}"],
-            )
-        except Exception as exc:
-            return WebAcquisitionResult(
-                source_url=url,
-                resolved_url=url,
-                domain=domain,
-                title="",
-                retrieved_at=retrieved_at,
-                http_status=500,
-                errors=[str(exc)],
-            )
-
-    def _run_async(self, coro_func: Any) -> Any:
-        """Run an async coroutine from sync context safely without event loop collision."""
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-
-        if loop and loop.is_running():
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                return pool.submit(asyncio.run, coro_func).result(timeout=self.timeout + 5)
-        else:
-            return asyncio.run(coro_func)
+    def _run_async(self, coroutine: Any):
+        try: asyncio.get_running_loop()
+        except RuntimeError: return asyncio.run(coroutine)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            return executor.submit(asyncio.run, coroutine).result(timeout=self.timeout + 2)

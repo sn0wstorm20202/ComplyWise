@@ -33,6 +33,7 @@ export interface WorkflowsAvailable {
 }
 
 export interface UpdateWorkflowStepPayload {
+  assessment_id?: string;
   workflow_id: string;
   step_number: number;
   status: "COMPLETED" | "IN_PROGRESS" | "NOT_STARTED" | string;

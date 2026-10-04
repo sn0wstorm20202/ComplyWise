@@ -1,4 +1,5 @@
 "use client";
+import Overlay from "@/components/product/Overlay";
 
 import React, { useState } from "react";
 import {
@@ -66,30 +67,30 @@ export function ComplianceView() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-1">
         <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-            <Folder className="h-3.5 w-3.5 text-slate-400" />
+          <div className="flex items-center gap-1.5 text-xs text-[var(--ui-muted)] font-medium">
+            <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
             <span>Home Page</span>
-            <ChevronRight className="h-3 w-3 text-slate-300" />
-            <Folder className="h-3.5 w-3.5 text-slate-400" />
-            <span className="text-slate-600 font-semibold">Compliance Matrix</span>
+            <ChevronRight className="h-3 w-3 text-[var(--ui-muted)]" />
+            <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
+            <span className="text-[var(--ui-secondary)] font-semibold">Compliance Matrix</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--ui-text)]">
             Statutory Compliance Matrix
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[var(--ui-secondary)]">
             Active mandates, mandatory Quality Control Orders (QCOs), and testing standards.
           </p>
         </div>
 
         {/* Filter Pills */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 p-1 rounded-full bg-slate-200/50">
+          <div className="flex items-center gap-1.5 p-1 rounded-full bg-[var(--ui-inset)]/50">
             <button
               onClick={() => setFilter("ALL")}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                 filter === "ALL"
-                  ? "bg-[#0f172a] text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-[var(--ui-text)] text-white shadow-xs"
+                  : "text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
               }`}
             >
               All (18)
@@ -98,8 +99,8 @@ export function ComplianceView() {
               onClick={() => setFilter("ACTION_NEEDED")}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                 filter === "ACTION_NEEDED"
-                  ? "bg-[#0f172a] text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-[var(--ui-text)] text-white shadow-xs"
+                  : "text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
               }`}
             >
               Action Required (3)
@@ -108,8 +109,8 @@ export function ComplianceView() {
               onClick={() => setFilter("COMPLIANT")}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                 filter === "COMPLIANT"
-                  ? "bg-[#0f172a] text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-[var(--ui-text)] text-white shadow-xs"
+                  : "text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
               }`}
             >
               Conforming (15)
@@ -176,20 +177,20 @@ function RequirementDetailModal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-[32px] max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200/80 space-y-6 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+    <Overlay open onClose={() => onClose()} title="Details">
+      <div className="bg-white rounded-[32px] max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-[var(--ui-border)]/80 space-y-6 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+        <div className="flex items-start justify-between border-b border-[var(--ui-border)] pb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-bold bg-[#0f172a] text-white px-2.5 py-0.5 rounded-full">
+              <span className="font-mono text-xs font-bold bg-[var(--ui-text)] text-white px-2.5 py-0.5 rounded-full">
                 {standard.code}
               </span>
-              <span className="text-xs font-semibold text-slate-500">
+              <span className="text-xs font-semibold text-[var(--ui-secondary)]">
                 {standard.authority}
               </span>
             </div>
-            <h2 className="text-lg font-bold text-slate-950 mt-1">
+            <h2 className="text-lg font-bold text-[var(--ui-text)] mt-1">
               {standard.title}
             </h2>
           </div>
@@ -197,7 +198,7 @@ function RequirementDetailModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
+            className="h-8 w-8 rounded-full bg-[var(--ui-inset)] hover:bg-[var(--ui-inset)] flex items-center justify-center text-[var(--ui-secondary)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -206,23 +207,23 @@ function RequirementDetailModal({
         {/* The 4 Canonical Pillars */}
         <div className="space-y-4 text-xs">
           {/* 1. Why does this apply? */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-1.5">
-            <div className="font-bold text-slate-900 flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-blue-600" />
+          <div className="p-4 rounded-2xl bg-[var(--ui-bg)] border border-[var(--ui-border)]/60 space-y-1.5">
+            <div className="font-bold text-[var(--ui-text)] flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-[var(--ui-text)]" />
               <span>1. Why does this apply to your business?</span>
             </div>
-            <p className="text-slate-600 leading-relaxed pl-3.5">
-              Evaluated by ComplyWise deterministic AST rule engine against your enterprise profile (Sector: Domestic Electrical Appliances, Turnover: ₹48.5 Cr, Manufacturing premises in Haryana). Rule ID: <code className="font-mono font-bold text-blue-900">RULE-BIS-ELEC-302</code>.
+            <p className="text-[var(--ui-secondary)] leading-relaxed pl-3.5">
+              Evaluated by ComplyWise deterministic AST rule engine against your enterprise profile (Sector: Domestic Electrical Appliances, Turnover: ₹48.5 Cr, Manufacturing premises in Haryana). Rule ID: <code className="font-mono font-bold text-[var(--ui-info)]">RULE-BIS-ELEC-302</code>.
             </p>
           </div>
 
           {/* 2. What do you need? */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-1.5">
-            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+          <div className="p-4 rounded-2xl bg-[var(--ui-bg)] border border-[var(--ui-border)]/60 space-y-1.5">
+            <div className="font-bold text-[var(--ui-text)] flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-amber-500" />
               <span>2. What documentation and evidence is required?</span>
             </div>
-            <ul className="list-disc list-inside space-y-1 text-slate-600 pl-3.5">
+            <ul className="list-disc list-inside space-y-1 text-[var(--ui-secondary)] pl-3.5">
               <li>NABL Accredited Laboratory Test Certificate for Clause 13.2 Endurance</li>
               <li>Calibrated test equipment calibration records (Traceable to NPL)</li>
               <li>Quarterly Quality Production Return (Form VI) with BIS Officer endorsement</li>
@@ -230,27 +231,27 @@ function RequirementDetailModal({
           </div>
 
           {/* 3. What to do next? */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-1.5">
-            <div className="font-bold text-slate-900 flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <div className="p-4 rounded-2xl bg-[var(--ui-bg)] border border-[var(--ui-border)]/60 space-y-1.5">
+            <div className="font-bold text-[var(--ui-text)] flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-[var(--ui-sage)]" />
               <span>3. What is the immediate next step?</span>
             </div>
-            <p className="text-slate-600 leading-relaxed pl-3.5">
-              Upload the sample dispatch slip to an empanelled NABL test facility before the statutory surveillance cycle deadline on <span className="font-bold text-slate-900">14 May 2026</span>.
+            <p className="text-[var(--ui-secondary)] leading-relaxed pl-3.5">
+              Upload the sample dispatch slip to an empanelled NABL test facility before the statutory surveillance cycle deadline on <span className="font-bold text-[var(--ui-text)]">14 May 2026</span>.
             </p>
           </div>
 
           {/* 4. Statutory Evidence Grounding */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-1.5">
-            <div className="font-bold text-slate-900 flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-purple-600" />
+          <div className="p-4 rounded-2xl bg-[var(--ui-bg)] border border-[var(--ui-border)]/60 space-y-1.5">
+            <div className="font-bold text-[var(--ui-text)] flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-[var(--ui-sage)]" />
               <span>4. Where did this requirement originate? (Statutory Citations)</span>
             </div>
-            <div className="pl-3.5 space-y-1 text-slate-600">
-              <div className="font-semibold text-slate-800">
+            <div className="pl-3.5 space-y-1 text-[var(--ui-secondary)]">
+              <div className="font-semibold text-[var(--ui-text)]">
                 Official Gazette Notification: S.O. 1421(E) dated 14 November 2024
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-[11px] text-[var(--ui-secondary)]">
                 Ministry of Consumer Affairs, Food & Public Distribution · Bureau of Indian Standards Act, 2016 (Section 16).
               </div>
             </div>
@@ -262,13 +263,13 @@ function RequirementDetailModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 rounded-full bg-[#0f172a] hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
+            className="px-5 py-2 rounded-full bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-white text-xs font-semibold transition-colors"
           >
             Close Requirement
           </button>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }
 
@@ -290,28 +291,28 @@ export function DocumentsView() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-1">
         <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-            <Folder className="h-3.5 w-3.5 text-slate-400" />
+          <div className="flex items-center gap-1.5 text-xs text-[var(--ui-muted)] font-medium">
+            <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
             <span>Home Page</span>
-            <ChevronRight className="h-3 w-3 text-slate-300" />
-            <Folder className="h-3.5 w-3.5 text-slate-400" />
-            <span className="text-slate-600 font-semibold">Documents & Evidence</span>
+            <ChevronRight className="h-3 w-3 text-[var(--ui-muted)]" />
+            <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
+            <span className="text-[var(--ui-secondary)] font-semibold">Documents & Evidence</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--ui-text)]">
             Statutory Documents & Evidence
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[var(--ui-secondary)]">
             11 entity proofs, laboratory test reports, and technical dossiers required for BIS clearance.
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 p-1 rounded-full bg-slate-200/50">
+        <div className="flex items-center gap-1.5 p-1 rounded-full bg-[var(--ui-inset)]/50">
           <button
             onClick={() => setDocFilter("ALL")}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
               docFilter === "ALL"
-                ? "bg-[#0f172a] text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-[var(--ui-text)] text-white shadow-xs"
+                : "text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
             }`}
           >
             All (11)
@@ -320,8 +321,8 @@ export function DocumentsView() {
             onClick={() => setDocFilter("VERIFIED")}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
               docFilter === "VERIFIED"
-                ? "bg-[#0f172a] text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-[var(--ui-text)] text-white shadow-xs"
+                : "text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
             }`}
           >
             Verified (8)
@@ -330,8 +331,8 @@ export function DocumentsView() {
             onClick={() => setDocFilter("NEEDS_REVIEW")}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
               docFilter === "NEEDS_REVIEW"
-                ? "bg-[#0f172a] text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-[var(--ui-text)] text-white shadow-xs"
+                : "text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
             }`}
           >
             Review (2)
@@ -340,8 +341,8 @@ export function DocumentsView() {
             onClick={() => setDocFilter("ISSUE")}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
               docFilter === "ISSUE"
-                ? "bg-[#0f172a] text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-[var(--ui-text)] text-white shadow-xs"
+                : "text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
             }`}
           >
             Issue (1)
@@ -366,17 +367,17 @@ export function WorkflowsView() {
   return (
     <div className="space-y-6 pb-6 select-none">
       <div className="space-y-1.5 pt-1">
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
+        <div className="flex items-center gap-1.5 text-xs text-[var(--ui-muted)] font-medium">
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
           <span>Home Page</span>
-          <ChevronRight className="h-3 w-3 text-slate-300" />
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
-          <span className="text-slate-600 font-semibold">Statutory Workflows</span>
+          <ChevronRight className="h-3 w-3 text-[var(--ui-muted)]" />
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
+          <span className="text-[var(--ui-secondary)] font-semibold">Statutory Workflows</span>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--ui-text)]">
           Statutory Approval Workflows
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[var(--ui-secondary)]">
           Multi-stage clearance progression, departmental scrutiny, and audit milestones.
         </p>
       </div>
@@ -397,17 +398,17 @@ export function CalendarView() {
   return (
     <div className="space-y-6 pb-6 select-none">
       <div className="space-y-1.5 pt-1">
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
+        <div className="flex items-center gap-1.5 text-xs text-[var(--ui-muted)] font-medium">
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
           <span>Home Page</span>
-          <ChevronRight className="h-3 w-3 text-slate-300" />
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
-          <span className="text-slate-600 font-semibold">Compliance Calendar</span>
+          <ChevronRight className="h-3 w-3 text-[var(--ui-muted)]" />
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
+          <span className="text-[var(--ui-secondary)] font-semibold">Compliance Calendar</span>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--ui-text)]">
           Statutory Filing Calendar
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[var(--ui-secondary)]">
           Statutory deadlines, periodic renewal cycles, and mandatory return filings.
         </p>
       </div>
@@ -428,17 +429,17 @@ export function StandardsView() {
   return (
     <div className="space-y-6 pb-6 select-none">
       <div className="space-y-1.5 pt-1">
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
+        <div className="flex items-center gap-1.5 text-xs text-[var(--ui-muted)] font-medium">
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
           <span>Home Page</span>
-          <ChevronRight className="h-3 w-3 text-slate-300" />
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
-          <span className="text-slate-600 font-semibold">Standards Catalogue</span>
+          <ChevronRight className="h-3 w-3 text-[var(--ui-muted)]" />
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
+          <span className="text-[var(--ui-secondary)] font-semibold">Standards Catalogue</span>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--ui-text)]">
           BIS & Indian Standards Repository
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[var(--ui-secondary)]">
           Catalogue of Indian Standards, mandatory testing clauses, and Scheme of Testing and Inspection (STI).
         </p>
       </div>
@@ -459,55 +460,55 @@ export function SchemesView() {
   return (
     <div className="space-y-6 pb-6 select-none">
       <div className="space-y-1.5 pt-1">
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
+        <div className="flex items-center gap-1.5 text-xs text-[var(--ui-muted)] font-medium">
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
           <span>Home Page</span>
-          <ChevronRight className="h-3 w-3 text-slate-300" />
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
-          <span className="text-slate-600 font-semibold">Schemes & Benefits</span>
+          <ChevronRight className="h-3 w-3 text-[var(--ui-muted)]" />
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
+          <span className="text-[var(--ui-secondary)] font-semibold">Schemes & Benefits</span>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--ui-text)]">
           Matched Government Schemes & Subsidies
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[var(--ui-secondary)]">
           Central & State MSME concessions, testing fee rebates, and capital investment subsidies.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-6 rounded-[28px] border border-emerald-200/80 bg-emerald-50/40 space-y-3 shadow-xs">
+        <div className="p-6 rounded-[28px] border border-[var(--ui-sage-soft)]/80 bg-[var(--ui-sage-faint)]/40 space-y-3 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="font-bold text-slate-950 text-sm">
+            <span className="font-bold text-[var(--ui-text)] text-sm">
               Ministry of MSME 80% Marking Fee Concession
             </span>
-            <span className="text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold uppercase bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] px-2.5 py-0.5 rounded-full">
               Active Subsidy
             </span>
           </div>
-          <p className="text-xs text-slate-600 leading-relaxed">
+          <p className="text-xs text-[var(--ui-secondary)] leading-relaxed">
             Registered Medium Enterprises with valid Udyam certificate (UDYAM-HR-05-0029182) are entitled to 80% rebate on annual BIS marking fees.
           </p>
-          <div className="pt-2 text-xs text-slate-500 flex items-center justify-between border-t border-emerald-100">
-            <span>Estimated Savings: <span className="font-bold text-slate-900">₹94,400 / yr</span></span>
-            <span className="text-emerald-700 font-semibold">Eligible & Applied</span>
+          <div className="pt-2 text-xs text-[var(--ui-secondary)] flex items-center justify-between border-t border-[var(--ui-sage-soft)]">
+            <span>Estimated Savings: <span className="font-bold text-[var(--ui-text)]">₹94,400 / yr</span></span>
+            <span className="text-[var(--ui-sage)] font-semibold">Eligible & Applied</span>
           </div>
         </div>
 
-        <div className="p-6 rounded-[28px] border border-slate-200/70 bg-white space-y-3 shadow-xs">
+        <div className="p-6 rounded-[28px] border border-[var(--ui-border)]/70 bg-white space-y-3 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="font-bold text-slate-950 text-sm">
+            <span className="font-bold text-[var(--ui-text)] text-sm">
               Scheme IV Simplified Certification for Green Units
             </span>
-            <span className="text-[10px] font-bold uppercase bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold uppercase bg-[var(--ui-info-soft)] text-[var(--ui-info)] px-2.5 py-0.5 rounded-full">
               Expedited Approval
             </span>
           </div>
-          <p className="text-xs text-slate-600 leading-relaxed">
+          <p className="text-xs text-[var(--ui-secondary)] leading-relaxed">
             Expedited 30-day factory inspection and license issuance for manufacturing units with ISO 14001 or state green consent.
           </p>
-          <div className="pt-2 text-xs text-slate-500 flex items-center justify-between border-t border-slate-100">
-            <span>Turnaround: <span className="font-bold text-slate-900">30 Days</span></span>
-            <span className="text-blue-700 font-semibold">Pre-Requisites Met</span>
+          <div className="pt-2 text-xs text-[var(--ui-secondary)] flex items-center justify-between border-t border-[var(--ui-border)]">
+            <span>Turnaround: <span className="font-bold text-[var(--ui-text)]">30 Days</span></span>
+            <span className="text-[var(--ui-info)] font-semibold">Pre-Requisites Met</span>
           </div>
         </div>
       </div>
@@ -522,17 +523,17 @@ export function UpdatesView() {
   return (
     <div className="space-y-6 pb-6 select-none">
       <div className="space-y-1.5 pt-1">
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
+        <div className="flex items-center gap-1.5 text-xs text-[var(--ui-muted)] font-medium">
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
           <span>Home Page</span>
-          <ChevronRight className="h-3 w-3 text-slate-300" />
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
-          <span className="text-slate-600 font-semibold">Regulatory Updates</span>
+          <ChevronRight className="h-3 w-3 text-[var(--ui-muted)]" />
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
+          <span className="text-[var(--ui-secondary)] font-semibold">Regulatory Updates</span>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--ui-text)]">
           Regulatory Updates & Gazette Monitor
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[var(--ui-secondary)]">
           Official Gazette of India notifications, Quality Control Orders, and BIS Technical Circulars.
         </p>
       </div>
@@ -553,17 +554,17 @@ export function AssistantView() {
   return (
     <div className="space-y-6 pb-6 select-none">
       <div className="space-y-1.5 pt-1">
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
+        <div className="flex items-center gap-1.5 text-xs text-[var(--ui-muted)] font-medium">
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
           <span>Home Page</span>
-          <ChevronRight className="h-3 w-3 text-slate-300" />
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
-          <span className="text-slate-600 font-semibold">AI Assistant</span>
+          <ChevronRight className="h-3 w-3 text-[var(--ui-muted)]" />
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
+          <span className="text-[var(--ui-secondary)] font-semibold">AI Assistant</span>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--ui-text)]">
           BIS Compliance Copilot
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[var(--ui-secondary)]">
           Intelligent retrieval engine grounded in Indian Standards clauses, DPIIT orders, and statutory gazettes.
         </p>
       </div>
@@ -580,64 +581,64 @@ export function ProfileView() {
   return (
     <div className="space-y-6 pb-6 select-none">
       <div className="space-y-1.5 pt-1">
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
+        <div className="flex items-center gap-1.5 text-xs text-[var(--ui-muted)] font-medium">
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
           <span>Home Page</span>
-          <ChevronRight className="h-3 w-3 text-slate-300" />
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
-          <span className="text-slate-600 font-semibold">Business Profile</span>
+          <ChevronRight className="h-3 w-3 text-[var(--ui-muted)]" />
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
+          <span className="text-[var(--ui-secondary)] font-semibold">Business Profile</span>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--ui-text)]">
           Enterprise Regulatory Profile
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[var(--ui-secondary)]">
           Statutory profile variables, manufacturing scale, and factory license credentials.
         </p>
       </div>
 
-      <div className="bg-white rounded-[28px] border border-slate-200/70 p-6 sm:p-8 space-y-6 shadow-xs">
+      <div className="bg-white rounded-[28px] border border-[var(--ui-border)]/70 p-6 sm:p-8 space-y-6 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
           <div className="space-y-1">
-            <span className="font-semibold text-slate-400 text-[11px] uppercase tracking-wider">
+            <span className="font-semibold text-[var(--ui-muted)] text-[11px] uppercase tracking-wider">
               Legal Business Name
             </span>
-            <div className="font-bold text-slate-900 text-base">
+            <div className="font-bold text-[var(--ui-text)] text-base">
               {companyInfo.name}
             </div>
           </div>
 
           <div className="space-y-1">
-            <span className="font-semibold text-slate-400 text-[11px] uppercase tracking-wider">
+            <span className="font-semibold text-[var(--ui-muted)] text-[11px] uppercase tracking-wider">
               BIS License Number (CM/L)
             </span>
-            <div className="font-mono font-bold text-blue-900 text-base">
+            <div className="font-mono font-bold text-[var(--ui-info)] text-base">
               {companyInfo.bisRegistration}
             </div>
           </div>
 
           <div className="space-y-1">
-            <span className="font-semibold text-slate-400 text-[11px] uppercase tracking-wider">
+            <span className="font-semibold text-[var(--ui-muted)] text-[11px] uppercase tracking-wider">
               Industrial Sector
             </span>
-            <div className="text-slate-800 font-medium text-sm">
+            <div className="text-[var(--ui-text)] font-medium text-sm">
               {companyInfo.sector}
             </div>
           </div>
 
           <div className="space-y-1">
-            <span className="font-semibold text-slate-400 text-[11px] uppercase tracking-wider">
+            <span className="font-semibold text-[var(--ui-muted)] text-[11px] uppercase tracking-wider">
               MSME Classification
             </span>
-            <div className="text-slate-800 font-medium text-sm">
+            <div className="text-[var(--ui-text)] font-medium text-sm">
               {companyInfo.scale}
             </div>
           </div>
 
-          <div className="md:col-span-2 space-y-1 pt-3 border-t border-slate-100">
-            <span className="font-semibold text-slate-400 text-[11px] uppercase tracking-wider">
+          <div className="md:col-span-2 space-y-1 pt-3 border-t border-[var(--ui-border)]">
+            <span className="font-semibold text-[var(--ui-muted)] text-[11px] uppercase tracking-wider">
               Manufacturing Premises Address
             </span>
-            <div className="text-slate-800 font-medium text-sm">
+            <div className="text-[var(--ui-text)] font-medium text-sm">
               {companyInfo.location}
             </div>
           </div>
@@ -654,29 +655,29 @@ export function SettingsView() {
   return (
     <div className="space-y-6 pb-6 select-none">
       <div className="space-y-1.5 pt-1">
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
+        <div className="flex items-center gap-1.5 text-xs text-[var(--ui-muted)] font-medium">
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
           <span>Home Page</span>
-          <ChevronRight className="h-3 w-3 text-slate-300" />
-          <Folder className="h-3.5 w-3.5 text-slate-400" />
-          <span className="text-slate-600 font-semibold">Settings</span>
+          <ChevronRight className="h-3 w-3 text-[var(--ui-muted)]" />
+          <Folder className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
+          <span className="text-[var(--ui-secondary)] font-semibold">Settings</span>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--ui-text)]">
           System Configuration
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[var(--ui-secondary)]">
           Compliance evaluation frequencies, notification hooks, and tenant integration parameters.
         </p>
       </div>
 
-      <div className="bg-white rounded-[28px] border border-slate-200/70 p-6 sm:p-8 space-y-4 text-xs shadow-xs">
+      <div className="bg-white rounded-[28px] border border-[var(--ui-border)]/70 p-6 sm:p-8 space-y-4 text-xs shadow-xs">
         <div className="space-y-2">
-          <div className="font-bold text-slate-900 text-sm">Deterministic Engine Mode</div>
-          <p className="text-slate-500 text-xs leading-relaxed">
+          <div className="font-bold text-[var(--ui-text)] text-sm">Deterministic Engine Mode</div>
+          <p className="text-[var(--ui-secondary)] text-xs leading-relaxed">
             Statutory applicability evaluates via 3-valued logic (TRUE · FALSE · UNKNOWN). AI never makes final legal determination.
           </p>
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-50 border border-slate-200 font-mono text-[11px] text-slate-700">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--ui-bg)] border border-[var(--ui-border)] font-mono text-[11px] text-[var(--ui-secondary)]">
+            <span className="h-2 w-2 rounded-full bg-[var(--ui-sage)]" />
             <span>AST Rule Engine: Active & Enforcing</span>
           </div>
         </div>

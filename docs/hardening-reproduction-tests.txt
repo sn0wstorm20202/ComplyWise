@@ -1,0 +1,81 @@
+FFFF                                                                     [100%]
+================================== FAILURES ===================================
+____________ test_planner_context_has_same_known_aliases_as_engine ____________
+
+make_business = <function make_business.<locals>._make at 0x0000027D3EAA79C0>
+user = <User: founder@example.com>
+
+    def test_planner_context_has_same_known_aliases_as_engine(make_business, user):
+        b=make_business(user)
+        profile(b,product_description="Software consultancy",total_worker_count=0,state="KARNATAKA")
+        ctx=build_business_context(b)
+>       assert ctx.raw_variables["total_workforce"] == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'total_workforce'
+
+tests\test_functional_hardening.py:22: KeyError
+__ test_planner_uses_requested_snapshot_and_suppresses_reworded_known_facts ___
+
+make_business = <function make_business.<locals>._make at 0x0000027D3E9F71A0>
+user = <User: founder@example.com>
+
+    def test_planner_uses_requested_snapshot_and_suppresses_reworded_known_facts(make_business,user):
+        b=make_business(user)
+        first=profile(b,product_description="Software consultancy",total_worker_count=12,connected_power_load=5,
+                      hazardous_waste_generation=False,state="KARNATAKA")
+        a=Assessment.objects.create(business=b,profile_version=first)
+        profile(b,2,product_description="Unrelated metal factory",state="MAHARASHTRA")
+        provider=Mock(is_configured=True)
+        provider.complete.return_value=CompletionResult(json.dumps({"questions":[
+            {"target_variable_id":"dynamic_number_of_workers","question_text":"How many workers do you have?","answer_type":"NUMBER","reason":"Workforce decisions"},
+            {"target_variable_id":"primary_activity","question_text":"What is your primary activity?","answer_type":"TEXT","reason":"Activity decisions"},
+            {"target_variable_id":"dynamic_client_data","question_text":"Do you process personal client data?","answer_type":"BOOLEAN","reason":"Refines privacy source discovery","domain":"DIGITAL_SAAS"}
+        ]}),"fixture","fixture")
+        with patch("apps.onboarding.planner.get_llm_provider",return_value=provider):
+            result=plan_adaptive_smart_questions(b,assessment_id=a.id)
+>       assert not {"primary_activity","total_worker_count","dynamic_number_of_workers"} & {q["variable_key"] for q in result["questions"]}
+E       AssertionError: assert not ({'dynamic_number_of_workers', 'primary_activity', 'total_worker_count'} & {'dynamic_client_data', 'dynamic_number_of_workers', 'primary_activity'})
+
+tests\test_functional_hardening.py:40: AssertionError
+_ test_answers_do_not_mark_other_assessment_questions_or_merge_newer_snapshot _
+
+make_business = <function make_business.<locals>._make at 0x0000027D3E9F4CC0>
+user = <User: founder@example.com>
+
+    def test_answers_do_not_mark_other_assessment_questions_or_merge_newer_snapshot(make_business,user):
+        b=make_business(user)
+        first=profile(b,product_description="First office",state="KARNATAKA")
+        a=Assessment.objects.create(business=b,profile_version=first)
+        second=profile(b,2,product_description="Second factory",state="MAHARASHTRA")
+        other=Assessment.objects.create(business=b,assessment_number=2,profile_version=second)
+        instances=[]
+        for ass in (a,other):
+            plan=SmartQuestionPlan.objects.create(business=b,assessment=ass)
+            instances.append(SmartQuestionInstance.objects.create(business=b,plan=plan,variable_key="dynamic_client_data",question_text="Client data?"))
+        saved=save_smart_question_answers(business=b,assessment_id=a.id,answers={"dynamic_client_data":False})
+>       assert saved.raw_value("product_description") == "First office"
+E       AssertionError: assert 'Second factory' == 'First office'
+E         
+E         - First office
+E         + Second factory
+
+tests\test_functional_hardening.py:56: AssertionError
+_____________ test_wrong_assessment_does_not_silently_plan_latest _____________
+
+make_business = <function make_business.<locals>._make at 0x0000027D3E76AD40>
+user = <User: founder@example.com>
+
+    def test_wrong_assessment_does_not_silently_plan_latest(make_business,user):
+        b=make_business(user); other=make_business(user)
+        a=Assessment.objects.create(business=other)
+>       with pytest.raises(ValueError,match="Assessment"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_functional_hardening.py:63: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_functional_hardening.py::test_planner_context_has_same_known_aliases_as_engine
+FAILED tests/test_functional_hardening.py::test_planner_uses_requested_snapshot_and_suppresses_reworded_known_facts
+FAILED tests/test_functional_hardening.py::test_answers_do_not_mark_other_assessment_questions_or_merge_newer_snapshot
+FAILED tests/test_functional_hardening.py::test_wrong_assessment_does_not_silently_plan_latest
+4 failed in 5.72s

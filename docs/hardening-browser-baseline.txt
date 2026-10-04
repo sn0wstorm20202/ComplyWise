@@ -1,0 +1,375 @@
+
+Running 42 tests using 1 worker
+
+(node:2620) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › e2e\architecture-landing-regression.spec.cjs:3:3 › existing landing CSS and CTA routes remain intact at 1440px (2.1s)
+  ✓   2 [chromium] › e2e\architecture-landing-regression.spec.cjs:3:3 › existing landing CSS and CTA routes remain intact at 390px (1.2s)
+  ✘   3 [chromium] › e2e\compliance-workflows-sync.spec.ts:23:7 › Compliance and Workflows Synchronization & SaaS Guard › Compliance page displays 4 legitimate statutory compliances and excludes industrial factory licenses (19.8s)
+(node:3744) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   4 [chromium] › e2e\compliance-workflows-sync.spec.ts:60:7 › Compliance and Workflows Synchronization & SaaS Guard › Workflows page synchronizes 1-to-1 with compliance, shows 5 targeted schemes, and has multi-step roadmaps (22.3s)
+(node:1888) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   5 [chromium] › e2e\demo-profiles.spec.ts:17:7 › Demo Profiles & Non-Preset Verification › Five Controlled Demo Profiles Load and Present Contextual Questionnaire (14.7s)
+(node:17984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   6 [chromium] › e2e\demo-profiles.spec.ts:59:7 › Demo Profiles & Non-Preset Verification › Ambuja Cement Regression: No Unrelated Requirements in Rendered UI (25.6s)
+(node:10044) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   7 [chromium] › e2e\demo-profiles.spec.ts:150:7 › Demo Profiles & Non-Preset Verification › Non-Preset Unseen Business Profile Completes Full Journey (1.1m)
+(node:7188) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   8 [chromium] › e2e\easternvolt-ev.spec.ts:17:7 › EasternVolt EV Technologies Regression Test › EasternVolt EV Charger Manufacturer: 15-Question LLM Intake & Requisite Standards Mapping (1.0m)
+(node:2332) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   9 [chromium] › e2e\landing-editorial-design.spec.ts:19:5 › desktop film retains objects through facts, evaluation, evidence and workspace (35.1s)
+  ✓  10 [chromium] › e2e\landing-editorial-design.spec.ts:95:5 › keyboard chapters and motion changes cleanly replace the pinned scene (4.3s)
+  ✓  11 [chromium] › e2e\landing-editorial-design.spec.ts:116:5 › mobile keeps the story, touch controls and workspace without pinning (6.2s)
+  ✓  12 [chromium] › e2e\landing-editorial-design.spec.ts:138:5 › reduced motion keeps evidence, keyboard FAQ and the local business preview (2.3s)
+  ✘  13 [chromium] › e2e\primary-journey.spec.ts:4:7 › Primary End-to-End User Journey › Complete flow: Auth -> Onboarding -> Questions -> Live Results -> 4-Part Trace Modal -> Operational Surfaces (15.0s)
+(node:9312) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  14 [chromium] › e2e\product-workspace.spec.ts:50:5 › workspace navigation supports keyboard, modal focus and mobile drawer (2.8s)
+  ✓  15 [chromium] › e2e\product-workspace.spec.ts:68:5 › onboarding saves supplied facts, keeps unknown figures absent, and progresses to products (1.5s)
+  ✓  16 [chromium] › e2e\product-workspace.spec.ts:96:5 › settings save real preferences, preserve failed edits, and retry load errors (2.2s)
+  ✓  17 [chromium] › e2e\product-workspace.spec.ts:114:5 › failed keyboard mark-read restores the alert and unread count (1.2s)
+  ✓  18 [chromium] › e2e\product-workspace.spec.ts:123:5 › failed Copilot requests preserve the prompt without fabricating advice (967ms)
+  ✓  19 [chromium] › e2e\product-workspace.spec.ts:131:5 › empty accounts and unknown IDs show honest states (2.5s)
+  ✓  20 [chromium] › e2e\product-workspace.spec.ts:142:5 › workflow step completion is saved before progress advances (1.6s)
+  ✓  21 [chromium] › e2e\product-workspace.spec.ts:151:5 › upload failure keeps the file and never adds a successful document (1.4s)
+  ✓  22 [chromium] › e2e\product-workspace.spec.ts:174:5 › document results disclose server checks and keep the persisted record identity (2.2s)
+  ✓  23 [chromium] › e2e\product-workspace.spec.ts:198:5 › auth modes share the product brand and work with keyboard on small screens (986ms)
+  ✓  24 [chromium] › e2e\product-workspace.spec.ts:209:5 › reviewer login establishes the shared session before opening the business workspace (1.9s)
+  ✓  25 [chromium] › e2e\product-workspace.spec.ts:221:5 › standards search clears previous records and compliance reveals source evidence (1.7s)
+  ✓  26 [chromium] › e2e\product-workspace.spec.ts:237:5 › compliance preserves backend decisions and failed loads never become sample assessments (1.4s)
+  ✓  27 [chromium] › e2e\product-workspace.spec.ts:257:5 › requirement detail preserves recorded decisions and discloses rules without guessing a fee or filing procedure (1.2s)
+  ✓  28 [chromium] › e2e\product-workspace.spec.ts:273:5 › staff case review requires a reason and explicit submission; denied users see no review data (2.4s)
+  ✓  29 [chromium] › e2e\product-workspace.spec.ts:287:7 › reviewer approve preserves submission identity and concurrency (2.3s)
+  ✓  30 [chromium] › e2e\product-workspace.spec.ts:287:7 › reviewer query preserves submission identity and concurrency (1.8s)
+  ✓  31 [chromium] › e2e\product-workspace.spec.ts:300:5 › admin query navigation reloads the correct queue and detail routes fit mobile (4.2s)
+  ✓  32 [chromium] › e2e\product-workspace.spec.ts:315:5 › product routes render across desktop, tablet and mobile with reduced motion (15.9s)
+  ✓  33 [chromium] › e2e\product-workspace.spec.ts:333:5 › visible starter autofill is editable, does not submit, and own business clears facts (2.3s)
+  ✓  34 [chromium] › e2e\product-workspace.spec.ts:355:5 › platform admin creates editable starting profile without autofilling credentials (2.8s)
+  ✓  35 [chromium] › e2e\product-workspace.spec.ts:378:5 › submission workspace screenshot inventory retains warm styling and clear states (5.3s)
+  ✓  36 [chromium] › e2e\product-workspace.spec.ts:389:5 › resumed assessment restores questions once and preserves answers on acquisition failure (3.0s)
+  ✓  37 [chromium] › e2e\product-workspace.spec.ts:411:5 › login screenshot contains loaded global styles (669ms)
+  ✓  38 [chromium] › e2e\ux-security-resilience.spec.ts:24:7 › UX Quality, Security, Resilience & Policy Invariants › Public UI Leaks Zero Internal Implementation Details or Model Secrets (11.3s)
+  ✓  39 [chromium] › e2e\ux-security-resilience.spec.ts:50:7 › UX Quality, Security, Resilience & Policy Invariants › Browser Network Traffic Never Makes Direct Calls to External Providers (7.1s)
+  ✘  40 [chromium] › e2e\ux-security-resilience.spec.ts:81:7 › UX Quality, Security, Resilience & Policy Invariants › Questionnaire Progress Survives Browser Refresh (24.1s)
+(node:2080) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  41 [chromium] › e2e\ux-security-resilience.spec.ts:151:7 › UX Quality, Security, Resilience & Policy Invariants › Responsive Viewport Tests: Desktop, Tablet, and Mobile Render Without Horizontal Overflow (6.7s)
+  ✓  42 [chromium] › e2e\ux-security-resilience.spec.ts:171:7 › UX Quality, Security, Resilience & Policy Invariants › Main Navigation Preserves Business Context Across All Destinations (9.7s)
+
+
+  1) [chromium] › e2e\compliance-workflows-sync.spec.ts:23:7 › Compliance and Workflows Synchronization & SaaS Guard › Compliance page displays 4 legitimate statutory compliances and excludes industrial factory licenses 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('h1')
+    Expected pattern: /Regulatory & Compliance Obligations/i
+    Received string:  "Statutory Requirements & Clearances"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toContainText" locator('h1') with timeout 10000ms
+      - waiting for locator('h1')
+        23 × locator resolved to <h1 class="text-2xl font-sans font-bold tracking-tight text-[var(--ui-text)] mt-1">Statutory Requirements & Clearances</h1>
+           - unexpected value "Statutory Requirements & Clearances"
+
+
+      29 |
+      30 |     // Check page header
+    > 31 |     await expect(page.locator("h1")).toContainText(/Regulatory & Compliance Obligations/i);
+         |                                      ^
+      32 |
+      33 |     // Verify the 4 legitimate statutory requirements are present
+      34 |     const pageContent = await page.content();
+        at O:\Project\branches\ComplyWise\frontend\e2e\compliance-workflows-sync.spec.ts:31:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\compliance-workflows-sync--ae318-industrial-factory-licenses-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\compliance-workflows-sync--ae318-industrial-factory-licenses-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\compliance-workflows-sync--ae318-industrial-factory-licenses-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\compliance-workflows-sync--ae318-industrial-factory-licenses-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › e2e\compliance-workflows-sync.spec.ts:60:7 › Compliance and Workflows Synchronization & SaaS Guard › Workflows page synchronizes 1-to-1 with compliance, shows 5 targeted schemes, and has multi-step roadmaps 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('h1')
+    Expected pattern: /Clearance Workflows & Roadmaps/i
+    Received string:  "Compliance & Clearance Process Workflows"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toContainText" locator('h1') with timeout 10000ms
+      - waiting for locator('h1')
+        23 × locator resolved to <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--ui-text)]">Compliance & Clearance Process Workflows</h1>
+           - unexpected value "Compliance & Clearance Process Workflows"
+
+
+      66 |
+      67 |     // Check page header
+    > 68 |     await expect(page.locator("h1")).toContainText(/Clearance Workflows & Roadmaps/i);
+         |                                      ^
+      69 |
+      70 |     const pageContent = await page.content();
+      71 |
+        at O:\Project\branches\ComplyWise\frontend\e2e\compliance-workflows-sync.spec.ts:68:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\compliance-workflows-sync--039b1-and-has-multi-step-roadmaps-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\compliance-workflows-sync--039b1-and-has-multi-step-roadmaps-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\compliance-workflows-sync--039b1-and-has-multi-step-roadmaps-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\compliance-workflows-sync--039b1-and-has-multi-step-roadmaps-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium] › e2e\demo-profiles.spec.ts:17:7 › Demo Profiles & Non-Preset Verification › Five Controlled Demo Profiles Load and Present Contextual Questionnaire 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('button:has-text("VoltPro Power Technologies")').first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('button:has-text("VoltPro Power Technologies")').first() with timeout 10000ms
+      - waiting for locator('button:has-text("VoltPro Power Technologies")').first()
+
+
+      29 |       await page.goto('/onboarding?new=true');
+      30 |       const card = page.locator(`button:has-text("${prof.name}")`).first();
+    > 31 |       await expect(card).toBeVisible({ timeout: 10000 });
+         |                          ^
+      32 |       await card.click();
+      33 |
+      34 |       // Submit Step 1
+        at O:\Project\branches\ComplyWise\frontend\e2e\demo-profiles.spec.ts:31:26
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\demo-profiles-Demo-Profile-1e361-nt-Contextual-Questionnaire-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\demo-profiles-Demo-Profile-1e361-nt-Contextual-Questionnaire-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\demo-profiles-Demo-Profile-1e361-nt-Contextual-Questionnaire-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\demo-profiles-Demo-Profile-1e361-nt-Contextual-Questionnaire-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chromium] › e2e\demo-profiles.spec.ts:59:7 › Demo Profiles & Non-Preset Verification › Ambuja Cement Regression: No Unrelated Requirements in Rendered UI 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('button:has-text("Ambuja Heritage Cement")').first()
+    Expected: visible
+    Timeout: 20000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('button:has-text("Ambuja Heritage Cement")').first() with timeout 20000ms
+      - waiting for locator('button:has-text("Ambuja Heritage Cement")').first()
+
+
+      64 |     // Select Cement preset
+      65 |     const cementCard = page.locator('button:has-text("Ambuja Heritage Cement")').first();
+    > 66 |     await expect(cementCard).toBeVisible({ timeout: 20000 });
+         |                              ^
+      67 |     await cementCard.click();
+      68 |
+      69 |     // Submit Step 1
+        at O:\Project\branches\ComplyWise\frontend\e2e\demo-profiles.spec.ts:66:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\demo-profiles-Demo-Profile-5c987-Requirements-in-Rendered-UI-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\demo-profiles-Demo-Profile-5c987-Requirements-in-Rendered-UI-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\demo-profiles-Demo-Profile-5c987-Requirements-in-Rendered-UI-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\demo-profiles-Demo-Profile-5c987-Requirements-in-Rendered-UI-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chromium] › e2e\demo-profiles.spec.ts:150:7 › Demo Profiles & Non-Preset Verification › Non-Preset Unseen Business Profile Completes Full Journey 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('h2:has-text("Your 15 Compliance Questions"), h2:has-text("15-Question Statutory Assessment"), p:has-text("15-Question Statutory Assessment")').first()
+    Expected: visible
+    Timeout: 50000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('h2:has-text("Your 15 Compliance Questions"), h2:has-text("15-Question Statutory Assessment"), p:has-text("15-Question Statutory Assessment")').first() with timeout 50000ms
+      - waiting for locator('h2:has-text("Your 15 Compliance Questions"), h2:has-text("15-Question Statutory Assessment"), p:has-text("15-Question Statutory Assessment")').first()
+
+
+      195 |     await expect(
+      196 |       page.locator('h2:has-text("Your 15 Compliance Questions"), h2:has-text("15-Question Statutory Assessment"), p:has-text("15-Question Statutory Assessment")').first()
+    > 197 |     ).toBeVisible({ timeout: 50000 });
+          |       ^
+      198 |
+      199 |     for (let i = 0; i < 22; i++) {
+      200 |       const boolYesBtn = page.locator('button:has-text("Yes, Applicable"), button:has-text("Yes —")').first();
+        at O:\Project\branches\ComplyWise\frontend\e2e\demo-profiles.spec.ts:197:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\demo-profiles-Demo-Profile-f4e5d-file-Completes-Full-Journey-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\demo-profiles-Demo-Profile-f4e5d-file-Completes-Full-Journey-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\demo-profiles-Demo-Profile-f4e5d-file-Completes-Full-Journey-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\demo-profiles-Demo-Profile-f4e5d-file-Completes-Full-Journey-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [chromium] › e2e\easternvolt-ev.spec.ts:17:7 › EasternVolt EV Technologies Regression Test › EasternVolt EV Charger Manufacturer: 15-Question LLM Intake & Requisite Standards Mapping 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('h2:has-text("Your 15 Compliance Questions"), h2:has-text("15-Question Statutory Assessment"), p:has-text("15-Question Statutory Assessment")').first()
+    Expected: visible
+    Timeout: 45000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('h2:has-text("Your 15 Compliance Questions"), h2:has-text("15-Question Statutory Assessment"), p:has-text("15-Question Statutory Assessment")').first() with timeout 45000ms
+      - waiting for locator('h2:has-text("Your 15 Compliance Questions"), h2:has-text("15-Question Statutory Assessment"), p:has-text("15-Question Statutory Assessment")').first()
+
+
+      79 |
+      80 |     // 6. Strict Verification: NO AST / Internal Rule Engine Strings Leaked
+    > 81 |     await expect(page.locator('h2:has-text("Your 15 Compliance Questions"), h2:has-text("15-Question Statutory Assessment"), p:has-text("15-Question Statutory Assessment")').first()).toBeVisible({ timeout: 45000 });
+         |                                                                                                                                                                                        ^
+      82 |     const bodyText = await page.innerText('body');
+      83 |     expect(bodyText).not.toContain('ADAPTIVE RULE ENGINE');
+      84 |     expect(bodyText).not.toContain('Sequential AST-Driven Discovery');
+        at O:\Project\branches\ComplyWise\frontend\e2e\easternvolt-ev.spec.ts:81:184
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\easternvolt-ev-EasternVolt-5b8ec-Requisite-Standards-Mapping-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\easternvolt-ev-EasternVolt-5b8ec-Requisite-Standards-Mapping-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\easternvolt-ev-EasternVolt-5b8ec-Requisite-Standards-Mapping-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\easternvolt-ev-EasternVolt-5b8ec-Requisite-Standards-Mapping-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [chromium] › e2e\primary-journey.spec.ts:4:7 › Primary End-to-End User Journey › Complete flow: Auth -> Onboarding -> Questions -> Live Results -> 4-Part Trace Modal -> Operational Surfaces 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('button:has-text("VoltPro Power Technologies")').first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('button:has-text("VoltPro Power Technologies")').first() with timeout 10000ms
+      - waiting for locator('button:has-text("VoltPro Power Technologies")').first()
+
+
+      27 |     // 3. Select VoltPro Power Technologies Preset
+      28 |     const voltproCard = page.locator('button:has-text("VoltPro Power Technologies")').first();
+    > 29 |     await expect(voltproCard).toBeVisible({ timeout: 10000 });
+         |                               ^
+      30 |     await voltproCard.click();
+      31 |
+      32 |     // Verify fields populated
+        at O:\Project\branches\ComplyWise\frontend\e2e\primary-journey.spec.ts:29:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\primary-journey-Primary-En-3c1ba-odal---Operational-Surfaces-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\primary-journey-Primary-En-3c1ba-odal---Operational-Surfaces-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\primary-journey-Primary-En-3c1ba-odal---Operational-Surfaces-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\primary-journey-Primary-En-3c1ba-odal---Operational-Surfaces-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [chromium] › e2e\ux-security-resilience.spec.ts:81:7 › UX Quality, Security, Resilience & Policy Invariants › Questionnaire Progress Survives Browser Refresh 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('button:has-text("VoltPro Power Technologies")').first()
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('button:has-text("VoltPro Power Technologies")').first() with timeout 15000ms
+      - waiting for locator('button:has-text("VoltPro Power Technologies")').first()
+
+
+      94 |     // Select VoltPro preset — wait for the card to be visible first
+      95 |     const card = page.locator('button:has-text("VoltPro Power Technologies")').first();
+    > 96 |     await expect(card).toBeVisible({ timeout: 15000 });
+         |                        ^
+      97 |     await card.click();
+      98 |     // Give the preset time to populate all form fields
+      99 |     await page.waitForTimeout(1000);
+        at O:\Project\branches\ComplyWise\frontend\e2e\ux-security-resilience.spec.ts:96:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\ux-security-resilience-UX--5f05e-ss-Survives-Browser-Refresh-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\ux-security-resilience-UX--5f05e-ss-Survives-Browser-Refresh-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\ux-security-resilience-UX--5f05e-ss-Survives-Browser-Refresh-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\ux-security-resilience-UX--5f05e-ss-Survives-Browser-Refresh-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8 failed
+    [chromium] › e2e\compliance-workflows-sync.spec.ts:23:7 › Compliance and Workflows Synchronization & SaaS Guard › Compliance page displays 4 legitimate statutory compliances and excludes industrial factory licenses 
+    [chromium] › e2e\compliance-workflows-sync.spec.ts:60:7 › Compliance and Workflows Synchronization & SaaS Guard › Workflows page synchronizes 1-to-1 with compliance, shows 5 targeted schemes, and has multi-step roadmaps 
+    [chromium] › e2e\demo-profiles.spec.ts:17:7 › Demo Profiles & Non-Preset Verification › Five Controlled Demo Profiles Load and Present Contextual Questionnaire 
+    [chromium] › e2e\demo-profiles.spec.ts:59:7 › Demo Profiles & Non-Preset Verification › Ambuja Cement Regression: No Unrelated Requirements in Rendered UI 
+    [chromium] › e2e\demo-profiles.spec.ts:150:7 › Demo Profiles & Non-Preset Verification › Non-Preset Unseen Business Profile Completes Full Journey 
+    [chromium] › e2e\easternvolt-ev.spec.ts:17:7 › EasternVolt EV Technologies Regression Test › EasternVolt EV Charger Manufacturer: 15-Question LLM Intake & Requisite Standards Mapping 
+    [chromium] › e2e\primary-journey.spec.ts:4:7 › Primary End-to-End User Journey › Complete flow: Auth -> Onboarding -> Questions -> Live Results -> 4-Part Trace Modal -> Operational Surfaces 
+    [chromium] › e2e\ux-security-resilience.spec.ts:81:7 › UX Quality, Security, Resilience & Policy Invariants › Questionnaire Progress Survives Browser Refresh 
+  34 passed (7.0m)

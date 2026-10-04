@@ -14,6 +14,7 @@ import uuid
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.db.models.functions import Lower
 from django.utils import timezone
 
 
@@ -87,6 +88,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         db_table = "accounts_user"
         ordering = ["email"]
+        constraints = [models.UniqueConstraint(Lower("email"), name="unique_user_email_casefold")]
 
     def __str__(self) -> str:
         return self.email
@@ -96,3 +98,22 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_short_name(self) -> str:
         return self.full_name.split(" ")[0] if self.full_name else self.email
+
+
+class GoogleIdentity(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="google_identities")
+    subject = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class GoogleLoginAttempt(models.Model):
+    state_digest = models.CharField(max_length=64, primary_key=True)
+    nonce = models.CharField(max_length=128)
+    code_verifier = models.CharField(max_length=128)
+    handoff_challenge = models.CharField(max_length=64)
+    expires_at = models.DateTimeField()
+    callback_used_at = models.DateTimeField(null=True)
+    ticket_digest = models.CharField(max_length=64, null=True, unique=True)
+    ticket_used_at = models.DateTimeField(null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    is_new_user = models.BooleanField(default=False)

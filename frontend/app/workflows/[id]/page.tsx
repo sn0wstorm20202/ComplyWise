@@ -106,7 +106,7 @@ export default function WorkflowDetailPage({ params }: PageProps) {
     ? "IN_PROGRESS"
     : "WAITING";
 
-  const stage3Complete = isCompleted || isExternal || isSubmitted || docsAppCount >= docsReqCount;
+  const stage3Complete = isCompleted || isExternal || isSubmitted || (docsReqCount > 0 && docsAppCount >= docsReqCount);
   let stage3Status: "COMPLETED" | "IN_PROGRESS" | "WAITING" | "ACTION_REQUIRED" = "WAITING";
   if (isCompleted || stage3Complete) stage3Status = "COMPLETED";
   else if (isActionReq) stage3Status = "ACTION_REQUIRED";
@@ -198,7 +198,7 @@ export default function WorkflowDetailPage({ params }: PageProps) {
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-border pb-5">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold text-purple-700 bg-purple-100 dark:bg-purple-950 px-2 py-0.5 rounded">
+                <span className="font-mono text-xs font-bold text-[var(--ui-sage)] bg-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)] px-2 py-0.5 rounded">
                   {caseData.case_number}
                 </span>
                 <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded">
@@ -212,10 +212,10 @@ export default function WorkflowDetailPage({ params }: PageProps) {
             </div>
 
             <div className="flex flex-col sm:items-end gap-1.5 shrink-0">
-              <span className="font-mono text-base font-extrabold text-purple-600">
+              <span className="font-mono text-base font-extrabold text-[var(--ui-sage)]">
                 {progress}% Completed
               </span>
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]">
                 {caseData.status_code.replace(/_/g, " ")}
               </span>
             </div>
@@ -233,22 +233,22 @@ export default function WorkflowDetailPage({ params }: PageProps) {
                   key={st.number}
                   className={`p-3.5 rounded-xl border text-xs space-y-2 transition-all ${
                     isDone
-                      ? "border-emerald-300 bg-emerald-50/50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300"
+                      ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/50 text-[var(--ui-sage)] dark:border-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/20 dark:text-[var(--ui-sage)]"
                       : isAct
                       ? "border-amber-300 bg-amber-50/60 text-amber-900 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-300"
                       : isInProg
-                      ? "border-purple-300 bg-purple-50/50 text-purple-900 dark:border-purple-900 dark:bg-purple-950/20 dark:text-purple-300"
+                      ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/50 text-[var(--ui-sage)] dark:border-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/20 dark:text-[var(--ui-sage)]"
                       : "border-border bg-muted/20 text-muted-foreground opacity-60"
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold">STAGE {st.number}</span>
                     {isDone ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <CheckCircle2 className="w-4 h-4 text-[var(--ui-sage)]" />
                     ) : isAct ? (
                       <AlertTriangle className="w-4 h-4 text-amber-600" />
                     ) : isInProg ? (
-                      <Clock className="w-4 h-4 text-purple-600 animate-spin" />
+                      <Clock className="w-4 h-4 text-[var(--ui-sage)] animate-spin" />
                     ) : (
                       <span className="w-2 h-2 rounded-full bg-muted-foreground/30" />
                     )}
@@ -268,7 +268,7 @@ export default function WorkflowDetailPage({ params }: PageProps) {
           <div className="pt-4 border-t border-border flex items-center justify-between">
             <Link
               href="/documents"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-sm transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] text-white text-xs font-semibold shadow-sm transition-colors"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>Go to Statutory Documents Section &rarr;</span>

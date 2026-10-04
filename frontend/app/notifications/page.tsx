@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
+import ErrorState from "@/components/ErrorState";
 import {
   Bell,
   Calendar,
@@ -119,11 +120,12 @@ const DEMO_FALLBACK_NOTIFICATIONS: UnifiedNotification[] = [
 ];
 
 function NotificationsContent() {
-  const { profile, activeBusinessId } = useBusinessContext();
+  const { profile, activeBusinessId, isDemoMode } = useBusinessContext();
   const { t } = useLanguage();
 
   const [filter, setFilter] = useState<string>("ALL");
-  const [notifications, setNotifications] = useState<UnifiedNotification[]>(DEMO_FALLBACK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<UnifiedNotification[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<NotificationSummaryResponse | null>(null);
   const [preferences, setPreferences] = useState<NotificationPreferenceResponse | null>(null);
   const [showPreferences, setShowPreferences] = useState(false);
@@ -134,12 +136,13 @@ function NotificationsContent() {
   // Fetch live notifications and summary
   const loadNotificationsData = useCallback(async () => {
     if (!activeBusinessId) {
-      setNotifications(DEMO_FALLBACK_NOTIFICATIONS);
+      setNotifications(isDemoMode ? DEMO_FALLBACK_NOTIFICATIONS : []);
       setIsLiveBackend(false);
       return;
     }
 
     setIsLoading(true);
+    setError(null);
     try {
       const [notifRes, summaryRes, prefRes] = await Promise.allSettled([
         api.calendar.listNotifications(activeBusinessId),
@@ -186,12 +189,12 @@ function NotificationsContent() {
         if (liveItems.length > 0) {
           setNotifications(liveItems);
         } else {
-          // If empty live list, show default items with live indicator
-          setNotifications(DEMO_FALLBACK_NOTIFICATIONS);
+          setNotifications([]);
         }
         setIsLiveBackend(true);
       } else {
-        setNotifications(DEMO_FALLBACK_NOTIFICATIONS);
+        setNotifications(isDemoMode ? DEMO_FALLBACK_NOTIFICATIONS : []);
+        if (!isDemoMode) setError("We couldn't load your alerts. Please try again.");
         setIsLiveBackend(false);
       }
 
@@ -203,12 +206,13 @@ function NotificationsContent() {
         setPreferences(prefRes.value);
       }
     } catch {
-      setNotifications(DEMO_FALLBACK_NOTIFICATIONS);
+      setNotifications(isDemoMode ? DEMO_FALLBACK_NOTIFICATIONS : []);
+      if (!isDemoMode) setError("We couldn't load your alerts. Please try again.");
       setIsLiveBackend(false);
     } finally {
       setIsLoading(false);
     }
-  }, [activeBusinessId]);
+  }, [activeBusinessId, isDemoMode]);
 
   useEffect(() => {
     loadNotificationsData();
@@ -231,12 +235,17 @@ function NotificationsContent() {
         await api.calendar.markRead(activeBusinessId, item.id);
       } catch (err) {
         console.error("Failed to mark notification as read on server:", err);
+        setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, isRead: false } : n));
+        setSummary(s => s ? { ...s, unread_count: s.unread_count + 1 } : null);
+        setError("This alert wasn't marked as read. Please try again.");
       }
     }
   };
 
   // Mark all notifications as read
   const handleMarkAllRead = async () => {
+    const previousNotifications = notifications;
+    const previousSummary = summary;
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     if (summary) {
       setSummary((s) => (s ? { ...s, unread_count: 0 } : null));
@@ -247,6 +256,9 @@ function NotificationsContent() {
         await api.calendar.markAllRead(activeBusinessId);
       } catch (err) {
         console.error("Failed to mark all notifications as read:", err);
+        setNotifications(previousNotifications);
+        setSummary(previousSummary);
+        setError("Your alerts weren't marked as read. Please try again.");
       }
     }
   };
@@ -320,7 +332,7 @@ function NotificationsContent() {
       case "MEDIUM":
         return "bg-amber-50/50 text-amber-700 border-amber-200/60";
       case "LOW":
-        return "bg-slate-50 text-slate-600 border-slate-200";
+        return "bg-[var(--ui-bg)] text-[var(--ui-secondary)] border-[var(--ui-border)]";
     }
   };
 
@@ -328,20 +340,20 @@ function NotificationsContent() {
     switch (channel) {
       case "GOOGLE_CALENDAR":
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100">
-            <Calendar className="h-3 w-3 text-sky-500" /> Calendar
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--ui-info)] bg-[var(--ui-info-soft)] px-2 py-0.5 rounded-md border border-[var(--ui-sage-soft)]">
+            <Calendar className="h-3 w-3 text-[var(--ui-info)]" /> Calendar
           </span>
         );
       case "EMAIL":
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-            <Mail className="h-3 w-3 text-emerald-500" /> Email
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--ui-sage)] bg-[var(--ui-sage-faint)] px-2 py-0.5 rounded-md border border-[var(--ui-sage-soft)]">
+            <Mail className="h-3 w-3 text-[var(--ui-sage)]" /> Email
           </span>
         );
       case "IN_APP":
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
-            <Bell className="h-3 w-3 text-purple-500" /> In-App
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--ui-sage)] bg-[var(--ui-sage-faint)] px-2 py-0.5 rounded-md border border-[var(--ui-sage-soft)]">
+            <Bell className="h-3 w-3 text-[var(--ui-sage)]" /> In-App
           </span>
         );
     }
@@ -355,10 +367,10 @@ function NotificationsContent() {
       return <ShieldAlert className="h-4 w-4 text-rose-500" />;
     }
     if (item.channel === "GOOGLE_CALENDAR") {
-      return <Calendar className="h-4 w-4 text-sky-500" />;
+      return <Calendar className="h-4 w-4 text-[var(--ui-info)]" />;
     }
     if (item.channel === "EMAIL") {
-      return <Mail className="h-4 w-4 text-emerald-500" />;
+      return <Mail className="h-4 w-4 text-[var(--ui-sage)]" />;
     }
     return <Bell className="h-4 w-4 text-amber-600" />;
   };
@@ -381,8 +393,9 @@ function NotificationsContent() {
   return (
     <AppShell activeView="notifications">
       <div className="space-y-6 max-w-7xl mx-auto">
+        {error && <ErrorState title={error} message="Your alerts remain available for review." onRetry={loadNotificationsData} />}
         {/* Header */}
-        <div className="bg-white rounded-[12px] border border-[#E2E8F0] p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-white rounded-[12px] border border-[var(--ui-border)] p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-amber-800 tracking-wide uppercase">
@@ -392,15 +405,15 @@ function NotificationsContent() {
                 {unreadCount} Unread
               </span>
               {isLiveBackend && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700 border border-emerald-200 font-medium">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live System
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--ui-sage-faint)] px-2 py-0.5 text-[11px] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)] font-medium">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--ui-sage)] animate-pulse" /> Live System
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-sans font-bold tracking-tight text-[#0F172A] mt-1">
+            <h1 className="text-2xl font-sans font-bold tracking-tight text-[var(--ui-text)] mt-1">
               Compliance Alerts & Notifications
             </h1>
-            <p className="text-xs text-[#64748B] mt-0.5">
+            <p className="text-xs text-[var(--ui-secondary)] mt-0.5">
               Statutory deadline notices, non-spam overdue alerts, and multi-channel delivery audit log.
             </p>
           </div>
@@ -410,7 +423,7 @@ function NotificationsContent() {
               type="button"
               onClick={handleSyncDeadlines}
               disabled={isSyncing}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0F172A] hover:bg-slate-800 text-xs font-semibold text-white transition-colors shadow-2xs cursor-pointer disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-xs font-semibold text-white transition-colors shadow-2xs cursor-pointer disabled:opacity-60"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`} />
               {isSyncing ? "Syncing..." : "Sync Deadlines"}
@@ -418,16 +431,16 @@ function NotificationsContent() {
             <button
               type="button"
               onClick={() => setShowPreferences(!showPreferences)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E2E8F0] hover:bg-slate-50 text-xs font-semibold text-[#0F172A] transition-colors shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[var(--ui-border)] hover:bg-[var(--ui-bg)] text-xs font-semibold text-[var(--ui-text)] transition-colors shadow-2xs cursor-pointer"
             >
-              <Settings className="h-3.5 w-3.5 text-slate-500" />
+              <Settings className="h-3.5 w-3.5 text-[var(--ui-secondary)]" />
               Preferences
             </button>
             <button
               type="button"
               onClick={loadNotificationsData}
               disabled={isLoading}
-              className="p-1.5 rounded-lg bg-white border border-[#E2E8F0] hover:bg-slate-50 text-slate-600 transition-colors shadow-2xs cursor-pointer"
+              className="p-1.5 rounded-lg bg-white border border-[var(--ui-border)] hover:bg-[var(--ui-bg)] text-[var(--ui-secondary)] transition-colors shadow-2xs cursor-pointer"
               title="Refresh notifications"
             >
               <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin text-amber-600" : ""}`} />
@@ -435,7 +448,7 @@ function NotificationsContent() {
             <button
               type="button"
               onClick={handleMarkAllRead}
-              className="px-3.5 py-1.5 rounded-lg bg-white border border-[#E2E8F0] hover:bg-slate-50 text-xs font-semibold text-[#0F172A] transition-colors cursor-pointer shadow-2xs"
+              className="px-3.5 py-1.5 rounded-lg bg-white border border-[var(--ui-border)] hover:bg-[var(--ui-bg)] text-xs font-semibold text-[var(--ui-text)] transition-colors cursor-pointer shadow-2xs"
             >
               Mark all as read
             </button>
@@ -444,60 +457,60 @@ function NotificationsContent() {
 
         {/* Channel Preferences Accordion */}
         {showPreferences && (
-          <div className="bg-white rounded-[12px] border border-[#E2E8F0] p-5 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="bg-white rounded-[12px] border border-[var(--ui-border)] p-5 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--ui-border)]">
               <div>
-                <h2 className="text-sm font-bold text-[#0F172A]">Delivery Channel & Notification Preferences</h2>
-                <p className="text-xs text-[#64748B]">Configure your recipient channels and statutory alert language.</p>
+                <h2 className="text-sm font-bold text-[var(--ui-text)]">Delivery Channel & Notification Preferences</h2>
+                <p className="text-xs text-[var(--ui-secondary)]">Configure your recipient channels and statutory alert language.</p>
               </div>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-[var(--ui-muted)]">
                 {isUpdatingPrefs ? "Saving changes..." : "Auto-saved"}
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
-              <label className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50/50 cursor-pointer hover:bg-slate-50">
-                <span className="font-semibold text-slate-800 flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-emerald-600" /> Email Alerts
+              <label className="flex items-center justify-between p-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)]/50 cursor-pointer hover:bg-[var(--ui-bg)]">
+                <span className="font-semibold text-[var(--ui-text)] flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-[var(--ui-sage)]" /> Email Alerts
                 </span>
                 <input
                   type="checkbox"
                   checked={preferences?.email_enabled ?? true}
                   onChange={() => handleTogglePreference("email_enabled")}
-                  className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 h-4 w-4 cursor-pointer"
+                  className="rounded border-[var(--ui-border-strong)] text-amber-600 focus:ring-amber-500 h-4 w-4 cursor-pointer"
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50/50 cursor-pointer hover:bg-slate-50">
-                <span className="font-semibold text-slate-800 flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-sky-600" /> Google Calendar
+              <label className="flex items-center justify-between p-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)]/50 cursor-pointer hover:bg-[var(--ui-bg)]">
+                <span className="font-semibold text-[var(--ui-text)] flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-[var(--ui-info)]" /> Google Calendar
                 </span>
                 <input
                   type="checkbox"
                   checked={preferences?.calendar_enabled ?? true}
                   onChange={() => handleTogglePreference("calendar_enabled")}
-                  className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 h-4 w-4 cursor-pointer"
+                  className="rounded border-[var(--ui-border-strong)] text-amber-600 focus:ring-amber-500 h-4 w-4 cursor-pointer"
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50/50 cursor-pointer hover:bg-slate-50">
-                <span className="font-semibold text-slate-800 flex items-center gap-2">
-                  <Bell className="h-4 w-4 text-purple-600" /> In-App Center
+              <label className="flex items-center justify-between p-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)]/50 cursor-pointer hover:bg-[var(--ui-bg)]">
+                <span className="font-semibold text-[var(--ui-text)] flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-[var(--ui-sage)]" /> In-App Center
                 </span>
                 <input
                   type="checkbox"
                   checked={preferences?.in_app_enabled ?? true}
                   onChange={() => handleTogglePreference("in_app_enabled")}
-                  className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 h-4 w-4 cursor-pointer"
+                  className="rounded border-[var(--ui-border-strong)] text-amber-600 focus:ring-amber-500 h-4 w-4 cursor-pointer"
                 />
               </label>
 
-              <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50 flex items-center justify-between">
-                <span className="font-semibold text-slate-800">Alert Language</span>
+              <div className="p-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)]/50 flex items-center justify-between">
+                <span className="font-semibold text-[var(--ui-text)]">Alert Language</span>
                 <select
                   value={preferences?.language ?? "en"}
                   onChange={(e) => handleLanguageChange(e.target.value as "en" | "hi" | "bn")}
-                  className="rounded-md border border-slate-300 text-xs px-2 py-1 bg-white text-slate-700 cursor-pointer font-medium"
+                  className="rounded-md border border-[var(--ui-border-strong)] text-xs px-2 py-1 bg-white text-[var(--ui-secondary)] cursor-pointer font-medium"
                 >
                   <option value="en">English (EN)</option>
                   <option value="hi">हिंदी (HI)</option>
@@ -510,40 +523,40 @@ function NotificationsContent() {
 
         {/* Notification Metrics Overview */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-white rounded-[10px] border border-[#E2E8F0] p-4 shadow-2xs">
+          <div className="bg-white rounded-[10px] border border-[var(--ui-border)] p-4 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Logged</span>
-              <Bell className="h-4 w-4 text-slate-400" />
+              <span className="text-xs font-semibold text-[var(--ui-secondary)] uppercase tracking-wide">Total Logged</span>
+              <Bell className="h-4 w-4 text-[var(--ui-muted)]" />
             </div>
-            <div className="text-2xl font-bold text-[#0F172A] mt-2">{totalCount}</div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Audited delivery events</p>
+            <div className="text-2xl font-bold text-[var(--ui-text)] mt-2">{totalCount}</div>
+            <p className="text-[11px] text-[var(--ui-muted)] mt-0.5">Audited delivery events</p>
           </div>
 
-          <div className="bg-white rounded-[10px] border border-[#E2E8F0] p-4 shadow-2xs">
+          <div className="bg-white rounded-[10px] border border-[var(--ui-border)] p-4 shadow-2xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Unread</span>
               <span className="h-2 w-2 rounded-full bg-amber-500" />
             </div>
             <div className="text-2xl font-bold text-amber-900 mt-2">{unreadCount}</div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Requires acknowledgment</p>
+            <p className="text-[11px] text-[var(--ui-muted)] mt-0.5">Requires acknowledgment</p>
           </div>
 
-          <div className="bg-white rounded-[10px] border border-[#E2E8F0] p-4 shadow-2xs">
+          <div className="bg-white rounded-[10px] border border-[var(--ui-border)] p-4 shadow-2xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-rose-700 uppercase tracking-wide">Overdue</span>
               <AlertTriangle className="h-4 w-4 text-rose-500" />
             </div>
             <div className="text-2xl font-bold text-rose-600 mt-2">{overdueCount}</div>
-            <p className="text-[11px] text-slate-400 mt-0.5">Past statutory deadline</p>
+            <p className="text-[11px] text-[var(--ui-muted)] mt-0.5">Past statutory deadline</p>
           </div>
 
-          <div className="bg-white rounded-[10px] border border-[#E2E8F0] p-4 shadow-2xs">
+          <div className="bg-white rounded-[10px] border border-[var(--ui-border)] p-4 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Urgent / Critical</span>
+              <span className="text-xs font-semibold text-[var(--ui-secondary)] uppercase tracking-wide">Urgent / Critical</span>
               <ShieldAlert className="h-4 w-4 text-amber-600" />
             </div>
-            <div className="text-2xl font-bold text-[#0F172A] mt-2">{urgentCount}</div>
-            <p className="text-[11px] text-slate-400 mt-0.5">T-1 or high risk mandates</p>
+            <div className="text-2xl font-bold text-[var(--ui-text)] mt-2">{urgentCount}</div>
+            <p className="text-[11px] text-[var(--ui-muted)] mt-0.5">T-1 or high risk mandates</p>
           </div>
         </div>
 
@@ -563,8 +576,8 @@ function NotificationsContent() {
               onClick={() => setFilter(item.key)}
               className={`px-3.5 py-1.5 rounded-full font-semibold transition-colors shrink-0 cursor-pointer ${
                 filter === item.key
-                  ? "bg-[#0F172A] text-white shadow-2xs"
-                  : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-slate-300 hover:text-[#0F172A]"
+                  ? "bg-[var(--ui-text)] text-white shadow-2xs"
+                  : "bg-white text-[var(--ui-secondary)] border border-[var(--ui-border)] hover:border-[var(--ui-border-strong)] hover:text-[var(--ui-text)]"
               }`}
             >
               {item.label}
@@ -575,32 +588,36 @@ function NotificationsContent() {
         {/* Notifications List */}
         <div className="space-y-3">
           {filtered.length === 0 ? (
-            <div className="bg-white rounded-[12px] border border-dashed border-slate-300 p-12 text-center">
-              <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-              <h3 className="text-sm font-bold text-[#0F172A]">All Clear!</h3>
-              <p className="text-xs text-[#64748B] max-w-sm mx-auto mt-1">
-                No alerts match the selected filter. Check back periodically for statutory calendar reminders.
+            <div className="bg-white rounded-[12px] border border-dashed border-[var(--ui-border-strong)] p-12 text-center">
+              <CheckCircle2 className="h-8 w-8 text-[var(--ui-sage)] mx-auto mb-2" />
+              <h3 className="text-2xl font-serif font-normal text-[var(--ui-text)]">You're up to date.</h3>
+              <p className="text-xs text-[var(--ui-secondary)] max-w-sm mx-auto mt-1">
+                {filter === "ALL" ? "We'll surface important compliance reminders here." : "No alerts match this filter."}
               </p>
             </div>
           ) : (
             filtered.map((item) => (
               <div
                 key={item.id}
+                role="group"
+                tabIndex={item.isRead ? -1 : 0}
+                aria-label={`${item.title}${item.isRead ? ", read" : ", unread. Press Enter to mark read"}`}
+                onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); void handleMarkRead(item); } }}
                 onClick={() => handleMarkRead(item)}
                 className={`rounded-[12px] border p-4.5 shadow-2xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer ${
                   !item.isRead
                     ? "border-amber-300 bg-amber-50/25 hover:bg-amber-50/40"
-                    : "border-[#E2E8F0] bg-white hover:border-slate-300"
+                    : "border-[var(--ui-border)] bg-white hover:border-[var(--ui-border-strong)]"
                 }`}
               >
                 <div className="flex items-start gap-3.5">
-                  <div className="p-2.5 rounded-lg bg-slate-100 border border-slate-200 shrink-0 mt-0.5">
+                  <div className="p-2.5 rounded-lg bg-[var(--ui-inset)] border border-[var(--ui-border)] shrink-0 mt-0.5">
                     {getIcon(item)}
                   </div>
 
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-sans font-bold text-[#0F172A]">
+                      <h3 className="text-sm font-sans font-bold text-[var(--ui-text)]">
                         {item.title}
                       </h3>
 
@@ -627,9 +644,9 @@ function NotificationsContent() {
                       <span
                         className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
                           item.status === "DELIVERED"
-                            ? "text-emerald-700 bg-emerald-50"
+                            ? "text-[var(--ui-sage)] bg-[var(--ui-sage-faint)]"
                             : item.status === "SIMULATED"
-                            ? "text-sky-700 bg-sky-50"
+                            ? "text-[var(--ui-info)] bg-[var(--ui-info-soft)]"
                             : "text-rose-700 bg-rose-50"
                         }`}
                       >
@@ -637,11 +654,11 @@ function NotificationsContent() {
                       </span>
                     </div>
 
-                    <p className="text-xs text-[#64748B] leading-relaxed max-w-2xl">
+                    <p className="text-xs text-[var(--ui-secondary)] leading-relaxed max-w-2xl">
                       {item.message}
                     </p>
 
-                    <div className="flex items-center gap-3 text-[11px] text-[#94A3B8]">
+                    <div className="flex items-center gap-3 text-[11px] text-[var(--ui-muted)]">
                       <span>{item.timestamp}</span>
                       {item.deadlineDate && (
                         <>
@@ -673,7 +690,7 @@ function NotificationsContent() {
                   <Link
                     href={item.actionUrl}
                     onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 px-4 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-[#E2E8F0] text-xs font-semibold text-amber-800 hover:text-amber-900 transition-colors shadow-2xs"
+                    className="inline-flex items-center gap-1 px-4 py-1.5 rounded-lg bg-white hover:bg-[var(--ui-bg)] border border-[var(--ui-border)] text-xs font-semibold text-amber-800 hover:text-amber-900 transition-colors shadow-2xs"
                   >
                     {item.actionLabel}
                     <ExternalLink className="h-3 w-3" />
@@ -690,7 +707,7 @@ function NotificationsContent() {
 
 export default function NotificationsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F8FAFC]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[var(--ui-bg)]" />}>
       <NotificationsContent />
     </Suspense>
   );

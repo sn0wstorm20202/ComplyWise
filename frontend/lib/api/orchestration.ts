@@ -59,6 +59,10 @@ export interface OrchestrationQuestion {
   order?: number;
   is_answered?: boolean;
   current_value?: any;
+  fact_key?: string;
+  reason_code?: string;
+  suggested_answer?: any;
+  suggested_answer_origin?: "STARTER_PROFILE" | "NONE";
 }
 
 export interface QuestionsListResponse {
@@ -120,10 +124,12 @@ export interface ComplianceEvidenceItem {
 }
 
 export interface SynthesizedRequirement {
+  result_origin?: string;
+  source_reference?: string;
   id?: string;
   requirement_id: string;
   name: string;
-  status: "APPLICABLE" | "NEEDS_INFORMATION" | "NOT_APPLICABLE";
+  status: "APPLICABLE" | "NEEDS_INFORMATION" | "NOT_APPLICABLE" | "SUGGESTED" | "UNVERIFIED" | "CONFLICT_REVIEW";
   priority: "HIGH" | "MEDIUM" | "LOW";
   authority: string;
   domain: string;
@@ -286,6 +292,7 @@ export const orchestrationApi = {
   runDiscovery: (runId: string, options?: { force_refresh?: boolean }): Promise<any> =>
     request<any>(`assessments/${runId}/regulatory-discovery/`, {
       method: "POST",
+      timeoutMs: 180000,
       body: JSON.stringify(options || {}),
     }),
 
@@ -295,6 +302,7 @@ export const orchestrationApi = {
   runSynthesis: (runId: string, options?: { force_refresh?: boolean }): Promise<ComplianceResponse> =>
     request<ComplianceResponse>(`assessments/${runId}/compliance-synthesis/`, {
       method: "POST",
+      timeoutMs: 180000,
       body: JSON.stringify(options || {}),
     }),
 

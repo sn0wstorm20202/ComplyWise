@@ -1,0 +1,4 @@
+Operations to perform:
+  Apply all migrations: accounts, admin, applicability, auth, authtoken, businesses, calendar, contenttypes, documents, evidence, ingestion, knowledge, onboarding, schemes, sessions, workflows
+Running migrations:
+  Applying ingestion.0004_alter_discoveryrun_provider... OK

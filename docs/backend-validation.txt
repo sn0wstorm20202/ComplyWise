@@ -1,0 +1,15 @@
+......................................s................................. [ 11%]
+........................................................................ [ 22%]
+........................................................................ [ 33%]
+..................................sss................................... [ 45%]
+........................................................................ [ 56%]
+........................................................................ [ 67%]
+........................................................................ [ 79%]
+........................................................................ [ 90%]
+............................................................             [100%]
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_api_orchestration_step03.py:690: Live integration smoke test disabled by default. Set COMPLYWISE_LIVE_INTEGRATION=1 to run.
+SKIPPED [1] tests\test_live_firecrawl_smoke.py:18: FIRECRAWL_API_KEY not configured; skipping live Firecrawl smoke test.
+SKIPPED [1] tests\test_live_prototype_smoke.py:11: Real-provider smoke is opt-in.
+SKIPPED [1] tests\test_live_smoke_step05.py:73: Live integration smoke tests disabled by default. Set COMPLYWISE_LIVE_INTEGRATION=1 to run.
+632 passed, 4 skipped in 31.30s

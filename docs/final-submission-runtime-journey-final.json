@@ -1,0 +1,297 @@
+{
+  "kind": "REAL_PROVIDER_API_RUNTIME_DATABASE",
+  "business": "Synthetic Gujarat food manufacturing workshop",
+  "stages": {
+    "login": {
+      "http_status": 200,
+      "seconds": 1.851
+    },
+    "businesses": {
+      "http_status": 201,
+      "seconds": 0.42
+    },
+    "profile": {
+      "http_status": 201,
+      "seconds": 0.218
+    },
+    "post": {
+      "http_status": 201,
+      "seconds": 0.588
+    },
+    "understand": {
+      "http_status": 200,
+      "seconds": 3.142
+    },
+    "generate": {
+      "http_status": 200,
+      "seconds": 5.153
+    },
+    "answers": {
+      "http_status": 200,
+      "seconds": 2.928
+    },
+    "regulatory-discovery": {
+      "http_status": 200,
+      "seconds": 28.175
+    },
+    "compliance-synthesis": {
+      "http_status": 200,
+      "seconds": 35.781
+    },
+    "orchestrate": {
+      "http_status": 200,
+      "seconds": 7.207
+    },
+    "compliance?assessment_id=ee5d95e9-8c9d-4c9e-be91-7c934886ecec": {
+      "http_status": 200,
+      "seconds": 0.695
+    },
+    "documents?assessment_id=ee5d95e9-8c9d-4c9e-be91-7c934886ecec": {
+      "http_status": 200,
+      "seconds": 0.656
+    },
+    "workflows?assessment_id=ee5d95e9-8c9d-4c9e-be91-7c934886ecec": {
+      "http_status": 200,
+      "seconds": 2.595
+    },
+    "schemes?assessment_id=ee5d95e9-8c9d-4c9e-be91-7c934886ecec": {
+      "http_status": 200,
+      "seconds": 2.078
+    },
+    "calendar?assessment_id=ee5d95e9-8c9d-4c9e-be91-7c934886ecec": {
+      "http_status": 200,
+      "seconds": 0.446
+    },
+    "dashboard?assessment_id=ee5d95e9-8c9d-4c9e-be91-7c934886ecec": {
+      "http_status": 200,
+      "seconds": 6.35
+    },
+    "standards": {
+      "http_status": 200,
+      "seconds": 1.856
+    }
+  },
+  "failures": [],
+  "assessment_id": "ee5d95e9-8c9d-4c9e-be91-7c934886ecec",
+  "question_count": 5,
+  "answers_limitation": "Synthetic QA business answers selected from actual generated options; not a legal expert coverage benchmark.",
+  "assessment_status": "COMPLETED",
+  "deterministic_status_counts": {
+    "APPLICABLE": 6,
+    "NOT_APPLICABLE": 57,
+    "NEEDS_INFORMATION": 0,
+    "UNVERIFIED": 30
+  },
+  "guidance_counts": {
+    "compliance_items": 0,
+    "documents": 0,
+    "workflows": 0,
+    "schemes": 1,
+    "standards": 2
+  },
+  "discovery": [
+    {
+      "status": "FAILED",
+      "query_count": 6,
+      "candidate_count": 20,
+      "official_candidates": 2,
+      "captures": 0,
+      "modes": [],
+      "error": "Query 'Legal Metrology packaged commo...' failed: SerpApi timed out.; Source capture rejected: Source was empty or exceeded the capture byte limit.; Source capture rejected: Source was empty or exceeded the capture byte limit."
+    }
+  ],
+  "workspace": {
+    "compliance": {
+      "keys": [
+        "business_id",
+        "latest_run_id",
+        "count",
+        "requirements"
+      ],
+      "counts": {
+        "requirements": 93
+      }
+    },
+    "documents": {
+      "keys": [
+        "business_id",
+        "business_name",
+        "evaluated",
+        "total_count",
+        "total_documents_needed",
+        "documents",
+        "grouped_by_requirement",
+        "requirements_summary",
+        "requirements_without_checklist",
+        "checklist_source",
+        "upload_available",
+        "prevalidation_available",
+        "disclaimer"
+      ],
+      "counts": {
+        "documents": 9,
+        "requirements_summary": 6,
+        "requirements_without_checklist": 0
+      }
+    },
+    "workflows": {
+      "keys": [
+        "business_id",
+        "business_name",
+        "available",
+        "evaluated",
+        "count",
+        "total_workflows",
+        "summary",
+        "workflows",
+        "source",
+        "disclaimer"
+      ],
+      "counts": {
+        "workflows": 23
+      }
+    },
+    "schemes": {
+      "keys": [
+        "business_id",
+        "business_name",
+        "available",
+        "state",
+        "state_code",
+        "raw_state",
+        "state_name",
+        "msme_scale",
+        "product_description",
+        "count",
+        "total_schemes_found",
+        "universal_schemes_count",
+        "sector_specific_schemes_count",
+        "maharashtra_schemes_count",
+        "central_schemes_count",
+        "schemes",
+        "discovery_mode",
+        "data_freshness",
+        "disclaimer"
+      ],
+      "counts": {
+        "schemes": 18
+      }
+    },
+    "calendar": {
+      "keys": [
+        "business_id",
+        "business_name",
+        "evaluated",
+        "events",
+        "count",
+        "covers",
+        "not_covered",
+        "not_covered_reason",
+        "disclaimer"
+      ],
+      "counts": {
+        "events": 1,
+        "covers": 2,
+        "not_covered": 2
+      }
+    },
+    "dashboard": {
+      "keys": [
+        "business_id",
+        "business_name",
+        "assessment_id",
+        "assessment_number",
+        "assessment_title",
+        "assessment_status",
+        "has_evaluation",
+        "widgets",
+        "latest_run_id",
+        "evaluation_date",
+        "profile_version",
+        "compliance_readiness",
+        "readiness_label",
+        "readiness_basis",
+        "metrics",
+        "total_documents_needed",
+        "total_workflows_count",
+        "schemes_preview",
+        "total_schemes_count",
+        "standards_preview",
+        "total_standards_count",
+        "priority_actions",
+        "upcoming_deadlines",
+        "category_breakdown",
+        "jurisdiction_breakdown",
+        "recent_updates",
+        "recent_updates_available",
+        "coverage"
+      ],
+      "counts": {
+        "schemes_preview": 3,
+        "standards_preview": 2,
+        "priority_actions": 6,
+        "upcoming_deadlines": 1,
+        "recent_updates": 0
+      }
+    }
+  },
+  "providers": [
+    {
+      "provider": "gemini",
+      "provider_slot": 1,
+      "attempt": 1,
+      "status": "SUCCESS",
+      "failure_type": null,
+      "fallback": false,
+      "latency_ms": 2848.06,
+      "model": "gemini-3.5-flash-lite",
+      "workflow": "business_understanding"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 2,
+      "attempt": 1,
+      "status": "SUCCESS",
+      "failure_type": null,
+      "fallback": false,
+      "latency_ms": 3937.11,
+      "model": "gemini-3.5-flash-lite",
+      "workflow": "smart_questions_planner"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 3,
+      "attempt": 1,
+      "status": "ERROR",
+      "failure_type": "malformed_response",
+      "fallback": false,
+      "latency_ms": 9262.01,
+      "model": "gemini-3.5-flash-lite",
+      "workflow": "workspace_guidance"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 1,
+      "attempt": 2,
+      "status": "ERROR",
+      "failure_type": "malformed_response",
+      "fallback": true,
+      "latency_ms": 9310.38,
+      "model": "gemini-3.5-flash-lite",
+      "workflow": "workspace_guidance"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 2,
+      "attempt": 3,
+      "status": "SUCCESS",
+      "failure_type": null,
+      "fallback": true,
+      "latency_ms": 10406.79,
+      "model": "gemini-3.5-flash-lite",
+      "workflow": "workspace_guidance"
+    }
+  ],
+  "total_seconds": 102.308,
+  "temporary_account_business_removed": true
+}

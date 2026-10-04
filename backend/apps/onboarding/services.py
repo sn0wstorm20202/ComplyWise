@@ -102,6 +102,9 @@ def save_smart_question_answers(
 ) -> BusinessProfileVersion:
     """Save answered variables into a new immutable BusinessProfileVersion."""
     cleaned_entries: dict[str, dict[str, Any]] = {}
+    assessment = business.assessments.filter(pk=assessment_id).first() if assessment_id else None
+    if assessment_id and assessment is None:
+        raise ValueError("Assessment does not belong to this business.")
 
     from django.db.models import Q
 
@@ -155,10 +158,13 @@ def save_smart_question_answers(
             )
 
         # Mark corresponding SmartQuestionInstance as answered (match by variable_key or question_id)
-        SmartQuestionInstance.objects.filter(
+        questions = SmartQuestionInstance.objects.filter(
             business=business,
             is_answered=False,
-        ).filter(
+        )
+        if assessment:
+            questions = questions.filter(plan__assessment=assessment)
+        questions.filter(
             Q(variable_key=key) | Q(question_id=key) | Q(target_variable_id=key)
         ).update(is_answered=True, answer_value=raw_value)
 
@@ -175,7 +181,8 @@ def save_smart_question_answers(
     # Carry forward existing variables from the current version
     current_profile = business.current_profile
     next_version = (current_profile.version + 1) if current_profile else 1
-    merged_variables: dict[str, dict[str, Any]] = dict(current_profile.variables) if current_profile else {}
+    base_profile = assessment.profile_version if assessment and assessment.profile_version else current_profile
+    merged_variables: dict[str, dict[str, Any]] = dict(base_profile.variables) if base_profile else {}
     merged_variables.update(cleaned_entries)
 
     new_profile = BusinessProfileVersion.objects.create(
@@ -205,7 +212,10 @@ def save_smart_question_answers(
             assessment.save(update_fields=["profile_version", "step_state", "current_step", "updated_at"])
 
     # Check active question plans and mark completed if all questions answered
-    for plan in SmartQuestionPlan.objects.filter(business=business, status="ACTIVE"):
+    plans = SmartQuestionPlan.objects.filter(business=business, status="ACTIVE")
+    if assessment:
+        plans = plans.filter(assessment=assessment)
+    for plan in plans:
         unanswered_count = plan.questions.filter(is_answered=False).count()
         if unanswered_count == 0:
             plan.status = "COMPLETED"

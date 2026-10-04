@@ -7,5 +7,5 @@ export default function LoginPage() {
   useEffect(() => {
     router.replace("/auth/signin");
   }, [router]);
-  return <div className="min-h-screen bg-[#F8FAFC]" />;
+  return <div className="min-h-screen bg-[var(--ui-bg)]" />;
 }

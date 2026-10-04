@@ -9,12 +9,13 @@ interface ErrorStateProps {
 
 export function ErrorState({
   title = "We couldn't load this information.",
-  message = "Please check your network connection or verify that the backend service is running.",
+  message = "Check your connection and try again.",
   onRetry,
   className = "",
 }: ErrorStateProps) {
   return (
     <div
+      role="alert"
       className={`flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50/70 p-8 text-center shadow-2xs ${className}`}
     >
       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-rose-100 border border-rose-200 text-rose-600">
@@ -33,7 +34,8 @@ export function ErrorState({
         </svg>
       </div>
       <h3 className="text-sm font-semibold text-rose-900">{title}</h3>
-      <p className="mt-1 max-w-md text-xs text-rose-700">{message}</p>
+      <p className="mt-1 max-w-md text-xs text-rose-700">Please try again. If this continues, share the details below with support.</p>
+      <details className="mt-3 max-w-lg text-left text-xs text-[var(--ui-secondary)]"><summary className="cursor-pointer">Details</summary><p className="mt-2 break-words">{message}</p></details>
       {onRetry && (
         <button
           type="button"

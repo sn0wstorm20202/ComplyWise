@@ -1,6 +1,9 @@
 "use client";
+import UploadProgress from "@/components/product/UploadProgress";
+import Overlay from "@/components/product/Overlay";
+import Disclosure from "@/components/product/Disclosure";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -27,7 +30,6 @@ import { api } from "@/lib/api";
 import { DEMO_DOCUMENTS } from "@/data/demo/documents";
 import type { DocumentsListResponse } from "@/lib/api/documents";
 import {
-  verifyDocument,
   type DocumentVerificationResult,
   type DocumentVerificationInput,
 } from "@/lib/verification/documentVerifier";
@@ -36,7 +38,7 @@ import { useBusinessContext } from "@/context/BusinessContext";
 
 function DocumentsContent() {
   const { t } = useLanguage();
-  const { activeBusinessId, isDemoMode } = useBusinessContext();
+  const { activeBusinessId, activeAssessmentId, isDemoMode } = useBusinessContext();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
 
@@ -46,35 +48,23 @@ function DocumentsContent() {
     upload_available: true,
     business_id: "active-biz",
     evaluated: true,
-    total_count: DEMO_DOCUMENTS.length,
+    total_count: 0,
     disclaimer: "",
     checklist_source: "OFFICIAL_GAZETTE",
     requirements_without_checklist: [],
     prevalidation_available: true,
     unavailable_reason: "",
-    documents: DEMO_DOCUMENTS.map((d) => ({
-      id: d.id,
-      name: d.name,
-      document_type: d.category,
-      status: d.status,
-      uploaded_at: d.lastUpdated,
-      file_name: `${d.code}.pdf`,
-      file_size_bytes: 2400000,
-      requirement_id: d.clauseLinked,
-      requirement_name: d.clauseLinked,
-      authority: d.authority,
-      notes: d.notes,
-      valid_until: d.validUntil,
-      code: d.code,
-    })),
+    documents: [],
   } as any));
 
+  const requestVersion = useRef(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [businessId, setBusinessId] = useState<string>("");
 
   // Tracking manual portal uploads: { [docId: string]: boolean }
   const [portalUploadedMap, setPortalUploadedMap] = useState<Record<string, boolean>>({});
+  const [portalSaving, setPortalSaving] = useState<Record<string, boolean>>({});
 
   // Filter: ALL | UPLOADED | NOT_UPLOADED
   const [portalFilter, setPortalFilter] = useState<"ALL" | "UPLOADED" | "NOT_UPLOADED">("ALL");
@@ -87,10 +77,10 @@ function DocumentsContent() {
   // Upload & Verification form fields
   const [docName, setDocName] = useState<string>("");
   const [docCategory, setDocCategory] = useState<string>("Statutory Proof");
-  const [docAuthority, setDocAuthority] = useState<string>("Directorate of Industrial Safety & Health");
-  const [docRequirementId, setDocRequirementId] = useState<string>("Factories Act 1948 §6");
+  const [docAuthority, setDocAuthority] = useState<string>("");
+  const [docRequirementId, setDocRequirementId] = useState<string>("");
   const [docReferenceNumber, setDocReferenceNumber] = useState<string>("");
-  const [docValidUntil, setDocValidUntil] = useState<string>("2026-12-31");
+  const [docValidUntil, setDocValidUntil] = useState<string>("");
   const [fileObject, setFileObject] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string>("");
 
@@ -102,26 +92,16 @@ function DocumentsContent() {
   } | null>(null);
   const [verificationProgressStep, setVerificationProgressStep] = useState<number>(0);
 
-  // OpenAI API Configuration state
-  const [llmConfig, setLlmConfig] = useState<{
-    provider: string;
-    model: string;
-    is_configured: boolean;
-    key_preview: string | null;
-  } | null>(null);
-  const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
-  const [apiKeyInput, setApiKeyInput] = useState<string>("");
-  const [savingKey, setSavingKey] = useState<boolean>(false);
-  const [configFeedback, setConfigFeedback] = useState<string | null>(null);
-
-  // Load saved portal upload state & LLM config scoped to active business
+  // Load persisted document and filing states for the selected assessment.
   useEffect(() => {
     const bizId =
       paramBusinessId ||
       activeBusinessId ||
       (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
 
-    if (!bizId) return;
+    ++requestVersion.current;
+    setShowUpload(false); setSelectedDocForUpload(null); setActiveVerificationResult(null);
+    if (!bizId) { setBusinessId(""); setResponse(previous => ({...previous, documents: [], total_count: 0})); setLoading(false); return; }
     setBusinessId(bizId);
 
     // Reset previous company's documents immediately
@@ -142,60 +122,27 @@ function DocumentsContent() {
       } as any);
     }
 
-    try {
-      const stored = localStorage.getItem(`complywise_portal_uploaded_${bizId}`);
-      if (stored) {
-        setPortalUploadedMap(JSON.parse(stored));
-      } else {
-        setPortalUploadedMap({});
-      }
-    } catch {
-      // Ignore localStorage parse errors
-    }
+    setPortalUploadedMap({});
 
     loadDocuments(bizId);
+    return () => { ++requestVersion.current; };
 
-    // Fetch live LLM configuration
-    api.documents.getLLMConfig()
-      .then((cfg) => setLlmConfig(cfg))
-      .catch(() => {});
-  }, [paramBusinessId, activeBusinessId, isDemoMode]);
-
-  async function handleSaveApiKey(e: React.FormEvent) {
-    e.preventDefault();
-    if (!apiKeyInput.trim()) return;
-    setSavingKey(true);
-    setConfigFeedback(null);
-    try {
-      localStorage.setItem("complywise_openai_api_key", apiKeyInput.trim());
-      const res = await api.documents.saveLLMConfig(apiKeyInput.trim());
-      setLlmConfig({
-        provider: res.provider || "openai",
-        model: res.model || "gpt-4o-mini",
-        is_configured: true,
-        key_preview: res.key_preview,
-      });
-      setConfigFeedback("OpenAI API Key successfully configured and saved!");
-      setTimeout(() => {
-        setShowConfigModal(false);
-        setConfigFeedback(null);
-        setApiKeyInput("");
-      }, 1500);
-    } catch (err: any) {
-      setConfigFeedback(`Failed to save: ${err.message || err}`);
-    } finally {
-      setSavingKey(false);
-    }
-  }
+  }, [paramBusinessId, activeBusinessId, activeAssessmentId, searchParams]);
 
   async function loadDocuments(bizId: string) {
+    const version = ++requestVersion.current;
+    const current = () => requestVersion.current === version;
+    setLoading(true);
     setError(null);
     try {
-      const resp = await api.documents.list(bizId);
+      const resp = await api.documents.list(bizId, searchParams.get("assessment_id") || (bizId === activeBusinessId ? activeAssessmentId : undefined) || undefined);
+      if (!current()) return;
       if (resp && resp.documents) {
         setResponse(resp);
       }
     } catch {
+      if (!current()) return;
+      setError("We couldn't load your documents. Please try again.");
       if (!isDemoMode) {
         setResponse({
           available: true,
@@ -212,27 +159,28 @@ function DocumentsContent() {
           documents: [],
         } as any);
       }
-    }
+    } finally { if (current()) setLoading(false); }
   }
 
   // Toggle manual official portal upload checkbox
-  function handleTogglePortalUploaded(docId: string) {
-    const nextState = !portalUploadedMap[docId];
+  async function handleTogglePortalUploaded(docId: string) {
+    if (!businessId || portalSaving[docId]) return;
+    const previous = portalUploadedMap[docId] ?? Boolean(response.documents.find(doc => doc.id === docId)?.portal_uploaded);
+    const nextState = !previous;
     const updated = {
       ...portalUploadedMap,
       [docId]: nextState,
     };
     setPortalUploadedMap(updated);
+    setPortalSaving(values => ({...values, [docId]: true}));
 
     try {
-      localStorage.setItem(`complywise_portal_uploaded_${businessId}`, JSON.stringify(updated));
+      await api.documents.updatePortalStatus(businessId, docId, nextState, searchParams.get("assessment_id") || (businessId === activeBusinessId ? activeAssessmentId : undefined) || undefined);
     } catch {
-      // Ignore quota errors
-    }
-
-    // Attempt backend sync
-    if (businessId) {
-      api.documents.updatePortalStatus(businessId, docId, nextState).catch(() => {});
+      setPortalUploadedMap(values => ({...values, [docId]: previous}));
+      setError("Your filing status wasn't saved. Please try again.");
+    } finally {
+      setPortalSaving(values => ({...values, [docId]: false}));
     }
   }
 
@@ -244,7 +192,7 @@ function DocumentsContent() {
     setDocAuthority(doc.authority || "Regulatory Authority");
     setDocRequirementId(doc.requirement_id || doc.clause_linked || doc.clauseLinked || "Statutory Clause");
     setDocReferenceNumber((doc as any).code || "");
-    setDocValidUntil((doc as any).valid_until || (doc as any).validUntil || "2026-12-31");
+    setDocValidUntil((doc as any).valid_until || (doc as any).validUntil || "");
     setFileName(doc.file_name || "");
     setFileObject(null);
     setShowUpload(true);
@@ -282,31 +230,27 @@ function DocumentsContent() {
       reference_number: docReferenceNumber,
       valid_until: docValidUntil,
       file_name: actualFileName,
-      file_size_bytes: fileObject ? fileObject.size : 2400000,
+      file_size_bytes: fileObject ? fileObject.size : selectedDocForUpload?.file_size_bytes,
       extracted_text: clientExtractedText,
     };
 
-    // Animate 4 systematic verification steps
-    setVerificationProgressStep(1); // Step 1: Compliance File Type Check
-    await new Promise((r) => setTimeout(r, 200));
-    setVerificationProgressStep(2); // Step 2: Mandatory Field Completeness Check
-    await new Promise((r) => setTimeout(r, 200));
-    setVerificationProgressStep(3); // Step 3: Format & Expiry Date Compliance Check
-    await new Promise((r) => setTimeout(r, 200));
-    setVerificationProgressStep(4); // Step 4: AI Pre-Validation & OCR Relevance Inspection
-    await new Promise((r) => setTimeout(r, 200));
+    setVerificationProgressStep(1);
 
-    // Run systematic software verification engine (Client-side with hybrid API sync)
-    let verification = verifyDocument(verificationInput);
+    // A successful result must include the persisted document and server checks.
+    let verification: DocumentVerificationResult;
+    setVerificationProgressStep(2);
 
     let backendResp: any = null;
-    const targetBizId = businessId || "30ce1ab5-2347-46a9-b82b-b5e846a08e0b";
+    const targetBizId = businessId;
+    if (!targetBizId) { setError("Select a business before uploading a document."); setUploading(false); setVerificationProgressStep(0); return; }
 
     // Attempt backend verification API with real file attachment
     try {
       backendResp = await api.documents.upload(
         targetBizId,
         {
+          document_id: selectedDocForUpload?.id,
+          assessment_id: searchParams.get("assessment_id") || (businessId === activeBusinessId ? activeAssessmentId : undefined) || undefined,
           name: docName,
           category: docCategory,
           document_type: docCategory,
@@ -319,19 +263,25 @@ function DocumentsContent() {
         },
         fileObject
       );
-      if (backendResp && backendResp.verification) {
-        verification = backendResp.verification;
+      if (!backendResp?.document?.id || !backendResp?.verification?.checks) {
+        setError("We didn't receive a complete upload confirmation. Check your document vault before retrying.");
+        setUploading(false);
+        setVerificationProgressStep(0);
+        return;
       }
-    } catch (err) {
-      console.warn("Backend document upload & verification error:", err);
-      // Offline fallback: client-side engine executed with full precision
+      verification = backendResp.verification;
+    } catch {
+      setError("Your document wasn't uploaded. Please try again; your selected file is still available.");
+      setUploading(false);
+      setVerificationProgressStep(0);
+      return;
     }
 
     setUploading(false);
     setVerificationProgressStep(0);
 
     const docPayload = {
-      id: selectedDocForUpload ? selectedDocForUpload.id : (backendResp?.document?.id || `doc-${Date.now()}`),
+      id: backendResp.document.id,
       name: backendResp?.document?.name || docName,
       category: backendResp?.document?.category || docCategory,
       authority: backendResp?.document?.authority || docAuthority,
@@ -340,7 +290,7 @@ function DocumentsContent() {
       file_name: verificationInput.file_name,
       file_size_bytes: verificationInput.file_size_bytes,
       valid_until: backendResp?.document?.valid_until || docValidUntil,
-      code: backendResp?.document?.code || docReferenceNumber || `REG-${Date.now().toString().slice(-4)}`,
+      code: backendResp?.document?.code || docReferenceNumber,
       status: verification.status,
       verification,
     };
@@ -352,7 +302,12 @@ function DocumentsContent() {
     });
   }
 
-  // Accept verification and persist document in state
+  function closeVerificationResult() {
+    setActiveVerificationResult(null);
+    if (businessId) void loadDocuments(businessId);
+  }
+
+  // Show the server-persisted document in the local vault.
   function handleAcceptVerification() {
     if (!activeVerificationResult) return;
     const { docData, isNewUpload } = activeVerificationResult;
@@ -385,11 +340,11 @@ function DocumentsContent() {
   }
 
   const rawDocuments = response?.documents ?? [];
-  const uploadAvailable = response?.upload_available ?? true;
+  const uploadAvailable = Boolean(businessId) && (response?.upload_available ?? true);
 
   // Compute computed documents with manual portal upload state
   const documentsWithPortalState = rawDocuments.map((doc) => {
-    const isPortalUploaded = !!portalUploadedMap[doc.id];
+    const isPortalUploaded = portalUploadedMap[doc.id] ?? Boolean(doc.portal_uploaded);
     return {
       ...doc,
       isPortalUploaded,
@@ -410,45 +365,30 @@ function DocumentsContent() {
   });
 
   return (
-    <AppShell activeView="documents" requireAuth={false}>
+    <AppShell activeView="documents">
       <div className="space-y-6 max-w-7xl mx-auto pb-12">
         {/* Header */}
-        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+        <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
           <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#E2E8F0] bg-[#F1F5F9] text-[#0F172A] text-[11px] font-semibold tracking-wider uppercase mb-2">
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-inset)] text-[var(--ui-text)] text-[11px] font-semibold tracking-wider uppercase mb-2">
               {t("common.appName")} · {t("documents.title")}
             </div>
-            <h1 className="font-sans text-2xl sm:text-3xl text-[#0F172A] font-bold tracking-tight">
+            <h1 className="font-sans text-2xl sm:text-3xl text-[var(--ui-text)] font-bold tracking-tight">
               {t("documents.title")}
             </h1>
-            <p className="text-xs text-[#64748B] mt-1.5 max-w-2xl leading-relaxed">
-              {t("documents.subtitle")}
+            <p className="text-xs text-[var(--ui-secondary)] mt-1.5 max-w-2xl leading-relaxed">
+              Documents and preparation checklists for your saved business assessment.
             </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
             <Link
               href={`/dashboard?business_id=${businessId}`}
-              className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
+              className="rounded-full border border-[var(--ui-border)] bg-[var(--ui-bg)] px-4 py-2 text-xs font-semibold text-[var(--ui-text)] hover:bg-[var(--ui-inset)] transition-colors"
             >
               ← {t("navigation.dashboard")}
             </Link>
-            <button
-              type="button"
-              onClick={() => setShowConfigModal(true)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold border transition-all cursor-pointer ${
-                llmConfig?.is_configured
-                  ? "bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
-                  : "bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100"
-              }`}
-            >
-              <Key className="h-3.5 w-3.5" />
-              <span>
-                {llmConfig?.is_configured
-                  ? `AI Provider (${llmConfig.key_preview})`
-                  : "Configure OpenAI Key"}
-              </span>
-            </button>
+
             {uploadAvailable && (
               <button
                 type="button"
@@ -456,15 +396,15 @@ function DocumentsContent() {
                   setSelectedDocForUpload(null);
                   setDocName("");
                   setDocCategory("Statutory Proof");
-                  setDocAuthority("Directorate of Industrial Safety & Health");
-                  setDocRequirementId("Factories Act 1948 §6");
+                  setDocAuthority("");
+                  setDocRequirementId("");
                   setDocReferenceNumber("");
-                  setDocValidUntil("2026-12-31");
+                  setDocValidUntil("");
                   setFileName("");
                   setFileObject(null);
                   setShowUpload(!showUpload);
                 }}
-                className="inline-flex items-center gap-2 rounded-full bg-[#18181B] px-4 py-2 text-xs font-semibold text-white hover:bg-[#27272A] transition-all shadow-2xs cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--ui-text)] px-4 py-2 text-xs font-semibold text-white hover:bg-[var(--ui-text)] transition-all shadow-2xs cursor-pointer"
               >
                 <Upload className="h-3.5 w-3.5" />
                 <span>{t("documents.uploadDocument")}</span>
@@ -474,53 +414,52 @@ function DocumentsContent() {
         </div>
 
         {/* Official Statutory Disclaimer Banner with Verification Layer Notice */}
-        <div className="rounded-[16px] border border-blue-200 bg-blue-50/50 p-4 text-xs text-[#0F172A] flex items-start gap-3.5 shadow-2xs relative overflow-hidden">
-          <div className="w-1 h-full absolute left-0 top-0 bg-blue-600" />
-          <div className="p-1 rounded-full bg-blue-100 text-blue-800 shrink-0 mt-0.5">
+        <div className="rounded-[16px] border border-[var(--ui-sage-soft)] bg-[var(--ui-info-soft)]/50 p-4 text-xs text-[var(--ui-text)] flex items-start gap-3.5 shadow-2xs relative overflow-hidden">
+          <div className="w-1 h-full absolute left-0 top-0 bg-[var(--ui-text)]" />
+          <div className="p-1 rounded-full bg-[var(--ui-info-soft)] text-[var(--ui-info)] shrink-0 mt-0.5">
             <ShieldCheck className="h-4 w-4" />
           </div>
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-semibold text-[#0F172A] uppercase tracking-wider text-[11px]">
-                Statutory Verification Notice
+              <span className="font-semibold text-[var(--ui-text)] uppercase tracking-wider text-[11px]">
+                Upload · Check · Review
               </span>
-              <span className="text-[10px] px-2 py-0.5 text-blue-800 bg-blue-100/60 border border-blue-200 rounded-full font-mono font-medium">
-                AI Pre-Validation & OCR Engine Active
+              <span className="text-[10px] px-2 py-0.5 text-[var(--ui-info)] bg-[var(--ui-info-soft)]/60 border border-[var(--ui-sage-soft)] rounded-full font-mono font-medium">
+                Document checks
               </span>
             </div>
-            <p className="text-[#475569] text-xs leading-relaxed">
-              Every uploaded document undergoes systematic verification checking compliance file types, mandatory field completeness, statutory prescribed format, active validity dates, and AI relevance pre-validation.
-              <span className="font-medium text-[#0F172A]"> Admin manual verification</span> is scheduled as a secondary layer for a future release. Final statutory licensing jurisdiction remains with regulatory bodies (BIS, FSSAI, CPCB, DISH).
+            <p className="text-[var(--ui-secondary)] text-xs leading-relaxed">
+              Upload your evidence, review the checks, then address anything that needs attention. A document check supports your preparation; the authority makes the final licensing decision.
             </p>
           </div>
         </div>
 
         {/* Official Portal Filing Progress & Filter Tracker */}
-        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-5 shadow-2xs space-y-4">
+        <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-5 shadow-2xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--ui-text)]">
                   Official Portal Filing Status
                 </h2>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-[#475569] font-mono">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--ui-inset)] border border-[var(--ui-border)] text-[var(--ui-secondary)] font-mono">
                   {uploadedCount} of {totalDocuments} Uploaded ({portalCompletionPercent}%)
                 </span>
               </div>
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-[var(--ui-secondary)]">
                 Check the box on any document to mark it as already filed on official government portals (FoSCoS, Parivesh, DISH, Manakonline) to keep track of your statutory submissions.
               </p>
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex items-center gap-1.5 p-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl self-start sm:self-auto text-xs">
+            <div className="flex items-center gap-1.5 p-1 bg-[var(--ui-bg)] border border-[var(--ui-border)] rounded-xl self-start sm:self-auto text-xs">
               <button
                 type="button"
                 onClick={() => setPortalFilter("ALL")}
                 className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
                   portalFilter === "ALL"
-                    ? "bg-[#18181B] text-white shadow-2xs font-semibold"
-                    : "text-[#64748B] hover:text-[#0F172A]"
+                    ? "bg-[var(--ui-text)] text-white shadow-2xs font-semibold"
+                    : "text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
                 }`}
               >
                 All ({totalDocuments})
@@ -530,8 +469,8 @@ function DocumentsContent() {
                 onClick={() => setPortalFilter("UPLOADED")}
                 className={`px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1.5 ${
                   portalFilter === "UPLOADED"
-                    ? "bg-emerald-700 text-white shadow-2xs font-semibold"
-                    : "text-[#64748B] hover:text-emerald-700"
+                    ? "bg-[var(--ui-sage)] text-white shadow-2xs font-semibold"
+                    : "text-[var(--ui-secondary)] hover:text-[var(--ui-sage)]"
                 }`}
               >
                 <Check className="h-3 w-3" />
@@ -542,8 +481,8 @@ function DocumentsContent() {
                 onClick={() => setPortalFilter("NOT_UPLOADED")}
                 className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
                   portalFilter === "NOT_UPLOADED"
-                    ? "bg-[#18181B] text-white shadow-2xs font-semibold"
-                    : "text-[#64748B] hover:text-[#0F172A]"
+                    ? "bg-[var(--ui-text)] text-white shadow-2xs font-semibold"
+                    : "text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
                 }`}
               >
                 Not Uploaded ({pendingCount})
@@ -552,9 +491,9 @@ function DocumentsContent() {
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-[#F1F5F9] rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-[var(--ui-inset)] rounded-full h-2 overflow-hidden">
             <div
-              className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
+              className="bg-[var(--ui-sage)] h-2 rounded-full transition-all duration-300"
               style={{ width: `${portalCompletionPercent}%` }}
             />
           </div>
@@ -564,55 +503,57 @@ function DocumentsContent() {
         {showUpload && uploadAvailable && (
           <form
             onSubmit={handleRunVerificationAndUpload}
-            className="bg-white rounded-[16px] border border-[#CBD5E1] p-6 shadow-xs space-y-5 animate-in fade-in duration-200"
+            className="bg-white rounded-[16px] border border-[var(--ui-border-strong)] p-6 shadow-xs space-y-5 animate-in fade-in duration-200"
           >
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
+            <div className="flex items-center justify-between border-b border-[var(--ui-border)] pb-4">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-sans font-bold text-lg text-[#0F172A]">
+                  <h2 className="font-sans font-bold text-lg text-[var(--ui-text)]">
                     {selectedDocForUpload ? `Upload & Verify: ${selectedDocForUpload.name}` : t("documents.uploadDocument")}
                   </h2>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--ui-info-soft)] text-[var(--ui-info)] border border-[var(--ui-sage-soft)] flex items-center gap-1">
                     <Sparkles className="h-3 w-3" />
-                    <span>AI Pre-Validation Layer</span>
+                    <span>Document checks</span>
                   </span>
                 </div>
-                <p className="text-xs text-[#64748B]">
-                  Performs OCR extraction, verifies the compliance-mandated file extension, checks mandatory statutory fields, and flags irrelevant uploads.
+                <p className="text-xs text-[var(--ui-secondary)]">
+                  Add the document and its reference details. Review the checks before using it in a submission.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowUpload(false)}
-                className="text-[#64748B] hover:text-[#0F172A] text-sm p-1 rounded-md"
+                className="text-[var(--ui-secondary)] hover:text-[var(--ui-text)] text-sm p-1 rounded-md"
               >
-                ✕
+                <span aria-label="Close upload form">✕</span>
               </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-text)] mb-1.5">
                   Document Title *
                 </label>
                 <input
                   type="text"
                   required
                   value={docName}
+                  aria-label="Document name"
                   onChange={(e) => setDocName(e.target.value)}
                   placeholder="e.g. Factory Layout Plan & DISH Endorsement"
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-xs text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F172A] focus:outline-hidden"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2 text-xs text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:border-[var(--ui-text)] focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-text)] mb-1.5">
                   Document Category *
                 </label>
                 <select
                   value={docCategory}
+                  aria-label="Document category"
                   onChange={(e) => setDocCategory(e.target.value)}
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-xs text-[#0F172A] focus:border-[#0F172A] focus:outline-hidden"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2 text-xs text-[var(--ui-text)] focus:border-[var(--ui-text)] focus:outline-hidden"
                 >
                   <option value="Statutory Proof">Statutory Proof</option>
                   <option value="Testing Evidence">Testing Evidence</option>
@@ -624,67 +565,72 @@ function DocumentsContent() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-text)] mb-1.5">
                   Associated Compliance Requirement *
                 </label>
                 <input
                   type="text"
                   required
                   value={docRequirementId}
+                  aria-label="Requirement reference"
                   onChange={(e) => setDocRequirementId(e.target.value)}
                   placeholder="e.g. Factories Act 1948 §6 or IS 1293:2019"
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-xs text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F172A] focus:outline-hidden"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2 text-xs text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:border-[var(--ui-text)] focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-text)] mb-1.5">
                   Issuing Regulatory Authority *
                 </label>
                 <input
                   type="text"
                   required
                   value={docAuthority}
+                  aria-label="Issuing authority"
                   onChange={(e) => setDocAuthority(e.target.value)}
                   placeholder="e.g. DISH, FSSAI, SPCB, BIS"
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-xs text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F172A] focus:outline-hidden"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2 text-xs text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:border-[var(--ui-text)] focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-text)] mb-1.5">
                   Certificate / Registration Reference # *
                 </label>
                 <input
                   type="text"
                   required
                   value={docReferenceNumber}
+                  aria-label="Document reference number"
                   onChange={(e) => setDocReferenceNumber(e.target.value)}
                   placeholder="e.g. FAC-LIC-2024-881"
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-xs text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F172A] focus:outline-hidden"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2 text-xs text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:border-[var(--ui-text)] focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-text)] mb-1.5">
                   Valid Until / Date of Expiry *
                 </label>
                 <input
                   type="date"
                   required
                   value={docValidUntil}
+                  aria-label="Valid until"
                   onChange={(e) => setDocValidUntil(e.target.value)}
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-xs text-[#0F172A] focus:border-[#0F172A] focus:outline-hidden"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2 text-xs text-[var(--ui-text)] focus:border-[var(--ui-text)] focus:outline-hidden"
                 />
               </div>
 
               <div className="sm:col-span-3">
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-text)] mb-1.5">
                   File Attachment (Blueprints, Test Reports, and Factory Layouts mandate PDF format) *
                 </label>
                 <div className="flex items-center gap-3">
                   <input
                     type="file"
+                    aria-label="Document file"
                     required={!fileName && !fileObject}
                     accept=".pdf,.png,.jpg,.jpeg,.tiff,.docx,.html,.htm,.txt"
                     onChange={(e) => {
@@ -694,10 +640,10 @@ function DocumentsContent() {
                         setFileName(f.name);
                       }
                     }}
-                    className="w-full text-xs text-[#64748B] file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#0F172A] file:text-white hover:file:bg-[#27272A] file:cursor-pointer"
+                    className="w-full text-xs text-[var(--ui-secondary)] file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[var(--ui-text)] file:text-white hover:file:bg-[var(--ui-text)] file:cursor-pointer"
                   />
                   {fileName && (
-                    <span className="text-xs text-[#0F172A] font-mono shrink-0">
+                    <span className="text-xs text-[var(--ui-text)] font-mono shrink-0">
                       {fileName} {fileObject ? `(${(fileObject.size / 1024 / 1024).toFixed(1)} MB)` : ""}
                     </span>
                   )}
@@ -707,43 +653,21 @@ function DocumentsContent() {
 
             {/* Stepped Progress Indicator during verification */}
             {uploading && (
-              <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2.5 animate-pulse">
-                <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider block">
-                  Systematic Software Verification & AI Pre-Validation in Progress...
-                </span>
-                <div className="space-y-1.5 text-xs text-[#64748B]">
-                  <div className={`flex items-center gap-2 ${verificationProgressStep >= 1 ? "text-emerald-700 font-semibold" : ""}`}>
-                    <span>{verificationProgressStep > 1 ? "✓" : "○"}</span>
-                    <span>1. Verifying file type required for this specific compliance (PDF/Image compatibility)...</span>
-                  </div>
-                  <div className={`flex items-center gap-2 ${verificationProgressStep >= 2 ? "text-emerald-700 font-semibold" : ""}`}>
-                    <span>{verificationProgressStep > 2 ? "✓" : "○"}</span>
-                    <span>2. Checking whether all 7 mandatory statutory fields are filled out...</span>
-                  </div>
-                  <div className={`flex items-center gap-2 ${verificationProgressStep >= 3 ? "text-emerald-700 font-semibold" : ""}`}>
-                    <span>{verificationProgressStep > 3 ? "✓" : "○"}</span>
-                    <span>3. Verifying statutory format and date of expiry compliance...</span>
-                  </div>
-                  <div className={`flex items-center gap-2 ${verificationProgressStep >= 4 ? "text-emerald-700 font-semibold" : ""}`}>
-                    <span>{verificationProgressStep >= 4 ? "✓" : "○"}</span>
-                    <span>4. Executing OCR text extraction & AI pre-validation for document relevance...</span>
-                  </div>
-                </div>
-              </div>
+              <UploadProgress stage={verificationProgressStep} />
             )}
 
             <div className="flex justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setShowUpload(false)}
-                className="rounded-full border border-[#E2E8F0] px-4 py-2 text-xs font-medium text-[#64748B] hover:bg-[#F8FAFC]"
+                className="rounded-full border border-[var(--ui-border)] px-4 py-2 text-xs font-medium text-[var(--ui-secondary)] hover:bg-[var(--ui-bg)]"
               >
                 {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 disabled={uploading}
-                className="inline-flex items-center gap-2 rounded-full bg-[#18181B] px-5 py-2 text-xs font-semibold text-white hover:bg-[#27272A] disabled:opacity-50 transition-all shadow-2xs cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--ui-text)] px-5 py-2 text-xs font-semibold text-white hover:bg-[var(--ui-text)] disabled:opacity-50 transition-all shadow-2xs cursor-pointer"
               >
                 <ShieldCheck className="h-4 w-4" />
                 <span>{uploading ? (t("common.submitting") || "Verifying Document...") : "Submit & Run Software Verification"}</span>
@@ -754,18 +678,19 @@ function DocumentsContent() {
 
         {/* Software Verification Result Modal */}
         {activeVerificationResult && (
-          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-xs">
-            <div className="bg-white rounded-[20px] border border-[#CBD5E1] max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-8 space-y-6 animate-in zoom-in-95 duration-150">
-              <div className="flex items-start justify-between border-b border-[#E2E8F0] pb-4">
+          <Overlay open onClose={closeVerificationResult} title="Document verification result">
+            <div className="bg-white rounded-[20px] border border-[var(--ui-border-strong)] max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-8 space-y-6 animate-in zoom-in-95 duration-150">
+              <div className="flex items-start justify-between border-b border-[var(--ui-border)] pb-4">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-[#0F172A]">
-                      Software Verification & AI Pre-Validation Report
+                  <p className="text-xs text-[var(--ui-secondary)]">Preliminary checks support preparation. A reviewer must confirm this document.</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-xl font-bold text-[var(--ui-text)]">
+                      Your document check
                     </h2>
                     <span
                       className={`px-3 py-0.5 rounded-full text-xs font-bold font-mono ${
                         activeVerificationResult.result.overall_status === "PASSED"
-                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                          ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]"
                           : activeVerificationResult.result.overall_status === "WARNING"
                           ? "bg-amber-100 text-amber-800 border border-amber-300"
                           : "bg-rose-100 text-rose-800 border border-rose-300"
@@ -774,14 +699,15 @@ function DocumentsContent() {
                       {activeVerificationResult.result.overall_status}
                     </span>
                   </div>
-                  <p className="text-xs text-[#64748B]">
-                    Document: <strong className="text-[#0F172A]">{activeVerificationResult.docData.name}</strong>
+                  <p className="text-xs text-[var(--ui-secondary)]">
+                    Document: <strong className="text-[var(--ui-text)]">{activeVerificationResult.docData.name}</strong>
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setActiveVerificationResult(null)}
-                  className="p-1 text-[#64748B] hover:text-[#0F172A] rounded-md text-lg"
+                  onClick={closeVerificationResult}
+                  aria-label="Close document check"
+                  className="p-1 text-[var(--ui-secondary)] hover:text-[var(--ui-text)] rounded-md text-lg"
                 >
                   ✕
                 </button>
@@ -792,42 +718,37 @@ function DocumentsContent() {
                 <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-400 text-rose-950 space-y-2.5 shadow-xs">
                   <div className="flex items-center gap-2 font-bold text-sm text-rose-900">
                     <AlertCircle className="h-5 w-5 text-rose-600 shrink-0" />
-                    <span>Irrelevant Document Alert: Upload Rejected by AI Pre-Validation</span>
+                    <span>This document needs a closer look.</span>
                   </div>
                   <div className="text-xs font-semibold text-rose-900 bg-white/80 p-3 rounded-lg border border-rose-200 leading-relaxed">
                     {activeVerificationResult.result.flag_message}
                   </div>
                   <p className="text-[11px] text-rose-800 leading-relaxed">
-                    The AI Pre-Validation engine detected that this uploaded file does not correspond to the statutory requirements of this compliance. Please ensure the document is not an unrelated bill or arbitrary attachment, and upload the genuine regulatory filing.
+                    The checks found a possible mismatch with the requirement. Review the explanation and provide the relevant supporting record.
                   </p>
                 </div>
               )}
 
-              {/* Admin layer explanation banner */}
-              <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-xs text-[#64748B] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-[#0F172A]">Layer 1 (Admin Manual Verification):</span>
-                  <span>Scheduled for a later phase</span>
-                </div>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 text-[#475569] font-mono">
-                  Future Phase
-                </span>
+              <section><h3 className="font-semibold mb-2">Next step</h3>{activeVerificationResult.result.recommendations?.length ? <ul className="list-disc pl-5 text-sm text-[var(--ui-secondary)] space-y-2">{activeVerificationResult.result.recommendations.map((item,index) => <li key={index}>{item}</li>)}</ul> : <p className="text-sm text-[var(--ui-secondary)]">Review the checks and keep this record in your document vault.</p>}</section>
+              <Disclosure title="Document checks · supporting detail">
+              <div className="p-3.5 rounded-xl bg-[var(--ui-bg)] border border-[var(--ui-border)] text-xs text-[var(--ui-secondary)] flex items-center justify-between">
+                <p>This result reflects document checks. Official filing and reviewer decisions are tracked separately.</p>
               </div>
 
               {/* LLM Compliance Scan & Regulatory Analysis (Necessity & Correctness) */}
               {activeVerificationResult.result.llm_scan_analysis && (
-                <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50/70 to-indigo-50/40 p-5 space-y-4 shadow-xs">
-                  <div className="flex items-center justify-between border-b border-blue-200/80 pb-3">
+                <div className="rounded-xl border border-[var(--ui-sage-soft)] bg-gradient-to-br from-[var(--ui-info-soft)]/70 to-[var(--ui-sage-faint)]/40 p-5 space-y-4 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-[var(--ui-sage-soft)]/80 pb-3">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-blue-700" />
-                      <h3 className="text-sm font-bold text-[#0F172A]">
-                        LLM Compliance Scan & Regulatory Analysis
+                      <Sparkles className="h-4 w-4 text-[var(--ui-info)]" />
+                      <h3 className="text-sm font-bold text-[var(--ui-text)]">
+                        Requirement match
                       </h3>
                     </div>
                     <span
                       className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full ${
                         activeVerificationResult.result.llm_scan_analysis.compliance_verdict === "COMPLIANT"
-                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                          ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]"
                           : activeVerificationResult.result.llm_scan_analysis.compliance_verdict === "IRRELEVANT"
                           ? "bg-rose-100 text-rose-800 border border-rose-300"
                           : "bg-amber-100 text-amber-800 border border-amber-300"
@@ -839,51 +760,51 @@ function DocumentsContent() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     {/* 1. Document Necessity */}
-                    <div className="bg-white/90 p-3.5 rounded-xl border border-blue-100 space-y-1.5 shadow-2xs">
+                    <div className="bg-white/90 p-3.5 rounded-xl border border-[var(--ui-sage-soft)] space-y-1.5 shadow-2xs">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#0F172A]">
+                        <span className="text-xs font-bold text-[var(--ui-text)]">
                           1. Is document necessary for compliance?
                         </span>
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                             activeVerificationResult.result.llm_scan_analysis.is_necessary
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              ? "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]"
                               : "bg-rose-50 text-rose-700 border border-rose-200"
                           }`}
                         >
                           {activeVerificationResult.result.llm_scan_analysis.necessity_verdict}
                         </span>
                       </div>
-                      <p className="text-xs text-[#475569] leading-relaxed">
+                      <p className="text-xs text-[var(--ui-secondary)] leading-relaxed">
                         {activeVerificationResult.result.llm_scan_analysis.necessity_rationale}
                       </p>
                     </div>
 
                     {/* 2. Document Correctness */}
-                    <div className="bg-white/90 p-3.5 rounded-xl border border-blue-100 space-y-1.5 shadow-2xs">
+                    <div className="bg-white/90 p-3.5 rounded-xl border border-[var(--ui-sage-soft)] space-y-1.5 shadow-2xs">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#0F172A]">
+                        <span className="text-xs font-bold text-[var(--ui-text)]">
                           2. Is document correct for compliance?
                         </span>
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                             activeVerificationResult.result.llm_scan_analysis.is_correct
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              ? "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]"
                               : "bg-rose-50 text-rose-700 border border-rose-200"
                           }`}
                         >
                           {activeVerificationResult.result.llm_scan_analysis.correctness_verdict}
                         </span>
                       </div>
-                      <p className="text-xs text-[#475569] leading-relaxed">
+                      <p className="text-xs text-[var(--ui-secondary)] leading-relaxed">
                         {activeVerificationResult.result.llm_scan_analysis.correctness_assessment}
                       </p>
                     </div>
                   </div>
 
                   {activeVerificationResult.result.llm_scan_analysis.llm_summary && (
-                    <div className="text-xs text-[#334155] bg-white/70 p-3 rounded-lg border border-blue-100 flex items-start gap-2">
-                      <span className="font-semibold text-[#0F172A] shrink-0">Scan Summary:</span>
+                    <div className="text-xs text-[var(--ui-secondary)] bg-white/70 p-3 rounded-lg border border-[var(--ui-sage-soft)] flex items-start gap-2">
+                      <span className="font-semibold text-[var(--ui-text)] shrink-0">Scan Summary:</span>
                       <span className="leading-relaxed">{activeVerificationResult.result.llm_scan_analysis.llm_summary}</span>
                     </div>
                   )}
@@ -892,34 +813,34 @@ function DocumentsContent() {
 
               {/* 4 Systematic Verification Checks Breakdown */}
               <div className="space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
-                  Layer 2 · Systematic Software & AI Checks
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--ui-text)]">
+                  Document checks
                 </h3>
 
                 {/* Check 1: File Type Required for Compliance */}
-                <div className="p-4 rounded-xl border border-[#E2E8F0] bg-white space-y-2">
+                <div className="p-4 rounded-xl border border-[var(--ui-border)] bg-white space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       {activeVerificationResult.result.checks.file_type.passed ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <CheckCircle2 className="h-4 w-4 text-[var(--ui-sage)]" />
                       ) : (
                         <AlertCircle className="h-4 w-4 text-rose-600" />
                       )}
-                      <span className="text-xs font-bold text-[#0F172A]">
+                      <span className="text-xs font-bold text-[var(--ui-text)]">
                         1. Compliance-Specific File Type & Extension
                       </span>
                     </div>
                     <span
                       className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
                         activeVerificationResult.result.checks.file_type.passed
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          ? "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]"
                           : "bg-rose-50 text-rose-700 border border-rose-200"
                       }`}
                     >
                       {activeVerificationResult.result.checks.file_type.status}
                     </span>
                   </div>
-                  <p className="text-xs text-[#475569] pl-6">
+                  <p className="text-xs text-[var(--ui-secondary)] pl-6">
                     {activeVerificationResult.result.checks.file_type.message}
                   </p>
                   {activeVerificationResult.result.checks.file_type.issues.length > 0 && (
@@ -932,29 +853,29 @@ function DocumentsContent() {
                 </div>
 
                 {/* Check 2: Mandatory Field Completeness */}
-                <div className="p-4 rounded-xl border border-[#E2E8F0] bg-white space-y-2">
+                <div className="p-4 rounded-xl border border-[var(--ui-border)] bg-white space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       {activeVerificationResult.result.checks.field_completeness.passed ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <CheckCircle2 className="h-4 w-4 text-[var(--ui-sage)]" />
                       ) : (
                         <AlertCircle className="h-4 w-4 text-rose-600" />
                       )}
-                      <span className="text-xs font-bold text-[#0F172A]">
+                      <span className="text-xs font-bold text-[var(--ui-text)]">
                         2. Mandatory Statutory Fields Completeness
                       </span>
                     </div>
                     <span
                       className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
                         activeVerificationResult.result.checks.field_completeness.passed
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          ? "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]"
                           : "bg-rose-50 text-rose-700 border border-rose-200"
                       }`}
                     >
                       {activeVerificationResult.result.checks.field_completeness.status}
                     </span>
                   </div>
-                  <p className="text-xs text-[#475569] pl-6">
+                  <p className="text-xs text-[var(--ui-secondary)] pl-6">
                     {activeVerificationResult.result.checks.field_completeness.message}
                   </p>
                   {activeVerificationResult.result.checks.field_completeness.issues.length > 0 && (
@@ -967,15 +888,15 @@ function DocumentsContent() {
                 </div>
 
                 {/* Check 3: Format & Expiry Compliance */}
-                <div className="p-4 rounded-xl border border-[#E2E8F0] bg-white space-y-2">
+                <div className="p-4 rounded-xl border border-[var(--ui-border)] bg-white space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       {activeVerificationResult.result.checks.format_and_expiry.passed ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <CheckCircle2 className="h-4 w-4 text-[var(--ui-sage)]" />
                       ) : (
                         <AlertCircle className="h-4 w-4 text-rose-600" />
                       )}
-                      <span className="text-xs font-bold text-[#0F172A]">
+                      <span className="text-xs font-bold text-[var(--ui-text)]">
                         3. Statutory Prescribed Format & Expiry Date Compliance
                       </span>
                     </div>
@@ -984,14 +905,14 @@ function DocumentsContent() {
                         activeVerificationResult.result.checks.format_and_expiry.passed
                           ? activeVerificationResult.result.checks.format_and_expiry.status === "WARNING"
                             ? "bg-amber-50 text-amber-700 border border-amber-200"
-                            : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]"
                           : "bg-rose-50 text-rose-700 border border-rose-200"
                       }`}
                     >
                       {activeVerificationResult.result.checks.format_and_expiry.status}
                     </span>
                   </div>
-                  <p className="text-xs text-[#475569] pl-6">
+                  <p className="text-xs text-[var(--ui-secondary)] pl-6">
                     {activeVerificationResult.result.checks.format_and_expiry.message}
                   </p>
                   {activeVerificationResult.result.checks.format_and_expiry.issues.length > 0 && (
@@ -1011,39 +932,39 @@ function DocumentsContent() {
                 </div>
 
                 {/* Check 4: AI Pre-Validation & OCR Relevance */}
-                <div className="p-4 rounded-xl border border-[#E2E8F0] bg-white space-y-3">
+                <div className="p-4 rounded-xl border border-[var(--ui-border)] bg-white space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       {activeVerificationResult.result.checks.ai_relevance.passed ? (
-                        <Sparkles className="h-4 w-4 text-blue-600" />
+                        <Sparkles className="h-4 w-4 text-[var(--ui-info)]" />
                       ) : (
                         <AlertCircle className="h-4 w-4 text-rose-600" />
                       )}
-                      <span className="text-xs font-bold text-[#0F172A]">
+                      <span className="text-xs font-bold text-[var(--ui-text)]">
                         4. AI Pre-Validation & OCR Relevance Analysis
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {activeVerificationResult.result.checks.ai_relevance.ai_call_status === "LIVE_OPENAI_COMPLETION" ||
-                      activeVerificationResult.result.llm_scan_analysis?.ai_call_status === "LIVE_OPENAI_COMPLETION" ? (
-                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
-                          <Zap className="h-3 w-3 text-emerald-600" />
-                          <span>OpenAI GPT-4o-mini</span>
+                      {["LIVE_OPENAI_COMPLETION", "LIVE_PROVIDER_COMPLETION"].includes(activeVerificationResult.result.checks.ai_relevance.ai_call_status || "") ||
+                      ["LIVE_OPENAI_COMPLETION", "LIVE_PROVIDER_COMPLETION"].includes(activeVerificationResult.result.llm_scan_analysis?.ai_call_status || "") ? (
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)] flex items-center gap-1">
+                          <Zap className="h-3 w-3 text-[var(--ui-sage)]" />
+                          <span>Automated interpretation</span>
                         </span>
                       ) : activeVerificationResult.result.checks.ai_relevance.ai_call_status === "OPENAI_ERROR" ||
                         activeVerificationResult.result.llm_scan_analysis?.ai_call_status === "OPENAI_ERROR" ? (
                         <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-                          Fallback Engine (API Error)
+                          Preliminary file checks
                         </span>
                       ) : (
-                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300">
-                          Statutory Regulatory Engine
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[var(--ui-inset)] text-[var(--ui-secondary)] border border-[var(--ui-border-strong)]">
+                          Preliminary file checks
                         </span>
                       )}
                       <span
                         className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
                           activeVerificationResult.result.checks.ai_relevance.passed
-                            ? "bg-blue-50 text-blue-700 border border-blue-200"
+                            ? "bg-[var(--ui-info-soft)] text-[var(--ui-info)] border border-[var(--ui-sage-soft)]"
                             : "bg-rose-50 text-rose-700 border border-rose-200"
                         }`}
                       >
@@ -1052,7 +973,7 @@ function DocumentsContent() {
                     </div>
                   </div>
 
-                  <p className="text-xs text-[#475569] pl-6 leading-relaxed">
+                  <p className="text-xs text-[var(--ui-secondary)] pl-6 leading-relaxed">
                     {activeVerificationResult.result.checks.ai_relevance.message}
                   </p>
 
@@ -1069,42 +990,42 @@ function DocumentsContent() {
                   {/* Two-Column LLM Scan Analysis: Necessity & Correctness */}
                   {activeVerificationResult.result.llm_scan_analysis && (
                     <div className="ml-6 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                      <div className="p-3 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] space-y-1">
+                      <div className="p-3 rounded-lg bg-[var(--ui-bg)] border border-[var(--ui-border)] space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-[#0F172A] uppercase tracking-wide">
+                          <span className="text-[11px] font-bold text-[var(--ui-text)] uppercase tracking-wide">
                             Statutory Necessity
                           </span>
                           <span
                             className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-sm ${
                               activeVerificationResult.result.llm_scan_analysis.is_necessary
-                                ? "bg-emerald-100 text-emerald-800"
+                                ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]"
                                 : "bg-rose-100 text-rose-800"
                             }`}
                           >
                             {activeVerificationResult.result.llm_scan_analysis.necessity_verdict}
                           </span>
                         </div>
-                        <p className="text-[11px] text-[#475569] leading-snug">
+                        <p className="text-[11px] text-[var(--ui-secondary)] leading-snug">
                           {activeVerificationResult.result.llm_scan_analysis.necessity_rationale}
                         </p>
                       </div>
 
-                      <div className="p-3 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] space-y-1">
+                      <div className="p-3 rounded-lg bg-[var(--ui-bg)] border border-[var(--ui-border)] space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-[#0F172A] uppercase tracking-wide">
+                          <span className="text-[11px] font-bold text-[var(--ui-text)] uppercase tracking-wide">
                             Statutory Correctness
                           </span>
                           <span
                             className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-sm ${
                               activeVerificationResult.result.llm_scan_analysis.is_correct
-                                ? "bg-emerald-100 text-emerald-800"
+                                ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]"
                                 : "bg-rose-100 text-rose-800"
                             }`}
                           >
                             {activeVerificationResult.result.llm_scan_analysis.correctness_verdict}
                           </span>
                         </div>
-                        <p className="text-[11px] text-[#475569] leading-snug">
+                        <p className="text-[11px] text-[var(--ui-secondary)] leading-snug">
                           {activeVerificationResult.result.llm_scan_analysis.correctness_assessment}
                         </p>
                       </div>
@@ -1121,131 +1042,31 @@ function DocumentsContent() {
                 </div>
               </div>
 
+              </Disclosure>
               {/* Action buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E2E8F0]">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--ui-border)]">
                 <button
                   type="button"
-                  onClick={() => setActiveVerificationResult(null)}
-                  className="rounded-full border border-[#E2E8F0] px-4 py-2 text-xs font-semibold text-[#64748B] hover:bg-[#F8FAFC]"
+                  onClick={closeVerificationResult}
+                  className="rounded-full border border-[var(--ui-border)] px-4 py-2 text-xs font-semibold text-[var(--ui-secondary)] hover:bg-[var(--ui-bg)]"
                 >
-                  Cancel / Re-edit
+                  Close result
                 </button>
                 <button
                   type="button"
                   onClick={handleAcceptVerification}
-                  className="rounded-full bg-[#18181B] px-5 py-2 text-xs font-semibold text-white hover:bg-[#27272A] transition-all shadow-2xs"
+                  className="rounded-full bg-[var(--ui-text)] px-5 py-2 text-xs font-semibold text-white hover:bg-[var(--ui-text)] transition-all shadow-2xs"
                 >
-                  Accept & Save to Repository
+                  Return to document vault
                 </button>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* OpenAI API Configuration Modal */}
-        {showConfigModal && (
-          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-xs">
-            <div className="bg-white rounded-[20px] border border-[#CBD5E1] max-w-lg w-full shadow-2xl p-6 sm:p-8 space-y-5 animate-in zoom-in-95 duration-150">
-              <div className="flex items-start justify-between border-b border-[#E2E8F0] pb-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Key className="h-5 w-5 text-blue-600" />
-                    <h2 className="text-lg font-bold text-[#0F172A]">
-                      OpenAI API Configuration
-                    </h2>
-                  </div>
-                  <p className="text-xs text-[#64748B]">
-                    Configure your OpenAI API key for live GPT-4o-mini statutory document pre-validation and compliance scanning.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowConfigModal(false)}
-                  className="text-[#64748B] hover:text-[#0F172A] text-sm p-1 rounded-md"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Current Status */}
-              <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-[#0F172A]">Model Provider:</span>
-                  <span className="font-mono text-blue-700 font-bold">OpenAI ({llmConfig?.model || "gpt-4o-mini"})</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-[#0F172A]">Status:</span>
-                  <span className="font-mono">
-                    {llmConfig?.is_configured ? (
-                      <span className="text-emerald-700 font-bold flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                        Configured ({llmConfig.key_preview})
-                      </span>
-                    ) : (
-                      <span className="text-amber-700 font-bold flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
-                        Not Configured
-                      </span>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              <form onSubmit={handleSaveApiKey} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                    OpenAI API Key (sk-...)
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={apiKeyInput}
-                    onChange={(e) => setApiKeyInput(e.target.value)}
-                    placeholder="sk-proj-..."
-                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-xs text-[#0F172A] placeholder-[#94A3B8] font-mono focus:border-[#0F172A] focus:outline-hidden"
-                  />
-                  <span className="text-[11px] text-[#64748B] mt-1 block">
-                    The key is saved to backend .env and browser storage to execute live completions on https://api.openai.com.
-                  </span>
-                </div>
-
-                {configFeedback && (
-                  <div
-                    className={`p-3 rounded-lg text-xs font-medium ${
-                      configFeedback.includes("successfully")
-                        ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                        : "bg-rose-50 text-rose-800 border border-rose-200"
-                    }`}
-                  >
-                    {configFeedback}
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowConfigModal(false)}
-                    className="rounded-full border border-[#E2E8F0] px-4 py-2 text-xs font-medium text-[#64748B] hover:bg-[#F8FAFC]"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={savingKey || !apiKeyInput.trim()}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#18181B] px-5 py-2 text-xs font-semibold text-white hover:bg-[#27272A] disabled:opacity-50 transition-all shadow-2xs cursor-pointer"
-                  >
-                    <Key className="h-3.5 w-3.5" />
-                    <span>{savingKey ? "Saving & Testing..." : "Save API Key"}</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+          </Overlay>
         )}
 
         {error && (
           <ErrorState
-            title="Document Service Notice"
+            title={error}
             message={error}
             onRetry={() => businessId && loadDocuments(businessId)}
           />
@@ -1255,17 +1076,17 @@ function DocumentsContent() {
           <div className="space-y-3">
             <LoadingSkeleton count={4} className="h-28 w-full rounded-[16px]" />
           </div>
-        ) : filteredDocuments.length === 0 ? (
-          <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs">
+        ) : error ? null : filteredDocuments.length === 0 ? (
+          <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-12 text-center shadow-2xs">
             <div className="text-3xl mb-3">📁</div>
-            <h3 className="font-sans font-bold text-lg text-[#0F172A]">
+            <h3 className="font-sans font-bold text-lg text-[var(--ui-text)]">
               {portalFilter === "UPLOADED"
                 ? "No documents marked as uploaded on official portals yet"
                 : portalFilter === "NOT_UPLOADED"
                 ? "All catalogued documents have been marked as uploaded!"
                 : "No documents recorded for current requirements"}
             </h3>
-            <p className="font-sans text-xs text-[#64748B] mt-1 max-w-md mx-auto">
+            <p className="font-sans text-xs text-[var(--ui-secondary)] mt-1 max-w-md mx-auto">
               {portalFilter === "UPLOADED"
                 ? "No documents marked as uploaded on official portals yet"
                 : portalFilter === "NOT_UPLOADED"
@@ -1275,7 +1096,7 @@ function DocumentsContent() {
             {rawDocuments.length === 0 && (
               <Link
                 href={`/onboarding?business_id=${businessId}`}
-                className="inline-flex items-center mt-5 rounded-full bg-[#18181B] text-white px-5 py-2 text-xs font-semibold hover:bg-[#27272A] transition-colors shadow-2xs"
+                className="inline-flex items-center mt-5 rounded-full bg-[var(--ui-text)] text-white px-5 py-2 text-xs font-semibold hover:bg-[var(--ui-text)] transition-colors shadow-2xs"
               >
                 Run Regulatory Analysis →
               </Link>
@@ -1290,18 +1111,18 @@ function DocumentsContent() {
                   key={doc.id}
                   className={`bg-white rounded-[16px] border p-5 shadow-2xs transition-all space-y-4 flex flex-col justify-between ${
                     isUploaded
-                      ? "border-emerald-200 hover:border-emerald-300"
-                      : "border-[#E2E8F0] hover:border-[#CBD5E1]"
+                      ? "border-[var(--ui-sage-soft)] hover:border-[var(--ui-sage-soft)]"
+                      : "border-[var(--ui-border)] hover:border-[var(--ui-border-strong)]"
                   }`}
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1 min-w-0">
-                        <h3 className="font-sans text-base text-[#0F172A] font-bold leading-snug">
+                        <h3 className="font-sans text-base text-[var(--ui-text)] font-bold leading-snug">
                           {doc.name}
                         </h3>
-                        <span className="text-[11px] text-[#64748B] block">
-                          Category: <span className="text-[#0F172A] font-medium">{doc.category || doc.document_type || "Statutory Proof"}</span>
+                        <span className="text-[11px] text-[var(--ui-secondary)] block">
+                          Category: <span className="text-[var(--ui-text)] font-medium">{doc.category || doc.document_type || "Statutory Proof"}</span>
                         </span>
                       </div>
 
@@ -1313,23 +1134,24 @@ function DocumentsContent() {
                     </div>
 
                     {/* Official Portal Tracking Checkbox Option */}
-                    <div className="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-between">
+                    <div className="p-2.5 rounded-xl bg-[var(--ui-bg)] border border-[var(--ui-border)] flex items-center justify-between">
                       <label className="flex items-center gap-2.5 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={isUploaded}
-                          onChange={() => handleTogglePortalUploaded(doc.id)}
-                          className="h-4 w-4 rounded border-[#CBD5E1] text-[#0F172A] focus:ring-[#0F172A] cursor-pointer"
+                          disabled={portalSaving[doc.id]}
+                          onChange={() => void handleTogglePortalUploaded(doc.id)}
+                          className="h-4 w-4 rounded border-[var(--ui-border-strong)] text-[var(--ui-text)] focus:ring-[var(--ui-text)] cursor-pointer"
                         />
-                        <span className="text-xs font-semibold text-[#0F172A]">
+                        <span className="text-xs font-semibold text-[var(--ui-text)]">
                           {isUploaded ? "Uploaded on Official Portal" : "Mark as Uploaded on Portal"}
                         </span>
                       </label>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
                           isUploaded
-                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                            : "bg-slate-100 text-slate-600 border border-slate-200"
+                            ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]"
+                            : "bg-[var(--ui-inset)] text-[var(--ui-secondary)] border border-[var(--ui-border)]"
                         }`}
                       >
                         {isUploaded ? "FILED" : "NOT UPLOADED"}
@@ -1337,41 +1159,41 @@ function DocumentsContent() {
                     </div>
 
                     {/* Which requirement asks for this document */}
-                    <div className="pt-2 border-t border-[#E2E8F0] space-y-1.5">
-                      <span className="text-[11px] font-medium text-[#64748B] block uppercase tracking-wider">
-                        Statutory Basis
+                    <div className="pt-2 border-t border-[var(--ui-border)] space-y-1.5">
+                      <span className="text-[11px] font-medium text-[var(--ui-secondary)] block uppercase tracking-wider">
+                        {doc.category === "PLANNING_CHECKLIST" ? "Planning basis" : "Requirement basis"}
                       </span>
                       <Link
-                        href={`/compliance/${doc.requirement_id || doc.clauseLinked}?business_id=${businessId}`}
-                        className="text-xs font-semibold text-[#0F172A] hover:underline block leading-snug"
+                        href={`/compliance/${doc.requirement_id || doc.clauseLinked}?business_id=${businessId}${(searchParams.get("assessment_id") || (businessId === activeBusinessId ? activeAssessmentId : undefined)) ? `&assessment_id=${searchParams.get("assessment_id") || activeAssessmentId}` : ""}`}
+                        className="text-xs font-semibold text-[var(--ui-text)] hover:underline block leading-snug"
                       >
                         {doc.requirement_name || doc.requirement_id || doc.clauseLinked}
                       </Link>
-                      <div className="flex items-center gap-2 text-[11px] text-[#64748B]">
-                        <span>{doc.authority || "Regulatory Body"}</span>
-                        <span className="text-[#CBD5E1]">·</span>
-                        <span className="font-mono text-[#94A3B8]">{doc.code || doc.requirement_id}</span>
+                      <div className="flex items-center gap-2 text-[11px] text-[var(--ui-secondary)]">
+                        <span>{doc.authority || (doc.category === "PLANNING_CHECKLIST" ? "Contextual preparation guidance" : "Authority not recorded")}</span>
+                        <span className="text-[var(--ui-border-strong)]">·</span>
+                        <span className="font-mono text-[var(--ui-muted)]">{doc.code || doc.requirement_id}</span>
                       </div>
                     </div>
 
                     {doc.notes && (
-                      <p className="text-[11px] text-[#475569] border-t border-[#E2E8F0] pt-2.5 leading-relaxed">
+                      <p className="text-[11px] text-[var(--ui-secondary)] border-t border-[var(--ui-border)] pt-2.5 leading-relaxed">
                         {doc.notes}
                       </p>
                     )}
                   </div>
 
                   {/* Bottom Actions: View Dossier & Upload/Verify */}
-                  <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-mono text-[#64748B]">
-                      {doc.file_size_bytes ? `${(doc.file_size_bytes / 1024 / 1024).toFixed(1)} MB` : "2.4 MB PDF"}
+                  <div className="pt-3 border-t border-[var(--ui-border)] flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-mono text-[var(--ui-secondary)]">
+                      {doc.file_size_bytes ? `${(doc.file_size_bytes / 1024 / 1024).toFixed(1)} MB` : "No file size recorded"}
                     </span>
 
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => openUploadForDocument(doc)}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#0F172A] hover:text-blue-700 px-2.5 py-1 rounded-full border border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--ui-text)] hover:text-[var(--ui-info)] px-2.5 py-1 rounded-full border border-[var(--ui-border)] hover:bg-[var(--ui-bg)] transition-colors"
                         title="Upload file and run software verification"
                       >
                         <Upload className="h-3 w-3" />
@@ -1380,7 +1202,7 @@ function DocumentsContent() {
 
                       <Link
                         href={`/documents/${doc.id}`}
-                        className="inline-flex items-center gap-1 text-xs text-[#0F172A] hover:underline font-semibold transition-colors"
+                        className="inline-flex items-center gap-1 text-xs text-[var(--ui-text)] hover:underline font-semibold transition-colors"
                       >
                         <span>{t("common.viewDetails")}</span>
                         <span className="text-sm">→</span>
@@ -1401,7 +1223,7 @@ export default function DocumentsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#EDEFF2] flex items-center justify-center text-xs text-[#64748B]">
+        <div className="min-h-screen bg-[var(--ui-bg)] flex items-center justify-center text-xs text-[var(--ui-secondary)]">
           Loading statutory repository...
         </div>
       }

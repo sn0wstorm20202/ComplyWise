@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import RequirementCard from "@/components/product/RequirementCard";
 import StatusBadge from "@/components/StatusBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
@@ -11,7 +12,6 @@ import WhyThisAppliesModal from "@/components/WhyThisAppliesModal";
 import { api } from "@/lib/api";
 import { sanitizeExternalUrl } from "@/lib/url";
 import { ComplianceRequirementItem, CandidateRequirement, Business } from "@/types";
-import { DEMO_REQUIREMENTS } from "@/data/demo/compliance";
 import { resolveAuthorityPortalUrl } from "@/lib/authorityPortals";
 import { useLanguage } from "@/context/LanguageContext";
 import { useBusinessContext } from "@/context/BusinessContext";
@@ -28,31 +28,9 @@ function ComplianceContent() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [business, setBusiness] = useState<Business | null>(null);
-  const [requirements, setRequirements] = useState<ComplianceRequirementItem[]>(() =>
-    DEMO_REQUIREMENTS.map((req) => ({
-      requirement_id: req.id,
-      name: req.title,
-      status: req.status as any,
-      category: req.category,
-      authority: req.authority,
-      domain: "BIS Scheme-I",
-      jurisdiction: "CENTRAL",
-      citation_count: req.statutoryCitations.length,
-      evidence_count: req.statutoryCitations.length,
-      description: req.explanation,
-      citations: req.statutoryCitations.map((c) => ({
-        evidence_id: c,
-        locator: c,
-        authority: req.authority,
-        excerpt: `Statutory mandate under ${c}`,
-        verification_status: "VERIFIED" as const,
-        source_title: "Official Gazette / BIS Schedule",
-        canonical_url: resolveAuthorityPortalUrl(req.authority, c),
-      })),
-    }))
-  );
+  const [requirements, setRequirements] = useState<ComplianceRequirementItem[]>([]);
   const [candidates, setCandidates] = useState<CandidateRequirement[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(DEMO_REQUIREMENTS.length);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [businessId, setBusinessId] = useState<string | null>(null);
 
   // Active view tab (defaults to 'action_required' for clean founder UX)
@@ -64,14 +42,16 @@ function ComplianceContent() {
   const [provenanceModalOpen, setProvenanceModalOpen] = useState<boolean>(false);
   const [selectedReqForModal, setSelectedReqForModal] = useState<ComplianceRequirementItem | null>(null);
 
+  const requestVersion = useRef(0);
   async function loadData(bizId: string) {
+    const version = ++requestVersion.current;
     setLoading(true);
     setError(null);
     setBusinessId(bizId);
 
     try {
       const explicitRunId = searchParams.get("run_id");
-      const explicitAssessmentId = searchParams.get("assessment_id") || activeAssessmentId || undefined;
+      const explicitAssessmentId = searchParams.get("assessment_id") || (bizId === contextBusinessId ? activeAssessmentId : undefined) || undefined;
 
       // 1. Fetch business profile, canonical business compliance list, and candidate regulations concurrently
       const [bizResp, reqResp, candResp] = await Promise.allSettled([
@@ -83,6 +63,7 @@ function ComplianceContent() {
         api.discovery.getCandidates(bizId),
       ]);
 
+      if (version !== requestVersion.current) return;
       let loadedBusiness: Business | null = null;
       if (bizResp.status === "fulfilled" && bizResp.value) {
         loadedBusiness = bizResp.value;
@@ -104,7 +85,7 @@ function ComplianceContent() {
       ) {
         loadedItems = reqResp.value.requirements.map((req) => ({
           ...req,
-          portal_url: resolveAuthorityPortalUrl(
+          portal_url: req.result_origin === "LLM_FALLBACK_RESULT" ? undefined : resolveAuthorityPortalUrl(
             req.authority,
             req.name,
             req.portal_url || req.portal || req.source_url
@@ -112,164 +93,17 @@ function ComplianceContent() {
         }));
       }
 
-      // 3. Fallback: if canonical list is empty, retrieve orchestration compliance from explicit or cached run
-      if (loadedItems.length === 0) {
-        const runIdToTry =
-          explicitRunId ||
-          (typeof window !== "undefined"
-            ? localStorage.getItem("complywise_active_assessment_id")
-            : null);
-        if (runIdToTry) {
-          try {
-            const orchComp = await api.orchestration.getCompliance(runIdToTry);
-            if (orchComp && orchComp.requirements && orchComp.requirements.length > 0) {
-              loadedItems = orchComp.requirements.map((req: any) => {
-                const reqAuthority = req.authority || "Regulatory Authority";
-                const reqTitle = req.name || req.title || "Statutory Requirement";
-                const resolvedPortal = resolveAuthorityPortalUrl(
-                  reqAuthority,
-                  reqTitle,
-                  req.portal_url || (req.source_urls && req.source_urls[0])
-                );
-                return {
-                  requirement_id: req.requirement_id || req.id,
-                  name: reqTitle,
-                  status: req.status as any,
-                  category: req.domain || req.regulatory_domain || "STATUTORY",
-                  authority: reqAuthority,
-                  domain: req.domain || req.regulatory_domain || "STATUTORY",
-                  jurisdiction: req.jurisdiction || "CENTRAL",
-                  citation_count: req.citations?.length || req.evidence_ids?.length || 1,
-                  evidence_count: req.evidence_ids?.length || req.citations?.length || 1,
-                  description: req.description || req.why_it_matters || "",
-                  applicable_facts: req.applicable_facts || req.business_facts_used,
-                  missing_facts: req.missing_facts,
-                  portal_url: resolvedPortal,
-                  portal_name: req.portal_name || reqAuthority || "Official Government Portal",
-                  citations: (req.citations && req.citations.length > 0)
-                    ? req.citations.map((c: any) => ({
-                        evidence_id: c.evidence_id,
-                        locator: c.locator || req.statutory_act || "Statutory Schedule",
-                        authority: c.authority || reqAuthority,
-                        excerpt: c.excerpt || req.description,
-                        verification_status: (c.verification_status || "VERIFIED") as any,
-                        source_title: c.source_title || "Official Gazette / Government Portal",
-                        canonical_url: resolveAuthorityPortalUrl(
-                          c.authority || reqAuthority,
-                          c.source_title || reqTitle,
-                          c.canonical_url
-                        ),
-                      }))
-                    : [
-                        {
-                          evidence_id: req.evidence_ids?.[0] || req.requirement_id,
-                          locator: req.statutory_act || "Statutory Schedule",
-                          authority: reqAuthority,
-                          excerpt: req.evidence_excerpts?.[0] || req.description || req.why_it_matters || "Statutory requirement verified against business facts.",
-                          verification_status: "VERIFIED" as const,
-                          source_title: "Official Government Portal",
-                          canonical_url: resolvedPortal,
-                        },
-                      ],
-                };
-              });
-            }
-          } catch (orchErr) {
-            console.warn("Could not fetch assessment orchestration compliance:", orchErr);
-          }
-        }
-      }
-
-      // 5. Software / SaaS Guard: Pure software, web, IT, or SaaS companies never require physical manufacturing clearances
-      const bizAny = loadedBusiness as any;
-      const bizVariables = bizAny?.current_profile?.variables || {};
-      const descTokens = [
-        loadedBusiness?.name || "",
-        loadedBusiness?.business_type || "",
-        ...Object.values(bizVariables).map((v: any) => (typeof v === "object" ? v?.value || "" : String(v || ""))),
-      ].join(" ").toLowerCase();
-
-      const isSoftwareSaaS =
-        /\b(software|saas|platform|app|web|digital|pre-visualization|storyloom|consulting|it services|agency)\b/i.test(descTokens) &&
-        !/\b(manufacturing|hardware|factory|machinery|chemical|assembly plant)\b/i.test(descTokens);
-
-      if (isSoftwareSaaS) {
-        loadedItems = loadedItems.filter((r) => {
-          const combo = `${r.requirement_id} ${r.name} ${r.authority} ${r.description}`.toLowerCase();
-          return !/\b(factory license|factories act|consent to establish|consent to operate|cte|cto|spcb|pollution control|mpcb|wbpcb|gpcb|cpcb consent|boiler)\b/i.test(
-            combo
-          );
-        });
-      }
-
-      const isPhysicalMfg =
-        /\b(mill|textile|weaving|spinning|dyeing|fabric|yarn|foundry|plant|casting|manufacturing|factory|machinery|engineering|chemical|metal|assembly|battery)\b/i.test(descTokens) &&
-        !isSoftwareSaaS;
-
-      if (isPhysicalMfg) {
-        loadedItems = loadedItems.filter((r) => {
-          const combo = `${r.requirement_id} ${r.name} ${r.authority} ${r.description}`.toLowerCase();
-          return !/\b(cert-in|certin|cybersecurity|incident-reporting|dpdp|data fiduciary)\b/i.test(
-            combo
-          );
-        });
-      }
-
-      // 6. Canonical Deduplication Guard (e.g. REQ-CERT-IN-CYBERSECURITY-DIRECTIVES vs REQ-CERTIN-CYBERSECURITY-DIRECTIVES)
-      const seenCanonical = new Set<string>();
-      const dedupedItems: ComplianceRequirementItem[] = [];
-      for (const item of loadedItems) {
-        const canon = (item.requirement_id || "").replace(/[-_]/g, "").toUpperCase();
-        if (seenCanonical.has(canon)) {
-          continue;
-        }
-        seenCanonical.add(canon);
-        dedupedItems.push(item);
-      }
-
-      // 7. Client-side FSSAI Single-Tier deduplication guard
-      const fssaiIndices = dedupedItems
-        .map((r, idx) => ({ r, idx }))
-        .filter(
-          ({ r }) =>
-            (r.authority || "").toLowerCase().includes("fssai") ||
-            (r.name || "").toLowerCase().includes("fssai") ||
-            (r.domain || "").toUpperCase() === "FOOD_SAFETY"
-        );
-
-      let finalMapped = dedupedItems;
-      if (fssaiIndices.length > 1) {
-        const central = fssaiIndices.find(({ r }) => (r.name || "").toLowerCase().includes("central"));
-        const state = fssaiIndices.find(({ r }) => (r.name || "").toLowerCase().includes("state"));
-        const chosenObj = central || state || fssaiIndices[0];
-        const chosen = { ...chosenObj.r };
-
-        const allCitations = fssaiIndices.flatMap(({ r }) => r.citations || []);
-        const seenCits = new Set<string>();
-        const uniqueCitations = allCitations.filter((c) => {
-          const key = c.evidence_id || c.locator || "";
-          if (seenCits.has(key)) return false;
-          seenCits.add(key);
-          return true;
-        });
-        chosen.citations = uniqueCitations;
-        chosen.citation_count = uniqueCitations.length;
-        chosen.evidence_count = uniqueCitations.length;
-
-        const otherIndices = new Set(
-          fssaiIndices.map(({ idx }) => idx).filter((idx) => idx !== chosenObj.idx)
-        );
-        finalMapped = dedupedItems
-          .filter((_, idx) => !otherIndices.has(idx))
-          .map((r, idx) => (idx === chosenObj.idx ? chosen : r));
-      }
-
-      setRequirements(finalMapped);
-      setTotalCount(finalMapped.length);
+      // Applicability belongs to the evaluated backend response, never to name-based UI heuristics.
+      if (reqResp.status === "rejected" && loadedItems.length === 0) throw reqResp.reason;
+      setRequirements(loadedItems);
+      setTotalCount(loadedItems.length);
     } catch {
-      // Fallback already rendered seamlessly
+      if (version !== requestVersion.current) return;
+      setRequirements([]);
+      setTotalCount(0);
+      setError("We couldn't load your requirements. Please try again.");
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) setLoading(false);
     }
   }
 
@@ -281,7 +115,7 @@ function ComplianceContent() {
       contextBusinessId ||
       (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
 
-    if (!bizId) return; // No business selected yet — show loading state, not stale data
+    if (!bizId) { setRequirements([]); setTotalCount(0); setLoading(false); return; }
 
     // Clear stale requirements immediately before loading new company data
     setRequirements([]);
@@ -289,23 +123,24 @@ function ComplianceContent() {
     setBusiness(null);
 
     loadData(bizId);
-  }, [paramBusinessId, contextBusinessId, categoryFilter]); // Re-run when business switches
+  }, [paramBusinessId, contextBusinessId, activeAssessmentId, searchParams, categoryFilter]); // Re-run when business switches
 
   // Filtering buckets
   const actionRequiredItems = requirements.filter(
     (r) =>
+      r.user_action_required !== false && (r.admin_disposition === "CONFIRMED_REQUIRED" || r.status === "SUGGESTED" ||
       r.status === "APPLICABLE" ||
       r.status === "NEEDS_INFORMATION" ||
-      (r.status as string) === "NEEDS_VERIFICATION"
+      (r.status as string) === "NEEDS_VERIFICATION")
   );
   const verificationRequiredItems = requirements.filter(
     (r) =>
-      r.status === "UNVERIFIED" ||
+      r.user_action_required !== false && (r.status === "UNVERIFIED" ||
       r.status === "CONFLICT_REVIEW" ||
-      (r.status as string) === "NEEDS_VERIFICATION"
+      (r.status as string) === "NEEDS_VERIFICATION")
   );
   const notApplicableItems = requirements.filter(
-    (r) => r.status === "NOT_APPLICABLE"
+    (r) => r.status === "NOT_APPLICABLE" || r.user_action_required === false
   );
 
   const categories = ["ALL", "FOOD", "ENVIRONMENT", "LABOUR", "REGISTRATION", "STANDARD"];
@@ -319,34 +154,34 @@ function ComplianceContent() {
     <AppShell activeView="compliance">
       <div className="space-y-6">
         {/* Header Banner */}
-        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#64748B] tracking-wide uppercase">
+              <span className="text-xs font-semibold text-[var(--ui-secondary)] tracking-wide uppercase">
                 {t("common.appName")} · {business?.name || t("common.appName")}
               </span>
-              <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
+              <span className="inline-flex items-center rounded-full bg-[var(--ui-sage-faint)] px-2.5 py-0.5 text-xs font-semibold text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]">
                 {actionRequiredItems.length} {t("compliance.actionRequired")}
               </span>
             </div>
-            <h1 className="text-2xl font-sans font-bold tracking-tight text-[#0F172A] mt-1">
+            <h1 className="text-2xl font-sans font-bold tracking-tight text-[var(--ui-text)] mt-1">
               {t("compliance.title")}
             </h1>
-            <p className="text-xs text-[#64748B] mt-0.5">
-              {t("compliance.subtitle")}
+            <p className="text-xs text-[var(--ui-secondary)] mt-0.5">
+              Reviewed requirements and contextual next steps for this assessment. Planning guidance is identified separately from published-rule decisions.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <Link
               href={`/dashboard?business_id=${businessId || ""}`}
-              className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-1.5 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
+              className="rounded-full border border-[var(--ui-border)] bg-[var(--ui-bg)] px-4 py-1.5 text-xs font-semibold text-[var(--ui-text)] hover:bg-[var(--ui-inset)] transition-colors"
             >
               ← {t("navigation.dashboard")}
             </Link>
             <Link
               href={businessId ? `/onboarding?business_id=${businessId}` : "/onboarding?new=true"}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#18181B] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#27272A] transition-colors shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--ui-text)] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[var(--ui-text)] transition-colors shadow-2xs cursor-pointer"
             >
               + Re-evaluate
             </Link>
@@ -354,15 +189,15 @@ function ComplianceContent() {
         </div>
 
         {/* View Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E2E8F0] pb-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ui-border)] pb-2">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setActiveTab("action_required")}
               className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-full transition-all cursor-pointer ${
                 activeTab === "action_required"
-                  ? "bg-[#18181B] text-white shadow-2xs"
-                  : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-[#CBD5E1] hover:text-[#0F172A]"
+                  ? "bg-[var(--ui-text)] text-white shadow-2xs"
+                  : "bg-white text-[var(--ui-secondary)] border border-[var(--ui-border)] hover:border-[var(--ui-border-strong)] hover:text-[var(--ui-text)]"
               }`}
             >
               <span>{t("compliance.actionRequired")}</span>
@@ -370,7 +205,7 @@ function ComplianceContent() {
                 className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                   activeTab === "action_required"
                     ? "bg-white/20 text-white"
-                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    : "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]"
                 }`}
               >
                 {actionRequiredItems.length}
@@ -382,8 +217,8 @@ function ComplianceContent() {
               onClick={() => setActiveTab("verification_required")}
               className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-full transition-all cursor-pointer ${
                 activeTab === "verification_required"
-                  ? "bg-[#18181B] text-white shadow-2xs"
-                  : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-[#CBD5E1] hover:text-[#0F172A]"
+                  ? "bg-[var(--ui-text)] text-white shadow-2xs"
+                  : "bg-white text-[var(--ui-secondary)] border border-[var(--ui-border)] hover:border-[var(--ui-border-strong)] hover:text-[var(--ui-text)]"
               }`}
             >
               <span>{t("compliance.underReview")}</span>
@@ -403,8 +238,8 @@ function ComplianceContent() {
               onClick={() => setActiveTab("audit")}
               className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-full transition-all cursor-pointer ${
                 activeTab === "audit"
-                  ? "bg-[#18181B] text-white shadow-2xs"
-                  : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-[#CBD5E1] hover:text-[#0F172A]"
+                  ? "bg-[var(--ui-text)] text-white shadow-2xs"
+                  : "bg-white text-[var(--ui-secondary)] border border-[var(--ui-border)] hover:border-[var(--ui-border-strong)] hover:text-[var(--ui-text)]"
               }`}
             >
               <span>{t("compliance.allRequirements")}</span>
@@ -418,7 +253,7 @@ function ComplianceContent() {
 
           {/* Domain Filter */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-[#64748B]">{t("common.filter")}:</span>
+            <span className="text-xs font-medium text-[var(--ui-secondary)]">{t("common.filter")}:</span>
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -426,8 +261,8 @@ function ComplianceContent() {
                 onClick={() => setCategoryFilter(cat === "ALL" ? "" : cat)}
                 className={`rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
                   (cat === "ALL" && !categoryFilter) || categoryFilter === cat
-                    ? "bg-[#18181B] text-white"
-                    : "bg-white text-[#64748B] border border-[#E2E8F0] hover:border-[#CBD5E1] hover:text-[#0F172A]"
+                    ? "bg-[var(--ui-text)] text-white"
+                    : "bg-white text-[var(--ui-secondary)] border border-[var(--ui-border)] hover:border-[var(--ui-border-strong)] hover:text-[var(--ui-text)]"
                 }`}
               >
                 {cat === "ALL" ? t("common.all") : cat}
@@ -453,138 +288,13 @@ function ComplianceContent() {
           /* PRIMARY FOUNDER VIEW: ACTION REQUIRED ONLY */
           <div className="space-y-4">
             {actionRequiredItems.length === 0 ? (
-              <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs">
-                <p className="text-sm font-semibold text-[#0F172A]">{t("common.noData")}</p>
-                <p className="text-xs text-[#64748B] mt-1">{t("compliance.filterByStatus")}</p>
+              <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-12 text-center shadow-2xs">
+                <p className="text-sm font-semibold text-[var(--ui-text)]">{t("common.noData")}</p>
+                <p className="text-xs text-[var(--ui-secondary)] mt-1">{t("compliance.filterByStatus")}</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {actionRequiredItems.map((req) => {
-                  const isApplicable = req.status === "APPLICABLE";
-
-                  return (
-                    <div
-                      key={req.requirement_id}
-                      className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 shadow-2xs hover:border-[#CBD5E1] transition-all space-y-4"
-                    >
-                      {/* Top Bar */}
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                        <div className="space-y-1.5">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center rounded-full bg-[#F1F5F9] px-2.5 py-0.5 text-xs font-bold text-[#0F172A] border border-[#E2E8F0]">
-                              {req.authority}
-                            </span>
-                            <span className="text-xs text-[#CBD5E1]">·</span>
-                            <span className="text-xs font-semibold text-[#64748B] uppercase">
-                              {req.category}
-                            </span>
-                            <span className="text-xs text-[#CBD5E1]">·</span>
-                            <span className="text-xs text-[#64748B] font-medium">
-                              Jurisdiction: {req.jurisdiction}
-                            </span>
-                          </div>
-
-                          <h2 className="text-base sm:text-lg font-sans font-bold text-[#0F172A]">
-                            {req.name}
-                          </h2>
-
-                          <p className="text-xs text-[#475569] leading-relaxed max-w-3xl">
-                            {req.description}
-                          </p>
-                        </div>
-
-                        {/* Status Badge */}
-                        <div className="shrink-0">
-                          <StatusBadge status={isApplicable ? "REQUIRED" : "NEEDS_INFORMATION"} size="md" />
-                        </div>
-                      </div>
-
-                      {/* Mini Procedural Summary Strip */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 text-xs">
-                        <div>
-                          <span className="text-[#64748B] text-[10px] block uppercase font-bold">Required Documents</span>
-                          <span className="font-semibold text-[#0F172A]">4-6 Documents</span>
-                        </div>
-                        <div>
-                          <span className="text-[#64748B] text-[10px] block uppercase font-bold">Estimated Steps</span>
-                          <span className="font-semibold text-[#0F172A]">4-5 Steps</span>
-                        </div>
-                        <div>
-                          <span className="text-[#64748B] text-[10px] block uppercase font-bold">Timeline / Due Date</span>
-                          <span className="font-semibold text-[#0F172A]">Prior to Operations</span>
-                        </div>
-                        <div>
-                          <span className="text-[#64748B] text-[10px] block uppercase font-bold">Submission Route</span>
-                          {(() => {
-                            const portalUrl = sanitizeExternalUrl(req.portal_url || req.source_url || req.portal || (req.citations && req.citations[0]?.canonical_url));
-                            const portalLabel = req.portal_name || `${req.authority} Portal`;
-                            return portalUrl ? (
-                              <a
-                                href={portalUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-semibold text-blue-600 hover:text-blue-800 hover:underline truncate block"
-                                title={`Open official portal: ${portalLabel}`}
-                              >
-                                {portalLabel} ↗
-                              </a>
-                            ) : (
-                              <span className="font-semibold text-[#0F172A] truncate block">{portalLabel}</span>
-                            );
-                          })()}
-                        </div>
-                      </div>
-
-                      {/* Action Bar */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#E2E8F0]">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => openProvenance(req)}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#0F172A] hover:underline cursor-pointer"
-                          >
-                            <span>ℹ️ {t("compliance.whyApplies")}</span>
-                          </button>
-
-                          {(() => {
-                            const statutoryUrl = sanitizeExternalUrl(req.source_url || req.portal_url || req.portal || (req.citations && req.citations[0]?.canonical_url));
-                            if (!statutoryUrl) return null;
-                            const portalLabel = req.portal_name || "Official Statutory Source";
-                            return (
-                              <a
-                                href={statutoryUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all shadow-2xs"
-                                title={`Open official statutory portal: ${portalLabel}`}
-                              >
-                                <span>🔗 {portalLabel}</span>
-                                <span className="text-[11px]">↗</span>
-                              </a>
-                            );
-                          })()}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/workflows?business_id=${businessId || ""}&requirement_id=${req.requirement_id}`}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition-colors shadow-2xs"
-                          >
-                            <span>⚡ Execute Workflow</span>
-                            <span>→</span>
-                          </Link>
-                          <Link
-                            href={`/compliance/${req.requirement_id}?business_id=${businessId}`}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[#18181B] px-4 py-2 text-xs font-semibold text-white hover:bg-[#27272A] transition-colors shadow-2xs"
-                          >
-                            <span>{t("common.viewDetails")}</span>
-                            <span>→</span>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {actionRequiredItems.map(req => <RequirementCard key={req.requirement_id} requirement={req} businessId={businessId} assessmentId={searchParams.get("assessment_id") || (businessId === contextBusinessId ? activeAssessmentId : undefined)} onInspect={() => openProvenance(req)} />)}
               </div>
             )}
           </div>
@@ -592,35 +302,35 @@ function ComplianceContent() {
           /* VERIFICATION REQUIRED / UNDER REVIEW */
           <div className="space-y-4">
             {verificationRequiredItems.length === 0 ? (
-              <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs">
-                <p className="text-sm font-semibold text-[#0F172A]">No obligations currently under review.</p>
-                <p className="text-xs text-[#64748B] mt-1">All evaluated items are clearly categorized.</p>
+              <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-12 text-center shadow-2xs">
+                <p className="text-sm font-semibold text-[var(--ui-text)]">No obligations currently under review.</p>
+                <p className="text-xs text-[var(--ui-secondary)] mt-1">All evaluated items are clearly categorized.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {verificationRequiredItems.map((req) => (
                   <div
                     key={req.requirement_id}
-                    className="bg-white rounded-[16px] border border-[#E2E8F0] p-5 shadow-2xs space-y-3"
+                    className="bg-white rounded-[16px] border border-[var(--ui-border)] p-5 shadow-2xs space-y-3"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-bold text-[#0F172A]">{req.authority}</span>
-                          <span className="text-xs text-[#CBD5E1]">·</span>
-                          <span className="text-xs text-[#64748B]">{req.category}</span>
+                          <span className="text-xs font-bold text-[var(--ui-text)]">{req.authority}</span>
+                          <span className="text-xs text-[var(--ui-border-strong)]">·</span>
+                          <span className="text-xs text-[var(--ui-secondary)]">{req.category}</span>
                         </div>
-                        <h3 className="text-sm font-semibold text-[#0F172A]">{req.name}</h3>
-                        <p className="text-xs text-[#475569] mt-1">{req.description}</p>
+                        <h3 className="text-sm font-semibold text-[var(--ui-text)]">{req.name}</h3>
+                        <p className="text-xs text-[var(--ui-secondary)] mt-1">{req.description}</p>
                       </div>
                       <StatusBadge status={req.status} />
                     </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-[#E2E8F0]">
+                    <div className="flex justify-between items-center pt-2 border-t border-[var(--ui-border)]">
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
                           onClick={() => openProvenance(req)}
-                          className="text-xs font-semibold text-[#0F172A] hover:underline cursor-pointer"
+                          className="text-xs font-semibold text-[var(--ui-text)] hover:underline cursor-pointer"
                         >
                           {t("compliance.whyApplies")}
                         </button>
@@ -633,7 +343,7 @@ function ComplianceContent() {
                               href={statutoryUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs font-bold text-emerald-700 hover:underline inline-flex items-center gap-1"
+                              className="text-xs font-bold text-[var(--ui-sage)] hover:underline inline-flex items-center gap-1"
                               title={`Open official portal: ${portalLabel}`}
                             >
                               <span>🔗 {portalLabel} ↗</span>
@@ -644,14 +354,14 @@ function ComplianceContent() {
                       <div className="flex items-center gap-3">
                         <Link
                           href={`/workflows?business_id=${businessId || ""}&requirement_id=${req.requirement_id}`}
-                          className="text-xs font-semibold text-blue-600 hover:underline inline-flex items-center gap-1"
+                          className="text-xs font-semibold text-[var(--ui-info)] hover:underline inline-flex items-center gap-1"
                         >
                           <span>⚡ Execute Workflow</span>
                           <span>→</span>
                         </Link>
                         <Link
                           href={`/compliance/${req.requirement_id}?business_id=${businessId}`}
-                          className="text-xs font-semibold text-[#0F172A] hover:underline"
+                          className="text-xs font-semibold text-[var(--ui-text)] hover:underline"
                         >
                           {t("common.viewDetails")} →
                         </Link>
@@ -700,8 +410,8 @@ function ComplianceContent() {
                           {cand.verification_status}
                         </span>
                       </div>
-                      <h4 className="font-semibold text-[#0F172A]">{cand.requirement_name}</h4>
-                      <p className="text-[#475569] line-clamp-2">{cand.applicability_statement}</p>
+                      <h4 className="font-semibold text-[var(--ui-text)]">{cand.requirement_name}</h4>
+                      <p className="text-[var(--ui-secondary)] line-clamp-2">{cand.applicability_statement}</p>
                       {(() => {
                         const cleanUrl = sanitizeExternalUrl(cand.source_url);
                         if (!cleanUrl) return null;
@@ -710,7 +420,7 @@ function ComplianceContent() {
                             href={cleanUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline block pt-1 font-medium"
+                            className="text-[var(--ui-info)] hover:underline block pt-1 font-medium"
                           >
                             Source Portal ↗
                           </a>
@@ -723,58 +433,59 @@ function ComplianceContent() {
             </div>
 
             {/* Collapsible NOT_APPLICABLE Audit View */}
-            <div className="border border-[#E2E8F0] rounded-[16px] bg-white overflow-hidden shadow-2xs">
+            <div className="border border-[var(--ui-border)] rounded-[16px] bg-white overflow-hidden shadow-2xs">
               <button
                 type="button"
                 onClick={() => setShowNotApplicableAudit(!showNotApplicableAudit)}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-[#F8FAFC] transition-colors cursor-pointer"
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--ui-bg)] transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-[#64748B] font-mono text-sm">
+                  <span className="text-[var(--ui-secondary)] font-mono text-sm">
                     {showNotApplicableAudit ? "▼" : "▶"}
                   </span>
                   <div>
-                    <span className="text-xs font-semibold text-[#0F172A]">
+                    <span className="text-xs font-semibold text-[var(--ui-text)]">
                       Audit Trail: Not Applicable Obligations
                     </span>
-                    <span className="ml-2 inline-flex items-center rounded-full bg-[#F1F5F9] border border-[#E2E8F0] px-2 py-0.5 text-[11px] font-semibold text-[#64748B]">
+                    <span className="ml-2 inline-flex items-center rounded-full bg-[var(--ui-inset)] border border-[var(--ui-border)] px-2 py-0.5 text-[11px] font-semibold text-[var(--ui-secondary)]">
                       {notApplicableItems.length} excluded
                     </span>
                   </div>
                 </div>
-                <span className="text-xs font-semibold text-[#0F172A]">
+                <span className="text-xs font-semibold text-[var(--ui-text)]">
                   {showNotApplicableAudit ? "Hide Excluded Rules" : "Inspect Ruled-Out Obligations"}
                 </span>
               </button>
 
               {showNotApplicableAudit && (
-                <div className="p-4 border-t border-[#E2E8F0] bg-[#F8FAFC] space-y-3">
-                  <p className="text-xs text-[#64748B]">
+                <div className="p-4 border-t border-[var(--ui-border)] bg-[var(--ui-bg)] space-y-3">
+                  <p className="text-xs text-[var(--ui-secondary)]">
                     The deterministic engine verified that your business profile does not meet the statutory threshold conditions for these requirements.
                   </p>
                   <div className="space-y-2">
                     {notApplicableItems.map((req) => (
                       <div
                         key={req.requirement_id}
-                        className="bg-white rounded-lg border border-[#E2E8F0] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                        className="bg-white rounded-lg border border-[var(--ui-border)] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                       >
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-[#64748B]">{req.requirement_id}</span>
-                            <span className="text-[#CBD5E1]">·</span>
-                            <span className="font-semibold text-[#0F172A]">{req.name}</span>
+                            <span className="font-mono font-bold text-[var(--ui-secondary)]">{req.requirement_id}</span>
+                            <span className="text-[var(--ui-border-strong)]">·</span>
+                            <span className="font-semibold text-[var(--ui-text)]">{req.name}</span>
                           </div>
-                          <div className="text-[#64748B] text-[11px]">
+                          <div className="text-[var(--ui-secondary)] text-[11px]">
                             Authority: {req.authority} · Jurisdiction: {req.jurisdiction}
                           </div>
+                          {req.review_reason && <p className="text-[var(--ui-sage)] mt-2">Reviewer note: {req.review_reason}</p>}
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                          <span className="inline-flex items-center rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[11px] font-medium text-[#64748B] border border-[#E2E8F0]">
-                            NOT APPLICABLE
+                          <span className="inline-flex items-center rounded-full bg-[var(--ui-inset)] px-2 py-0.5 text-[11px] font-medium text-[var(--ui-secondary)] border border-[var(--ui-border)]">
+                            {req.user_action_required === false ? "NO ACTION NEEDED" : "NOT APPLICABLE"}
                           </span>
                           <Link
                             href={`/compliance/${req.requirement_id}?business_id=${businessId}`}
-                            className="text-xs font-medium text-[#0F172A] hover:underline"
+                            className="text-xs font-medium text-[var(--ui-text)] hover:underline"
                           >
                             Trace →
                           </Link>
@@ -805,7 +516,7 @@ export default function CompliancePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center text-sm text-slate-500">
+        <div className="min-h-screen bg-[var(--ui-bg)] flex items-center justify-center text-sm text-[var(--ui-secondary)]">
           Loading compliance requirements...
         </div>
       }

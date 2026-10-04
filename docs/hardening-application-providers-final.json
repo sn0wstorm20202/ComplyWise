@@ -1,0 +1,126 @@
+{
+  "task": "actual BusinessUnderstandingEngine with its prompt and response validator",
+  "probes": [
+    {
+      "name": "gemini_independent",
+      "slot": 1,
+      "requested_model": "gemini-3.5-flash-lite",
+      "validated": true,
+      "seconds": 2.436,
+      "normalized_fact_count": 5,
+      "unknown_count": 3,
+      "status": "SUCCESS",
+      "attempts": [
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "latency_ms": 2435.02,
+          "fallback": false
+        }
+      ],
+      "final_provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "cooldown_remaining_seconds": 0
+    },
+    {
+      "name": "gemini_independent",
+      "slot": 2,
+      "requested_model": "gemini-3.5-flash-lite",
+      "validated": true,
+      "seconds": 2.296,
+      "normalized_fact_count": 5,
+      "unknown_count": 4,
+      "status": "SUCCESS",
+      "attempts": [
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "latency_ms": 2294.98,
+          "fallback": false
+        }
+      ],
+      "final_provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "cooldown_remaining_seconds": 0
+    },
+    {
+      "name": "gemini_independent",
+      "slot": 3,
+      "requested_model": "gemini-3.5-flash-lite",
+      "validated": true,
+      "seconds": 2.279,
+      "normalized_fact_count": 4,
+      "unknown_count": 4,
+      "status": "SUCCESS",
+      "attempts": [
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "latency_ms": 2278.01,
+          "fallback": false
+        }
+      ],
+      "final_provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "cooldown_remaining_seconds": 0
+    },
+    {
+      "name": "openai_independent",
+      "slot": null,
+      "requested_model": "gpt-4o-mini",
+      "validated": true,
+      "seconds": 5.024,
+      "normalized_fact_count": 3,
+      "unknown_count": 3,
+      "status": "SUCCESS",
+      "attempts": [
+        {
+          "provider": "openai",
+          "provider_slot": null,
+          "model": "gpt-4o-mini",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "latency_ms": 5022.38,
+          "fallback": false
+        }
+      ],
+      "final_provider": "openai",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "name": "controlled_gemini_unavailable_real_openai",
+      "slot": null,
+      "requested_model": "gemini-3.5-flash-lite",
+      "validated": true,
+      "seconds": 5.167,
+      "normalized_fact_count": 3,
+      "unknown_count": 4,
+      "status": "SUCCESS",
+      "attempts": [
+        {
+          "provider": "openai",
+          "provider_slot": null,
+          "model": "gpt-4o-mini",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "latency_ms": 5165.29,
+          "fallback": true
+        }
+      ],
+      "final_provider": "openai",
+      "model": "gpt-4o-mini"
+    }
+  ],
+  "limitations": [
+    "Independent slot selection and Gemini-unavailable scenario are diagnostic controls, not real outages. Quota-project independence cannot be established from credentials alone."
+  ]
+}

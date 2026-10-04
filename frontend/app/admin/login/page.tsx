@@ -3,11 +3,12 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { AlertCircle, Lock, Mail, Shield, ShieldCheck } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { adminLogin } = useAuth();
 
   const [email, setEmail] = useState("admin@complywise.in");
   const [password, setPassword] = useState("Admin@1234");
@@ -20,7 +21,7 @@ export default function AdminLoginPage() {
     setError(null);
 
     try {
-      const session = await api.auth.adminLogin(email, password);
+      const session = await adminLogin(email, password);
       if (session?.user && (session.user.is_staff || session.user.is_superuser)) {
         router.push("/admin");
       } else {
@@ -37,15 +38,15 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-md">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--ui-sage)] flex items-center justify-center text-white shadow-md">
             <Shield className="w-7 h-7" />
           </div>
         </div>
         <h2 className="mt-4 text-center text-2xl font-bold tracking-tight text-foreground">
-          ComplyWise Admin Control Room
+          Compliance review
         </h2>
         <p className="mt-1 text-center text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-          Compliance Officer & Platform Scrutiny Portal
+          Sign in to review cases and evidence.
         </p>
       </div>
 
@@ -67,11 +68,13 @@ export default function AdminLoginPage() {
                 <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="email"
+                  aria-label="Staff email address"
+                  autoComplete="username"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@complywise.in"
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-input bg-background focus:outline-none focus:ring-1 focus:ring-purple-600 font-mono"
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-input bg-background focus:outline-none focus:ring-1 focus:ring-[var(--ui-sage-soft)] font-mono"
                 />
               </div>
             </div>
@@ -84,11 +87,13 @@ export default function AdminLoginPage() {
                 <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="password"
+                  aria-label="Password"
+                  autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-input bg-background focus:outline-none focus:ring-1 focus:ring-purple-600 font-mono"
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-input bg-background focus:outline-none focus:ring-1 focus:ring-[var(--ui-sage-soft)] font-mono"
                 />
               </div>
             </div>
@@ -96,14 +101,14 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loading ? (
                 <span>Authenticating Officer...</span>
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4" />
-                  Sign In to Control Room
+                  Sign in to review workspace
                 </>
               )}
             </button>

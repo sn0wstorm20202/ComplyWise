@@ -24,7 +24,7 @@ interface AuthContextValue {
     fullName: string,
     phoneNumber?: string
   ) => Promise<AuthSession>;
-  fastDemoLogin: () => Promise<AuthSession>;
+  completeGoogleSignIn: (ticket: string, verifier: string) => Promise<AuthSession & {is_new_user: boolean}>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<boolean>;
 }
@@ -123,45 +123,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const fastDemoLogin = async (): Promise<AuthSession> => {
-    setLoading(true);
-    const demoEmail = "compliance.officer@example.com";
-    const demoPassword = "CompliancePass123!";
-    const fallbackEmail = "demo@complywise.test";
-    const fallbackPassword = "DemoPassword123!";
-    const demoName = "Lead Compliance Officer";
-
-    try {
-      try {
-        const session = await authApi.login(demoEmail, demoPassword);
-        setUser(session.user);
-        setTokenState(session.token);
-        setAuthToken(session.token);
-        return session;
-      } catch {
-        try {
-          const session = await authApi.login(fallbackEmail, fallbackPassword);
-          setUser(session.user);
-          setTokenState(session.token);
-          setAuthToken(session.token);
-          return session;
-        } catch {
-          // If not registered yet, register demo account
-          const session = await authApi.register(
-            demoEmail,
-            demoPassword,
-            demoName
-          );
-          setUser(session.user);
-          setTokenState(session.token);
-          setAuthToken(session.token);
-          return session;
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const completeGoogleSignIn = useCallback(async (ticket: string, verifier: string) => {
+    const session = await authApi.googleExchange(ticket, verifier);
+    setAuthToken(session.token);
+    setUser(session.user);
+    setTokenState(session.token);
+    setLoading(false);
+    return session;
+  }, []);
 
   const logout = async (): Promise<void> => {
     setLoading(true);
@@ -171,6 +140,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Ignore network errors on logout
     } finally {
       setAuthToken(null);
+      localStorage.removeItem("complywise_admin_token");
+      for (const key of ["complywise_active_business_id", "complywise_active_assessment_id", "complywise_cached_businesses", "complywise_cached_assessments", "complywise_business_profile_v2"]) localStorage.removeItem(key);
       setUser(null);
       setTokenState(null);
       setLoading(false);
@@ -185,7 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     adminLogin,
     register,
-    fastDemoLogin,
+    completeGoogleSignIn,
     logout,
     checkAuth,
   };

@@ -14,20 +14,20 @@ export function WorkflowRow({ workflow, onContinue }: WorkflowRowProps) {
   const [showSteps, setShowSteps] = useState(false);
 
   return (
-    <div className="rounded-2xl border border-slate-200/70 bg-white hover:border-slate-300 hover:shadow-xs transition-all p-5 sm:p-6 space-y-4">
+    <div className="rounded-2xl border border-[var(--ui-border)]/70 bg-white hover:border-[var(--ui-border-strong)] hover:shadow-xs transition-all p-5 sm:p-6 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold text-blue-900 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+            <span className="font-mono text-xs font-bold text-[var(--ui-info)] bg-[var(--ui-info-soft)] px-2.5 py-0.5 rounded-full border border-[var(--ui-sage-soft)]">
               {workflow.authority}
             </span>
-            <span className="text-slate-300">·</span>
-            <span className="text-[11px] font-mono text-slate-500">
+            <span className="text-[var(--ui-muted)]">·</span>
+            <span className="text-[11px] font-mono text-[var(--ui-secondary)]">
               {workflow.standard}
             </span>
           </div>
 
-          <h3 className="text-sm font-bold text-slate-950 mt-1">
+          <h3 className="text-sm font-bold text-[var(--ui-text)] mt-1">
             {workflow.title}
           </h3>
         </div>
@@ -37,7 +37,7 @@ export function WorkflowRow({ workflow, onContinue }: WorkflowRowProps) {
           <button
             type="button"
             onClick={() => setShowSteps(!showSteps)}
-            className="text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100 transition-colors"
+            className="text-[var(--ui-muted)] hover:text-[var(--ui-secondary)] p-1 rounded-full hover:bg-[var(--ui-inset)] transition-colors"
           >
             {showSteps ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
@@ -47,18 +47,18 @@ export function WorkflowRow({ workflow, onContinue }: WorkflowRowProps) {
       {/* Stepper Progress Bar */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-medium text-slate-700">
+          <span className="font-medium text-[var(--ui-secondary)]">
             Step {workflow.current_step} of {workflow.total_steps}:{" "}
-            <span className="font-semibold text-slate-950">{workflow.current_step_name}</span>
+            <span className="font-semibold text-[var(--ui-text)]">{workflow.current_step_name}</span>
           </span>
-          <span className="font-mono text-xs font-bold text-slate-600">
+          <span className="font-mono text-xs font-bold text-[var(--ui-secondary)]">
             {Math.round((workflow.current_step / workflow.total_steps) * 100)}%
           </span>
         </div>
 
-        <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+        <div className="w-full h-2 rounded-full bg-[var(--ui-inset)] overflow-hidden">
           <div
-            className="h-full bg-[#0f172a] rounded-full transition-all duration-500"
+            className="h-full bg-[var(--ui-text)] rounded-full transition-all duration-500"
             style={{ width: `${(workflow.current_step / workflow.total_steps) * 100}%` }}
           />
         </div>
@@ -86,24 +86,24 @@ export function WorkflowRow({ workflow, onContinue }: WorkflowRowProps) {
 
       {/* Detailed Steps Progression (collapsible) */}
       {showSteps && (
-        <div className="pt-3 border-t border-slate-100 space-y-2">
-          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+        <div className="pt-3 border-t border-[var(--ui-border)] space-y-2">
+          <div className="text-[10px] font-semibold text-[var(--ui-muted)] uppercase tracking-wider">
             Clearance Steps & Verification Gates
           </div>
           <div className="space-y-1.5">
             {workflow.steps.map((step) => (
               <div
                 key={step.number}
-                className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs"
+                className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--ui-bg)] border border-[var(--ui-border)] text-xs"
               >
                 <div className="flex items-center gap-2.5">
                   <div
                     className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                       step.status === "COMPLETED"
-                        ? "bg-emerald-100 text-emerald-800"
+                        ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]"
                         : step.status === "IN_PROGRESS"
-                        ? "bg-blue-100 text-blue-800 ring-1 ring-blue-300"
-                        : "bg-slate-200 text-slate-500"
+                        ? "bg-[var(--ui-info-soft)] text-[var(--ui-info)] ring-1 ring-[var(--ui-sage-soft)]"
+                        : "bg-[var(--ui-inset)] text-[var(--ui-secondary)]"
                     }`}
                   >
                     {step.status === "COMPLETED" ? (
@@ -115,23 +115,23 @@ export function WorkflowRow({ workflow, onContinue }: WorkflowRowProps) {
                   <span
                     className={`font-medium ${
                       step.status === "COMPLETED"
-                        ? "text-slate-500 line-through"
+                        ? "text-[var(--ui-secondary)] line-through"
                         : step.status === "IN_PROGRESS"
-                        ? "text-slate-900 font-bold"
-                        : "text-slate-600"
+                        ? "text-[var(--ui-text)] font-bold"
+                        : "text-[var(--ui-secondary)]"
                     }`}
                   >
                     {step.name}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 font-mono text-[11px] text-slate-400">
+                <div className="flex items-center gap-2 font-mono text-[11px] text-[var(--ui-muted)]">
                   {step.date && <span>Date: {step.date}</span>}
                   {step.status === "COMPLETED" && (
-                    <span className="text-emerald-700 font-semibold">✓ Done</span>
+                    <span className="text-[var(--ui-sage)] font-semibold">✓ Done</span>
                   )}
                   {step.status === "IN_PROGRESS" && (
-                    <span className="text-blue-700 font-semibold">Active</span>
+                    <span className="text-[var(--ui-info)] font-semibold">Active</span>
                   )}
                 </div>
               </div>

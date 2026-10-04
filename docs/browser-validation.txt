@@ -1,0 +1,27 @@
+
+Running 19 tests using 1 worker
+
+
+
+(node:4304) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1/19] [chromium] › e2e\product-workspace.spec.ts:50:5 › workspace navigation supports keyboard, modal focus and mobile drawer
+[2/19] [chromium] › e2e\product-workspace.spec.ts:68:5 › onboarding saves supplied facts, keeps unknown figures absent, and progresses to products
+[3/19] [chromium] › e2e\product-workspace.spec.ts:96:5 › settings save real preferences, preserve failed edits, and retry load errors
+[4/19] [chromium] › e2e\product-workspace.spec.ts:114:5 › failed keyboard mark-read restores the alert and unread count
+[5/19] [chromium] › e2e\product-workspace.spec.ts:123:5 › failed Copilot requests preserve the prompt without fabricating advice
+[6/19] [chromium] › e2e\product-workspace.spec.ts:131:5 › empty accounts and unknown IDs show honest states
+[7/19] [chromium] › e2e\product-workspace.spec.ts:142:5 › workflow step completion is saved before progress advances
+[8/19] [chromium] › e2e\product-workspace.spec.ts:151:5 › upload failure keeps the file and never adds a successful document
+[9/19] [chromium] › e2e\product-workspace.spec.ts:174:5 › document results disclose server checks and keep the persisted record identity
+[10/19] [chromium] › e2e\product-workspace.spec.ts:198:5 › auth modes share the product brand and work with keyboard on small screens
+[11/19] [chromium] › e2e\product-workspace.spec.ts:209:5 › reviewer login establishes the shared session before opening the business workspace
+[12/19] [chromium] › e2e\product-workspace.spec.ts:221:5 › standards search clears previous records and compliance reveals source evidence
+[13/19] [chromium] › e2e\product-workspace.spec.ts:237:5 › compliance preserves backend decisions and failed loads never become sample assessments
+[14/19] [chromium] › e2e\product-workspace.spec.ts:257:5 › requirement detail preserves recorded decisions and discloses rules without guessing a fee or filing procedure
+[15/19] [chromium] › e2e\product-workspace.spec.ts:273:5 › staff case review requires a reason and explicit submission; denied users see no review data
+[16/19] [chromium] › e2e\product-workspace.spec.ts:287:7 › reviewer approve preserves submission identity and concurrency
+[17/19] [chromium] › e2e\product-workspace.spec.ts:287:7 › reviewer query preserves submission identity and concurrency
+[18/19] [chromium] › e2e\product-workspace.spec.ts:300:5 › admin query navigation reloads the correct queue and detail routes fit mobile
+[19/19] [chromium] › e2e\product-workspace.spec.ts:315:5 › product routes render across desktop, tablet and mobile with reduced motion
+  19 passed (54.8s)

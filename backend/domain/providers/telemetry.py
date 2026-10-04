@@ -81,6 +81,10 @@ class LLMCallRecord:
     error_message: str | None = None
     assessment_id: str | None = None
     business_id: str | None = None
+    logical_request_id: str | None = None
+    provider_slot: int | None = None
+    fallback: bool = False
+    failure_type: str | None = None
     timestamp: float = field(default_factory=time.time)
 
     def to_dict(self) -> dict[str, Any]:
@@ -108,6 +112,10 @@ class LLMTelemetryTracker:
         error_message: str | None = None,
         assessment_id: str | None = None,
         business_id: str | None = None,
+        logical_request_id: str | None = None,
+        provider_slot: int | None = None,
+        fallback: bool = False,
+        failure_type: str | None = None,
     ) -> LLMCallRecord:
         usage = usage or {}
         input_tokens = int(usage.get("prompt_tokens") or 0)
@@ -145,6 +153,10 @@ class LLMTelemetryTracker:
             error_message=error_message,
             assessment_id=str(assessment_id) if assessment_id else None,
             business_id=str(business_id) if business_id else None,
+            logical_request_id=logical_request_id,
+            provider_slot=provider_slot,
+            fallback=fallback,
+            failure_type=failure_type,
         )
 
         self._records.append(rec)
@@ -152,7 +164,7 @@ class LLMTelemetryTracker:
             self._records.pop(0)
 
         logger.info(
-            "LLM Telemetry: workflow=%s model=%s status=%s tokens=(in:%d, cached:%d, out:%d, reason:%d) cost=$%.6f latency=%.1fms",
+            "LLM Telemetry: workflow=%s model=%s status=%s tokens=(in:%d, cached:%d, out:%d, reason:%d) cost=$%.6f latency=%.1fms provider=%s slot=%s fallback=%s failure=%s",
             workflow,
             model,
             status,
@@ -162,11 +174,12 @@ class LLMTelemetryTracker:
             reasoning_tokens,
             cost_usd,
             latency_ms,
+            provider, provider_slot, fallback, failure_type,
         )
 
         return rec
 
-    def check_guardrails(self, assessment_id: str | None) -> tuple[bool, str | None]:
+    def check_guardrails(self, assessment_id: str | None, logical_request_id: str | None = None) -> tuple[bool, str | None]:
         """Check if an assessment has reached its configured LLM call / token / cost limits."""
         if not assessment_id:
             return True, None
@@ -176,7 +189,9 @@ class LLMTelemetryTracker:
         max_tokens = getattr(settings, "MAX_TOTAL_TOKENS_PER_ASSESSMENT", 25000)
 
         matching = [r for r in self._records if r.assessment_id == str(assessment_id)]
-        total_calls = len(matching)
+        logical_ids = {record.logical_request_id or f"legacy-{index}" for index, record in enumerate(matching)}
+        # An already-admitted request may finish its bounded fallback chain.
+        total_calls = len(logical_ids - ({logical_request_id} if logical_request_id else set()))
         total_cost = sum(r.estimated_cost_usd for r in matching)
         total_toks = sum(r.total_tokens for r in matching)
 

@@ -15,9 +15,10 @@ import json
 import urllib.error
 import urllib.request
 import time
+import socket
 from typing import Any
 
-from .base import ProviderError
+from .base import ProviderError, ProviderResponseError
 
 #: Seconds to wait for a provider response before failing. Kept finite so a hung
 #: vendor cannot hold a request worker open indefinitely.
@@ -50,27 +51,32 @@ def post_json(
     for attempt in range(max_retries + 1):
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:
-                return json.loads(response.read().decode("utf-8"))
+                data = json.loads(response.read().decode("utf-8"))
+                if not isinstance(data, dict):
+                    raise ProviderResponseError(f"{provider} returned an invalid response envelope.")
+                return data
         except urllib.error.HTTPError as exc:
             if exc.code in {429, 502, 503, 504} and attempt < max_retries:
                 time.sleep(0.5 * (2**attempt))
                 continue
-            err_detail = ""
-            try:
-                raw_body = exc.read().decode("utf-8", errors="replace")
-                err_data = json.loads(raw_body)
-                if isinstance(err_data, dict):
-                    if "error" in err_data:
-                        err_obj = err_data["error"]
-                        err_detail = err_obj.get("message") if isinstance(err_obj, dict) else str(err_obj)
-                    elif "message" in err_data:
-                        err_detail = err_data["message"]
-            except Exception:
-                pass
-            msg = f"{provider} returned HTTP {exc.code} ({err_detail})" if err_detail else f"{provider} returned HTTP {exc.code}."
-            raise ProviderError(msg) from None
+            # Vendor bodies may echo credentials/prompts. Never include them in
+            # exceptions, API responses or telemetry.
+            kind = ("authentication" if exc.code in {401, 403} else "rate_limit" if exc.code == 429
+                    else "provider_unavailable" if exc.code >= 500 or exc.code == 404 else "invalid_request")
+            if exc.code == 429:
+                try:
+                    detail = json.loads(exc.read(16000)).get("error", {})
+                    if "quota" in str(detail).lower():
+                        kind = "quota"
+                except (ValueError, AttributeError, OSError):
+                    pass
+            raise ProviderError(f"{provider} returned HTTP {exc.code}.",
+                                failure_type=kind, status_code=exc.code) from None
         except urllib.error.URLError as exc:
-            raise ProviderError(f"{provider} could not be reached: {exc.reason}") from None
-        except json.JSONDecodeError:
-            raise ProviderError(f"{provider} returned a response that was not valid JSON.") from None
+            kind = "timeout" if isinstance(exc.reason, (TimeoutError, socket.timeout)) else "network"
+            raise ProviderError(f"{provider} transport failed ({kind}).", failure_type=kind) from None
+        except (TimeoutError, socket.timeout):
+            raise ProviderError(f"{provider} timed out.", failure_type="timeout") from None
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            raise ProviderResponseError(f"{provider} returned a response that was not valid JSON.") from None
 

@@ -21,24 +21,24 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
   // Applicability statuses
   APPLICABLE: {
     label: "Required",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-    dot: "bg-emerald-500",
+    bg: "bg-[var(--ui-sage-faint)]",
+    text: "text-[var(--ui-sage)]",
+    border: "border-[var(--ui-sage-soft)]",
+    dot: "bg-[var(--ui-sage)]",
   },
   NOT_APPLICABLE: {
     label: "Not Applicable",
-    bg: "bg-[#F1F5F9]",
-    text: "text-[#64748B]",
-    border: "border-[#E2E8F0]",
-    dot: "bg-[#94A3B8]",
+    bg: "bg-[var(--ui-inset)]",
+    text: "text-[var(--ui-secondary)]",
+    border: "border-[var(--ui-border)]",
+    dot: "bg-[var(--ui-muted)]",
   },
   NEEDS_INFORMATION: {
     label: "Information Needed",
-    bg: "bg-sky-50",
-    text: "text-sky-700",
-    border: "border-sky-200",
-    dot: "bg-sky-500",
+    bg: "bg-[var(--ui-info-soft)]",
+    text: "text-[var(--ui-info)]",
+    border: "border-[var(--ui-sage-soft)]",
+    dot: "bg-[var(--ui-text)]",
   },
   CONFLICT_REVIEW: {
     label: "Needs Review",
@@ -46,6 +46,13 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
     text: "text-rose-700",
     border: "border-rose-200",
     dot: "bg-rose-500",
+  },
+  SUGGESTED: {
+    label: "Suggested next step",
+    bg: "bg-[var(--ui-sage-faint)]",
+    text: "text-[var(--ui-sage)]",
+    border: "border-[var(--ui-sage-soft)]",
+    dot: "bg-[var(--ui-sage)]",
   },
   UNVERIFIED: {
     label: "Review Recommended",
@@ -56,10 +63,10 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
   },
   REQUIRED: {
     label: "Required",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-    dot: "bg-emerald-500",
+    bg: "bg-[var(--ui-sage-faint)]",
+    text: "text-[var(--ui-sage)]",
+    border: "border-[var(--ui-sage-soft)]",
+    dot: "bg-[var(--ui-sage)]",
   },
   ACTION_NEEDED: {
     label: "Action Needed",
@@ -70,26 +77,26 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
   },
   POTENTIALLY_RELEVANT: {
     label: "Potentially Relevant",
-    bg: "bg-purple-50",
-    text: "text-purple-700",
-    border: "border-purple-200",
-    dot: "bg-purple-500",
+    bg: "bg-[var(--ui-sage-faint)]",
+    text: "text-[var(--ui-sage)]",
+    border: "border-[var(--ui-sage-soft)]",
+    dot: "bg-[var(--ui-sage)]",
   },
 
   // Workflow statuses
   NOT_STARTED: {
     label: "Not Started",
-    bg: "bg-[#F1F5F9]",
-    text: "text-[#64748B]",
-    border: "border-[#E2E8F0]",
-    dot: "bg-[#94A3B8]",
+    bg: "bg-[var(--ui-inset)]",
+    text: "text-[var(--ui-secondary)]",
+    border: "border-[var(--ui-border)]",
+    dot: "bg-[var(--ui-muted)]",
   },
   IN_PROGRESS: {
     label: "In Progress",
-    bg: "bg-sky-50",
-    text: "text-sky-700",
-    border: "border-sky-200",
-    dot: "bg-sky-500",
+    bg: "bg-[var(--ui-info-soft)]",
+    text: "text-[var(--ui-info)]",
+    border: "border-[var(--ui-sage-soft)]",
+    dot: "bg-[var(--ui-text)]",
   },
   WAITING_FOR_USER: {
     label: "Waiting for User",
@@ -121,17 +128,17 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
   },
   SUBMITTED: {
     label: "Submitted",
-    bg: "bg-sky-50",
-    text: "text-sky-700",
-    border: "border-sky-200",
-    dot: "bg-sky-500",
+    bg: "bg-[var(--ui-info-soft)]",
+    text: "text-[var(--ui-info)]",
+    border: "border-[var(--ui-sage-soft)]",
+    dot: "bg-[var(--ui-text)]",
   },
   COMPLETED: {
     label: "Completed",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-    dot: "bg-emerald-500",
+    bg: "bg-[var(--ui-sage-faint)]",
+    text: "text-[var(--ui-sage)]",
+    border: "border-[var(--ui-sage-soft)]",
+    dot: "bg-[var(--ui-sage)]",
   },
   OVERDUE: {
     label: "Overdue",
@@ -142,26 +149,26 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
   },
   BLOCKED: {
     label: "Blocked",
-    bg: "bg-[#F1F5F9]",
-    text: "text-[#64748B]",
-    border: "border-[#E2E8F0]",
-    dot: "bg-[#94A3B8]",
+    bg: "bg-[var(--ui-inset)]",
+    text: "text-[var(--ui-secondary)]",
+    border: "border-[var(--ui-border)]",
+    dot: "bg-[var(--ui-muted)]",
   },
 
   // Document statuses
   NOT_UPLOADED: {
     label: "Not Uploaded",
-    bg: "bg-[#F1F5F9]",
-    text: "text-[#64748B]",
-    border: "border-[#E2E8F0]",
-    dot: "bg-[#94A3B8]",
+    bg: "bg-[var(--ui-inset)]",
+    text: "text-[var(--ui-secondary)]",
+    border: "border-[var(--ui-border)]",
+    dot: "bg-[var(--ui-muted)]",
   },
   UPLOADED: {
     label: "Uploaded",
-    bg: "bg-sky-50",
-    text: "text-sky-700",
-    border: "border-sky-200",
-    dot: "bg-sky-500",
+    bg: "bg-[var(--ui-info-soft)]",
+    text: "text-[var(--ui-info)]",
+    border: "border-[var(--ui-sage-soft)]",
+    dot: "bg-[var(--ui-text)]",
   },
   PROCESSING: {
     label: "Processing",
@@ -172,10 +179,10 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
   },
   VERIFIED: {
     label: "Verified",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-    dot: "bg-emerald-500",
+    bg: "bg-[var(--ui-sage-faint)]",
+    text: "text-[var(--ui-sage)]",
+    border: "border-[var(--ui-sage-soft)]",
+    dot: "bg-[var(--ui-sage)]",
   },
   ISSUE: {
     label: "Issue Found",
@@ -210,10 +217,10 @@ const STATUS_CONFIGS: Record<string, StatusConfig> = {
 export function StatusBadge({ status, className = "", size = "md" }: StatusBadgeProps) {
   const config = STATUS_CONFIGS[status] || {
     label: status.replace(/_/g, " "),
-    bg: "bg-[#F1F5F9]",
-    text: "text-[#64748B]",
-    border: "border-[#E2E8F0]",
-    dot: "bg-[#94A3B8]",
+    bg: "bg-[var(--ui-inset)]",
+    text: "text-[var(--ui-secondary)]",
+    border: "border-[var(--ui-border)]",
+    dot: "bg-[var(--ui-muted)]",
   };
 
   const sizeStyles =
@@ -223,7 +230,8 @@ export function StatusBadge({ status, className = "", size = "md" }: StatusBadge
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border ${config.bg} ${config.text} ${config.border} ${sizeStyles} ${className}`}
+      role="status"
+      className={`inline-flex items-center rounded-full border transition-colors duration-240 ${config.bg} ${config.text} ${config.border} ${sizeStyles} ${className}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
       {config.label}

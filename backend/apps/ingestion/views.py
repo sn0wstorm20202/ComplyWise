@@ -221,11 +221,15 @@ class AnalysisOrchestrateView(_DiscoveryScopedView):
         from domain.intelligence.orchestration import orchestrate_compliance_analysis
         force = bool(request.data.get("force_live_discovery", True))
         assessment_id = request.data.get("assessment_id") or request.query_params.get("assessment_id")
-        payload = orchestrate_compliance_analysis(
-            business,
-            assessment_id=assessment_id,
-            force_live_discovery=force,
-        )
+        if assessment_id and not business.assessments.filter(pk=assessment_id).exists():
+            return error_response("NOT_FOUND", "Assessment not found.", http_status=404)
+        from domain.providers.base import ProviderError
+        try:
+            payload = orchestrate_compliance_analysis(
+                business, assessment_id=assessment_id, force_live_discovery=force,
+            )
+        except ProviderError:
+            return error_response("WORKSPACE_PREPARATION_FAILED", "Your details are saved. Please retry preparing your workspace.", http_status=503)
         return Response(envelope(payload), status=status.HTTP_200_OK)
 
 
@@ -241,9 +245,13 @@ class AnalysisStatusView(_DiscoveryScopedView):
 
         from domain.intelligence.orchestration import orchestrate_compliance_analysis
         assessment_id = request.query_params.get("assessment_id")
-        payload = orchestrate_compliance_analysis(
-            business,
-            assessment_id=assessment_id,
-            force_live_discovery=False,
-        )
+        if assessment_id and not business.assessments.filter(pk=assessment_id).exists():
+            return error_response("NOT_FOUND", "Assessment not found.", http_status=404)
+        from domain.providers.base import ProviderError
+        try:
+            payload = orchestrate_compliance_analysis(
+                business, assessment_id=assessment_id, force_live_discovery=False,
+            )
+        except ProviderError:
+            return error_response("WORKSPACE_PREPARATION_FAILED", "Your details are saved. Please retry preparing your workspace.", http_status=503)
         return Response(envelope(payload), status=status.HTTP_200_OK)

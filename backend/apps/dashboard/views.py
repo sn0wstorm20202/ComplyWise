@@ -30,6 +30,8 @@ class BusinessDashboardView(APIView):
             )
 
         assessment_id = request.query_params.get("assessment_id")
+        if assessment_id and not business.assessments.filter(pk=assessment_id).exists():
+            return error_response("NOT_FOUND", "Assessment not found for this business.", http_status=404)
         data = get_dashboard_summary(business, assessment_id=assessment_id)
 
         if request.user.is_authenticated:

@@ -28,25 +28,25 @@ export function CapabilityUnavailableNotice({
   icon = "○",
 }: CapabilityUnavailableNoticeProps) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 p-8 shadow-xs space-y-4">
+    <div className="bg-white rounded-2xl border border-[var(--ui-border)]/80 p-8 shadow-xs space-y-4">
       <div className="flex items-start gap-3">
-        <span className="text-xl text-slate-400 leading-none pt-0.5">{icon}</span>
+        <span className="text-xl text-[var(--ui-muted)] leading-none pt-0.5">{icon}</span>
         <div className="space-y-1">
-          <h3 className="text-sm font-bold text-slate-900">Not configured</h3>
-          <span className="font-mono text-[11px] text-slate-500">{capability}</span>
+          <h3 className="text-sm font-bold text-[var(--ui-text)]">Not configured</h3>
+          <span className="font-mono text-[11px] text-[var(--ui-secondary)]">{capability}</span>
         </div>
       </div>
 
-      <p className="text-xs text-slate-600 leading-relaxed">{reason}</p>
+      <p className="text-xs text-[var(--ui-secondary)] leading-relaxed">{reason}</p>
 
-      <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-1">
-        <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide block">
+      <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg)]/70 p-4 space-y-1">
+        <span className="text-[11px] font-semibold text-[var(--ui-secondary)] uppercase tracking-wide block">
           What this would require
         </span>
-        <p className="text-xs text-slate-600 leading-relaxed">{requires}</p>
+        <p className="text-xs text-[var(--ui-secondary)] leading-relaxed">{requires}</p>
       </div>
 
-      <p className="text-[11px] text-slate-500 border-t border-slate-100 pt-3">
+      <p className="text-[11px] text-[var(--ui-secondary)] border-t border-[var(--ui-border)] pt-3">
         This screen is empty because the capability is absent, not because the
         analysis found nothing that applies to your business.
       </p>

@@ -1,0 +1,317 @@
+{
+  "kind": "REAL_PROVIDER_API_RUNTIME_DATABASE",
+  "business": "Synthetic Gujarat food manufacturing workshop",
+  "stages": {
+    "login": {
+      "http_status": 200,
+      "seconds": 1.673
+    },
+    "businesses": {
+      "http_status": 201,
+      "seconds": 0.526
+    },
+    "profile": {
+      "http_status": 201,
+      "seconds": 0.234
+    },
+    "post": {
+      "http_status": 201,
+      "seconds": 0.753
+    },
+    "understand": {
+      "http_status": 200,
+      "seconds": 12.081
+    },
+    "generate": {
+      "http_status": 200,
+      "seconds": 15.362
+    },
+    "answers": {
+      "http_status": 200,
+      "seconds": 2.677
+    },
+    "regulatory-discovery": {
+      "http_status": 200,
+      "seconds": 25.647
+    },
+    "compliance-synthesis": {
+      "http_status": 200,
+      "seconds": 23.648
+    },
+    "orchestrate": {
+      "http_status": 200,
+      "seconds": 9.453
+    },
+    "compliance?assessment_id=f5b407bd-be67-44df-8d6f-df5280480b33": {
+      "http_status": 200,
+      "seconds": 0.856
+    },
+    "documents?assessment_id=f5b407bd-be67-44df-8d6f-df5280480b33": {
+      "http_status": 200,
+      "seconds": 0.712
+    },
+    "workflows?assessment_id=f5b407bd-be67-44df-8d6f-df5280480b33": {
+      "http_status": 200,
+      "seconds": 2.391
+    },
+    "schemes?assessment_id=f5b407bd-be67-44df-8d6f-df5280480b33": {
+      "http_status": 200,
+      "seconds": 2.257
+    },
+    "calendar?assessment_id=f5b407bd-be67-44df-8d6f-df5280480b33": {
+      "http_status": 200,
+      "seconds": 0.899
+    },
+    "dashboard?assessment_id=f5b407bd-be67-44df-8d6f-df5280480b33": {
+      "http_status": 200,
+      "seconds": 8.785
+    },
+    "standards": {
+      "http_status": 400,
+      "seconds": 0.261
+    }
+  },
+  "failures": [
+    {
+      "stage": "/api/v1/assessments/f5b407bd-be67-44df-8d6f-df5280480b33/standards",
+      "http_status": 400,
+      "code": "BUDGET_EXCEEDED",
+      "details": []
+    }
+  ],
+  "assessment_id": "f5b407bd-be67-44df-8d6f-df5280480b33",
+  "question_count": 5,
+  "answers_limitation": "Synthetic QA business answers selected from actual generated options; not a legal expert coverage benchmark.",
+  "assessment_status": "COMPLETED",
+  "deterministic_status_counts": {
+    "APPLICABLE": 6,
+    "NOT_APPLICABLE": 57,
+    "NEEDS_INFORMATION": 0,
+    "UNVERIFIED": 30
+  },
+  "guidance_counts": {
+    "compliance_items": 0,
+    "documents": 0,
+    "workflows": 0,
+    "schemes": 0,
+    "standards": 0
+  },
+  "discovery": [
+    {
+      "status": "PARTIAL",
+      "query_count": 6,
+      "candidate_count": 20,
+      "official_candidates": 7,
+      "captures": 1,
+      "modes": [
+        "CRAWLEE_HTTP"
+      ],
+      "error": "Source capture rejected: Requested document redirected to an unrelated portal homepage.; Source capture rejected: Crawlee produced no usable capture; blocked or failed source."
+    }
+  ],
+  "workspace": {
+    "compliance": {
+      "keys": [
+        "business_id",
+        "latest_run_id",
+        "count",
+        "requirements"
+      ],
+      "counts": {
+        "requirements": 93
+      }
+    },
+    "documents": {
+      "keys": [
+        "business_id",
+        "business_name",
+        "evaluated",
+        "total_count",
+        "total_documents_needed",
+        "documents",
+        "grouped_by_requirement",
+        "requirements_summary",
+        "requirements_without_checklist",
+        "checklist_source",
+        "upload_available",
+        "prevalidation_available",
+        "disclaimer"
+      ],
+      "counts": {
+        "documents": 9,
+        "requirements_summary": 6,
+        "requirements_without_checklist": 0
+      }
+    },
+    "workflows": {
+      "keys": [
+        "business_id",
+        "business_name",
+        "available",
+        "evaluated",
+        "count",
+        "total_workflows",
+        "summary",
+        "workflows",
+        "source",
+        "disclaimer"
+      ],
+      "counts": {
+        "workflows": 23
+      }
+    },
+    "schemes": {
+      "keys": [
+        "business_id",
+        "business_name",
+        "available",
+        "state",
+        "state_code",
+        "raw_state",
+        "state_name",
+        "msme_scale",
+        "product_description",
+        "count",
+        "total_schemes_found",
+        "universal_schemes_count",
+        "sector_specific_schemes_count",
+        "maharashtra_schemes_count",
+        "central_schemes_count",
+        "schemes",
+        "discovery_mode",
+        "data_freshness",
+        "disclaimer"
+      ],
+      "counts": {
+        "schemes": 17
+      }
+    },
+    "calendar": {
+      "keys": [
+        "business_id",
+        "business_name",
+        "evaluated",
+        "events",
+        "count",
+        "covers",
+        "not_covered",
+        "not_covered_reason",
+        "disclaimer"
+      ],
+      "counts": {
+        "events": 1,
+        "covers": 2,
+        "not_covered": 2
+      }
+    },
+    "dashboard": {
+      "keys": [
+        "business_id",
+        "business_name",
+        "assessment_id",
+        "assessment_number",
+        "assessment_title",
+        "assessment_status",
+        "has_evaluation",
+        "widgets",
+        "latest_run_id",
+        "evaluation_date",
+        "profile_version",
+        "compliance_readiness",
+        "readiness_label",
+        "readiness_basis",
+        "metrics",
+        "total_documents_needed",
+        "total_workflows_count",
+        "schemes_preview",
+        "total_schemes_count",
+        "standards_preview",
+        "total_standards_count",
+        "priority_actions",
+        "upcoming_deadlines",
+        "category_breakdown",
+        "jurisdiction_breakdown",
+        "recent_updates",
+        "recent_updates_available",
+        "coverage"
+      ],
+      "counts": {
+        "schemes_preview": 3,
+        "standards_preview": 0,
+        "priority_actions": 6,
+        "upcoming_deadlines": 1,
+        "recent_updates": 0
+      }
+    }
+  },
+  "providers": [
+    {
+      "provider": "gemini",
+      "provider_slot": 1,
+      "attempt": 1,
+      "status": "SUCCESS",
+      "failure_type": null,
+      "fallback": false,
+      "latency_ms": 11567.24,
+      "model": "gemini-3.5-flash-lite",
+      "workflow": "business_understanding"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 2,
+      "attempt": 1,
+      "status": "SUCCESS",
+      "failure_type": null,
+      "fallback": false,
+      "latency_ms": 14161.21,
+      "model": "gemini-3.5-flash-lite",
+      "workflow": "smart_questions_planner"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 3,
+      "attempt": 1,
+      "status": "SUCCESS",
+      "failure_type": null,
+      "fallback": false,
+      "latency_ms": 13135.81,
+      "model": "gemini-3.5-flash-lite",
+      "workflow": "claim_extraction"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 1,
+      "attempt": 1,
+      "status": "ERROR",
+      "failure_type": "provider_unavailable",
+      "fallback": false,
+      "latency_ms": 4892.48,
+      "model": "gemini-3.5-flash-lite",
+      "workflow": "workspace_guidance"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 2,
+      "attempt": 2,
+      "status": "ERROR",
+      "failure_type": "provider_unavailable",
+      "fallback": true,
+      "latency_ms": 4822.38,
+      "model": "gemini-3.5-flash-lite",
+      "workflow": "workspace_guidance"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 3,
+      "attempt": 3,
+      "status": "ERROR",
+      "failure_type": "provider_unavailable",
+      "fallback": true,
+      "latency_ms": 5715.23,
+      "model": "gemini-3.5-flash-lite",
+      "workflow": "workspace_guidance"
+    }
+  ],
+  "total_seconds": 110.364,
+  "temporary_account_business_removed": true
+}

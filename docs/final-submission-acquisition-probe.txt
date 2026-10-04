@@ -1,0 +1,420 @@
+2026-10-04 17:10:57,147 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:10:57,149 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 17:10:57,149 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 17:10:59,469 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 17:10:59,469 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 17:10:59,470 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 17:10:59,471 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 2.32s \u2502
+\u2502 requests_finished_per_minute  \u2502 26    \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 2.32s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 2.32s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:10:59,645 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:10:59,645 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 17:10:59,645 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 17:11:09,645 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 11.
+2026-10-04 17:11:19,644 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 11.
+2026-10-04 17:11:20,987 ERROR HttpCrawler Request to https://www.msmedikarnal.gov.in/pdf/msme_defination.pdf failed and reached maximum retries
+ Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_impit.py", line 134, in crawl
+    response = await client.request(
+               ^^^^^^^^^^^^^^^^^^^^^
+impit.TimeoutException: Request timeout (60000 ms) exceeded.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 100, in __call__
+    result = await middleware_instance.action()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 40, in action
+    self.output_context = await self.generator.__anext__()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_abstract_http\_abstract_http_crawler.py", line 278, in _make_http_request
+    result = await self._http_client.crawl(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_impit.py", line 142, in crawl
+    raise asyncio.TimeoutError from exc
+TimeoutError
+2026-10-04 17:11:20,987 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 17:11:20,987 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 17:11:20,987 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 17:11:20,987 INFO HttpCrawler Error analysis: total_errors=1 unique_errors=1
+2026-10-04 17:11:20,988 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0      \u2502
+\u2502 requests_failed               \u2502 1      \u2502
+\u2502 retry_histogram               \u2502 [1]    \u2502
+\u2502 request_avg_failed_duration   \u2502 21.34s \u2502
+\u2502 request_avg_finished_duration \u2502 None   \u2502
+\u2502 requests_finished_per_minute  \u2502 0      \u2502
+\u2502 requests_failed_per_minute    \u2502 2      \u2502
+\u2502 request_total_duration        \u2502 21.34s \u2502
+\u2502 requests_total                \u2502 1      \u2502
+\u2502 crawler_runtime               \u2502 21.34s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:11:20,993 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:11:20,993 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 17:11:20,993 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 17:11:21,363 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 17:11:21,363 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 17:11:21,363 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 17:11:21,364 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1       \u2502
+\u2502 requests_failed               \u2502 0       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 None    \u2502
+\u2502 request_avg_finished_duration \u2502 368.1ms \u2502
+\u2502 requests_finished_per_minute  \u2502 162     \u2502
+\u2502 requests_failed_per_minute    \u2502 0       \u2502
+\u2502 request_total_duration        \u2502 368.1ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 370.0ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:11:21,366 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:11:21,366 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 17:11:21,367 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 17:11:21,989 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 17:11:21,989 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 17:11:21,990 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 17:11:21,991 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1       \u2502
+\u2502 requests_failed               \u2502 0       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 None    \u2502
+\u2502 request_avg_finished_duration \u2502 621.6ms \u2502
+\u2502 requests_finished_per_minute  \u2502 96      \u2502
+\u2502 requests_failed_per_minute    \u2502 0       \u2502
+\u2502 request_total_duration        \u2502 621.6ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 624.0ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:11:21,993 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:11:21,993 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 17:11:21,993 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 17:11:22,243 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 17:11:22,243 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 17:11:22,245 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 17:11:22,245 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1       \u2502
+\u2502 requests_failed               \u2502 0       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 None    \u2502
+\u2502 request_avg_finished_duration \u2502 249.6ms \u2502
+\u2502 requests_finished_per_minute  \u2502 239     \u2502
+\u2502 requests_failed_per_minute    \u2502 0       \u2502
+\u2502 request_total_duration        \u2502 249.6ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 251.4ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:11:22,247 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:11:22,248 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 17:11:22,248 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 17:11:24,485 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 17:11:24,485 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 17:11:24,485 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 17:11:24,486 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 2.24s \u2502
+\u2502 requests_finished_per_minute  \u2502 27    \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 2.24s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 2.24s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:11:24,603 INFO crawlee.crawlers._playwright._playwright_crawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:11:24,604 INFO crawlee.crawlers._playwright._playwright_crawler Crawled 0/1 pages, 0 failed requests, desired concurrency 1.
+2026-10-04 17:11:25,439 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 2; cpu = 0.0; mem = 0.0; event_loop = 0.0; client_info = 0.0
+2026-10-04 17:11:30,810 INFO crawlee.crawlers._playwright._playwright_crawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 17:11:30,810 INFO crawlee.crawlers._playwright._playwright_crawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 17:11:30,816 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 17:11:31,090 INFO crawlee.crawlers._playwright._playwright_crawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 5.37s \u2502
+\u2502 requests_finished_per_minute  \u2502 9     \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 5.37s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 6.49s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:11:37,655 INFO domain.intelligence.regulatory_retrieval ComplianceRAG retrieval SUCCESS: 2 passages, 3063ms
+{
+  "configuration": {
+    "llm_primary": "gemini",
+    "gemini_slots": 3,
+    "openai_configured": true,
+    "search_provider": "serpapi",
+    "search_configured": true,
+    "rag_configured": true,
+    "firecrawl_active": false
+  },
+  "packages": {
+    "crawlee": "1.7.2",
+    "playwright": "1.63.0",
+    "impit": "0.14.1",
+    "beautifulsoup4": "4.15.0",
+    "pypdf": "6.19.0"
+  },
+  "probes": [
+    {
+      "name": "search",
+      "provider": "serpapi",
+      "status": "SUCCESS",
+      "result_count": 3,
+      "duration_seconds": 0.549,
+      "candidate_urls": [
+        "https://alephindia.in/blog/bis-certification-schemes.php",
+        "https://www.bis.gov.in/apply-for-a-license/?lang=en",
+        "https://www.crsbis.in/BIS/products-bis.do"
+      ]
+    },
+    {
+      "name": "static_html",
+      "url": "https://www.bis.gov.in/?lang=en",
+      "final_url": "https://www.bis.gov.in/?lang=en",
+      "mode": "CRAWLEE_HTTP",
+      "http_status": 200,
+      "text_chars": 12576,
+      "status": "SUCCESS",
+      "errors": [],
+      "metadata": {
+        "redirect_chain": [
+          "https://www.bis.gov.in/?lang=en"
+        ],
+        "source_last_modified": null,
+        "extractor_version": "cw-crawlee-1",
+        "engine_version": "1.7.2",
+        "raw_content_hash": "c8fc0c122152b1006512253aa0d70632587eb66f092ffb7da2a30348b8a180cf",
+        "content_length_bytes": 559224,
+        "mime_type": "text/html",
+        "normalized_text_hash": "05e98803c3c0c4e1c5c3b415a8fd067723f1062b77e0d1bdcd20eeeabe4920d1",
+        "latency_ms": 3227.69
+      }
+    },
+    {
+      "name": "official_pdf",
+      "url": "https://www.msmedikarnal.gov.in/pdf/msme_defination.pdf",
+      "final_url": "https://www.msmedikarnal.gov.in/pdf/msme_defination.pdf",
+      "mode": "FAILED_ACQUISITION",
+      "http_status": 0,
+      "text_chars": 0,
+      "status": "FAILED",
+      "errors": [
+        "Crawlee produced no usable capture; blocked or failed source."
+      ],
+      "metadata": {
+        "latency_ms": 21483.05
+      }
+    },
+    {
+      "name": "failed_source",
+      "url": "https://www.bis.gov.in/complywise-missing-probe-2026",
+      "final_url": "https://www.bis.gov.in/?lang=hi",
+      "mode": "CRAWLEE_HTTP",
+      "http_status": 200,
+      "text_chars": 13905,
+      "status": "SUCCESS",
+      "errors": [],
+      "metadata": {
+        "redirect_chain": [
+          "https://www.bis.gov.in/complywise-missing-probe-2026",
+          "https://www.bis.gov.in/complywise-missing-probe-2026?lang=hi",
+          "https://www.bis.gov.in/",
+          "https://www.bis.gov.in/?lang=hi"
+        ],
+        "source_last_modified": null,
+        "extractor_version": "cw-crawlee-1",
+        "engine_version": "1.7.2",
+        "raw_content_hash": "c2e15ddf7c89a8291e8e54874c636ae6a2dbcf2021421f19ed3ea43c0c69d178",
+        "content_length_bytes": 583841,
+        "mime_type": "text/html",
+        "normalized_text_hash": "c1a527b1c3d4f9aad403dee8a225c6acaa9f2b17f234431cecfcafcf6b0ab321",
+        "latency_ms": 3524.89
+      }
+    },
+    {
+      "name": "unofficial_destination",
+      "url": "https://example.com",
+      "final_url": "https://example.com",
+      "mode": "FAILED_ACQUISITION",
+      "http_status": 0,
+      "text_chars": 0,
+      "status": "FAILED",
+      "errors": [
+        "Rejected unofficial source or redirect."
+      ],
+      "metadata": {
+        "latency_ms": 0.08
+      }
+    },
+    {
+      "name": "js_official_page",
+      "url": "https://www.crsbis.in/BIS/products-bis.do",
+      "final_url": "https://www.crsbis.in/BIS/products-bis.do",
+      "mode": "CRAWLEE_BROWSER",
+      "http_status": 200,
+      "text_chars": 7109,
+      "status": "SUCCESS",
+      "errors": [],
+      "metadata": {
+        "redirect_chain": [
+          "https://www.crsbis.in/BIS/products-bis.do"
+        ],
+        "source_last_modified": null,
+        "extractor_version": "cw-crawlee-1",
+        "engine_version": "1.7.2",
+        "raw_content_hash": "59112124f09a6c413e4e01e166ee9f17d0081b191a79669679caf66a27af1917",
+        "content_length_bytes": 23330,
+        "mime_type": "text/html",
+        "normalized_text_hash": "1be6ea6b3e436d24f10f25ef19bd5accfdacc3ae7d246968abe9052487e35790",
+        "latency_ms": 6578.84
+      }
+    },
+    {
+      "name": "gemini_slot",
+      "slot": 1,
+      "model": "gemini-3.5-flash-lite",
+      "status": "SUCCESS",
+      "duration_seconds": 1.544,
+      "usage": {
+        "promptTokenCount": 8,
+        "candidatesTokenCount": 5,
+        "totalTokenCount": 13
+      }
+    },
+    {
+      "name": "gemini_slot",
+      "slot": 2,
+      "model": "gemini-3.5-flash-lite",
+      "status": "SUCCESS",
+      "duration_seconds": 0.966,
+      "usage": {
+        "promptTokenCount": 8,
+        "candidatesTokenCount": 5,
+        "totalTokenCount": 13
+      }
+    },
+    {
+      "name": "gemini_slot",
+      "slot": 3,
+      "model": "gemini-3.5-flash-lite",
+      "status": "SUCCESS",
+      "duration_seconds": 0.978,
+      "usage": {
+        "promptTokenCount": 8,
+        "candidatesTokenCount": 5,
+        "totalTokenCount": 13
+      }
+    },
+    {
+      "name": "deployed_rag",
+      "status": "SUCCESS",
+      "accepted_passages": 2,
+      "rejected_count": 2,
+      "duration_seconds": 3.073
+    }
+  ]
+}

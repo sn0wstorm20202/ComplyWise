@@ -41,7 +41,7 @@ export function TallFeatureCard({
           <h2 className="text-xl font-bold text-[#F2F2F0] tracking-tight">
             ComplyWise
           </h2>
-          <p className="text-xs text-[#71717A]">
+          <p className="text-xs text-[var(--ui-secondary)]">
             Your BIS compliance intelligence platform
           </p>
         </div>
@@ -51,7 +51,7 @@ export function TallFeatureCard({
             type="button"
             onClick={onDismiss}
             aria-label="Dismiss card"
-            className="h-7 w-7 rounded-[8px] bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] flex items-center justify-center text-[#71717A] hover:text-[#F2F2F0] transition-colors cursor-pointer shrink-0"
+            className="h-7 w-7 rounded-[8px] bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] flex items-center justify-center text-[var(--ui-secondary)] hover:text-[#F2F2F0] transition-colors cursor-pointer shrink-0"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -182,7 +182,7 @@ export function TallFeatureCard({
           )}
         </div>
 
-        <p className="text-[11px] text-[#71717A] leading-tight">
+        <p className="text-[11px] text-[var(--ui-secondary)] leading-tight">
           Explore BIS standards, schemes and updates with ComplyWise.
         </p>
       </div>

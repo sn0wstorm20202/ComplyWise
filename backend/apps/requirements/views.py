@@ -169,48 +169,6 @@ class BusinessComplianceListView(_BusinessScopedView):
             if status_filter:
                 results = [r for r in results if r.status == status_filter.upper()]
 
-            import re
-            desc_parts = [business.name]
-            if business.current_profile and business.current_profile.variables:
-                vars_dict = business.current_profile.variables
-                for k in ["product_description", "sector", "nature_of_business", "primary_business_activity"]:
-                    val = vars_dict.get(k)
-                    if isinstance(val, dict):
-                        desc_parts.append(str(val.get("value") or ""))
-                    elif val:
-                        desc_parts.append(str(val))
-            desc_lower = " ".join(desc_parts).lower()
-            is_pure_software = bool(re.search(r"\b(software|saas|platform|app|web|digital|pre-visualization|film pre-visualization|consulting|it services|agency)\b", desc_lower)) and not any(hw in desc_lower for hw in ["hardware manufacturing", "assembly plant", "fabrication plant", "physical manufacturing"])
-            is_physical_mfg = any(mfg_kw in desc_lower for mfg_kw in [
-                "mill", "textile", "weaving", "spinning", "dyeing", "fabric", "yarn", "foundry", "plant", "casting",
-                "manufacturing", "factory", "machinery", "engineering", "chemical", "metal", "assembly", "battery"
-            ]) and not is_pure_software
-
-            seen_canonical = set()
-            cleaned_results = []
-            for r in results:
-                req_id_upper = r.requirement_id.upper()
-                req_name_upper = r.requirement_name.upper()
-                combined = f"{req_id_upper} {req_name_upper}"
-
-                if is_pure_software and any(term in combined for term in [
-                    "FACTORY", "FACTORIES", "CONSENT TO ESTABLISH", "CONSENT TO OPERATE", "CTE", "CTO",
-                    "POLLUTION", "SPCB", "MPCB", "WBPCB", "GPCB", "CPCB", "BOILER"
-                ]):
-                    continue
-
-                if is_physical_mfg and any(term in combined for term in [
-                    "CERT-IN", "CERTIN", "CYBERSECURITY", "INCIDENT-REPORTING", "DPDP", "DATA FIDUCIARY"
-                ]):
-                    continue
-
-                canon = req_id_upper.replace("-", "").replace("_", "")
-                if canon in seen_canonical:
-                    continue
-                seen_canonical.add(canon)
-                cleaned_results.append(r)
-
-            results = cleaned_results
             req_ids = [r.requirement_id for r in results]
             req_defs = {
                 rd.requirement_id: rd
@@ -272,6 +230,7 @@ class BusinessComplianceListView(_BusinessScopedView):
                 items.append(
                     {
                         "requirement_id": r.requirement_id,
+                        "result_origin": "DETERMINISTIC_KB_RESULT",
                         "name": r.requirement_name,
                         "authority": auth,
                         "category": cat,
@@ -295,6 +254,32 @@ class BusinessComplianceListView(_BusinessScopedView):
                         "citation_count": len(citations),
                     }
                 )
+
+        from domain.intelligence.workspace_guidance import compliance_rows
+        for item in compliance_rows(business, assessment_id):
+            if status_filter and item["status"] != status_filter.upper():
+                continue
+            if authority_filter and item["authority"] != authority_filter:
+                continue
+            if category_filter and item["category"] != category_filter:
+                continue
+            items.append(item)
+
+        from apps.workflows.services.disposition_service import reviewed_requirement_treatment
+        treatments = reviewed_requirement_treatment(business, assessment_id,
+            latest_run.profile_version_id if latest_run else None)
+        from apps.workflows.services.disposition_service import reviewer_assigned_requirements
+        present = {item["requirement_id"] for item in items}
+        for assigned in reviewer_assigned_requirements(business, assessment_id,
+                latest_run.profile_version_id if latest_run else None):
+            if assigned["requirement_id"] in present:
+                item = next(item for item in items if item["requirement_id"] == assigned["requirement_id"])
+                item.update(system_applicability_status=item["status"], result_origin="HUMAN_REVIEW_RESULT")
+            elif not status_filter or status_filter.upper() == assigned["status"]:
+                if (not authority_filter or authority_filter.upper() == assigned["authority"].upper()) and (not category_filter or category_filter.upper() == assigned["category"].upper()):
+                    items.append(assigned)
+        for item in items:
+            item.update(treatments.get(item["requirement_id"], {}))
 
         return Response(
             envelope(
@@ -322,6 +307,24 @@ class BusinessRequirementDetailView(_BusinessScopedView):
         business = self.get_business(request, business_id)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
+
+        from domain.intelligence.workspace_guidance import compliance_rows, get_workspace
+        assessment_id = request.query_params.get("assessment_id")
+        guidance = next((r for r in compliance_rows(business, assessment_id) if r["id"] == requirement_id), None)
+        if guidance:
+            from apps.workflows.services.disposition_service import reviewed_requirement_treatment
+            guidance.update(reviewed_requirement_treatment(business, assessment_id).get(requirement_id, {}))
+            workspace = get_workspace(business, assessment_id)
+            docs = [d["title"] for d in workspace["documents"] if d["requirement_id"] == requirement_id]
+            workflow = next((w for w in workspace["workflows"] if w["requirement_id"] == requirement_id), None)
+            return Response(envelope({**guidance, "business_id": str(business.id),
+                "requirement_name": guidance["title"], "why_it_applies": {"summary": guidance["why_it_may_apply"],
+                    "reason": guidance["why_it_may_apply"], "result_origin": guidance["result_origin"]},
+                "what_you_need": {"documents": docs, "documents_available": bool(docs),
+                    "statutory_fee_estimate": "Confirm with the relevant authority", "validity_period": "Confirm with the relevant authority"},
+                "what_to_do_next": {"steps": workflow["steps"] if workflow else [guidance["recommended_next_step"]],
+                    "steps_available": True, "official_portal": None, "portal_url": None, "portal_name": ""},
+                "statutory_evidence": [], "source_reference": guidance["source_reference"]}))
 
         req_def = RequirementDefinition.objects.filter(requirement_id=requirement_id).first()
         if req_def is None:
@@ -453,4 +456,10 @@ class BusinessRequirementDetailView(_BusinessScopedView):
             "evidence_count": len(evidence_items),
         }
 
+        from apps.workflows.services.disposition_service import reviewed_requirement_treatment
+        detail_data.update(reviewed_requirement_treatment(business, assessment_id,
+            latest_run.profile_version_id if latest_run else None).get(requirement_id, {}))
+        if detail_data.get("treatment_source") == "ADMIN_ASSIGNED":
+            detail_data["result_origin"] = "HUMAN_REVIEW_RESULT"
+            detail_data["reviewer_assignment"] = True
         return Response(envelope(detail_data), status=status.HTTP_200_OK)

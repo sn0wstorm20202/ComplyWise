@@ -1,0 +1,33 @@
+
+Running 26 tests using 1 worker
+
+(node:18732) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › e2e\architecture-landing-regression.spec.cjs:3:3 › existing landing CSS and CTA routes remain intact at 1440px (1.6s)
+  ✓   2 [chromium] › e2e\architecture-landing-regression.spec.cjs:3:3 › existing landing CSS and CTA routes remain intact at 390px (931ms)
+  ✓   3 [chromium] › e2e\product-workspace.spec.ts:50:5 › workspace navigation supports keyboard, modal focus and mobile drawer (2.1s)
+  ✓   4 [chromium] › e2e\product-workspace.spec.ts:68:5 › onboarding saves supplied facts, keeps unknown figures absent, and progresses to products (1.5s)
+  ✓   5 [chromium] › e2e\product-workspace.spec.ts:96:5 › settings save real preferences, preserve failed edits, and retry load errors (2.2s)
+  ✓   6 [chromium] › e2e\product-workspace.spec.ts:114:5 › failed keyboard mark-read restores the alert and unread count (1.2s)
+  ✓   7 [chromium] › e2e\product-workspace.spec.ts:123:5 › failed Copilot requests preserve the prompt without fabricating advice (1.1s)
+  ✓   8 [chromium] › e2e\product-workspace.spec.ts:131:5 › empty accounts and unknown IDs show honest states (2.9s)
+  ✓   9 [chromium] › e2e\product-workspace.spec.ts:142:5 › workflow step completion is saved before progress advances (1.7s)
+  ✓  10 [chromium] › e2e\product-workspace.spec.ts:151:5 › upload failure keeps the file and never adds a successful document (1.6s)
+  ✓  11 [chromium] › e2e\product-workspace.spec.ts:174:5 › document results disclose server checks and keep the persisted record identity (3.0s)
+  ✓  12 [chromium] › e2e\product-workspace.spec.ts:198:5 › auth modes share the product brand and work with keyboard on small screens (1.3s)
+  ✓  13 [chromium] › e2e\product-workspace.spec.ts:209:5 › reviewer login establishes the shared session before opening the business workspace (2.2s)
+  ✓  14 [chromium] › e2e\product-workspace.spec.ts:221:5 › standards search clears previous records and compliance reveals source evidence (2.3s)
+  ✓  15 [chromium] › e2e\product-workspace.spec.ts:237:5 › compliance preserves backend decisions and failed loads never become sample assessments (2.0s)
+  ✓  16 [chromium] › e2e\product-workspace.spec.ts:257:5 › requirement detail preserves recorded decisions and discloses rules without guessing a fee or filing procedure (1.6s)
+  ✓  17 [chromium] › e2e\product-workspace.spec.ts:273:5 › staff case review requires a reason and explicit submission; denied users see no review data (2.7s)
+  ✓  18 [chromium] › e2e\product-workspace.spec.ts:287:7 › reviewer approve preserves submission identity and concurrency (1.9s)
+  ✓  19 [chromium] › e2e\product-workspace.spec.ts:287:7 › reviewer query preserves submission identity and concurrency (2.0s)
+  ✓  20 [chromium] › e2e\product-workspace.spec.ts:300:5 › admin query navigation reloads the correct queue and detail routes fit mobile (4.8s)
+  ✓  21 [chromium] › e2e\product-workspace.spec.ts:315:5 › product routes render across desktop, tablet and mobile with reduced motion (20.2s)
+  ✓  22 [chromium] › e2e\product-workspace.spec.ts:333:5 › visible starter autofill is editable, does not submit, and own business clears facts (2.5s)
+  ✓  23 [chromium] › e2e\product-workspace.spec.ts:355:5 › platform admin creates editable starting profile without autofilling credentials (2.5s)
+  ✓  24 [chromium] › e2e\product-workspace.spec.ts:378:5 › submission workspace screenshot inventory retains warm styling and clear states (5.3s)
+  ✓  25 [chromium] › e2e\product-workspace.spec.ts:389:5 › resumed assessment restores questions once and preserves answers on acquisition failure (3.1s)
+  ✓  26 [chromium] › e2e\product-workspace.spec.ts:411:5 › login screenshot contains loaded global styles (823ms)
+
+  26 passed (1.3m)

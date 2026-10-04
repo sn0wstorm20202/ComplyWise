@@ -1,0 +1,177 @@
+{
+  "configuration": {
+    "llm_primary": "gemini",
+    "gemini_slots": 3,
+    "openai_configured": true,
+    "search_provider": "serpapi",
+    "search_configured": true,
+    "rag_configured": true,
+    "firecrawl_active": false
+  },
+  "packages": {
+    "crawlee": "1.7.2",
+    "playwright": "1.63.0",
+    "impit": "0.14.1",
+    "beautifulsoup4": "4.15.0",
+    "pypdf": "6.19.0"
+  },
+  "probes": [
+    {
+      "name": "search",
+      "provider": "serpapi",
+      "status": "SUCCESS",
+      "result_count": 3,
+      "duration_seconds": 0.332,
+      "candidate_urls": [
+        "https://alephindia.in/blog/bis-certification-schemes.php",
+        "https://www.bis.gov.in/apply-for-a-license/?lang=en",
+        "https://www.crsbis.in/BIS/products-bis.do"
+      ]
+    },
+    {
+      "name": "static_html",
+      "url": "https://www.bis.gov.in/?lang=en",
+      "final_url": "https://www.bis.gov.in/?lang=en",
+      "mode": "CRAWLEE_HTTP",
+      "http_status": 200,
+      "text_chars": 12576,
+      "status": "SUCCESS",
+      "errors": [],
+      "metadata": {
+        "redirect_chain": [
+          "https://www.bis.gov.in/?lang=en"
+        ],
+        "source_last_modified": null,
+        "extractor_version": "cw-crawlee-1",
+        "engine_version": "1.7.2",
+        "http_backend": "httpx",
+        "raw_content_hash": "5f403714627070e1fe30db86682cd031b3c6bbd95eec6a3f417086d42c90766e",
+        "content_length_bytes": 559224,
+        "mime_type": "text/html",
+        "normalized_text_hash": "05e98803c3c0c4e1c5c3b415a8fd067723f1062b77e0d1bdcd20eeeabe4920d1",
+        "latency_ms": 8081.06
+      }
+    },
+    {
+      "name": "official_pdf",
+      "url": "https://msmedi-chennai.gov.in/GARMS_Admin/basictools/images/MSME%20GazetteNotification-S.O-no-1364-E-dated-21.03.2025-Revised-Definition.pdf",
+      "final_url": "https://msmedi-chennai.gov.in/GARMS_Admin/basictools/images/MSME%20GazetteNotification-S.O-no-1364-E-dated-21.03.2025-Revised-Definition.pdf",
+      "mode": "CRAWLEE_HTTP",
+      "http_status": 200,
+      "text_chars": 26092,
+      "status": "SUCCESS",
+      "errors": [],
+      "metadata": {
+        "redirect_chain": [
+          "https://msmedi-chennai.gov.in/GARMS_Admin/basictools/images/MSME%20GazetteNotification-S.O-no-1364-E-dated-21.03.2025-Revised-Definition.pdf"
+        ],
+        "source_last_modified": "Tue, 01 Apr 2025 05:26:03 GMT",
+        "extractor_version": "cw-crawlee-1",
+        "engine_version": "1.7.2",
+        "http_backend": "httpx",
+        "raw_content_hash": "2201e3820fc8554bfa736747e13495b25221e661cf7c800ed5fb5e78bd269caf",
+        "content_length_bytes": 1947449,
+        "mime_type": "application/pdf",
+        "normalized_text_hash": "a70cd1ca13df3d3f28e27dad4a8b956bca456a7d57a0641122f9aaf2c19727f2",
+        "latency_ms": 6673.56
+      }
+    },
+    {
+      "name": "failed_source",
+      "url": "https://www.bis.gov.in/complywise-missing-probe-2026",
+      "final_url": "https://www.bis.gov.in/complywise-missing-probe-2026",
+      "mode": "FAILED_ACQUISITION",
+      "http_status": 0,
+      "text_chars": 0,
+      "status": "FAILED",
+      "errors": [
+        "Requested document redirected to an unrelated portal homepage."
+      ],
+      "metadata": {
+        "latency_ms": 6347.89
+      }
+    },
+    {
+      "name": "unofficial_destination",
+      "url": "https://example.com",
+      "final_url": "https://example.com",
+      "mode": "FAILED_ACQUISITION",
+      "http_status": 0,
+      "text_chars": 0,
+      "status": "FAILED",
+      "errors": [
+        "Rejected unofficial source or redirect."
+      ],
+      "metadata": {
+        "latency_ms": 0.21
+      }
+    },
+    {
+      "name": "js_official_page",
+      "url": "https://www.crsbis.in/BIS/products-bis.do",
+      "final_url": "https://www.crsbis.in/BIS/products-bis.do",
+      "mode": "CRAWLEE_BROWSER",
+      "http_status": 200,
+      "text_chars": 7109,
+      "status": "SUCCESS",
+      "errors": [],
+      "metadata": {
+        "redirect_chain": [
+          "https://www.crsbis.in/BIS/products-bis.do"
+        ],
+        "source_last_modified": null,
+        "extractor_version": "cw-crawlee-1",
+        "engine_version": "1.7.2",
+        "http_backend": null,
+        "raw_content_hash": "59112124f09a6c413e4e01e166ee9f17d0081b191a79669679caf66a27af1917",
+        "content_length_bytes": 23330,
+        "mime_type": "text/html",
+        "normalized_text_hash": "1be6ea6b3e436d24f10f25ef19bd5accfdacc3ae7d246968abe9052487e35790",
+        "latency_ms": 8175.14
+      }
+    },
+    {
+      "name": "gemini_slot",
+      "slot": 1,
+      "model": "gemini-3.5-flash-lite",
+      "status": "SUCCESS",
+      "duration_seconds": 0.952,
+      "usage": {
+        "promptTokenCount": 8,
+        "candidatesTokenCount": 5,
+        "totalTokenCount": 13
+      }
+    },
+    {
+      "name": "gemini_slot",
+      "slot": 2,
+      "model": "gemini-3.5-flash-lite",
+      "status": "SUCCESS",
+      "duration_seconds": 1.866,
+      "usage": {
+        "promptTokenCount": 8,
+        "candidatesTokenCount": 5,
+        "totalTokenCount": 13
+      }
+    },
+    {
+      "name": "gemini_slot",
+      "slot": 3,
+      "model": "gemini-3.5-flash-lite",
+      "status": "SUCCESS",
+      "duration_seconds": 0.944,
+      "usage": {
+        "promptTokenCount": 8,
+        "candidatesTokenCount": 5,
+        "totalTokenCount": 13
+      }
+    },
+    {
+      "name": "deployed_rag",
+      "status": "SUCCESS",
+      "accepted_passages": 2,
+      "rejected_count": 2,
+      "duration_seconds": 0.952
+    }
+  ]
+}

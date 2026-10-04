@@ -26,6 +26,17 @@ from domain.context.business_context import build_business_context
 User = get_user_model()
 
 
+@pytest.fixture(autouse=True)
+def recorded_portal_content(monkeypatch):
+    """Parser/version tests use explicit fixture HTML, never a live/offline production fallback."""
+    from apps.schemes.pipeline.fetcher import SchemePortalFetcher, SNAPSHOT_FALLBACK_MAP
+    original = SchemePortalFetcher.fetch
+    def fetch(self, config, simulate_changed_content=None):
+        return original(self, config, simulate_changed_content=(simulate_changed_content
+            if simulate_changed_content is not None else SNAPSHOT_FALLBACK_MAP[config.key]))
+    monkeypatch.setattr(SchemePortalFetcher, "fetch", fetch)
+
+
 @pytest.fixture
 def api_client():
     return APIClient()
@@ -331,10 +342,15 @@ def test_schemes_catalog_api_endpoint(api_client):
 
 
 @pytest.mark.django_db
-def test_pipeline_status_and_version_history_api(api_client):
+def test_pipeline_status_and_version_history_api(api_client, user):
     """Test pipeline status and scheme version history endpoints."""
     SchemePipelineService().run_pipeline(force=True)
 
+    # Operational pipeline metadata is restricted to a reviewer.
+    assert api_client.get("/api/v1/schemes/pipeline/status").status_code == 401
+    user.is_staff = True
+    user.save()
+    api_client.force_authenticate(user=user)
     # Status endpoint
     resp_status = api_client.get("/api/v1/schemes/pipeline/status")
     assert resp_status.status_code == 200

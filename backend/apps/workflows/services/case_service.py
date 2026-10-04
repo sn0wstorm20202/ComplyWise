@@ -34,16 +34,16 @@ class CaseService:
                 return val if val is not None else fallback
             return var_data if var_data is not None else fallback
 
-        state = get_val("state", get_val("operating_state", getattr(business, "state", "Maharashtra")))
-        district = get_val("district", getattr(business, "district", "Pune"))
-        industry = get_val("industry", get_val("business_type", "Manufacturing"))
-        product = get_val("product_name", get_val("primary_activity", "Commercial Production"))
-        workers = get_val("worker_count", get_val("employee_count", "25"))
-        power = get_val("power_load_kw", get_val("electricity_connected_load", get_val("power_load_hp", "150 KW")))
-        investment = get_val("plant_and_machinery_investment", get_val("investment_in_plant_and_machinery", "Not Specified"))
-        turnover = get_val("annual_turnover", "Not Specified")
-        haz_substances = get_val("uses_hazardous_substances", get_val("handles_hazardous_materials", False))
-        haz_waste = get_val("generates_hazardous_waste", False)
+        state = get_val("state")
+        district = get_val("district")
+        industry = get_val("sector", get_val("nature_of_business"))
+        product = get_val("product_description")
+        workers = get_val("total_worker_count")
+        power = get_val("connected_power_load")
+        investment = get_val("plant_machinery_investment")
+        turnover = get_val("annual_turnover")
+        haz_substances = get_val("uses_hazardous_substances", None)
+        haz_waste = get_val("hazardous_waste_generation", None)
 
         # Assemble full answered variables list with metadata for deep scrutiny
         answered_vars = []

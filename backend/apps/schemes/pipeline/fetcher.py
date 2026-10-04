@@ -94,10 +94,10 @@ class SchemePortalFetcher:
                     is_live = True
         except Exception as exc:  # Network unreachable / sandbox blocked / 403 / 503
             error_msg = str(exc)
-            logger.info("Live crawl for %s failed (%s); using authoritative snapshot fallback.", config.key, exc)
+            logger.info("Live crawl for %s failed (%s); capturing an explicit source failure.", config.key, exc)
 
         if not content:
-            content = SNAPSHOT_FALLBACK_MAP.get(config.key, "")
+            content = ""
             is_live = False
 
         content_hash = compute_sha256(content)

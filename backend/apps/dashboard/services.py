@@ -28,7 +28,7 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
     assessment = None
     if assessment_id:
         assessment = business.assessments.filter(pk=assessment_id).first()
-    if assessment is None:
+    if assessment is None and not assessment_id:
         assessment = business.assessments.order_by("-assessment_number").first()
 
     profile = assessment.profile_version if assessment and assessment.profile_version else business.current_profile
@@ -39,7 +39,7 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
     elif assessment:
         latest_run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
 
-    if latest_run is None:
+    if latest_run is None and not assessment:
         latest_run = (
             DecisionRun.objects.filter(business=business)
             .prefetch_related("results")
@@ -56,6 +56,7 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
             "assessment_title": assessment.title if assessment else None,
             "assessment_status": assessment.status if assessment else None,
             "has_evaluation": False,
+            "widgets": get_workspace_widgets(business),
             "profile_version": profile.version if profile else None,
             # Not 0: nothing has been evaluated, so readiness is not yet calculated.
             "compliance_readiness": None,
@@ -82,6 +83,8 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
             "coverage": assess_knowledge_coverage(business),
         }
 
+    from domain.intelligence.workspace_guidance import compliance_rows
+    guidance = compliance_rows(business, str(assessment.id) if assessment else None)
     results = list(latest_run.results.all())
     total_evaluated = len(results)
 
@@ -160,6 +163,25 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
         ApplicabilityStatus.NEEDS_INFORMATION: 1,
         ApplicabilityStatus.APPLICABLE: 2,
     }
+    priority_actions.extend({"requirement_id": item["id"], "requirement_name": item["title"],
+        "authority": item["authority"], "status": "SUGGESTED", "category": item["category"],
+        "action_type": item["recommended_next_step"], "evidence_count": 0,
+        "result_origin": item["result_origin"], "source_url": None, "portal_url": None, "portal_name": ""}
+        for item in guidance)
+    from apps.workflows.services.disposition_service import reviewed_requirement_treatment
+    from apps.workflows.services.disposition_service import reviewer_assigned_requirements
+    present = {item["requirement_id"] for item in priority_actions}
+    for assigned in reviewer_assigned_requirements(business, str(assessment.id) if assessment else None,
+            latest_run.profile_version_id):
+        if assigned["requirement_id"] not in present:
+            priority_actions.append({**assigned, "requirement_name": assigned["name"],
+                "action_type": assigned["review_reason"], "portal_name": "", "source_url": None})
+    treatments = reviewed_requirement_treatment(business, str(assessment.id) if assessment else None,
+                                               latest_run.profile_version_id)
+    for item in priority_actions:
+        item.update(treatments.get(item["requirement_id"], {}))
+    priority_actions = [item for item in priority_actions if item.get("user_action_required") is not False]
+    action_guidance_count = len(guidance)
     priority_actions.sort(key=lambda a: status_order.get(a["status"], 3))
 
     # Calculate honest compliance readiness score (percentage of determined rules)
@@ -171,11 +193,7 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
     )
     readiness_score = round(determined_count / total_evaluated * 100) if total_evaluated > 0 else 0
 
-    action_required_count = (
-        status_counts.get(ApplicabilityStatus.APPLICABLE, 0)
-        + status_counts.get(ApplicabilityStatus.NEEDS_INFORMATION, 0)
-        + status_counts.get(ApplicabilityStatus.CONFLICT_REVIEW, 0)
-    )
+    action_required_count = len(priority_actions) - action_guidance_count
 
     upcoming_deadlines = _statutory_deadlines(results, req_defs)
     # "Due soon" means inside the configured window, so the counter can never
@@ -205,6 +223,7 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
         "assessment_title": assessment.title if assessment else None,
         "assessment_status": assessment.status if assessment else None,
         "has_evaluation": True,
+        "widgets": get_workspace_widgets(business),
         "latest_run_id": str(latest_run.id),
         "evaluation_date": str(latest_run.evaluation_date),
         "profile_version": profile.version if profile else None,
@@ -219,7 +238,8 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
         ),
         "metrics": {
             "applicable_count": status_counts.get(ApplicabilityStatus.APPLICABLE, 0),
-            "action_required_count": action_required_count,
+            "action_required_count": action_required_count + action_guidance_count,
+            "suggested_count": action_guidance_count,
             "due_soon_count": due_soon_count,
             # Scheme eligibility is not yet evaluated by any rule, so there is no
             # count to report. `null` renders as "Not yet calculated"; a 0 would
@@ -248,6 +268,41 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
         "recent_updates_available": False,
         "coverage": coverage,
     }
+
+
+def get_workspace_widgets(business):
+    """Business operational history; never infer fulfilled obligations from applicability."""
+    from apps.documents.models import DocumentRequirement
+    from apps.workflows.models import WorkflowEvent, ComplianceCase
+    today = timezone.localdate()
+    start = today - datetime.timedelta(days=6)
+    events = list(WorkflowEvent.objects.filter(compliance_case__business=business,
+        created_at__date__gte=start).select_related("compliance_case").order_by("created_at"))
+    days = [{"day": (start + datetime.timedelta(days=i)).strftime("%a"),
+             "dateStr": (start + datetime.timedelta(days=i)).strftime("%d %b"),
+             "tasks": sum(timezone.localdate(e.created_at) == start + datetime.timedelta(days=i) for e in events),
+             "isHighlight": i == 6} for i in range(7)]
+    submissions = [d.latest_submission for d in DocumentRequirement.objects.filter(case__business=business)]
+    submissions = [s for s in submissions if s]
+    verified = sum(s.status_code in {"INTERNAL_HUMAN_APPROVED"} for s in submissions)
+    under_review = sum(s.status_code in {"PENDING", "PRECHECK_QUEUED", "PRECHECK_PROCESSING", "PRECHECK_PASSED"} for s in submissions)
+    total = len(submissions)
+    cases = ComplianceCase.objects.filter(business=business)
+    completed = cases.filter(status_code="COMPLETED").count()
+    overdue = cases.filter(status_code="OVERDUE").count()
+    pending = cases.count() - completed - overdue
+    denominator = max(cases.count(), 1)
+    return {"activity": {"weeklyTasks": len(events), "growthPercentage": "Recorded events",
+                "maxTasks": max((d["tasks"] for d in days), default=1) or 1, "daily": days},
+            "documents": {"totalCount": total, "onTrackCount": verified,
+                "changeThisWeek": f"{sum(s.created_at.date() >= start for s in submissions)} uploaded this week",
+                "verifiedPercentage": round(100 * verified / total) if total else 0,
+                "underReviewPercentage": round(100 * under_review / total) if total else 0},
+            "cases": {"Overall": {"category": "Overall", "healthPercentage": round(100 * completed / denominator),
+                "compliantCount": completed, "inProgressCount": pending, "overdueCount": overdue,
+                "inProgressPercentage": round(100 * pending / denominator), "overduePercentage": round(100 * overdue / denominator)}},
+            "recent_activity": [{"id": str(e.id), "event": e.event_code, "case": e.compliance_case.case_number,
+                                 "recorded_at": e.created_at.isoformat()} for e in events[-10:][::-1]]}
 
 
 #: Requirement metadata key holding a statutory renewal cycle, in years.

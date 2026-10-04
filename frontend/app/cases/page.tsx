@@ -107,17 +107,15 @@ function CasesContent() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border/60 pb-6">
           <div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                End-to-End Regulatory Engine
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)]/60 dark:text-[var(--ui-sage)]">
+                Your compliance work
               </span>
-              <span className="text-xs text-muted-foreground font-mono">Workflow Architecture v2.0</span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground mt-1">
               Compliance Cases & Workflows
             </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-              Centralized orchestration of applicable regulatory requirements. Every case coordinates versioned document
-              collection, AI precheck, human compliance review, statutory forms, and official government portal tracking.
+              Keep documents, reviews, forms and portal updates together for each requirement.
             </p>
           </div>
 
@@ -146,7 +144,7 @@ function CasesContent() {
             <div className="p-4 rounded-xl border border-border bg-card shadow-sm">
               <div className="flex items-center justify-between text-muted-foreground text-xs font-medium">
                 <span>Total Cases</span>
-                <Layers className="w-4 h-4 text-blue-500" />
+                <Layers className="w-4 h-4 text-[var(--ui-info)]" />
               </div>
               <p className="text-2xl font-bold text-foreground mt-2">{data.total_cases}</p>
               <p className="text-[11px] text-muted-foreground mt-1">Active regulatory tracks</p>
@@ -163,37 +161,37 @@ function CasesContent() {
               <p className="text-[11px] text-amber-700/80 dark:text-amber-400/70 mt-1">Officer queries to resolve</p>
             </div>
 
-            <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-50/40 dark:bg-blue-950/20 shadow-sm">
-              <div className="flex items-center justify-between text-blue-700 dark:text-blue-400 text-xs font-medium">
+            <div className="p-4 rounded-xl border border-[var(--ui-sage-soft)]/20 bg-[var(--ui-info-soft)]/40 dark:bg-[var(--ui-text)]/20 shadow-sm">
+              <div className="flex items-center justify-between text-[var(--ui-info)] dark:text-[var(--ui-info)] text-xs font-medium">
                 <span>In Human Review</span>
-                <UserCheck className="w-4 h-4 text-blue-600" />
+                <UserCheck className="w-4 h-4 text-[var(--ui-info)]" />
               </div>
-              <p className="text-2xl font-bold text-blue-900 dark:text-blue-300 mt-2">
+              <p className="text-2xl font-bold text-[var(--ui-info)] dark:text-[var(--ui-info)] mt-2">
                 {data.status_summary.HUMAN_REVIEW || 0}
               </p>
-              <p className="text-[11px] text-blue-700/80 dark:text-blue-400/70 mt-1">Officer verification pending</p>
+              <p className="text-[11px] text-[var(--ui-info)]/80 dark:text-[var(--ui-info)]/70 mt-1">Officer verification pending</p>
             </div>
 
-            <div className="p-4 rounded-xl border border-purple-500/20 bg-purple-50/40 dark:bg-purple-950/20 shadow-sm">
-              <div className="flex items-center justify-between text-purple-700 dark:text-purple-400 text-xs font-medium">
+            <div className="p-4 rounded-xl border border-[var(--ui-sage-soft)]/20 bg-[var(--ui-sage-faint)]/40 dark:bg-[var(--ui-sage)]/20 shadow-sm">
+              <div className="flex items-center justify-between text-[var(--ui-sage)] dark:text-[var(--ui-sage)] text-xs font-medium">
                 <span>Govt Portal Scrutiny</span>
-                <Clock className="w-4 h-4 text-purple-600" />
+                <Clock className="w-4 h-4 text-[var(--ui-sage)]" />
               </div>
-              <p className="text-2xl font-bold text-purple-900 dark:text-purple-300 mt-2">
+              <p className="text-2xl font-bold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] mt-2">
                 {data.status_summary.EXTERNAL_PROCESSING || 0}
               </p>
-              <p className="text-[11px] text-purple-700/80 dark:text-purple-400/70 mt-1">Departmental filing tracking</p>
+              <p className="text-[11px] text-[var(--ui-sage)]/80 dark:text-[var(--ui-sage)]/70 mt-1">Departmental filing tracking</p>
             </div>
 
-            <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-sm">
-              <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400 text-xs font-medium">
+            <div className="p-4 rounded-xl border border-[var(--ui-sage-soft)]/20 bg-[var(--ui-sage-faint)]/40 dark:bg-[var(--ui-sage)]/20 shadow-sm">
+              <div className="flex items-center justify-between text-[var(--ui-sage)] dark:text-[var(--ui-sage)] text-xs font-medium">
                 <span>Compliant / Closed</span>
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <CheckCircle2 className="w-4 h-4 text-[var(--ui-sage)]" />
               </div>
-              <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-300 mt-2">
+              <p className="text-2xl font-bold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] mt-2">
                 {data.status_summary.COMPLETED || 0}
               </p>
-              <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/70 mt-1">Full statutory clearance</p>
+              <p className="text-[11px] text-[var(--ui-sage)]/80 dark:text-[var(--ui-sage)]/70 mt-1">Full statutory clearance</p>
             </div>
           </div>
         )}
@@ -266,11 +264,11 @@ function CasesContent() {
                 c.status_code === "ACTION_REQUIRED"
                   ? "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300"
                   : c.status_code === "HUMAN_REVIEW"
-                  ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950 dark:text-blue-300"
+                  ? "bg-[var(--ui-info-soft)] text-[var(--ui-info)] border-[var(--ui-sage-soft)] dark:bg-[var(--ui-text)] dark:text-[var(--ui-info)]"
                   : c.status_code === "EXTERNAL_PROCESSING"
-                  ? "bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950 dark:text-purple-300"
+                  ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] border-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                   : c.status_code === "COMPLETED"
-                  ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300"
+                  ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] border-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                   : "bg-muted text-muted-foreground border-border";
 
               const priorityColor =
@@ -278,7 +276,7 @@ function CasesContent() {
                   ? "text-rose-600 bg-rose-50 dark:bg-rose-950/40"
                   : c.priority === "MEDIUM"
                   ? "text-amber-600 bg-amber-50 dark:bg-amber-950/40"
-                  : "text-slate-600 bg-slate-50 dark:bg-slate-900";
+                  : "text-[var(--ui-secondary)] bg-[var(--ui-bg)] dark:bg-[var(--ui-text)]";
 
               return (
                 <div
@@ -331,7 +329,7 @@ function CasesContent() {
                               key={num}
                               className={`h-full flex-1 border-r border-background/20 last:border-0 ${
                                 isDone
-                                  ? "bg-emerald-500"
+                                  ? "bg-[var(--ui-sage)]"
                                   : isCurrent
                                   ? "bg-primary animate-pulse"
                                   : "bg-muted"
@@ -345,7 +343,7 @@ function CasesContent() {
                     {/* Documents summary */}
                     <div className="flex items-center justify-between text-xs text-muted-foreground mt-3 pt-3 border-t border-border/50">
                       <span className="flex items-center gap-1">
-                        <FileCheck className="w-3.5 h-3.5 text-emerald-500" />
+                        <FileCheck className="w-3.5 h-3.5 text-[var(--ui-sage)]" />
                         Documents: {c.documents_verified_count} / {c.documents_count} Verified
                       </span>
                       <span>Opened {new Date(c.opened_at).toLocaleDateString()}</span>

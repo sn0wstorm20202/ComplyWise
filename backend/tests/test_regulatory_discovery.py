@@ -11,7 +11,9 @@ Validates:
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import patch, Mock
+import json
+from domain.providers.base import CompletionResult
 import pytest
 from apps.businesses.models import Business, BusinessProfileVersion
 from apps.ingestion.models import DiscoveryRun, CandidateRequirement
@@ -25,6 +27,7 @@ from apps.ingestion.ranking import (
     rank_candidates,
 )
 from apps.ingestion.services import run_discovery
+from domain.acquisition.base import WebAcquisitionResult
 from common.enums import VariableOrigin
 from domain.context.business_context import build_business_context
 
@@ -111,9 +114,15 @@ def test_quarantine_invariant_and_audit_logging(make_business, user):
         "markdown": "# Maharashtra Pollution Control Board\nEvery manufacturing unit must obtain Consent to Establish before commencing operations under Water Act 1974.",
     }
 
-    with patch("apps.ingestion.services.firecrawl.is_configured", return_value=True), \
-         patch("apps.ingestion.services.firecrawl.search", return_value=mock_search_results), \
-         patch("apps.ingestion.services.firecrawl.scrape", return_value=mock_scrape_results):
+    provider = Mock()
+    provider.is_configured = True
+    provider.complete.return_value = CompletionResult(json.dumps({"claims": [{
+        "requirement_name": "Synthetic captured consent claim", "excerpt": "Every manufacturing unit must obtain Consent to Establish before commencing operations under Water Act 1974.",
+        "category": "ENVIRONMENT", "authority": "Synthetic fixture authority", "jurisdiction": "MH"}]}), "fixture", "fixture")
+    with patch("apps.ingestion.claim_extraction.get_llm_provider", return_value=provider), \
+         patch("apps.ingestion.services.search_provider.is_configured", return_value=True), \
+         patch("apps.ingestion.services.search_provider.search", return_value=mock_search_results), \
+         patch("apps.ingestion.services.acquire_source", return_value=WebAcquisitionResult(source_url=mock_scrape_results["url"], resolved_url=mock_scrape_results["url"], domain="mpcb.gov.in", title=mock_scrape_results["title"], retrieved_at="", text_content=mock_scrape_results["markdown"], acquisition_engine="CRAWLEE_HTTP")):
 
         result = run_discovery(biz, force_refresh=True)
 

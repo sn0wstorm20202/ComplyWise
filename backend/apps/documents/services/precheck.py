@@ -130,7 +130,7 @@ def build_structured_findings(verification_result: dict[str, Any], doc_req: Docu
             "finding_code": "FIELDS_VERIFIED",
             "severity": "INFO",
             "field": "overall",
-            "expected_value": "Statutory alignment confirmed",
+            "expected_value": "Preliminary file checks passed",
             "observed_value": "All preliminary automated verification heuristics satisfied",
             "source": doc_req.name,
             "confidence": 0.96,
@@ -153,6 +153,7 @@ def process_document_upload(
 
     execute structured AI precheck, and trigger corresponding workflow transition.
     """
+    document_requirement = DocumentRequirement.objects.select_for_update().select_related("case__business").get(pk=document_requirement.pk)
     case = document_requirement.case
     business = case.business
     extra_metadata = extra_metadata or {}
@@ -174,19 +175,24 @@ def process_document_upload(
         file_bytes = b""
         file_name = file_name or f"document_v{next_version}.pdf"
 
+    from pathlib import PurePosixPath
+    file_name = PurePosixPath(file_name.replace("\\", "/")).name
+    if not file_bytes:
+        raise ValueError("A nonempty uploaded file is required.")
+
     # Compute SHA-256 checksum and size
     checksum = hashlib.sha256(file_bytes).hexdigest() if file_bytes else ""
     file_size = len(file_bytes) if file_bytes else 0
 
     # 2. Determine Storage Path and persist via DocumentStorageService
     storage_path = (
-        f"businesses/{business.id}/cases/{case.id}/documents/v{next_version}_{file_name}"
+        f"businesses/{business.id}/cases/{case.id}/documents/{document_requirement.id}/v{next_version}_{file_name}"
     )
 
     try:
         DocumentStorageService.save_file(storage_path, uploaded_file or file_bytes)
     except Exception as exc:
-        logger.warning("Could not persist file to storage service: %s", exc)
+        raise ValueError("Document storage failed. Please retry the upload.") from exc
 
     # Sanitize extra_metadata to prevent non-JSON serializable file objects
     clean_metadata: dict[str, Any] = {}
@@ -224,8 +230,8 @@ def process_document_upload(
         "authority": case.metadata.get("authority", "Regulatory Authority"),
         "requirement_id": case.requirement_id_code,
         "requirement_name": case.metadata.get("requirement_name", case.requirement_id_code),
-        "valid_until": extra_metadata.get("valid_until", "2026-12-31"),
-        "reference_number": extra_metadata.get("reference_number", f"REF-{checksum[:8].upper()}"),
+        "valid_until": extra_metadata.get("valid_until", ""),
+        "reference_number": extra_metadata.get("reference_number", ""),
     }
     if file_bytes:
         verification_payload["file_content_bytes"] = file_bytes
@@ -234,6 +240,8 @@ def process_document_upload(
     error_detail = ""
     try:
         verification_result = verify_document(verification_payload, file=uploaded_file)
+        if (verification_result.get("ocr_analysis") or {}).get("source_type") == "OCR_UNAVAILABLE":
+            raise RuntimeError("Image OCR is unavailable; document requires human review.")
     except Exception as exc:
         logger.warning("AI/OCR verification pipeline encountered technical error: %s", exc)
         technical_error = True
@@ -289,7 +297,7 @@ def process_document_upload(
     submission.save(update_fields=["status_code"])
 
     document_requirement.status_code = (
-        DocumentStatus.VERIFIED
+        DocumentStatus.UPLOADED
         if precheck_status == DocumentReviewStatus.PRECHECK_PASSED
         else DocumentStatus.NEEDS_REVIEW
     )

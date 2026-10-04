@@ -89,9 +89,9 @@ def test_end_to_end_onboarding_llm_cost_benchmark(make_business, user):
     assert questions_loop_calls == 0, f"Expected 0 LLM calls during 5-question answering loop, got {questions_loop_calls}!"
 
     # 5. Step 4: Regulatory Analysis & Discovery
-    with patch("apps.ingestion.services.firecrawl.is_configured", return_value=True), \
-         patch("apps.ingestion.services.firecrawl.search") as mock_search, \
-         patch("apps.ingestion.services.firecrawl.scrape") as mock_scrape:
+    with patch("apps.ingestion.services.search_provider.is_configured", return_value=True), \
+         patch("apps.ingestion.services.search_provider.search") as mock_search, \
+         patch("apps.ingestion.services.acquire_source") as mock_scrape:
         
         mock_search.return_value = [
             {
@@ -100,11 +100,11 @@ def test_end_to_end_onboarding_llm_cost_benchmark(make_business, user):
                 "description": "Gujarat Pollution Control Board guidelines for electronic assembly units.",
             }
         ]
-        mock_scrape.return_value = {
-            "url": "https://gpcb.gujarat.gov.in/esdm-guidelines",
-            "title": "GPCB CTE Environmental Clearances for ESDM",
-            "markdown": "# GPCB Guidelines\nElectronic assembly units must obtain Consent to Establish (CTE) under Water and Air Acts. E-waste management authorization required under E-Waste Rules 2022.",
-        }
+        from domain.acquisition.base import WebAcquisitionResult
+        mock_scrape.return_value = WebAcquisitionResult(source_url="https://gpcb.gujarat.gov.in/esdm-guidelines",
+            resolved_url="https://gpcb.gujarat.gov.in/esdm-guidelines", domain="gpcb.gujarat.gov.in", title="Synthetic fixture", retrieved_at="",
+            text_content="Synthetic electronic assembly source passage, retained as contextual material rather than published knowledge. " * 3,
+            acquisition_engine="CRAWLEE_HTTP")
 
         analysis_res = orchestrate_compliance_analysis(
             business,

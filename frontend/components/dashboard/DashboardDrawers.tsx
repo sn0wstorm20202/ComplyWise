@@ -1,4 +1,5 @@
 "use client";
+import Overlay from "@/components/product/Overlay";
 
 import React, { useState, useEffect } from "react";
 import {
@@ -34,19 +35,19 @@ export function ActivityTimelineDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-white border-l border-[#E2E8F0] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+    <Overlay open onClose={() => onClose()} title="Details">
+      <div className="w-full max-w-md bg-white border-l border-[var(--ui-border)] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
+          <div className="flex items-center justify-between border-b border-[var(--ui-border)] pb-4">
             <div>
-              <h2 className="text-base font-semibold text-[#0F172A]">Compliance Activity</h2>
-              <p className="text-xs text-[#64748B]">
+              <h2 className="text-base font-semibold text-[var(--ui-text)]">Compliance Activity</h2>
+              <p className="text-xs text-[var(--ui-secondary)]">
                 Weekly audit log: {data.activity.weeklyTasks} tasks tracked ({data.activity.growthPercentage} vs prev week)
               </p>
             </div>
             <button
               onClick={onClose}
-              className="h-7 w-7 rounded-[8px] bg-[#F1F5F9] hover:bg-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] transition-colors"
+              className="h-7 w-7 rounded-[8px] bg-[var(--ui-inset)] hover:bg-[var(--ui-border)] flex items-center justify-center text-[var(--ui-secondary)] hover:text-[var(--ui-text)] transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -60,22 +61,22 @@ export function ActivityTimelineDrawer({
                 className={`p-3.5 rounded-[12px] border transition-all ${
                   d.isHighlight
                     ? "bg-[#E5F77D]/25 border-[#BEF264]"
-                    : "bg-[#F8FAFC] border-[#E2E8F0]"
+                    : "bg-[var(--ui-bg)] border-[var(--ui-border)]"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-xs text-[#0F172A]">{d.day}</span>
-                    <span className="text-[11px] text-[#64748B]">({d.dateStr})</span>
+                    <span className="font-semibold text-xs text-[var(--ui-text)]">{d.day}</span>
+                    <span className="text-[11px] text-[var(--ui-secondary)]">({d.dateStr})</span>
                     {d.isHighlight && (
-                      <span className="px-2 py-0.5 rounded-full bg-[#18181B] text-white font-semibold text-[10px]">
+                      <span className="px-2 py-0.5 rounded-full bg-[var(--ui-text)] text-white font-semibold text-[10px]">
                         Peak Day
                       </span>
                     )}
                   </div>
-                  <span className="font-semibold text-[#0F172A] text-xs">{d.tasks} tasks</span>
+                  <span className="font-semibold text-[var(--ui-text)] text-xs">{d.tasks} tasks</span>
                 </div>
-                <div className="mt-2 text-xs text-[#475569] leading-relaxed">
+                <div className="mt-2 text-xs text-[var(--ui-secondary)] leading-relaxed">
                   {d.day === "Fri"
                     ? "Batch testing certificates validated & laboratory calibration logs uploaded."
                     : d.day === "Thu"
@@ -87,18 +88,18 @@ export function ActivityTimelineDrawer({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-[#E2E8F0]">
+        <div className="pt-4 border-t border-[var(--ui-border)]">
           <Link
             href="/compliance"
             onClick={onClose}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-medium transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-white text-xs font-medium transition-colors"
           >
             <span>Open Full Compliance Register</span>
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }
 
@@ -117,24 +118,24 @@ export function ActionsListDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-white border-l border-[#E2E8F0] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+    <Overlay open onClose={() => onClose()} title="Details">
+      <div className="w-full max-w-lg bg-white border-l border-[var(--ui-border)] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
+          <div className="flex items-center justify-between border-b border-[var(--ui-border)] pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-[#0F172A]">Open Compliance Actions</h2>
+                <h2 className="text-base font-semibold text-[var(--ui-text)]">Open Compliance Actions</h2>
                 <span className="px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-600 font-semibold text-xs">
                   {data.actions.openCount} Active
                 </span>
               </div>
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-[var(--ui-secondary)]">
                 {data.actions.changeFromLastWeek} · {data.actions.highPriorityCount} High Priority items
               </p>
             </div>
             <button
               onClick={onClose}
-              className="h-7 w-7 rounded-[8px] bg-[#F1F5F9] hover:bg-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] transition-colors"
+              className="h-7 w-7 rounded-[8px] bg-[var(--ui-inset)] hover:bg-[var(--ui-border)] flex items-center justify-center text-[var(--ui-secondary)] hover:text-[var(--ui-text)] transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -144,34 +145,34 @@ export function ActionsListDrawer({
             {data.actions.items.map((act) => (
               <div
                 key={act.id}
-                className="p-4 rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#CBD5E1] transition-all space-y-2.5"
+                className="p-4 rounded-[12px] border border-[var(--ui-border)] bg-[var(--ui-bg)] hover:border-[var(--ui-border-strong)] transition-all space-y-2.5"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="font-mono text-[11px] font-medium text-[#18181B] bg-white border border-[#E2E8F0] px-2 py-0.5 rounded-[6px]">
+                    <span className="font-mono text-[11px] font-medium text-[var(--ui-text)] bg-white border border-[var(--ui-border)] px-2 py-0.5 rounded-[6px]">
                       {act.standardCode}
                     </span>
-                    <h3 className="font-semibold text-[#0F172A] text-sm mt-1">{act.title}</h3>
+                    <h3 className="font-semibold text-[var(--ui-text)] text-sm mt-1">{act.title}</h3>
                   </div>
                   <span className="px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-600 font-medium text-[11px] shrink-0">
                     {act.daysRemaining}d remaining
                   </span>
                 </div>
 
-                <p className="text-xs text-[#475569] leading-relaxed">{act.summary}</p>
+                <p className="text-xs text-[var(--ui-secondary)] leading-relaxed">{act.summary}</p>
 
-                <div className="text-[11px] text-[#64748B] font-mono">
+                <div className="text-[11px] text-[var(--ui-secondary)] font-mono">
                   Citation: {act.clauseRef}
                 </div>
 
-                <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between">
-                  <span className="text-[11px] text-[#64748B]">
-                    Deadline: <strong className="text-[#0F172A]">{act.deadline}</strong>
+                <div className="pt-2 border-t border-[var(--ui-border)] flex items-center justify-between">
+                  <span className="text-[11px] text-[var(--ui-secondary)]">
+                    Deadline: <strong className="text-[var(--ui-text)]">{act.deadline}</strong>
                   </span>
                   <Link
                     href={`/${act.targetView}`}
                     onClick={onClose}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-medium transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-white text-xs font-medium transition-colors"
                   >
                     <span>{act.actionCta}</span>
                     <ArrowRight className="h-3 w-3" />
@@ -182,16 +183,16 @@ export function ActionsListDrawer({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-[#E2E8F0]">
+        <div className="pt-4 border-t border-[var(--ui-border)]">
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-[10px] border border-[#E2E8F0] text-xs font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
+            className="w-full py-2.5 rounded-[10px] border border-[var(--ui-border)] text-xs font-medium text-[var(--ui-secondary)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-inset)] transition-colors"
           >
             Close Actions Panel
           </button>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }
 
@@ -210,24 +211,24 @@ export function RequirementsListDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-white border-l border-[#E2E8F0] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+    <Overlay open onClose={() => onClose()} title="Details">
+      <div className="w-full max-w-lg bg-white border-l border-[var(--ui-border)] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
+          <div className="flex items-center justify-between border-b border-[var(--ui-border)] pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-[#0F172A]">Applicable Requirements</h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-xs">
+                <h2 className="text-base font-semibold text-[var(--ui-text)]">Applicable Requirements</h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-[var(--ui-sage-faint)] border border-[var(--ui-sage-soft)] text-[var(--ui-sage)] font-semibold text-xs">
                   {data.requirements.applicableCount} Total
                 </span>
               </div>
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-[var(--ui-secondary)]">
                 Bureau of Indian Standards · {data.requirements.isStandardsRatio} active IS standards
               </p>
             </div>
             <button
               onClick={onClose}
-              className="h-7 w-7 rounded-[8px] bg-[#F1F5F9] hover:bg-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] transition-colors"
+              className="h-7 w-7 rounded-[8px] bg-[var(--ui-inset)] hover:bg-[var(--ui-border)] flex items-center justify-center text-[var(--ui-secondary)] hover:text-[var(--ui-text)] transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -237,26 +238,26 @@ export function RequirementsListDrawer({
             {DEMO_REQUIREMENTS.map((req) => (
               <div
                 key={req.id}
-                className="p-4 rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#CBD5E1] transition-all space-y-2"
+                className="p-4 rounded-[12px] border border-[var(--ui-border)] bg-[var(--ui-bg)] hover:border-[var(--ui-border-strong)] transition-all space-y-2"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="font-mono text-[11px] font-medium text-[#18181B] bg-white border border-[#E2E8F0] px-2 py-0.5 rounded-[6px]">
+                    <span className="font-mono text-[11px] font-medium text-[var(--ui-text)] bg-white border border-[var(--ui-border)] px-2 py-0.5 rounded-[6px]">
                       {req.code}
                     </span>
-                    <h3 className="font-semibold text-[#0F172A] text-xs mt-1">{req.title}</h3>
+                    <h3 className="font-semibold text-[var(--ui-text)] text-xs mt-1">{req.title}</h3>
                   </div>
                   <StatusBadge status={req.status} size="sm" />
                 </div>
-                <p className="text-[11px] text-[#475569] line-clamp-2 leading-relaxed">{req.explanation}</p>
-                <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between text-xs">
-                  <span className="text-[11px] text-[#64748B]">
-                    Clauses: <strong className="text-[#0F172A]">{req.compliantClauses}/{req.totalClauses}</strong>
+                <p className="text-[11px] text-[var(--ui-secondary)] line-clamp-2 leading-relaxed">{req.explanation}</p>
+                <div className="pt-2 border-t border-[var(--ui-border)] flex items-center justify-between text-xs">
+                  <span className="text-[11px] text-[var(--ui-secondary)]">
+                    Clauses: <strong className="text-[var(--ui-text)]">{req.compliantClauses}/{req.totalClauses}</strong>
                   </span>
                   <Link
                     href={`/compliance/${req.id}`}
                     onClick={onClose}
-                    className="font-medium text-[#0F172A] hover:underline text-xs"
+                    className="font-medium text-[var(--ui-text)] hover:underline text-xs"
                   >
                     View Statutory Proof →
                   </Link>
@@ -266,18 +267,18 @@ export function RequirementsListDrawer({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-[#E2E8F0]">
+        <div className="pt-4 border-t border-[var(--ui-border)]">
           <Link
             href="/compliance"
             onClick={onClose}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-medium transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-white text-xs font-medium transition-colors"
           >
             <span>Open Statutory Compliance Matrix</span>
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }
 
@@ -296,24 +297,24 @@ export function DocumentsPreviewDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-white border-l border-[#E2E8F0] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+    <Overlay open onClose={() => onClose()} title="Details">
+      <div className="w-full max-w-lg bg-white border-l border-[var(--ui-border)] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
+          <div className="flex items-center justify-between border-b border-[var(--ui-border)] pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-[#0F172A]">Statutory Documents</h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#18181B] text-white font-semibold text-xs">
+                <h2 className="text-base font-semibold text-[var(--ui-text)]">Statutory Documents</h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-[var(--ui-text)] text-white font-semibold text-xs">
                   {data.documents.totalCount} Total
                 </span>
               </div>
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-[var(--ui-secondary)]">
                 {data.documents.verifiedPercentage}% Verified · {data.documents.underReviewPercentage}% Under Review
               </p>
             </div>
             <button
               onClick={onClose}
-              className="h-7 w-7 rounded-[8px] bg-[#F1F5F9] hover:bg-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] transition-colors"
+              className="h-7 w-7 rounded-[8px] bg-[var(--ui-inset)] hover:bg-[var(--ui-border)] flex items-center justify-center text-[var(--ui-secondary)] hover:text-[var(--ui-text)] transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -323,32 +324,32 @@ export function DocumentsPreviewDrawer({
             {DEMO_DOCUMENTS.map((doc) => (
               <div
                 key={doc.id}
-                className="p-3.5 rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#CBD5E1] transition-all space-y-1.5"
+                className="p-3.5 rounded-[12px] border border-[var(--ui-border)] bg-[var(--ui-bg)] hover:border-[var(--ui-border-strong)] transition-all space-y-1.5"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-[#64748B]" />
+                    <FileText className="h-4 w-4 text-[var(--ui-secondary)]" />
                     <div>
-                      <h4 className="font-semibold text-[#0F172A] text-xs">{doc.name}</h4>
-                      <span className="text-[10px] text-[#64748B] font-mono">{doc.code}</span>
+                      <h4 className="font-semibold text-[var(--ui-text)] text-xs">{doc.name}</h4>
+                      <span className="text-[10px] text-[var(--ui-secondary)] font-mono">{doc.code}</span>
                     </div>
                   </div>
                   <span
                     className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                       doc.status === "VERIFIED"
-                        ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
+                        ? "bg-[var(--ui-sage-faint)] border border-[var(--ui-sage-soft)] text-[var(--ui-sage)]"
                         : "bg-amber-50 border border-amber-200 text-amber-700"
                     }`}
                   >
                     {doc.status}
                   </span>
                 </div>
-                <div className="text-[11px] text-[#64748B] flex items-center justify-between pt-1">
-                  <span>Format: <strong className="text-[#0F172A]">{doc.fileFormat} ({doc.fileSize})</strong></span>
+                <div className="text-[11px] text-[var(--ui-secondary)] flex items-center justify-between pt-1">
+                  <span>Format: <strong className="text-[var(--ui-text)]">{doc.fileFormat} ({doc.fileSize})</strong></span>
                   <Link
                     href={`/documents/${doc.id}`}
                     onClick={onClose}
-                    className="text-xs font-medium text-[#0F172A] hover:underline"
+                    className="text-xs font-medium text-[var(--ui-text)] hover:underline"
                   >
                     Inspect Document →
                   </Link>
@@ -358,18 +359,18 @@ export function DocumentsPreviewDrawer({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-[#E2E8F0] flex items-center gap-3">
+        <div className="pt-4 border-t border-[var(--ui-border)] flex items-center gap-3">
           <Link
             href="/documents"
             onClick={onClose}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-medium transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-white text-xs font-medium transition-colors"
           >
             <span>View All Documents</span>
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }
 
@@ -397,14 +398,14 @@ export function DateRangeModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-[16px] p-6 max-w-sm w-full shadow-2xl border border-[#E2E8F0] space-y-4">
-        <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
-          <div className="flex items-center gap-2 text-[#0F172A] font-semibold text-sm">
-            <Calendar className="h-4 w-4 text-[#0F172A]" />
+    <Overlay open onClose={() => onClose()} title="Details">
+      <div className="bg-white rounded-[16px] p-6 max-w-sm w-full shadow-2xl border border-[var(--ui-border)] space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--ui-border)] pb-3">
+          <div className="flex items-center gap-2 text-[var(--ui-text)] font-semibold text-sm">
+            <Calendar className="h-4 w-4 text-[var(--ui-text)]" />
             <span>Select Audit Period</span>
           </div>
-          <button onClick={onClose} className="text-[#64748B] hover:text-[#0F172A]">
+          <button onClick={onClose} className="text-[var(--ui-secondary)] hover:text-[var(--ui-text)]">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -419,8 +420,8 @@ export function DateRangeModal({
               }}
               className={`w-full text-left px-4 py-2.5 rounded-[10px] text-xs font-medium transition-colors flex items-center justify-between ${
                 selectedRange === r.value
-                  ? "bg-[#18181B] text-white border border-[#18181B]"
-                  : "bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] border border-[#E2E8F0]"
+                  ? "bg-[var(--ui-text)] text-white border border-[var(--ui-text)]"
+                  : "bg-[var(--ui-bg)] hover:bg-[var(--ui-inset)] text-[var(--ui-text)] border border-[var(--ui-border)]"
               }`}
             >
               <span>{r.label}</span>
@@ -429,7 +430,7 @@ export function DateRangeModal({
           ))}
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }
 
@@ -456,14 +457,14 @@ export function AddWidgetModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-[16px] p-6 max-w-md w-full shadow-2xl border border-[#E2E8F0] space-y-4">
-        <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+    <Overlay open onClose={() => onClose()} title="Details">
+      <div className="bg-white rounded-[16px] p-6 max-w-md w-full shadow-2xl border border-[var(--ui-border)] space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--ui-border)] pb-3">
           <div>
-            <h3 className="text-base font-semibold text-[#0F172A]">Customize Dashboard Widgets</h3>
-            <p className="text-xs text-[#64748B]">Toggle or rearrange visible intelligence cards</p>
+            <h3 className="text-base font-semibold text-[var(--ui-text)]">Customize Dashboard Widgets</h3>
+            <p className="text-xs text-[var(--ui-secondary)]">Toggle or rearrange visible intelligence cards</p>
           </div>
-          <button onClick={onClose} className="text-[#64748B] hover:text-[#0F172A]">
+          <button onClick={onClose} className="text-[var(--ui-secondary)] hover:text-[var(--ui-text)]">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -472,9 +473,9 @@ export function AddWidgetModal({
           {widgets.map((w) => (
             <div
               key={w.id}
-              className="flex items-center justify-between p-3 rounded-[10px] border border-[#E2E8F0] bg-[#F8FAFC] text-xs"
+              className="flex items-center justify-between p-3 rounded-[10px] border border-[var(--ui-border)] bg-[var(--ui-bg)] text-xs"
             >
-              <span className="font-medium text-[#0F172A]">{w.name}</span>
+              <span className="font-medium text-[var(--ui-text)]">{w.name}</span>
               <button
                 type="button"
                 onClick={() =>
@@ -486,8 +487,8 @@ export function AddWidgetModal({
                 }
                 className={`px-3 py-1 rounded-full font-medium text-[11px] transition-colors ${
                   w.enabled
-                    ? "bg-[#18181B] text-white"
-                    : "bg-[#E2E8F0] text-[#64748B]"
+                    ? "bg-[var(--ui-text)] text-white"
+                    : "bg-[var(--ui-border)] text-[var(--ui-secondary)]"
                 }`}
               >
                 {w.enabled ? "Active" : "Hidden"}
@@ -496,16 +497,16 @@ export function AddWidgetModal({
           ))}
         </div>
 
-        <div className="pt-2 border-t border-[#E2E8F0] flex justify-end">
+        <div className="pt-2 border-t border-[var(--ui-border)] flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-[10px] bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-medium"
+            className="px-4 py-2 rounded-[10px] bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-white text-xs font-medium"
           >
             Save Dashboard Layout
           </button>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }
 
@@ -539,21 +540,21 @@ export function CreateReportModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-[16px] p-6 max-w-md w-full shadow-2xl border border-[#E2E8F0] space-y-4">
-        <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+    <Overlay open onClose={() => onClose()} title="Details">
+      <div className="bg-white rounded-[16px] p-6 max-w-md w-full shadow-2xl border border-[var(--ui-border)] space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--ui-border)] pb-3">
           <div>
-            <h3 className="text-base font-semibold text-[#0F172A]">Generate Statutory Report</h3>
-            <p className="text-xs text-[#64748B]">Export compliance dossier for auditors & directors</p>
+            <h3 className="text-base font-semibold text-[var(--ui-text)]">Generate Statutory Report</h3>
+            <p className="text-xs text-[var(--ui-secondary)]">Export compliance dossier for auditors & directors</p>
           </div>
-          <button onClick={onClose} className="text-[#64748B] hover:text-[#0F172A]">
+          <button onClick={onClose} className="text-[var(--ui-secondary)] hover:text-[var(--ui-text)]">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="p-4 rounded-[12px] bg-[#F8FAFC] border border-[#E2E8F0] text-xs space-y-2">
-          <div className="font-semibold text-[#0F172A]">Report Contents:</div>
-          <ul className="list-disc pl-4 text-[#475569] space-y-1">
+        <div className="p-4 rounded-[12px] bg-[var(--ui-bg)] border border-[var(--ui-border)] text-xs space-y-2">
+          <div className="font-semibold text-[var(--ui-text)]">Report Contents:</div>
+          <ul className="list-disc pl-4 text-[var(--ui-secondary)] space-y-1">
             <li>Compliance Health Score: {data.complianceHealth.percentage}%</li>
             <li>Mandatory QCO Applicability Schedule ({data.requirements.applicableCount} Requirements)</li>
             <li>NABL Laboratory Testing & Calibration Status</li>
@@ -564,14 +565,14 @@ export function CreateReportModal({
         <div className="flex items-center justify-between pt-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-[10px] border border-[#E2E8F0] text-xs font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9]"
+            className="px-4 py-2 rounded-[10px] border border-[var(--ui-border)] text-xs font-medium text-[var(--ui-secondary)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-inset)]"
           >
             Cancel
           </button>
           <button
             onClick={handleDownload}
             disabled={downloading || downloaded}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-medium transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-white text-xs font-medium transition-all disabled:opacity-50"
           >
             <Download className="h-3.5 w-3.5" />
             <span>
@@ -580,7 +581,7 @@ export function CreateReportModal({
           </button>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }
 
@@ -615,34 +616,34 @@ export function TeamInviteModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-[16px] p-6 max-w-md w-full shadow-2xl border border-[#E2E8F0] space-y-4">
-        <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+    <Overlay open onClose={() => onClose()} title="Details">
+      <div className="bg-white rounded-[16px] p-6 max-w-md w-full shadow-2xl border border-[var(--ui-border)] space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--ui-border)] pb-3">
           <div>
-            <h3 className="text-base font-semibold text-[#0F172A]">Compliance Team Members</h3>
-            <p className="text-xs text-[#64748B]">Collaborate on filings, audits, and test reports</p>
+            <h3 className="text-base font-semibold text-[var(--ui-text)]">Compliance Team Members</h3>
+            <p className="text-xs text-[var(--ui-secondary)]">Collaborate on filings, audits, and test reports</p>
           </div>
-          <button onClick={onClose} className="text-[#64748B] hover:text-[#0F172A]">
+          <button onClick={onClose} className="text-[var(--ui-secondary)] hover:text-[var(--ui-text)]">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Existing team */}
         <div className="space-y-2">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)]">
             Active Members ({members.length})
           </div>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {members.map((m, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between p-2.5 rounded-[10px] border border-[#E2E8F0] bg-[#F8FAFC] text-xs"
+                className="flex items-center justify-between p-2.5 rounded-[10px] border border-[var(--ui-border)] bg-[var(--ui-bg)] text-xs"
               >
                 <div>
-                  <div className="font-medium text-[#0F172A]">{m.name}</div>
-                  <div className="text-[10px] text-[#64748B]">{m.email}</div>
+                  <div className="font-medium text-[var(--ui-text)]">{m.name}</div>
+                  <div className="text-[10px] text-[var(--ui-secondary)]">{m.email}</div>
                 </div>
-                <span className="text-[11px] text-[#475569] bg-white px-2 py-0.5 rounded-[6px] border border-[#E2E8F0]">
+                <span className="text-[11px] text-[var(--ui-secondary)] bg-white px-2 py-0.5 rounded-[6px] border border-[var(--ui-border)]">
                   {m.role}
                 </span>
               </div>
@@ -651,8 +652,8 @@ export function TeamInviteModal({
         </div>
 
         {/* Invite new */}
-        <form onSubmit={handleInvite} className="pt-3 border-t border-[#E2E8F0] space-y-3">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
+        <form onSubmit={handleInvite} className="pt-3 border-t border-[var(--ui-border)] space-y-3">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)]">
             Invite New Member
           </div>
           <div className="flex gap-2">
@@ -661,12 +662,12 @@ export function TeamInviteModal({
               placeholder="name@company.in"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-[10px] bg-[#F8FAFC] border border-[#E2E8F0] text-xs text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-hidden focus:border-[#0F172A]"
+              className="flex-1 px-3 py-2 rounded-[10px] bg-[var(--ui-bg)] border border-[var(--ui-border)] text-xs text-[var(--ui-text)] placeholder:text-[var(--ui-muted)] focus:outline-hidden focus:border-[var(--ui-text)]"
             />
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="px-2.5 py-2 rounded-[10px] bg-[#F8FAFC] border border-[#E2E8F0] text-xs text-[#0F172A]"
+              className="px-2.5 py-2 rounded-[10px] bg-[var(--ui-bg)] border border-[var(--ui-border)] text-xs text-[var(--ui-text)]"
             >
               <option>Quality Officer</option>
               <option>Laboratory Analyst</option>
@@ -677,11 +678,11 @@ export function TeamInviteModal({
 
           <div className="flex items-center justify-between">
             {invited ? (
-              <span className="text-xs text-emerald-600 font-medium">Invitation sent!</span>
+              <span className="text-xs text-[var(--ui-sage)] font-medium">Invitation sent!</span>
             ) : <span />}
             <button
               type="submit"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[10px] bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-medium"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[10px] bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-white text-xs font-medium"
             >
               <UserPlus className="h-3.5 w-3.5" />
               <span>Send Invite</span>
@@ -689,7 +690,7 @@ export function TeamInviteModal({
           </div>
         </form>
       </div>
-    </div>
+    </Overlay>
   );
 }
 
@@ -787,28 +788,28 @@ export function NotificationsPopover({
   };
 
   return (
-    <div className="absolute right-0 top-10 z-50 w-80 sm:w-96 bg-white rounded-[14px] shadow-2xl border border-[#E2E8F0] p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150 select-none">
-      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2.5">
+    <div className="absolute right-0 top-10 z-50 w-80 sm:w-96 bg-white rounded-[14px] shadow-2xl border border-[var(--ui-border)] p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150 select-none">
+      <div className="flex items-center justify-between border-b border-[var(--ui-border)] pb-2.5">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-[#0F172A] text-sm">Regulatory & Deadline Alerts</span>
+          <span className="font-semibold text-[var(--ui-text)] text-sm">Regulatory & Deadline Alerts</span>
           {unreadCount > 0 ? (
             <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-semibold text-[10px]">
               {unreadCount} New
             </span>
           ) : (
-            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium text-[10px]">
+            <span className="px-2 py-0.5 rounded-full bg-[var(--ui-inset)] text-[var(--ui-secondary)] font-medium text-[10px]">
               All Read
             </span>
           )}
         </div>
-        <button onClick={onClose} className="text-[#64748B] hover:text-[#0F172A] cursor-pointer">
+        <button onClick={onClose} className="text-[var(--ui-secondary)] hover:text-[var(--ui-text)] cursor-pointer">
           <X className="h-4 w-4" />
         </button>
       </div>
 
       <div className="space-y-2 max-h-72 overflow-y-auto">
         {alerts.length === 0 ? (
-          <div className="py-6 text-center text-xs text-[#64748B]">No recent compliance alerts.</div>
+          <div className="py-6 text-center text-xs text-[var(--ui-secondary)]">No recent compliance alerts.</div>
         ) : (
           alerts.map((a) => (
             <div
@@ -818,23 +819,23 @@ export function NotificationsPopover({
                   ? "bg-amber-50/40 border-amber-200"
                   : a.urgent
                   ? "bg-rose-50/40 border-rose-200"
-                  : "bg-[#F8FAFC] border-[#E2E8F0]"
+                  : "bg-[var(--ui-bg)] border-[var(--ui-border)]"
               }`}
             >
               <div className="flex items-start justify-between gap-1.5">
                 <div className="flex items-center gap-1.5">
                   {!a.isRead && <span className="h-1.5 w-1.5 rounded-full bg-amber-600 shrink-0" />}
-                  <span className="font-semibold text-[#0F172A]">{a.title}</span>
+                  <span className="font-semibold text-[var(--ui-text)]">{a.title}</span>
                 </div>
-                <span className="text-[10px] text-[#64748B] shrink-0">{a.time}</span>
+                <span className="text-[10px] text-[var(--ui-secondary)] shrink-0">{a.time}</span>
               </div>
-              <p className="text-[#475569] mt-1 leading-relaxed">{a.desc}</p>
+              <p className="text-[var(--ui-secondary)] mt-1 leading-relaxed">{a.desc}</p>
             </div>
           ))
         )}
       </div>
 
-      <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between text-xs">
+      <div className="pt-2 border-t border-[var(--ui-border)] flex items-center justify-between text-xs">
         <Link
           href="/notifications"
           onClick={onClose}
@@ -845,7 +846,7 @@ export function NotificationsPopover({
         <button
           type="button"
           onClick={handleMarkAllRead}
-          className="text-[#64748B] hover:text-[#0F172A] text-xs cursor-pointer font-medium"
+          className="text-[var(--ui-secondary)] hover:text-[var(--ui-text)] text-xs cursor-pointer font-medium"
         >
           Mark all read
         </button>

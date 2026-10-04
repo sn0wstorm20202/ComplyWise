@@ -30,12 +30,10 @@ from apps.knowledge.loader import KnowledgePackLoader
 from apps.onboarding.services import get_dynamic_smart_questions
 
 
-@pytest.fixture(scope="module")
-def loaded_packs(django_db_setup, django_db_blocker):
-    with django_db_blocker.unblock():
-        loader = KnowledgePackLoader()
-        counts = loader.load_all_packs()
-        yield counts
+@pytest.fixture
+def loaded_packs(db):
+    # Test data must roll back with this test, not leak to other modules.
+    return KnowledgePackLoader().load_all_packs()
 
 
 @pytest.fixture
@@ -153,7 +151,7 @@ def test_business_isolation_and_no_stale_data(loaded_packs, owner_user, api_clie
     dash_b = get_dashboard_summary(biz_b)
     assert dash_b["business_id"] == str(biz_b.id)
     assert dash_b["business_name"] == "Eastern GridCell Energy Pvt. Ltd."
-    assert dash_b["metrics"]["applicable_count"] == 1
+    assert dash_b["metrics"]["applicable_count"] == sum(value == ApplicabilityStatus.APPLICABLE for value in results_b.values())
     assert dash_b["metrics"]["not_applicable_count"] >= 10
 
     # ------------------------------------------------------------------
@@ -205,8 +203,10 @@ def test_smart_questions_missing_variables_vs_zero(loaded_packs, owner_user, api
 
     assert data["total_missing"] > 0
     missing_keys = {q["variable_key"] for q in data["questions"]}
-    assert "annual_turnover" in missing_keys
-    assert "import_export_intent" in missing_keys
+    assert 1 <= len(missing_keys) <= 5
+    assert not missing_keys.intersection(vars_incomplete)
+    assert "total_worker_count" in missing_keys
+    assert any(key.startswith("dynamic_") for key in missing_keys)
 
 
 @pytest.mark.django_db

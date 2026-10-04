@@ -1,4 +1,5 @@
 "use client";
+import Overlay from "@/components/product/Overlay";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -163,13 +164,13 @@ export default function AdminControlRoomPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-6">
           <div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)]/70 dark:text-[var(--ui-sage)]">
                 Compliance Officer Portal
               </span>
               <span className="text-xs text-muted-foreground font-mono">Control Room &bull; Live Operations</span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground mt-1">
-              Admin Regulatory Control Room
+              Compliance review
             </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
               Platform-wide regulatory oversight. Monitor user declarations, inspect profile versions, scrutinize uploaded statutory evidence, and issue official determinations.
@@ -188,7 +189,7 @@ export default function AdminControlRoomPage() {
 
             <Link
               href="/admin/businesses"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-sm transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] text-white text-xs font-semibold shadow-sm transition-colors"
             >
               <Building2 className="w-3.5 h-3.5" />
               Businesses & Profile Versions
@@ -198,12 +199,12 @@ export default function AdminControlRoomPage() {
 
         {/* Action Success Alert */}
         {actionSuccessMsg && (
-          <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 flex items-center justify-between text-xs font-medium">
+          <div className="p-4 rounded-xl border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] dark:bg-[var(--ui-sage)]/40 text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)] flex items-center justify-between text-xs font-medium">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[var(--ui-sage)] shrink-0" />
               <span>{actionSuccessMsg}</span>
             </div>
-            <button onClick={() => setActionSuccessMsg(null)} className="text-emerald-700 hover:text-emerald-900">
+            <button onClick={() => setActionSuccessMsg(null)} className="text-[var(--ui-sage)] hover:text-[var(--ui-sage)]">
               Dismiss
             </button>
           </div>
@@ -218,21 +219,21 @@ export default function AdminControlRoomPage() {
             {/* KPI Executive Summary Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               {/* Human Review Needed */}
-              <div className="p-5 rounded-2xl border border-purple-300 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/20 shadow-sm relative overflow-hidden">
-                <div className="flex items-center justify-between text-purple-700 dark:text-purple-300">
+              <div className="p-5 rounded-2xl border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/50 dark:bg-[var(--ui-sage)]/20 shadow-sm relative overflow-hidden">
+                <div className="flex items-center justify-between text-[var(--ui-sage)] dark:text-[var(--ui-sage)]">
                   <span className="text-xs font-bold uppercase tracking-wider">Scrutiny Required</span>
                   <ShieldAlert className="w-5 h-5" />
                 </div>
-                <div className="text-3xl font-extrabold text-purple-900 dark:text-purple-100 mt-2">
+                <div className="text-3xl font-extrabold text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)] mt-2">
                   {summary?.in_human_review ?? queueCases.length}
                 </div>
-                <p className="text-[11px] text-purple-700/80 dark:text-purple-400 mt-1">
+                <p className="text-[11px] text-[var(--ui-sage)]/80 dark:text-[var(--ui-sage)] mt-1">
                   Awaiting officer determination
                 </p>
                 {((summary?.in_human_review ?? queueCases.length) > 0) && (
                   <span className="absolute top-2 right-2 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ui-sage-soft)] opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--ui-sage)]" />
                   </span>
                 )}
               </div>
@@ -262,27 +263,27 @@ export default function AdminControlRoomPage() {
               </div>
 
               {/* Government Portal Scrutiny */}
-              <div className="p-5 rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/10 shadow-sm">
-                <div className="flex items-center justify-between text-blue-700 dark:text-blue-400">
+              <div className="p-5 rounded-2xl border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)]/60 bg-[var(--ui-info-soft)]/40 dark:bg-[var(--ui-text)]/10 shadow-sm">
+                <div className="flex items-center justify-between text-[var(--ui-info)] dark:text-[var(--ui-info)]">
                   <span className="text-xs font-bold uppercase tracking-wider">Govt Processing</span>
                   <ExternalLink className="w-5 h-5" />
                 </div>
-                <div className="text-3xl font-extrabold text-blue-900 dark:text-blue-100 mt-2">
+                <div className="text-3xl font-extrabold text-[var(--ui-info)] dark:text-[var(--ui-info-soft)] mt-2">
                   {summary?.external_processing ?? 0}
                 </div>
-                <p className="text-[11px] text-blue-700/80 dark:text-blue-400 mt-1">Active external portal status</p>
+                <p className="text-[11px] text-[var(--ui-info)]/80 dark:text-[var(--ui-info)] mt-1">Active external portal status</p>
               </div>
 
               {/* Completed Cases */}
-              <div className="p-5 rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/10 shadow-sm">
-                <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400">
+              <div className="p-5 rounded-2xl border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)]/60 bg-[var(--ui-sage-faint)]/40 dark:bg-[var(--ui-sage)]/10 shadow-sm">
+                <div className="flex items-center justify-between text-[var(--ui-sage)] dark:text-[var(--ui-sage)]">
                   <span className="text-xs font-bold uppercase tracking-wider">Completed</span>
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
-                <div className="text-3xl font-extrabold text-emerald-900 dark:text-emerald-100 mt-2">
+                <div className="text-3xl font-extrabold text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)] mt-2">
                   {summary?.completed_cases ?? 0}
                 </div>
-                <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400 mt-1">Full statutory approval</p>
+                <p className="text-[11px] text-[var(--ui-sage)]/80 dark:text-[var(--ui-sage)] mt-1">Full statutory approval</p>
               </div>
             </div>
 
@@ -291,7 +292,7 @@ export default function AdminControlRoomPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
                   <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-purple-600" />
+                    <Building2 className="w-5 h-5 text-[var(--ui-sage)]" />
                     Registered Enterprises &amp; Account Workspaces
                   </h2>
                   <p className="text-xs text-muted-foreground">
@@ -300,7 +301,7 @@ export default function AdminControlRoomPage() {
                 </div>
                 <Link
                   href="/admin/businesses"
-                  className="text-xs font-semibold text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-200 flex items-center gap-1 group"
+                  className="text-xs font-semibold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] hover:text-[var(--ui-sage)] dark:hover:text-[var(--ui-sage-soft)] flex items-center gap-1 group"
                 >
                   <span>View All Enterprises ({businesses.length})</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -323,7 +324,7 @@ export default function AdminControlRoomPage() {
                     return (
                       <div
                         key={b.id}
-                        className="rounded-2xl border border-border bg-card p-5 hover:border-purple-300 dark:hover:border-purple-800 transition-all shadow-sm flex flex-col justify-between space-y-4 group"
+                        className="rounded-2xl border border-border bg-card p-5 hover:border-[var(--ui-sage-soft)] dark:hover:border-[var(--ui-sage-soft)] transition-all shadow-sm flex flex-col justify-between space-y-4 group"
                       >
                         <div>
                           {/* Business Header & Type */}
@@ -332,11 +333,11 @@ export default function AdminControlRoomPage() {
                               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
                                 {b.legal_structure?.replace(/_/g, " ") || b.business_type || "Enterprise"}
                               </span>
-                              <h3 className="font-bold text-foreground text-sm mt-1.5 line-clamp-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                              <h3 className="font-bold text-foreground text-sm mt-1.5 line-clamp-1 group-hover:text-[var(--ui-sage)] dark:group-hover:text-[var(--ui-sage)] transition-colors">
                                 {b.name}
                               </h3>
                             </div>
-                            <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded shrink-0">
+                            <span className="text-[10px] font-bold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] bg-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/60 px-2 py-0.5 rounded shrink-0">
                               Profile v{b.current_profile_version || b.profile_version || 1}
                             </span>
                           </div>
@@ -358,7 +359,7 @@ export default function AdminControlRoomPage() {
                               title="Copy Business ID"
                             >
                               {copiedId === b.id ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                <Check className="w-3.5 h-3.5 text-[var(--ui-sage)]" />
                               ) : (
                                 <Copy className="w-3.5 h-3.5" />
                               )}
@@ -396,7 +397,7 @@ export default function AdminControlRoomPage() {
                             </div>
                             <div>
                               <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Pending</span>
-                              <span className={`font-bold ${pendingReviews > 0 ? "text-purple-600 dark:text-purple-400" : "text-foreground"}`}>
+                              <span className={`font-bold ${pendingReviews > 0 ? "text-[var(--ui-sage)] dark:text-[var(--ui-sage)]" : "text-foreground"}`}>
                                 {pendingReviews}
                               </span>
                             </div>
@@ -410,7 +411,7 @@ export default function AdminControlRoomPage() {
                           </span>
                           <Link
                             href={`/admin/businesses/${b.id}`}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 hover:underline"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] hover:text-[var(--ui-sage)] dark:hover:text-[var(--ui-sage-soft)] hover:underline"
                           >
                             <span>Open Desk</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -475,7 +476,7 @@ export default function AdminControlRoomPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <ShieldAlert className="w-5 h-5 text-purple-600" />
+                    <ShieldAlert className="w-5 h-5 text-[var(--ui-sage)]" />
                     Action Required Review Queue
                   </h2>
                   <p className="text-xs text-muted-foreground">
@@ -489,7 +490,7 @@ export default function AdminControlRoomPage() {
 
               {filteredQueue.length === 0 ? (
                 <div className="p-12 text-center rounded-2xl border border-dashed border-border bg-card space-y-3">
-                  <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
+                  <CheckCircle2 className="w-10 h-10 text-[var(--ui-sage)] mx-auto" />
                   <h3 className="text-base font-bold text-foreground">Review Queue Clear</h3>
                   <p className="text-xs text-muted-foreground max-w-sm mx-auto">
                     All document submissions have been scrutinized or no pending human review cases match the active filter.
@@ -505,13 +506,13 @@ export default function AdminControlRoomPage() {
                     return (
                       <div
                         key={c.id}
-                        className="rounded-2xl border border-border bg-card p-5 hover:border-purple-300 dark:hover:border-purple-800 transition-all shadow-sm flex flex-col justify-between space-y-4"
+                        className="rounded-2xl border border-border bg-card p-5 hover:border-[var(--ui-sage-soft)] dark:hover:border-[var(--ui-sage-soft)] transition-all shadow-sm flex flex-col justify-between space-y-4"
                       >
                         <div>
                           {/* Card Header & Badges */}
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-mono text-[11px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded">
+                              <span className="font-mono text-[11px] font-bold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] bg-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/60 px-2 py-0.5 rounded">
                                 {c.case_number}
                               </span>
                               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
@@ -527,7 +528,7 @@ export default function AdminControlRoomPage() {
                             <span
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                                 isHumanReview
-                                  ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300"
+                                  ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                                   : isActionReq
                                   ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                                   : "bg-muted text-muted-foreground"
@@ -571,7 +572,7 @@ export default function AdminControlRoomPage() {
                         <div className="pt-3 border-t border-border flex items-center justify-between gap-3">
                           <button
                             onClick={() => openQuickReviewModal(c.id)}
-                            className="text-xs font-semibold text-purple-700 dark:text-purple-300 hover:text-purple-900 hover:underline flex items-center gap-1"
+                            className="text-xs font-semibold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] hover:text-[var(--ui-sage)] hover:underline flex items-center gap-1"
                           >
                             <ShieldCheck className="w-3.5 h-3.5" />
                             Quick Determination
@@ -596,11 +597,11 @@ export default function AdminControlRoomPage() {
 
         {/* Quick Review / Scrutiny Modal */}
         {selectedCase && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <Overlay open onClose={() => setSelectedCase(null)} title="Review case">
             <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2">
-                  <ShieldAlert className="w-5 h-5 text-purple-600" />
+                  <ShieldAlert className="w-5 h-5 text-[var(--ui-sage)]" />
                   <h3 className="font-bold text-sm text-foreground">
                     Direct Scrutiny Determination
                   </h3>
@@ -615,7 +616,7 @@ export default function AdminControlRoomPage() {
 
               {modalLoading ? (
                 <div className="py-8 text-center">
-                  <RefreshCw className="w-6 h-6 animate-spin mx-auto text-purple-600" />
+                  <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[var(--ui-sage)]" />
                   <p className="text-xs text-muted-foreground mt-2">Loading case details...</p>
                 </div>
               ) : (
@@ -625,7 +626,7 @@ export default function AdminControlRoomPage() {
                     <p className="text-muted-foreground">
                       Business: {selectedCase.business_name || "Enterprise Client"} &bull; Case: {selectedCase.case_number}
                     </p>
-                    <p className="text-[11px] text-purple-700 dark:text-purple-300 font-semibold">
+                    <p className="text-[11px] text-[var(--ui-sage)] dark:text-[var(--ui-sage)] font-semibold">
                       Evaluated Profile: Version v{(selectedCase.business_context as any)?.profile_version || 1}
                     </p>
                   </div>
@@ -640,7 +641,7 @@ export default function AdminControlRoomPage() {
                         onClick={() => setReviewAction("APPROVE")}
                         className={`py-2 px-3 rounded-lg text-xs font-bold border transition-colors ${
                           reviewAction === "APPROVE"
-                            ? "bg-emerald-600 text-white border-emerald-600"
+                            ? "bg-[var(--ui-sage)] text-white border-[var(--ui-sage-soft)]"
                             : "border-border text-muted-foreground hover:bg-muted"
                         }`}
                       >
@@ -686,7 +687,7 @@ export default function AdminControlRoomPage() {
                           ? "Specify missing stamps, signature discrepancy, or expired validity date..."
                           : "Specify why this application violates statutory regulatory rules..."
                       }
-                      className="w-full p-2.5 bg-background border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                      className="w-full p-2.5 bg-background border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[var(--ui-sage-soft)]/20"
                       required={reviewAction !== "APPROVE"}
                     />
                   </div>
@@ -702,7 +703,7 @@ export default function AdminControlRoomPage() {
                     <button
                       type="submit"
                       disabled={submittingReview}
-                      className="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg shadow-sm disabled:opacity-50"
+                      className="px-4 py-1.5 bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] text-white text-xs font-semibold rounded-lg shadow-sm disabled:opacity-50"
                     >
                       {submittingReview ? "Executing..." : "Confirm Determination"}
                     </button>
@@ -710,7 +711,7 @@ export default function AdminControlRoomPage() {
                 </form>
               )}
             </div>
-          </div>
+          </Overlay>
         )}
       </div>
     </AdminShell>

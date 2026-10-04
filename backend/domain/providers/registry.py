@@ -113,4 +113,10 @@ def provider_status() -> dict[str, Any]:
     Contains no key material — only booleans and model names — so it is safe to
     return over the API (TRD_v2.0 §62).
     """
-    return {"llm": llm_provider_status(), "embedding": embedding_provider_status()}
+    llm = llm_provider_status()
+    from .gemini_provider import _api_keys
+    slots = [f"gemini_slot_{i}" for i in range(1, len(_api_keys()) + 1)]
+    order = (slots + (["openai"] if OpenAIProvider().is_configured else [])
+             if llm["selected"] == "gemini" else [llm["selected"]] + (slots if llm["selected"] == "openai" else []))
+    llm["fallback_order"] = order
+    return {"llm": llm, "embedding": embedding_provider_status()}

@@ -1,4 +1,7 @@
 "use client";
+import Overlay from "@/components/product/Overlay";
+import AdminBusinessCreation from "@/components/product/AdminBusinessCreation";
+import { useAuth } from "@/context/AuthContext";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -34,6 +37,7 @@ import {
 } from "lucide-react";
 
 export default function AdminBusinessesDirectoryPage() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -106,7 +110,7 @@ export default function AdminBusinessesDirectoryPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-6">
           <div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)]/70 dark:text-[var(--ui-sage)]">
                 Centralized Business Directory
               </span>
               <span className="text-xs text-muted-foreground font-mono">
@@ -114,13 +118,16 @@ export default function AdminBusinessesDirectoryPage() {
               </span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground mt-1">
-              Businesses & Profile Mandates
+              Businesses
             </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
               Inspect onboarded enterprises across all user accounts by authoritative <strong>Business ID</strong>. Review declared profile versions, verify statutory mandates, and scrutinize uploaded evidence.
             </p>
           </div>
 
+          <div className="flex flex-wrap gap-2">
+          {user?.is_superuser && <AdminBusinessCreation onCreated={loadBusinesses} />}
+          <Link className="ui-button" href="/onboarding?new=true">Assess a starting business</Link>
           <button
             onClick={loadBusinesses}
             disabled={loading}
@@ -129,6 +136,7 @@ export default function AdminBusinessesDirectoryPage() {
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh Directory
           </button>
+          </div>
         </div>
 
         {/* Global Loading / Error */}
@@ -146,7 +154,7 @@ export default function AdminBusinessesDirectoryPage() {
                   placeholder="Search by Business ID, Enterprise Name, Owner Account Email, or State..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                  className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[var(--ui-sage-soft)]/20"
                 />
               </div>
 
@@ -168,12 +176,12 @@ export default function AdminBusinessesDirectoryPage() {
                 return (
                   <div
                     key={b.id}
-                    className="rounded-2xl border border-border bg-card p-5 hover:border-purple-300 dark:hover:border-purple-800 transition-all shadow-sm flex flex-col justify-between space-y-4"
+                    className="rounded-2xl border border-border bg-card p-5 hover:border-[var(--ui-sage-soft)] dark:hover:border-[var(--ui-sage-soft)] transition-all shadow-sm flex flex-col justify-between space-y-4"
                   >
                     <div>
                       {/* Top Badges & Business ID */}
                       <div className="flex items-start justify-between gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/60 text-[var(--ui-sage)] dark:text-[var(--ui-sage)] flex items-center justify-center font-bold">
                           <Building2 className="w-5 h-5" />
                         </div>
 
@@ -211,7 +219,7 @@ export default function AdminBusinessesDirectoryPage() {
                           className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
                         >
                           {copiedId === b.id ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <Check className="w-3.5 h-3.5 text-[var(--ui-sage)]" />
                           ) : (
                             <Copy className="w-3.5 h-3.5" />
                           )}
@@ -221,7 +229,7 @@ export default function AdminBusinessesDirectoryPage() {
                       {/* Owner Account & Operational Footprint */}
                       <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                          <User className="w-3.5 h-3.5 text-[var(--ui-sage)] shrink-0" />
                           <span className="font-medium text-foreground truncate" title={ownerEmail}>
                             Account: <span className="font-semibold">{ownerEmail}</span>
                             {ownerName ? ` (${ownerName})` : ""}
@@ -253,7 +261,7 @@ export default function AdminBusinessesDirectoryPage() {
                     <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
                       <button
                         onClick={() => handleOpenQuickView(b.id)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-purple-700 dark:text-purple-300 hover:text-purple-900 hover:underline"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] hover:text-[var(--ui-sage)] hover:underline"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         Quick Drawer
@@ -261,7 +269,7 @@ export default function AdminBusinessesDirectoryPage() {
 
                       <Link
                         href={`/admin/businesses/${b.id}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-sm transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] text-white text-xs font-semibold shadow-sm transition-colors"
                       >
                         <span>Command Desk</span>
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -276,12 +284,12 @@ export default function AdminBusinessesDirectoryPage() {
 
         {/* Quick View Drawer Modal */}
         {selectedBusinessId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <Overlay open onClose={() => setSelectedBusinessId(null)} title="Business overview">
             <div className="bg-card border border-border rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
               {/* Header */}
               <div className="p-5 border-b border-border flex items-center justify-between bg-muted/20">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold">
+                  <div className="w-9 h-9 rounded-xl bg-[var(--ui-sage)] text-white flex items-center justify-center font-bold">
                     <Building2 className="w-5 h-5" />
                   </div>
                   <div>
@@ -299,7 +307,7 @@ export default function AdminBusinessesDirectoryPage() {
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/admin/businesses/${selectedBusinessId}`}
-                    className="px-3 py-1 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700"
+                    className="px-3 py-1 bg-[var(--ui-sage)] text-white text-xs font-semibold rounded-lg hover:bg-[var(--ui-sage)]"
                   >
                     Open Full Desk &rarr;
                   </Link>
@@ -318,7 +326,7 @@ export default function AdminBusinessesDirectoryPage() {
                   onClick={() => setDrawerTab("compliances")}
                   className={`py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
                     drawerTab === "compliances"
-                      ? "border-purple-600 text-purple-600 dark:text-purple-400"
+                      ? "border-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -329,7 +337,7 @@ export default function AdminBusinessesDirectoryPage() {
                   onClick={() => setDrawerTab("documents")}
                   className={`py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
                     drawerTab === "documents"
-                      ? "border-purple-600 text-purple-600 dark:text-purple-400"
+                      ? "border-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -340,7 +348,7 @@ export default function AdminBusinessesDirectoryPage() {
                   onClick={() => setDrawerTab("profile")}
                   className={`py-3 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
                     drawerTab === "profile"
-                      ? "border-purple-600 text-purple-600 dark:text-purple-400"
+                      ? "border-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -353,7 +361,7 @@ export default function AdminBusinessesDirectoryPage() {
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {drawerLoading ? (
                   <div className="py-12 text-center space-y-2">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto text-purple-600" />
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[var(--ui-sage)]" />
                     <p className="text-xs text-muted-foreground">Loading business command overview...</p>
                   </div>
                 ) : (
@@ -378,10 +386,10 @@ export default function AdminBusinessesDirectoryPage() {
                                 <div className="space-y-1">
                                   <div className="flex items-center gap-2">
                                     <span className="font-mono font-bold text-foreground">{c.case_number}</span>
-                                    <span className="text-[10px] font-bold uppercase text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-1.5 py-0.2 rounded">
+                                    <span className="text-[10px] font-bold uppercase text-[var(--ui-sage)] dark:text-[var(--ui-sage)] bg-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/60 px-1.5 py-0.2 rounded">
                                       {c.authority}
                                     </span>
-                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded">
+                                    <span className="text-[10px] font-bold text-[var(--ui-sage)] bg-[var(--ui-sage-soft)] dark:text-[var(--ui-sage)] dark:bg-[var(--ui-sage)]/60 px-1.5 py-0.2 rounded">
                                       MANDATED
                                     </span>
                                   </div>
@@ -445,10 +453,10 @@ export default function AdminBusinessesDirectoryPage() {
                                 <div className="flex sm:flex-col items-end gap-2 shrink-0">
                                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                                     d.status_code === "INTERNAL_HUMAN_APPROVED"
-                                      ? "bg-emerald-100 text-emerald-800"
+                                      ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]"
                                       : d.status_code === "INTERNAL_HUMAN_QUERY"
                                       ? "bg-amber-100 text-amber-800"
-                                      : "bg-blue-100 text-blue-800"
+                                      : "bg-[var(--ui-info-soft)] text-[var(--ui-info)]"
                                   }`}>
                                     {d.status_code.replace(/_/g, " ")}
                                   </span>
@@ -469,8 +477,8 @@ export default function AdminBusinessesDirectoryPage() {
                     {/* TAB 3: PROFILE DECLARATIONS */}
                     {drawerTab === "profile" && (
                       <div className="space-y-4">
-                        <div className="p-3 bg-purple-50/60 dark:bg-purple-950/30 rounded-xl border border-purple-200 dark:border-purple-900/60 text-xs">
-                          <span className="font-bold text-purple-900 dark:text-purple-300">
+                        <div className="p-3 bg-[var(--ui-sage-faint)]/60 dark:bg-[var(--ui-sage)]/30 rounded-xl border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)]/60 text-xs">
+                          <span className="font-bold text-[var(--ui-sage)] dark:text-[var(--ui-sage)]">
                             Active Profile Version: v{overviewData?.profile?.version_number || 1}
                           </span>
                           <p className="text-muted-foreground mt-0.5">
@@ -503,7 +511,7 @@ export default function AdminBusinessesDirectoryPage() {
                 )}
               </div>
             </div>
-          </div>
+          </Overlay>
         )}
       </div>
     </AdminShell>

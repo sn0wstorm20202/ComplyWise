@@ -28,7 +28,6 @@ except Exception:
 
 from domain.providers import get_llm_provider
 from domain.providers.base import ChatMessage
-from domain.providers.openai_provider import is_valid_openai_key, OpenAIProvider
 from .ocr_engine import extract_text_from_upload, extract_text_from_file_bytes
 
 logger = logging.getLogger(__name__)
@@ -337,42 +336,12 @@ def perform_genuine_file_inspection(data: dict[str, Any], file: Any = None) -> d
             "error": None,
         }
     else:
-        # Headless JSON-only payload without binary upload (e.g. unit tests or API catalog evaluation)
-        doc_name = (data.get("name") or data.get("title") or "").strip()
-        ref_num = (data.get("reference_number") or data.get("code") or "").strip()
-        auth = (data.get("authority") or "").strip()
-        valid = (data.get("valid_until") or "").strip()
-
-        # If doc_name indicates an irrelevant pattern, do not simulate valid text
-        irrelevant_keywords = ["bill", "electricity", "invoice", "receipt", "salary", "payslip", "resume", "cv", "random", "test", "dummy"]
-        is_declared_irrelevant = any(kw in f"{doc_name} {file_name}".lower() for kw in irrelevant_keywords)
-
-        if is_declared_irrelevant or not doc_name:
-            ocr_res = {
-                "extracted_text": "",
-                "word_count": 0,
-                "character_count": 0,
-                "source_type": "NO_BINARY",
-                "has_readable_text": False,
-                "error": "No file binary provided for OCR inspection",
-            }
-        else:
-            simulated_text = (
-                f"Statutory Document Filing: {doc_name}\n"
-                f"Issuing Regulatory Authority: {auth}\n"
-                f"License / Registration Reference: {ref_num}\n"
-                f"Statutory Validity Period: Valid Until {valid}\n"
-                f"Statutory Schedule Form & Compliance Certificate"
-            )
-            words = re.findall(r"[A-Za-z0-9_\-\.\/]+", simulated_text)
-            ocr_res = {
-                "extracted_text": simulated_text,
-                "word_count": len(words),
-                "character_count": len(simulated_text),
-                "source_type": "METADATA_SIMULATION",
-                "has_readable_text": len(words) >= 3,
-                "error": None,
-            }
+        # Metadata alone is not evidence of uploaded document contents.
+        ocr_res = {
+            "extracted_text": "", "word_count": 0, "character_count": 0,
+            "source_type": "NO_BINARY", "has_readable_text": False,
+            "error": "No file binary provided for inspection",
+        }
 
     extracted_text = ocr_res.get("extracted_text", "")
     words = re.findall(r"[A-Za-z0-9_\-\.\/]+", extracted_text)
@@ -665,6 +634,18 @@ def check_format_and_expiry_compliance(data: dict[str, Any], std: dict[str, Any]
     }
 
 
+def _validate_scan_response(text: str) -> None:
+    match = re.search(r"\{.*\}", text.strip(), re.DOTALL)
+    if not match:
+        raise ValueError("Document interpretation must be JSON.")
+    value = json.loads(match.group(0))
+    if not isinstance(value, dict) or any(type(value.get(field)) is not bool
+            for field in ("is_necessary", "is_correct")):
+        raise ValueError("Document interpretation must contain boolean assessments.")
+    if not isinstance(value.get("confidence_score", 0), (int, float)):
+        raise ValueError("Document interpretation confidence must be numeric.")
+
+
 def ai_prevalidate_and_relevance_check(
     data: dict[str, Any],
     ocr: dict[str, Any],
@@ -788,26 +769,14 @@ def ai_prevalidate_and_relevance_check(
         "ai_call_status": "PENDING",
     }
 
-    # Resolve OpenAI API key from request data, settings, or process environment
-    django_key = ""
-    try:
-        from django.conf import settings
-        if hasattr(settings, "OPENAI_API_KEY"):
-            django_key = (settings.OPENAI_API_KEY or "").strip()
-        else:
-            django_key = os.getenv("OPENAI_API_KEY", "").strip()
-    except Exception:
-        django_key = os.getenv("OPENAI_API_KEY", "").strip()
-
-    active_key = (data.get("openai_api_key") or django_key).strip()
-
     llm_called_successfully = False
     openai_error_msg = None
 
-    # Only invoke OpenAI if a genuine live key is present (preventing 401s on dummy keys)
-    if is_valid_openai_key(active_key):
+    # Keep document analysis on the same configured provider/fallback boundary.
+    # Never invoke a model when there are no readable document contents.
+    if has_readable_text:
         try:
-            provider = OpenAIProvider(api_key=active_key)
+            provider = get_llm_provider()
             prompt = (
                 f"You are the ComplyWise Statutory Regulatory Intelligence Engine.\n"
                 f"Scan and analyze this uploaded document for Indian statutory regulatory compliance.\n\n"
@@ -843,8 +812,9 @@ def ai_prevalidate_and_relevance_check(
             )
             resp = provider.complete(
                 [ChatMessage(role="user", content=prompt)],
-                max_output_tokens=500,
+                max_output_tokens=1200,
                 response_format={"type": "json_object"},
+                response_validator=_validate_scan_response,
                 reasoning_effort="none",
                 workflow="document_verification",
             )
@@ -862,19 +832,19 @@ def ai_prevalidate_and_relevance_check(
                         "compliance_verdict": str(parsed.get("compliance_verdict", "COMPLIANT" if parsed.get("is_correct") else "NON_COMPLIANT")),
                         "confidence_score": int(parsed.get("confidence_score", 90)),
                         "llm_summary": str(parsed.get("llm_summary", "")),
-                        "ai_engine": f"OpenAI ({provider.model})",
-                        "ai_call_status": "LIVE_OPENAI_COMPLETION",
+                        "ai_engine": f"{resp.provider} ({resp.model})",
+                        "ai_call_status": "LIVE_PROVIDER_COMPLETION",
                     }
                     llm_called_successfully = True
         except Exception as exc:
             openai_error_msg = str(exc)
-            logger.warning("OpenAI completion error during document scan: %s", exc)
+            logger.warning("Configured provider chain exhausted during document scan: %s", type(exc).__name__)
 
     # Fallback to deterministic statutory compliance engine if LLM provider not configured or errored
     if not llm_called_successfully:
         engine_label = "Statutory Regulatory Engine"
         call_status = "OPENAI_ERROR" if openai_error_msg else "API_KEY_REQUIRED"
-        notice = openai_error_msg or "OpenAI API Key not configured. Enter your live OpenAI API key in the document settings to activate live GPT-4o-mini scanning."
+        notice = "Automated interpretation is unavailable. File checks are preliminary; a reviewer must confirm the document."
 
         # Rigorous check: only mark compliant if the extracted text contains genuine statutory evidence
         if has_irrelevant_pattern or is_domain_conflict or not has_statutory_evidence:
@@ -1030,7 +1000,7 @@ def verify_document(data: dict[str, Any], file: Any = None) -> dict[str, Any]:
         result_status = "NEEDS_REVIEW"
     else:
         overall_status = "PASSED"
-        result_status = "VERIFIED"
+        result_status = "NEEDS_REVIEW"
 
     recommendations: list[str] = []
     if not file_type_check["passed"]:
@@ -1049,10 +1019,12 @@ def verify_document(data: dict[str, Any], file: Any = None) -> dict[str, Any]:
         "has_readable_text": ocr_result.get("has_readable_text"),
         "word_count": ocr_result.get("word_count"),
         "character_count": ocr_result.get("character_count"),
+        "error": ocr_result.get("error"),
     }
 
     return {
-        "verified": all_passed,
+        "verified": False,
+        "precheck_passed": all_passed,
         "overall_status": overall_status,
         "status": result_status,
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -1060,8 +1032,8 @@ def verify_document(data: dict[str, Any], file: Any = None) -> dict[str, Any]:
         "flag_message": ai_check["flag_message"],
         "llm_scan_analysis": llm_analysis,
         "admin_verification": {
-            "status": "PENDING_LATER_PHASE",
-            "message": "Admin-level manual verification will be implemented at a later time.",
+            "status": "PENDING_REVIEW",
+            "message": "These are preliminary file checks. A human reviewer must confirm the document.",
         },
         "ocr_analysis": internal_ocr_summary,
         "checks": {

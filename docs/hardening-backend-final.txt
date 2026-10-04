@@ -1,0 +1,118 @@
+......................................s................................. [ 10%]
+........................................................................ [ 21%]
+........................................................................ [ 32%]
+............................................ss.......................... [ 42%]
+........................................................................ [ 53%]
+........................................................................ [ 64%]
+........................................................................ [ 75%]
+.............................FFF........................................ [ 85%]
+........................................................................ [ 96%]
+.......................                                                  [100%]
+================================== FAILURES ===================================
+________________ test_no_scenario_tokens_in_typescript_sources ________________
+
+    def test_no_scenario_tokens_in_typescript_sources():
+        """Frontend TypeScript code must not embed scenario codes or hardcoded scenario branches."""
+        ts_files = typescript_sources()
+        offenders: list[str] = []
+        for token in SCENARIO_TOKENS:
+            for path in ts_files:
+>               content = path.read_text(encoding="utf-8")
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_knowledge_boundary.py:211: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\pathlib.py:1028: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.utf_8.IncrementalDecoder object at 0x00000212696E6060>
+input = b"import { test, expect } from '@playwright/test';\r\nimport { functionalFixture, fixtureLogin, completeFixtureJourney...e.getByRole('heading',{name:/Compliance Profile for Arbitrary synthetic business/})).toBeVisible();\r\n });\r\n});\r\n"
+final = True
+
+>   ???
+E   UnicodeDecodeError: 'utf-8' codec can't decode byte 0x97 in position 213: invalid start byte
+
+<frozen codecs>:322: UnicodeDecodeError
+_______________ test_no_fabricated_authority_tokens_in_frontend _______________
+
+    def test_no_fabricated_authority_tokens_in_frontend():
+        """Frontend must not claim fabricated or non-existent regulatory authorities."""
+        # Authorities known from knowledge packs
+        VALID_AUTHORITIES = {
+            "FSSAI",
+            "GPCB",
+            "DISH_GUJARAT",
+            "BIS",
+            "TSPCB",
+            "CPCB",
+            "DGFT",
+            "TNPCB",
+            "DISH_TN",
+            "KSPCB",
+            "WPC",
+        }
+        FABRICATED_TOKENS = (
+            "FABRICATED_AUTH",
+            "FAKE_REGULATOR",
+            "MADE_UP_AUTHORITY",
+            "DUMMY_BOARD",
+        )
+        ts_files = typescript_sources()
+        for path in ts_files:
+>           content = path.read_text(encoding="utf-8")
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_knowledge_boundary.py:244: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\pathlib.py:1028: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.utf_8.IncrementalDecoder object at 0x00000212696E6FC0>
+input = b"import { test, expect } from '@playwright/test';\r\nimport { functionalFixture, fixtureLogin, completeFixtureJourney...e.getByRole('heading',{name:/Compliance Profile for Arbitrary synthetic business/})).toBeVisible();\r\n });\r\n});\r\n"
+final = True
+
+>   ???
+E   UnicodeDecodeError: 'utf-8' codec can't decode byte 0x97 in position 213: invalid start byte
+
+<frozen codecs>:322: UnicodeDecodeError
+____________ test_no_fee_or_deadline_values_in_typescript_sources _____________
+
+    def test_no_fee_or_deadline_values_in_typescript_sources():
+        """Frontend must not hardcode regulatory fees, deadlines, or penalty literals."""
+        pattern = re.compile(
+            r"^\s*(?:export\s+)?(?:const|let|var)\s+[A-Z_]*(?:FEE|FEES|DEADLINE|PENALTY|THRESHOLD)[A-Z_]*\s*=\s*\d+",
+            re.MULTILINE,
+        )
+        ts_files = typescript_sources()
+        offenders: list[str] = []
+        for path in ts_files:
+>           content = path.read_text(encoding="utf-8")
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_knowledge_boundary.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\pathlib.py:1028: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.utf_8.IncrementalDecoder object at 0x00000212695E0D40>
+input = b"import { test, expect } from '@playwright/test';\r\nimport { functionalFixture, fixtureLogin, completeFixtureJourney...e.getByRole('heading',{name:/Compliance Profile for Arbitrary synthetic business/})).toBeVisible();\r\n });\r\n});\r\n"
+final = True
+
+>   ???
+E   UnicodeDecodeError: 'utf-8' codec can't decode byte 0x97 in position 213: invalid start byte
+
+<frozen codecs>:322: UnicodeDecodeError
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_api_orchestration_step03.py:695: Live integration smoke test disabled by default. Set COMPLYWISE_LIVE_INTEGRATION=1 to run.
+SKIPPED [1] tests\test_live_prototype_smoke.py:17: Real-provider smoke is opt-in.
+SKIPPED [1] tests\test_live_smoke_step05.py:73: Live integration smoke tests disabled by default. Set COMPLYWISE_LIVE_INTEGRATION=1 to run.
+FAILED tests/test_knowledge_boundary.py::test_no_scenario_tokens_in_typescript_sources
+FAILED tests/test_knowledge_boundary.py::test_no_fabricated_authority_tokens_in_frontend
+FAILED tests/test_knowledge_boundary.py::test_no_fee_or_deadline_values_in_typescript_sources
+3 failed, 665 passed, 3 skipped in 53.55s

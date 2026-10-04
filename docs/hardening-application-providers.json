@@ -1,0 +1,61 @@
+{
+  "task": "actual BusinessUnderstandingEngine with its prompt and response validator",
+  "probes": [
+    {
+      "name": "gemini_independent",
+      "slot": 1,
+      "model": "gemini-3.5-flash-lite",
+      "validated": true,
+      "seconds": 2.666,
+      "normalized_fact_count": 4,
+      "unknown_count": 4,
+      "status": "SUCCESS",
+      "cooldown_remaining_seconds": 0
+    },
+    {
+      "name": "gemini_independent",
+      "slot": 2,
+      "model": "gemini-3.5-flash-lite",
+      "validated": true,
+      "seconds": 2.066,
+      "normalized_fact_count": 5,
+      "unknown_count": 3,
+      "status": "SUCCESS",
+      "cooldown_remaining_seconds": 0
+    },
+    {
+      "name": "gemini_independent",
+      "slot": 3,
+      "model": "gemini-3.5-flash-lite",
+      "validated": true,
+      "seconds": 2.295,
+      "normalized_fact_count": 4,
+      "unknown_count": 3,
+      "status": "SUCCESS",
+      "cooldown_remaining_seconds": 0
+    },
+    {
+      "name": "openai_independent",
+      "slot": null,
+      "model": "gpt-4o-mini",
+      "validated": true,
+      "seconds": 5.937,
+      "normalized_fact_count": 4,
+      "unknown_count": 3,
+      "status": "SUCCESS"
+    },
+    {
+      "name": "controlled_gemini_unavailable_real_openai",
+      "slot": null,
+      "model": "gemini-3.5-flash-lite",
+      "validated": true,
+      "seconds": 4.733,
+      "normalized_fact_count": 3,
+      "unknown_count": 3,
+      "status": "SUCCESS"
+    }
+  ],
+  "limitations": [
+    "Independent slot selection and Gemini-unavailable scenario are diagnostic controls, not real outages. Quota-project independence cannot be established from credentials alone."
+  ]
+}

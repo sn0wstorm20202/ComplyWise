@@ -1,9 +1,11 @@
 "use client";
+import Overlay from "@/components/product/Overlay";
 
 import React, { useEffect, useState, useMemo, Suspense, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
+import Disclosure from "@/components/product/Disclosure";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import { api } from "@/lib/api";
@@ -11,6 +13,7 @@ import type { SchemeVersionHistoryResponse } from "@/lib/api/schemes";
 import type { SchemeItem, SchemePipelineStatus, SchemeVersionRecord } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
 import { useBusinessContext } from "@/context/BusinessContext";
+import { useAuth } from "@/context/AuthContext";
 import { resolveAuthorityPortalUrl } from "@/lib/authorityPortals";
 
 // Filter Level 1: Jurisdiction
@@ -30,6 +33,8 @@ type BenefitTypeFilter =
 
 function SchemesContent() {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const canManageSources = Boolean(user?.is_staff || user?.is_superuser);
   const router = useRouter();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
@@ -42,51 +47,8 @@ function SchemesContent() {
     switchProfile,
   } = useBusinessContext();
 
-  // Dynamically loaded real onboarded businesses from backend
-  const [dynamicBusinesses, setDynamicBusinesses] = useState<any[]>([]);
-
-  useEffect(() => {
-    let active = true;
-    async function loadRealBusinesses() {
-      try {
-        const home = await api.businesses.getProfileHome().catch(() => null);
-        if (active && home && home.businesses && home.businesses.length > 0) {
-          setDynamicBusinesses(home.businesses);
-          return;
-        }
-        const list = await api.businesses.list().catch(() => null);
-        if (active && Array.isArray(list) && list.length > 0) {
-          setDynamicBusinesses(
-            list.map((b: any) => ({
-              id: b.id,
-              name: b.name,
-              is_active: b.is_active ?? true,
-              profile_version: b.profile_version ?? 1,
-              state: b.state || "",
-              district: b.district || "",
-              industry: b.industry || null,
-              product_description: b.product_description || "",
-              assessment_count: b.assessment_count ?? 1,
-              created_at: b.created_at || new Date().toISOString(),
-              updated_at: b.updated_at || new Date().toISOString(),
-            }))
-          );
-          return;
-        }
-      } catch (err) {
-        console.warn("Could not fetch real businesses for schemes:", err);
-      }
-    }
-    loadRealBusinesses();
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const allBusinesses = useMemo(() => {
-    if (dynamicBusinesses.length > 0) return dynamicBusinesses;
-    return userBusinesses;
-  }, [dynamicBusinesses, userBusinesses]);
+  // BusinessProvider already loads the tenant's business list and reports failures.
+  const allBusinesses = userBusinesses;
 
   // Effective business ID from URL, active context, localStorage, or latest dynamic business
   const effectiveBusinessId = useMemo(() => {
@@ -97,7 +59,7 @@ function SchemesContent() {
     }
     if (activeBusinessId) return activeBusinessId;
     if (allBusinesses.length > 0) return allBusinesses[0].id;
-    return "active";
+    return "";
   }, [paramBusinessId, activeBusinessId, allBusinesses]);
 
   const [response, setResponse] = useState<any>(null);
@@ -139,7 +101,7 @@ function SchemesContent() {
     setError(null);
     try {
       if (viewMasterCatalog || !effectiveBusinessId) {
-        // Load master government catalogue of all 36 schemes
+        // Load the persisted government scheme catalogue
         const cat = await api.schemes.catalog();
         setResponse({
           available: true,
@@ -159,7 +121,7 @@ function SchemesContent() {
         });
       } else {
         // Load context-driven schemes matching the onboarded business's profile version
-        const res = await api.schemes.list(effectiveBusinessId, activeAssessmentId || undefined);
+        const res = await api.schemes.list(effectiveBusinessId, searchParams.get("assessment_id") || (effectiveBusinessId === activeBusinessId ? activeAssessmentId : undefined) || undefined);
         setResponse(res);
       }
     } catch (err: any) {
@@ -168,7 +130,7 @@ function SchemesContent() {
     } finally {
       setLoading(false);
     }
-  }, [effectiveBusinessId, activeAssessmentId, viewMasterCatalog, profile]);
+  }, [effectiveBusinessId, activeBusinessId, activeAssessmentId, searchParams, viewMasterCatalog, profile]);
 
   useEffect(() => {
     loadSchemes();
@@ -252,7 +214,7 @@ function SchemesContent() {
     setSchemeToEdit(sc);
     setEditBenefitSummary(sc.benefit_summary || "");
     setEditRatePercent((sc.benefit_details as any)?.rate_percent ? String((sc.benefit_details as any).rate_percent) : "");
-    setEditChangeReason("Gazette Revision 2026: Official enhancement of subsidy and incentive caps");
+    setEditChangeReason("");
     setEditSchemeModalOpen(true);
   }
 
@@ -354,27 +316,27 @@ function SchemesContent() {
   }, [rawSchemes]);
 
   // Active business display info
-  const businessDisplayName = response?.business_name || profile?.businessName || "Your Business Profile";
-  const businessStateName = response?.state_name || (profile?.state ? profile.state.toUpperCase() : "Maharashtra");
-  const businessScale = response?.msme_scale || profile?.scale || "MICRO";
+  const businessDisplayName = response?.business_name || (effectiveBusinessId ? profile?.businessName : "Scheme catalogue");
+  const businessStateName = response?.state_name || (effectiveBusinessId ? profile?.state : "All jurisdictions");
+  const businessScale = response?.msme_scale || (effectiveBusinessId ? profile?.scale : "All business sizes");
   const businessProductDesc =
     response?.product_description ||
-    profile?.productDescription ||
-    "Manufacturing, agro-processing, engineering and industrial operations.";
+    (effectiveBusinessId ? profile?.productDescription : "") ||
+    "Add your business context to see matched benefits.";
 
   return (
-    <AppShell activeView="schemes" requireAuth={false}>
+    <AppShell activeView="schemes">
       <div className="space-y-6 max-w-7xl mx-auto pb-12">
         {/* Action Notice Toast */}
         {actionNotice && (
-          <div className="rounded-[12px] bg-blue-50 border border-blue-200 p-4 text-blue-900 text-xs flex items-center justify-between shadow-sm animate-fade-in">
+          <div className="rounded-[12px] bg-[var(--ui-info-soft)] border border-[var(--ui-sage-soft)] p-4 text-[var(--ui-info)] text-xs flex items-center justify-between shadow-sm animate-fade-in">
             <div className="flex items-center gap-2">
               <span className="text-base">⚡</span>
               <span className="font-medium">{actionNotice}</span>
             </div>
             <button
               onClick={() => setActionNotice(null)}
-              className="text-blue-600 hover:text-blue-800 text-xs font-bold"
+              className="text-[var(--ui-info)] hover:text-[var(--ui-info)] text-xs font-bold"
             >
               ✕
             </button>
@@ -382,40 +344,39 @@ function SchemesContent() {
         )}
 
         {/* Top Header Card */}
-        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xs">
+        <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xs">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-800 text-[11px] font-semibold tracking-wider uppercase mb-2.5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] text-[11px] font-semibold tracking-wider uppercase mb-2.5">
               <span>🏛️</span>
-              <span>Central &amp; Maharashtra Government Schemes Pipeline</span>
+              <span>Business benefits</span>
             </div>
-            <h1 className="font-sans text-2xl sm:text-3xl text-[#0F172A] font-extrabold tracking-tight">
+            <h1 className="font-sans text-2xl sm:text-3xl text-[var(--ui-text)] font-extrabold tracking-tight">
               Schemes &amp; Financial Incentives
             </h1>
-            <p className="text-xs sm:text-sm text-[#64748B] mt-1.5 max-w-3xl leading-relaxed">
-              Real-time business context discovery. Verified schemes from Central MSME, CHAMPIONS, DPIIT, and
-              Maharashtra MCED portals dynamically matched to your registered business profile.
+            <p className="text-xs sm:text-sm text-[var(--ui-secondary)] mt-1.5 max-w-3xl leading-relaxed">
+              Explore benefits matched to your business, then review the eligibility and source before applying.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <button
               onClick={handleOpenPipelineStatus}
-              className="rounded-full border border-[#CBD5E1] bg-white px-4 py-2 text-xs font-semibold text-[#334155] hover:bg-[#F8FAFC] transition-colors inline-flex items-center gap-2 shadow-2xs"
+              className="rounded-full border border-[var(--ui-border-strong)] bg-white px-4 py-2 text-xs font-semibold text-[var(--ui-secondary)] hover:bg-[var(--ui-bg)] transition-colors inline-flex items-center gap-2 shadow-2xs"
             >
               <span>🔍</span>
               <span>Registry &amp; Audit Trail</span>
             </button>
             <button
-              onClick={handleTriggerPipeline}
+              onClick={canManageSources ? handleTriggerPipeline : () => void loadSchemes()}
               disabled={refreshing}
-              className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:from-blue-700 hover:to-indigo-700 transition-all inline-flex items-center gap-2 shadow-sm disabled:opacity-60"
+              className="rounded-full bg-gradient-to-r from-[var(--ui-text)] to-[var(--ui-sage)] px-4 py-2 text-xs font-semibold text-white hover:from-[var(--ui-text)] hover:to-[var(--ui-sage)] transition-all inline-flex items-center gap-2 shadow-sm disabled:opacity-60"
             >
               <span className={refreshing ? "animate-spin" : ""}>🔄</span>
-              <span>{refreshing ? "Crawling Portals..." : "Refresh from Portals"}</span>
+              <span>{refreshing ? "Refreshing…" : canManageSources ? "Refresh sources" : "Refresh matches"}</span>
             </button>
             <Link
               href="/dashboard"
-              className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
+              className="rounded-full border border-[var(--ui-border)] bg-[var(--ui-bg)] px-4 py-2 text-xs font-semibold text-[var(--ui-text)] hover:bg-[var(--ui-inset)] transition-colors"
             >
               ← Dashboard
             </Link>
@@ -423,56 +384,56 @@ function SchemesContent() {
         </div>
 
         {/* Real Onboarded Business Profile Context Card */}
-        <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-[16px] p-6 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5">
+        <div className="ui-business-context bg-white border border-[var(--ui-border)] rounded-[16px] p-6 text-[var(--ui-text)] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="flex items-start sm:items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-2xl shrink-0 text-blue-300">
+            <div className="w-12 h-12 rounded-2xl bg-[var(--ui-text)]/20 border border-[var(--ui-sage-soft)]/30 flex items-center justify-center text-2xl shrink-0 text-[var(--ui-info)]">
               🏢
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                <span className="text-[10px] uppercase tracking-wider text-[var(--ui-muted)] font-bold">
                   Active Business Context
                 </span>
-                <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Dynamic Matching Active
+                <span className="inline-flex items-center gap-1 text-[10px] bg-[var(--ui-sage)]/20 text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]/30 px-2 py-0.5 rounded-full font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--ui-sage)]" />
+                  {effectiveBusinessId ? "Matched business context" : "Browse catalogue"}
                 </span>
               </div>
-              <div className="text-lg font-bold text-white flex items-center gap-2.5 flex-wrap">
+              <div className="text-lg font-bold text-[var(--ui-text)] flex items-center gap-2.5 flex-wrap">
                 <span>{businessDisplayName}</span>
-                <span className="text-[10px] bg-blue-500/30 text-blue-200 border border-blue-400/40 px-2.5 py-0.5 rounded-full font-mono font-medium">
-                  {businessScale} SCALE
+                <span className="text-[10px] bg-[var(--ui-sage-faint)]/30 text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]/40 px-2.5 py-0.5 rounded-full font-mono font-medium">
+                  {businessScale}
                 </span>
               </div>
-              <div className="text-xs text-slate-300 mt-1 max-w-2xl line-clamp-1">
+              <div className="text-xs text-[var(--ui-muted)] mt-1 max-w-2xl line-clamp-1">
                 {businessProductDesc}
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 shrink-0 border-t sm:border-t-0 sm:border-l border-white/10 pt-4 sm:pt-0 sm:pl-5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 shrink-0 border-t sm:border-t-0 sm:border-l border-[var(--ui-border)] pt-4 sm:pt-0 sm:pl-5">
             <div>
-              <div className="text-[10px] uppercase text-slate-400 font-semibold">Registered State</div>
-              <div className="text-sm font-bold text-white mt-0.5">{businessStateName}</div>
+              <div className="text-[10px] uppercase text-[var(--ui-muted)] font-semibold">Registered State</div>
+              <div className="text-sm font-bold text-[var(--ui-text)] mt-0.5">{businessStateName}</div>
             </div>
 
             {/* Business switcher dropdown if user has businesses */}
             {allBusinesses && allBusinesses.length > 0 && (
               <div className="space-y-1">
-                <label className="text-[10px] uppercase text-slate-400 font-semibold block">
+                <label className="text-[10px] uppercase text-[var(--ui-muted)] font-semibold block">
                   Switch Business Profile:
                 </label>
                 <select
                   value={viewMasterCatalog ? "MASTER_CATALOG" : effectiveBusinessId || ""}
                   onChange={(e) => handleBusinessSelect(e.target.value)}
-                  className="bg-slate-800 border border-slate-600 text-white text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-400"
+                  className="bg-[var(--ui-sage-faint)] border border-[var(--ui-border-strong)] text-[var(--ui-text)] text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-[var(--ui-sage-soft)]"
                 >
                   {allBusinesses.map((b: any) => (
                     <option key={b.id} value={b.id}>
                       {b.name} ({b.state || "State"})
                     </option>
                   ))}
-                  <option value="MASTER_CATALOG">🌐 View Master Catalog (All 36 Schemes)</option>
+                  <option value="MASTER_CATALOG">View scheme catalogue</option>
                 </select>
               </div>
             )}
@@ -481,20 +442,20 @@ function SchemesContent() {
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
-          <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-4 shadow-2xs">
-            <div className="text-[10px] font-semibold text-[#64748B] uppercase tracking-wider">
+          <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-4 shadow-2xs">
+            <div className="text-[10px] font-semibold text-[var(--ui-secondary)] uppercase tracking-wider">
               Total Applicable
             </div>
-            <div className="text-2xl font-black text-[#0F172A] mt-1">{counts.total}</div>
-            <div className="text-[11px] text-[#64748B] mt-0.5">Matched for this profile</div>
+            <div className="text-2xl font-black text-[var(--ui-text)] mt-1">{counts.total}</div>
+            <div className="text-[11px] text-[var(--ui-secondary)] mt-0.5">Matched for this profile</div>
           </div>
 
-          <div className="bg-white rounded-[16px] border border-blue-100 bg-blue-50/20 p-4 shadow-2xs">
-            <div className="text-[10px] font-semibold text-blue-700 uppercase tracking-wider">
+          <div className="bg-white rounded-[16px] border border-[var(--ui-sage-soft)] bg-[var(--ui-info-soft)]/20 p-4 shadow-2xs">
+            <div className="text-[10px] font-semibold text-[var(--ui-info)] uppercase tracking-wider">
               Central Govt (National)
             </div>
-            <div className="text-2xl font-black text-blue-900 mt-1">{counts.central}</div>
-            <div className="text-[11px] text-blue-700/80 mt-0.5">MSME Ministry &amp; DPIIT</div>
+            <div className="text-2xl font-black text-[var(--ui-info)] mt-1">{counts.central}</div>
+            <div className="text-[11px] text-[var(--ui-info)]/80 mt-0.5">MSME Ministry &amp; DPIIT</div>
           </div>
 
           <div className="bg-white rounded-[16px] border border-amber-100 bg-amber-50/20 p-4 shadow-2xs">
@@ -505,40 +466,40 @@ function SchemesContent() {
             <div className="text-[11px] text-amber-800/80 mt-0.5">Maharashtra MCED &amp; PSI</div>
           </div>
 
-          <div className="bg-white rounded-[16px] border border-emerald-100 bg-emerald-50/20 p-4 shadow-2xs">
-            <div className="text-[10px] font-semibold text-emerald-800 uppercase tracking-wider">
+          <div className="bg-white rounded-[16px] border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/20 p-4 shadow-2xs">
+            <div className="text-[10px] font-semibold text-[var(--ui-sage)] uppercase tracking-wider">
               Universal Support
             </div>
-            <div className="text-2xl font-black text-emerald-900 mt-1">{counts.universal}</div>
-            <div className="text-[11px] text-emerald-800/80 mt-0.5">Open to all industries</div>
+            <div className="text-2xl font-black text-[var(--ui-sage)] mt-1">{counts.universal}</div>
+            <div className="text-[11px] text-[var(--ui-sage)]/80 mt-0.5">Open to all industries</div>
           </div>
 
-          <div className="bg-white rounded-[16px] border border-indigo-100 bg-indigo-50/20 p-4 shadow-2xs col-span-2 md:col-span-1">
-            <div className="text-[10px] font-semibold text-indigo-800 uppercase tracking-wider">
+          <div className="bg-white rounded-[16px] border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/20 p-4 shadow-2xs col-span-2 md:col-span-1">
+            <div className="text-[10px] font-semibold text-[var(--ui-sage)] uppercase tracking-wider">
               Targeted Sectoral
             </div>
-            <div className="text-2xl font-black text-indigo-900 mt-1">{counts.targeted}</div>
-            <div className="text-[11px] text-indigo-800/80 mt-0.5">Strict activity match</div>
+            <div className="text-2xl font-black text-[var(--ui-sage)] mt-1">{counts.targeted}</div>
+            <div className="text-[11px] text-[var(--ui-sage)]/80 mt-0.5">Strict activity match</div>
           </div>
         </div>
 
         {/* Filter Controls (Both Levels + Benefit Type + Search) */}
-        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-5 shadow-2xs space-y-4">
+        <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-5 shadow-2xs space-y-4">
           {/* Level 1: Jurisdiction Level Filter */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#F1F5F9] pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--ui-inset)] pb-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-text)]">
                 Level 1: Jurisdiction
               </span>
-              <span className="text-[11px] text-[#64748B]">(National vs State Portals)</span>
+              <span className="text-[11px] text-[var(--ui-secondary)]">(National vs State Portals)</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setJurisdictionFilter("ALL")}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   jurisdictionFilter === "ALL"
-                    ? "bg-[#0F172A] text-white shadow-2xs"
-                    : "bg-[#F8FAFC] text-[#475569] border border-[#E2E8F0] hover:bg-[#F1F5F9]"
+                    ? "bg-[var(--ui-text)] text-white shadow-2xs"
+                    : "bg-[var(--ui-bg)] text-[var(--ui-secondary)] border border-[var(--ui-border)] hover:bg-[var(--ui-inset)]"
                 }`}
               >
                 All Jurisdictions ({counts.total})
@@ -547,8 +508,8 @@ function SchemesContent() {
                 onClick={() => setJurisdictionFilter("CENTRAL")}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   jurisdictionFilter === "CENTRAL"
-                    ? "bg-blue-600 text-white shadow-2xs"
-                    : "bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100"
+                    ? "bg-[var(--ui-text)] text-white shadow-2xs"
+                    : "bg-[var(--ui-info-soft)] text-[var(--ui-info)] border border-[var(--ui-sage-soft)] hover:bg-[var(--ui-info-soft)]"
                 }`}
               >
                 🇮🇳 Central Government ({counts.central})
@@ -567,20 +528,20 @@ function SchemesContent() {
           </div>
 
           {/* Level 2: Scope & Applicability Filter */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#F1F5F9] pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--ui-inset)] pb-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-text)]">
                 Level 2: Scope &amp; Applicability
               </span>
-              <span className="text-[11px] text-[#64748B]">(Universal MSME vs Targeted Sector)</span>
+              <span className="text-[11px] text-[var(--ui-secondary)]">(Universal MSME vs Targeted Sector)</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setScopeFilter("ALL")}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   scopeFilter === "ALL"
-                    ? "bg-[#0F172A] text-white shadow-2xs"
-                    : "bg-[#F8FAFC] text-[#475569] border border-[#E2E8F0] hover:bg-[#F1F5F9]"
+                    ? "bg-[var(--ui-text)] text-white shadow-2xs"
+                    : "bg-[var(--ui-bg)] text-[var(--ui-secondary)] border border-[var(--ui-border)] hover:bg-[var(--ui-inset)]"
                 }`}
               >
                 All Scopes ({counts.total})
@@ -589,8 +550,8 @@ function SchemesContent() {
                 onClick={() => setScopeFilter("UNIVERSAL")}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   scopeFilter === "UNIVERSAL"
-                    ? "bg-emerald-600 text-white shadow-2xs"
-                    : "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
+                    ? "bg-[var(--ui-sage)] text-white shadow-2xs"
+                    : "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)] hover:bg-[var(--ui-sage-soft)]"
                 }`}
               >
                 🌐 Universal Incentives ({counts.universal})
@@ -599,8 +560,8 @@ function SchemesContent() {
                 onClick={() => setScopeFilter("TARGETED")}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   scopeFilter === "TARGETED"
-                    ? "bg-indigo-600 text-white shadow-2xs"
-                    : "bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100"
+                    ? "bg-[var(--ui-sage)] text-white shadow-2xs"
+                    : "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)] hover:bg-[var(--ui-sage-soft)]"
                 }`}
               >
                 🎯 Sector-Specific ({counts.targeted})
@@ -611,7 +572,7 @@ function SchemesContent() {
           {/* Search and Benefit Type Pills */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-semibold text-[#64748B] mr-1">Benefit Type:</span>
+              <span className="text-[11px] font-semibold text-[var(--ui-secondary)] mr-1">Benefit Type:</span>
               {(
                 [
                   ["ALL", "All Types"],
@@ -627,8 +588,8 @@ function SchemesContent() {
                   onClick={() => setBenefitTypeFilter(val)}
                   className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
                     benefitTypeFilter === val
-                      ? "bg-blue-600 text-white shadow-2xs"
-                      : "bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]"
+                      ? "bg-[var(--ui-text)] text-white shadow-2xs"
+                      : "bg-[var(--ui-inset)] text-[var(--ui-secondary)] hover:bg-[var(--ui-border)]"
                   }`}
                 >
                   {label}
@@ -643,13 +604,13 @@ function SchemesContent() {
                   placeholder="Search schemes, sectors, benefits..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-full border border-[#E2E8F0] bg-[#F8FAFC] pl-9 pr-4 py-1.5 text-xs text-[#0F172A] placeholder-[#94A3B8] focus:bg-white focus:border-blue-500 focus:outline-none transition-all"
+                  className="w-full rounded-full border border-[var(--ui-border)] bg-[var(--ui-bg)] pl-9 pr-4 py-1.5 text-xs text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:bg-white focus:border-[var(--ui-sage-soft)] focus:outline-none transition-all"
                 />
-                <span className="absolute left-3 top-2 text-xs text-[#94A3B8]">🔍</span>
+                <span className="absolute left-3 top-2 text-xs text-[var(--ui-muted)]">🔍</span>
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1.5 text-xs text-[#94A3B8] hover:text-[#475569]"
+                    className="absolute right-3 top-1.5 text-xs text-[var(--ui-muted)] hover:text-[var(--ui-secondary)]"
                   >
                     ✕
                   </button>
@@ -669,11 +630,11 @@ function SchemesContent() {
         )}
 
         {/* Results Counter Bar */}
-        <div className="flex items-center justify-between text-xs text-[#64748B] px-1">
+        <div className="flex items-center justify-between text-xs text-[var(--ui-secondary)] px-1">
           <div>
-            Showing <span className="font-bold text-[#0F172A]">{filteredSchemes.length}</span> of{" "}
-            <span className="font-bold text-[#0F172A]">{counts.total}</span> applicable schemes for{" "}
-            <span className="font-bold text-[#0F172A]">{businessDisplayName}</span>
+            Showing <span className="font-bold text-[var(--ui-text)]">{filteredSchemes.length}</span> of{" "}
+            <span className="font-bold text-[var(--ui-text)]">{counts.total}</span> applicable schemes for{" "}
+            <span className="font-bold text-[var(--ui-text)]">{businessDisplayName}</span>
           </div>
           {(jurisdictionFilter !== "ALL" || scopeFilter !== "ALL" || benefitTypeFilter !== "ALL" || searchQuery) && (
             <button
@@ -683,7 +644,7 @@ function SchemesContent() {
                 setBenefitTypeFilter("ALL");
                 setSearchQuery("");
               }}
-              className="text-blue-600 hover:underline font-semibold"
+              className="text-[var(--ui-info)] hover:underline font-semibold"
             >
               Reset All Filters
             </button>
@@ -695,13 +656,13 @@ function SchemesContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <LoadingSkeleton count={6} className="h-64 w-full rounded-[16px]" />
           </div>
-        ) : filteredSchemes.length === 0 ? (
-          <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs">
+        ) : error ? null : filteredSchemes.length === 0 ? (
+          <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-12 text-center shadow-2xs">
             <div className="text-4xl mb-3">🔍</div>
-            <h3 className="font-sans font-bold text-lg text-[#0F172A]">
+            <h3 className="font-sans font-bold text-lg text-[var(--ui-text)]">
               No schemes matched your current filter
             </h3>
-            <p className="text-xs text-[#64748B] mt-2 max-w-md mx-auto leading-relaxed">
+            <p className="text-xs text-[var(--ui-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
               Try adjusting the Jurisdiction or Scope filter options above, or search for another term.
             </p>
             <div className="mt-5 flex items-center justify-center gap-3">
@@ -712,15 +673,15 @@ function SchemesContent() {
                   setBenefitTypeFilter("ALL");
                   setSearchQuery("");
                 }}
-                className="px-4 py-2 rounded-full text-xs font-semibold bg-[#F1F5F9] text-[#0F172A] hover:bg-[#E2E8F0]"
+                className="px-4 py-2 rounded-full text-xs font-semibold bg-[var(--ui-inset)] text-[var(--ui-text)] hover:bg-[var(--ui-border)]"
               >
                 Clear Filters
               </button>
               <button
                 onClick={() => setViewMasterCatalog(true)}
-                className="px-4 py-2 rounded-full text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700"
+                className="px-4 py-2 rounded-full text-xs font-semibold bg-[var(--ui-text)] text-white hover:bg-[var(--ui-text)]"
               >
-                Browse Master Catalog (All 36 Schemes)
+                Browse scheme catalogue
               </button>
             </div>
           </div>
@@ -734,12 +695,12 @@ function SchemesContent() {
               return (
                 <div
                   key={sc.id || sc.scheme_code}
-                  className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 shadow-2xs hover:border-[#CBD5E1] hover:shadow-sm transition-all flex flex-col justify-between space-y-4 relative"
+                  className="bg-white rounded-[16px] border border-[var(--ui-border)] p-6 shadow-2xs hover:border-[var(--ui-border-strong)] hover:shadow-sm transition-all flex flex-col justify-between space-y-4 relative"
                 >
                   <div className="space-y-3.5">
                     {/* Top Badges */}
                     <div className="flex items-start justify-between gap-2 flex-wrap">
-                      <span className="font-mono text-[10px] font-semibold text-[#0F172A] bg-[#F1F5F9] border border-[#E2E8F0] px-2.5 py-0.5 rounded-full">
+                      <span className="font-mono text-[10px] font-semibold text-[var(--ui-text)] bg-[var(--ui-inset)] border border-[var(--ui-border)] px-2.5 py-0.5 rounded-full">
                         {sc.scheme_code || sc.id}
                       </span>
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -747,8 +708,8 @@ function SchemesContent() {
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                             isUniversal
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-300"
-                              : "bg-indigo-50 text-indigo-800 border-indigo-300"
+                              ? "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border-[var(--ui-sage-soft)]"
+                              : "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border-[var(--ui-sage-soft)]"
                           }`}
                         >
                           {isUniversal ? "🌐 Universal" : `🎯 ${sectorCategory || "Sector-Specific"}`}
@@ -759,7 +720,7 @@ function SchemesContent() {
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase border ${
                             isMH
                               ? "bg-amber-50 text-amber-800 border-amber-300"
-                              : "bg-blue-50 text-blue-800 border-blue-300"
+                              : "bg-[var(--ui-info-soft)] text-[var(--ui-info)] border-[var(--ui-sage-soft)]"
                           }`}
                         >
                           {isMH ? "🏛️ Maharashtra" : "🇮🇳 Central"}
@@ -768,25 +729,25 @@ function SchemesContent() {
                     </div>
 
                     {/* Scheme Title */}
-                    <h3 className="font-sans text-base text-[#0F172A] font-bold leading-snug">
+                    <h3 className="font-sans text-base text-[var(--ui-text)] font-bold leading-snug">
                       {sc.title}
                     </h3>
 
                     {/* Authority */}
-                    <div className="text-xs text-[#2563EB] font-semibold flex items-center gap-1.5">
+                    <div className="text-xs text-[var(--ui-sage)] font-semibold flex items-center gap-1.5">
                       <span>🏛️</span>
                       <span className="line-clamp-1">{sc.authority}</span>
                     </div>
 
                     {/* Benefit Box */}
-                    <div className="bg-[#F8FAFC] rounded-[12px] p-3 border border-[#E2E8F0] space-y-1.5">
-                      <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
+                    <div className="bg-[var(--ui-bg)] rounded-[12px] p-3 border border-[var(--ui-border)] space-y-1.5">
+                      <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--ui-secondary)]">
                         <span>Benefit Offering</span>
-                        <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                        <span className="text-[var(--ui-sage)] bg-[var(--ui-sage-faint)] px-2 py-0.5 rounded border border-[var(--ui-sage-soft)]">
                           {(sc.benefit_type || "INCENTIVE").replace(/_/g, " ")}
                         </span>
                       </div>
-                      <p className="text-xs text-[#334155] leading-relaxed font-medium">
+                      <p className="text-xs text-[var(--ui-secondary)] leading-relaxed font-medium">
                         {sc.benefit_summary}
                       </p>
                     </div>
@@ -796,32 +757,35 @@ function SchemesContent() {
                       <div
                         className={`rounded-[12px] p-3 text-[11px] leading-relaxed border ${
                           isUniversal
-                            ? "bg-emerald-50/70 border-emerald-200/80 text-emerald-900"
-                            : "bg-indigo-50/70 border-indigo-200/80 text-indigo-900"
+                            ? "bg-[var(--ui-sage-faint)]/70 border-[var(--ui-sage-soft)]/80 text-[var(--ui-sage)]"
+                            : "bg-[var(--ui-sage-faint)]/70 border-[var(--ui-sage-soft)]/80 text-[var(--ui-sage)]"
                         }`}
                       >
                         <div className="font-semibold flex items-center gap-1.5 mb-1">
                           <span>{isUniversal ? "🌐" : "🎯"}</span>
                           <span>{isUniversal ? "Universal MSME Eligibility:" : "Why Your Business Qualifies:"}</span>
                         </div>
-                        <p>{sc.relevance_rationale}</p>
+                        <p className="line-clamp-2">{sc.relevance_rationale}</p>
                       </div>
                     )}
 
+                    <Disclosure title="Eligibility & source evidence">
+                    {sc.relevance_rationale && <p className="text-sm mb-3">{sc.relevance_rationale}</p>}
                     {/* Evidence & Citation */}
                     {sc.evidence_snippet && (
-                      <div className="text-[11px] text-[#64748B] italic bg-[#F1F5F9]/50 rounded-lg p-2.5 border border-[#E2E8F0]/60 line-clamp-2">
+                      <div className="text-[11px] text-[var(--ui-secondary)] italic bg-[var(--ui-inset)]/50 rounded-lg p-2.5 border border-[var(--ui-border)]/60 line-clamp-2">
                         “{sc.evidence_snippet}”
                       </div>
                     )}
+                    </Disclosure>
                   </div>
 
                   {/* Footer Info & Actions */}
-                  <div className="pt-4 border-t border-[#E2E8F0] space-y-2.5">
-                    <div className="flex items-center justify-between text-[10px] text-[#64748B]">
-                      <span>Verified: {sc.last_verified_at || "Recent"}</span>
-                      <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                        {sc.version || `v${sc.version_number || 1}.0`}
+                  <div className="pt-4 border-t border-[var(--ui-border)] space-y-2.5">
+                    <div className="flex items-center justify-between text-[10px] text-[var(--ui-secondary)]">
+                      <span>{sc.result_origin === "LLM_FALLBACK_RESULT" ? "Support area to explore" : `Source checked: ${sc.last_verified_at || "Date not recorded"}`}</span>
+                      <span className="font-semibold text-[var(--ui-info)] bg-[var(--ui-info-soft)] px-2 py-0.5 rounded border border-[var(--ui-sage-soft)]">
+                        {sc.result_origin === "LLM_FALLBACK_RESULT" ? "Suggested" : sc.version || (sc.version_number ? `v${sc.version_number}` : "")}
                       </span>
                     </div>
 
@@ -829,28 +793,28 @@ function SchemesContent() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleOpenVersionHistory(sc.scheme_code || sc.id)}
-                          className="text-[11px] font-semibold text-[#475569] hover:text-[#0F172A] inline-flex items-center gap-1 transition-colors"
+                          className="text-[11px] font-semibold text-[var(--ui-secondary)] hover:text-[var(--ui-text)] inline-flex items-center gap-1 transition-colors"
                           title="View immutable version audit trail and SHA-256 fingerprint"
                         >
                           <span>📜</span>
                           <span>History</span>
                         </button>
-                        <button
+                        {canManageSources && <button
                           onClick={() => handleOpenEditScheme(sc)}
-                          className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1 transition-colors"
-                          title="Simulate official gazette policy update and trigger version bump"
+                          className="text-[11px] font-semibold text-[var(--ui-sage)] hover:text-[var(--ui-sage)] inline-flex items-center gap-1 transition-colors"
+                          title="Review and publish a scheme record revision"
                         >
                           <span>✏️</span>
-                          <span>Simulate Update</span>
-                        </button>
+                          <span>Edit record</span>
+                        </button>}
                       </div>
 
-                      {Boolean(sc.action_url || resolveAuthorityPortalUrl(sc.authority, sc.title || sc.name)) && (
+                      {Boolean(sc.action_url) && (
                         <a
-                          href={resolveAuthorityPortalUrl(sc.authority, sc.title || sc.name, sc.action_url)}
+                          href={sc.action_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-[var(--ui-info)] hover:text-[var(--ui-info)] transition-colors"
                         >
                           <span>Official Portal</span>
                           <span className="text-sm">↗</span>
@@ -866,46 +830,46 @@ function SchemesContent() {
 
         {/* Dynamic Scheme Policy Update / Gazette Simulation Modal */}
         {editSchemeModalOpen && schemeToEdit && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <Overlay open onClose={() => setEditSchemeModalOpen(false)} title="Review scheme update">
             <div className="bg-white rounded-[20px] max-w-xl w-full p-6 sm:p-8 shadow-xl space-y-5">
-              <div className="flex items-start justify-between border-b border-[#E2E8F0] pb-3.5">
+              <div className="flex items-start justify-between border-b border-[var(--ui-border)] pb-3.5">
                 <div>
-                  <div className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full inline-block mb-1 border border-indigo-200">
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-[var(--ui-sage)] bg-[var(--ui-sage-faint)] px-2.5 py-0.5 rounded-full inline-block mb-1 border border-[var(--ui-sage-soft)]">
                     Dynamic Scheme Management &amp; Gazette Revision
                   </div>
-                  <h2 className="text-lg font-bold text-[#0F172A]">
+                  <h2 className="text-lg font-bold text-[var(--ui-text)]">
                     Simulate Official Policy Revision ({schemeToEdit.scheme_code})
                   </h2>
                 </div>
                 <button
                   onClick={() => setEditSchemeModalOpen(false)}
-                  className="w-8 h-8 rounded-full bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0] flex items-center justify-center font-bold"
+                  className="w-8 h-8 rounded-full bg-[var(--ui-inset)] text-[var(--ui-secondary)] hover:bg-[var(--ui-border)] flex items-center justify-center font-bold"
                 >
                   ✕
                 </button>
               </div>
 
               <form onSubmit={handlePublishSchemeUpdate} className="space-y-4">
-                <div className="text-xs text-[#64748B] bg-slate-50 p-3 rounded-[12px] border border-[#E2E8F0]">
+                <div className="text-xs text-[var(--ui-secondary)] bg-[var(--ui-bg)] p-3 rounded-[12px] border border-[var(--ui-border)]">
                   This demonstrates that scheme records are <strong>fully dynamic and database-driven</strong>. Modifying
                   benefit parameters will calculate a new SHA-256 content hash, compute a field-by-field diff against the
                   previous immutable version, and bump the version number.
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-[#0F172A] block mb-1">
+                  <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
                     Scheme Title:
                   </label>
                   <input
                     type="text"
                     defaultValue={schemeToEdit.title}
                     disabled
-                    className="w-full text-xs rounded-lg border border-[#E2E8F0] bg-[#F1F5F9] p-2.5 text-[#64748B]"
+                    className="w-full text-xs rounded-lg border border-[var(--ui-border)] bg-[var(--ui-inset)] p-2.5 text-[var(--ui-secondary)]"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-[#0F172A] block mb-1">
+                  <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
                     Benefit Summary &amp; Subsidy Terms:
                   </label>
                   <textarea
@@ -913,12 +877,12 @@ function SchemesContent() {
                     value={editBenefitSummary}
                     onChange={(e) => setEditBenefitSummary(e.target.value)}
                     required
-                    className="w-full text-xs rounded-lg border border-[#CBD5E1] p-2.5 text-[#0F172A] focus:outline-none focus:border-blue-500"
+                    className="w-full text-xs rounded-lg border border-[var(--ui-border-strong)] p-2.5 text-[var(--ui-text)] focus:outline-none focus:border-[var(--ui-sage-soft)]"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-[#0F172A] block mb-1">
+                  <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
                     Subsidy Rate Percentage (%):
                   </label>
                   <input
@@ -927,12 +891,12 @@ function SchemesContent() {
                     placeholder="e.g. 35.0"
                     value={editRatePercent}
                     onChange={(e) => setEditRatePercent(e.target.value)}
-                    className="w-full text-xs rounded-lg border border-[#CBD5E1] p-2.5 text-[#0F172A] focus:outline-none focus:border-blue-500"
+                    className="w-full text-xs rounded-lg border border-[var(--ui-border-strong)] p-2.5 text-[var(--ui-text)] focus:outline-none focus:border-[var(--ui-sage-soft)]"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-[#0F172A] block mb-1">
+                  <label className="text-xs font-semibold text-[var(--ui-text)] block mb-1">
                     Gazette Revision Note / Justification:
                   </label>
                   <input
@@ -940,58 +904,58 @@ function SchemesContent() {
                     value={editChangeReason}
                     onChange={(e) => setEditChangeReason(e.target.value)}
                     required
-                    className="w-full text-xs rounded-lg border border-[#CBD5E1] p-2.5 text-[#0F172A] focus:outline-none focus:border-blue-500"
+                    className="w-full text-xs rounded-lg border border-[var(--ui-border-strong)] p-2.5 text-[var(--ui-text)] focus:outline-none focus:border-[var(--ui-sage-soft)]"
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E2E8F0]">
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--ui-border)]">
                   <button
                     type="button"
                     onClick={() => setEditSchemeModalOpen(false)}
-                    className="px-4 py-2 rounded-full text-xs font-semibold text-[#475569] hover:bg-[#F1F5F9]"
+                    className="px-4 py-2 rounded-full text-xs font-semibold text-[var(--ui-secondary)] hover:bg-[var(--ui-inset)]"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={updatingScheme}
-                    className="px-5 py-2 rounded-full text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-60"
+                    className="px-5 py-2 rounded-full text-xs font-semibold text-white bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] transition-colors disabled:opacity-60"
                   >
                     {updatingScheme ? "Publishing New Version..." : "Publish Updated Version"}
                   </button>
                 </div>
               </form>
             </div>
-          </div>
+          </Overlay>
         )}
 
         {/* Version Provenance & Diff Modal */}
         {selectedSchemeForHistory && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <Overlay open onClose={() => setSelectedSchemeForHistory(null)} title="Scheme version history">
             <div className="bg-white rounded-[20px] max-w-2xl w-full p-6 sm:p-8 shadow-xl max-h-[85vh] overflow-y-auto space-y-6">
-              <div className="flex items-start justify-between border-b border-[#E2E8F0] pb-4">
+              <div className="flex items-start justify-between border-b border-[var(--ui-border)] pb-4">
                 <div>
-                  <div className="text-[10px] uppercase font-bold tracking-wider text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full inline-block mb-1 border border-blue-200">
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-[var(--ui-info)] bg-[var(--ui-info-soft)] px-2.5 py-0.5 rounded-full inline-block mb-1 border border-[var(--ui-sage-soft)]">
                     Immutable Version Audit Trail
                   </div>
-                  <h2 className="text-lg font-bold text-[#0F172A]">
+                  <h2 className="text-lg font-bold text-[var(--ui-text)]">
                     {selectedSchemeForHistory} — Version History
                   </h2>
                 </div>
                 <button
                   onClick={() => setSelectedSchemeForHistory(null)}
-                  className="w-8 h-8 rounded-full bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0] flex items-center justify-center font-bold"
+                  className="w-8 h-8 rounded-full bg-[var(--ui-inset)] text-[var(--ui-secondary)] hover:bg-[var(--ui-border)] flex items-center justify-center font-bold"
                 >
                   ✕
                 </button>
               </div>
 
               {historyLoading ? (
-                <div className="py-8 text-center text-xs text-[#64748B]">
+                <div className="py-8 text-center text-xs text-[var(--ui-secondary)]">
                   Loading version records and cryptographic hashes...
                 </div>
               ) : !historyData || historyData.versions.length === 0 ? (
-                <div className="py-8 text-center text-xs text-[#64748B]">
+                <div className="py-8 text-center text-xs text-[var(--ui-secondary)]">
                   No version history records found.
                 </div>
               ) : (
@@ -1001,27 +965,27 @@ function SchemesContent() {
                       key={v.version_number}
                       className={`p-4 rounded-[14px] border ${
                         v.is_active
-                          ? "border-emerald-300 bg-emerald-50/20 shadow-2xs"
-                          : "border-[#E2E8F0] bg-[#F8FAFC] opacity-80"
+                          ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/20 shadow-2xs"
+                          : "border-[var(--ui-border)] bg-[var(--ui-bg)] opacity-80"
                       } space-y-3`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-sm text-[#0F172A]">
+                          <span className="font-bold text-sm text-[var(--ui-text)]">
                             Version {v.version_number}.0
                           </span>
                           {v.is_active ? (
-                            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-300">
+                            <span className="bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[var(--ui-sage-soft)]">
                               ACTIVE PUBLISHED
                             </span>
                           ) : (
-                            <span className="bg-gray-100 text-gray-600 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                            <span className="bg-[var(--ui-inset)] text-[var(--ui-secondary)] text-[10px] font-semibold px-2 py-0.5 rounded-full">
                               ARCHIVED
                             </span>
                           )}
                         </div>
 
-                        {!v.is_active && (
+                        {canManageSources && !v.is_active && (
                           <button
                             onClick={() => handleRollback(historyData.scheme_code, v.version_number)}
                             className="text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-3 py-1 rounded-full transition-colors"
@@ -1031,19 +995,19 @@ function SchemesContent() {
                         )}
                       </div>
 
-                      <div className="text-xs text-[#0F172A] font-semibold">
+                      <div className="text-xs text-[var(--ui-text)] font-semibold">
                         {v.title}
                       </div>
 
-                      <p className="text-xs text-[#475569] leading-relaxed">
+                      <p className="text-xs text-[var(--ui-secondary)] leading-relaxed">
                         {v.benefit_summary}
                       </p>
 
-                      <div className="bg-white rounded-lg p-2.5 border border-[#E2E8F0] text-[11px] font-mono text-[#475569] space-y-1">
-                        <div className="text-[10px] uppercase font-sans font-bold text-[#64748B]">
+                      <div className="bg-white rounded-lg p-2.5 border border-[var(--ui-border)] text-[11px] font-mono text-[var(--ui-secondary)] space-y-1">
+                        <div className="text-[10px] uppercase font-sans font-bold text-[var(--ui-secondary)]">
                           SHA-256 Content Fingerprint:
                         </div>
-                        <div className="truncate text-blue-700 font-semibold">{v.content_hash}</div>
+                        <div className="truncate text-[var(--ui-info)] font-semibold">{v.content_hash}</div>
                       </div>
 
                       {v.diff_summary && v.diff_summary.has_changes && (
@@ -1060,7 +1024,7 @@ function SchemesContent() {
                         </div>
                       )}
 
-                      <div className="text-[10px] text-[#64748B] flex items-center justify-between pt-1">
+                      <div className="text-[10px] text-[var(--ui-secondary)] flex items-center justify-between pt-1">
                         <span>Created: {new Date(v.created_at).toLocaleDateString()}</span>
                         <span>Source: {v.source_url}</span>
                       </div>
@@ -1069,75 +1033,75 @@ function SchemesContent() {
                 </div>
               )}
             </div>
-          </div>
+          </Overlay>
         )}
 
         {/* Pipeline & Ingestion Status Modal */}
         {pipelineModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <Overlay open onClose={() => setPipelineModalOpen(false)} title="Source registry">
             <div className="bg-white rounded-[20px] max-w-3xl w-full p-6 sm:p-8 shadow-xl max-h-[85vh] overflow-y-auto space-y-6">
-              <div className="flex items-start justify-between border-b border-[#E2E8F0] pb-4">
+              <div className="flex items-start justify-between border-b border-[var(--ui-border)] pb-4">
                 <div>
-                  <div className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full inline-block mb-1 border border-indigo-200">
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-[var(--ui-sage)] bg-[var(--ui-sage-faint)] px-2.5 py-0.5 rounded-full inline-block mb-1 border border-[var(--ui-sage-soft)]">
                     Live Portal Crawl &amp; Verification Audit
                   </div>
-                  <h2 className="text-xl font-bold text-[#0F172A]">
-                    Official Sources &amp; Ingestion Registry (36 Schemes)
+                  <h2 className="text-xl font-bold text-[var(--ui-text)]">
+                    Official sources &amp; ingestion registry
                   </h2>
                 </div>
                 <button
                   onClick={() => setPipelineModalOpen(false)}
-                  className="w-8 h-8 rounded-full bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0] flex items-center justify-center font-bold"
+                  className="w-8 h-8 rounded-full bg-[var(--ui-inset)] text-[var(--ui-secondary)] hover:bg-[var(--ui-border)] flex items-center justify-center font-bold"
                 >
                   ✕
                 </button>
               </div>
 
               {pipelineLoading ? (
-                <div className="py-8 text-center text-xs text-[#64748B]">
+                <div className="py-8 text-center text-xs text-[var(--ui-secondary)]">
                   Loading pipeline status...
                 </div>
               ) : !pipelineStatus ? (
-                <div className="py-8 text-center text-xs text-[#64748B]">
+                <div className="py-8 text-center text-xs text-[var(--ui-secondary)]">
                   No pipeline status available.
                 </div>
               ) : (
                 <div className="space-y-6">
                   {/* Summary Stats */}
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[12px] p-3 text-center">
-                      <div className="text-[10px] uppercase text-[#64748B] font-bold">Total Ingested Schemes</div>
-                      <div className="text-2xl font-bold text-[#0F172A] mt-1">{pipelineStatus.total_schemes}</div>
+                    <div className="bg-[var(--ui-bg)] border border-[var(--ui-border)] rounded-[12px] p-3 text-center">
+                      <div className="text-[10px] uppercase text-[var(--ui-secondary)] font-bold">Total Ingested Schemes</div>
+                      <div className="text-2xl font-bold text-[var(--ui-text)] mt-1">{pipelineStatus.total_schemes}</div>
                     </div>
                     <div className="bg-amber-50/40 border border-amber-200 rounded-[12px] p-3 text-center">
                       <div className="text-[10px] uppercase text-amber-800 font-bold">Maharashtra Schemes</div>
                       <div className="text-2xl font-bold text-amber-900 mt-1">{pipelineStatus.maharashtra_schemes_count}</div>
                     </div>
-                    <div className="bg-blue-50/40 border border-blue-200 rounded-[12px] p-3 text-center">
-                      <div className="text-[10px] uppercase text-blue-800 font-bold">Central Schemes</div>
-                      <div className="text-2xl font-bold text-blue-900 mt-1">{pipelineStatus.central_schemes_count}</div>
+                    <div className="bg-[var(--ui-info-soft)]/40 border border-[var(--ui-sage-soft)] rounded-[12px] p-3 text-center">
+                      <div className="text-[10px] uppercase text-[var(--ui-info)] font-bold">Central Schemes</div>
+                      <div className="text-2xl font-bold text-[var(--ui-info)] mt-1">{pipelineStatus.central_schemes_count}</div>
                     </div>
                   </div>
 
                   {/* Registered Sources */}
                   <div className="space-y-3">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#475569]">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--ui-secondary)]">
                       Authoritative Government Portals
                     </h3>
                     <div className="space-y-2">
                       {pipelineStatus.registered_sources.map((src) => (
                         <div
                           key={src.key}
-                          className="p-3 rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between text-xs"
+                          className="p-3 rounded-[12px] border border-[var(--ui-border)] bg-[var(--ui-bg)] flex items-center justify-between text-xs"
                         >
                           <div>
-                            <div className="font-bold text-[#0F172A] flex items-center gap-2">
+                            <div className="font-bold text-[var(--ui-text)] flex items-center gap-2">
                               <span>{src.name}</span>
-                              <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-mono font-medium">
+                              <span className="text-[10px] bg-[var(--ui-inset)] text-[var(--ui-secondary)] px-2 py-0.5 rounded font-mono font-medium">
                                 {src.jurisdiction}
                               </span>
                             </div>
-                            <div className="text-[11px] text-[#64748B] mt-0.5 font-mono">
+                            <div className="text-[11px] text-[var(--ui-secondary)] mt-0.5 font-mono">
                               Domain: {src.domain}
                             </div>
                           </div>
@@ -1145,7 +1109,7 @@ function SchemesContent() {
                             href={src.primary_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:underline font-semibold"
+                            className="text-xs text-[var(--ui-info)] hover:underline font-semibold"
                           >
                             Visit Source ↗
                           </a>
@@ -1156,31 +1120,31 @@ function SchemesContent() {
 
                   {/* Recent Snapshots & Hashes */}
                   <div className="space-y-3">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#475569]">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--ui-secondary)]">
                       Recent Cryptographic Snapshots
                     </h3>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {pipelineStatus.recent_snapshots.map((snap) => (
                         <div
                           key={snap.id}
-                          className="p-3 rounded-[12px] border border-[#E2E8F0] bg-white text-xs space-y-1.5"
+                          className="p-3 rounded-[12px] border border-[var(--ui-border)] bg-white text-xs space-y-1.5"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-[#0F172A]">{snap.source_key}</span>
+                            <span className="font-bold text-[var(--ui-text)]">{snap.source_key}</span>
                             <span
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                                 snap.status === "SUCCESS"
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : "bg-blue-100 text-blue-800"
+                                  ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]"
+                                  : "bg-[var(--ui-info-soft)] text-[var(--ui-info)]"
                               }`}
                             >
                               {snap.status} ({snap.scheme_count} schemes)
                             </span>
                           </div>
-                          <div className="text-[10px] font-mono text-[#64748B] truncate">
+                          <div className="text-[10px] font-mono text-[var(--ui-secondary)] truncate">
                             SHA-256: {snap.content_hash}
                           </div>
-                          <div className="text-[10px] text-[#94A3B8]">
+                          <div className="text-[10px] text-[var(--ui-muted)]">
                             Fetched: {new Date(snap.fetched_at).toLocaleString()}
                           </div>
                         </div>
@@ -1190,7 +1154,7 @@ function SchemesContent() {
                 </div>
               )}
             </div>
-          </div>
+          </Overlay>
         )}
       </div>
     </AppShell>
@@ -1201,7 +1165,7 @@ export default function SchemesPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#EDEFF2] flex items-center justify-center text-xs text-[#64748B]">
+        <div className="min-h-screen bg-[var(--ui-bg)] flex items-center justify-center text-xs text-[var(--ui-secondary)]">
           Loading government schemes pipeline...
         </div>
       }

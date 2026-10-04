@@ -20,7 +20,7 @@ from typing import Any
 import pytest
 
 from apps.businesses.models import Business, BusinessProfileVersion
-from apps.ingestion import firecrawl
+from apps.ingestion import search_provider
 from domain.intelligence.orchestration import (
     AssessmentOrchestrator,
     AssessmentStage,
@@ -219,7 +219,7 @@ class TestLiveStep05Integration:
         print(f"   Total Estimated LLM Cost: ${total_estimated_cost:.6f} (Budget limit: $0.50)")
         print("-" * 75)
         print("2. ACTUAL FIRECRAWL REQUESTS:")
-        print(f"   Firecrawl Configured:     {firecrawl.is_configured()}")
+        print(f"   Firecrawl Configured:     {search_provider.is_configured()}")
         print(f"   Search Queries Generated: {len(disc_queries)}")
         for q in disc_queries[:4]:
             print(f"     - '{q}'")

@@ -1,4 +1,5 @@
 "use client";
+import Overlay from "@/components/product/Overlay";
 
 import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
@@ -168,12 +169,12 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
 
         {/* Action Success Alert */}
         {actionSuccessMsg && (
-          <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 flex items-center justify-between text-xs font-medium">
+          <div className="p-4 rounded-xl border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] dark:bg-[var(--ui-sage)]/40 text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)] flex items-center justify-between text-xs font-medium">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[var(--ui-sage)] shrink-0" />
               <span>{actionSuccessMsg}</span>
             </div>
-            <button onClick={() => setActionSuccessMsg(null)} className="text-emerald-700 hover:text-emerald-900">
+            <button onClick={() => setActionSuccessMsg(null)} className="text-[var(--ui-sage)] hover:text-[var(--ui-sage)]">
               Dismiss
             </button>
           </div>
@@ -184,14 +185,14 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-900 dark:bg-purple-950/70 dark:text-purple-300">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)]/70 dark:text-[var(--ui-sage)]">
                   <Building2 className="w-3.5 h-3.5" />
                   Enterprise Entity
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-muted text-muted-foreground">
                   Profile v{p.version_number || 1}
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]">
                   Active
                 </span>
               </div>
@@ -215,7 +216,7 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                     className="p-1 text-muted-foreground hover:text-foreground transition-colors rounded"
                   >
                     {copiedId ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <Check className="w-3.5 h-3.5 text-[var(--ui-sage)]" />
                     ) : (
                       <Copy className="w-3.5 h-3.5" />
                     )}
@@ -223,8 +224,8 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                 </div>
 
                 {/* Owner Account Email Badge */}
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 text-purple-900 dark:text-purple-300 font-medium">
-                  <User className="w-3.5 h-3.5 text-purple-600" />
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--ui-sage-faint)] dark:bg-[var(--ui-sage)]/40 border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:text-[var(--ui-sage)] font-medium">
+                  <User className="w-3.5 h-3.5 text-[var(--ui-sage)]" />
                   <span>Account: <strong>{b.owner_email || "System"}</strong></span>
                   {b.owner_name ? <span className="opacity-80">({b.owner_name})</span> : null}
                 </div>
@@ -237,39 +238,40 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                 <span className="text-muted-foreground block text-[10px] font-bold uppercase">MANDATES</span>
                 <span className="text-xl font-extrabold text-foreground">{summary.mandated_compliances || cases.length}</span>
               </div>
-              <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 text-center">
-                <span className="text-purple-700 dark:text-purple-300 block text-[10px] font-bold uppercase">IN SCRUTINY</span>
-                <span className="text-xl font-extrabold text-purple-900 dark:text-purple-100">{summary.pending_reviews || 0}</span>
+              <div className="p-3 rounded-xl bg-[var(--ui-sage-faint)] dark:bg-[var(--ui-sage)]/40 border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)] text-center">
+                <span className="text-[var(--ui-sage)] dark:text-[var(--ui-sage)] block text-[10px] font-bold uppercase">IN SCRUTINY</span>
+                <span className="text-xl font-extrabold text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)]">{summary.pending_reviews || 0}</span>
               </div>
               <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-center">
                 <span className="text-amber-700 dark:text-amber-300 block text-[10px] font-bold uppercase">QUERIES</span>
                 <span className="text-xl font-extrabold text-amber-900 dark:text-amber-100">{summary.action_required || 0}</span>
               </div>
-              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-center">
-                <span className="text-blue-700 dark:text-blue-300 block text-[10px] font-bold uppercase">EVIDENCE</span>
-                <span className="text-xl font-extrabold text-blue-900 dark:text-blue-100">{summary.total_uploaded_documents || docs.length}</span>
+              <div className="p-3 rounded-xl bg-[var(--ui-info-soft)] dark:bg-[var(--ui-text)]/40 border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)] text-center">
+                <span className="text-[var(--ui-info)] dark:text-[var(--ui-info)] block text-[10px] font-bold uppercase">EVIDENCE</span>
+                <span className="text-xl font-extrabold text-[var(--ui-info)] dark:text-[var(--ui-info-soft)]">{summary.total_uploaded_documents || docs.length}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-border gap-6">
+        <nav aria-label="Business record sections" className="grid grid-cols-2 sm:flex border-b border-border gap-3 sm:gap-6">
           {[
-            { id: "compliances", label: `Business-Wise Compliances (${cases.length})`, icon: ShieldCheck },
-            { id: "documents", label: `All Uploaded Evidence (${docs.length})`, icon: FileText },
-            { id: "profile", label: `Profile Declarations (v${p.version_number || 1})`, icon: FileCheck },
-            { id: "history", label: `Version Snapshots (${data.profile_history?.length || 1})`, icon: History },
+            { id: "compliances", label: `Requirements (${cases.length})`, icon: ShieldCheck },
+            { id: "documents", label: `Evidence (${docs.length})`, icon: FileText },
+            { id: "profile", label: `Profile (v${p.version_number || 1})`, icon: FileCheck },
+            { id: "history", label: `History (${data.profile_history?.length || 0})`, icon: History },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
+                aria-pressed={isActive}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`pb-3 text-xs font-bold flex items-center gap-2 border-b-2 transition-colors ${
                   isActive
-                    ? "border-purple-600 text-purple-600 dark:text-purple-400"
+                    ? "border-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -278,7 +280,7 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
               </button>
             );
           })}
-        </div>
+        </nav>
 
         {/* TAB 1: Business-Wise Compliance Mandates ("Needed / Applicable vs Optional") */}
         {activeTab === "compliances" && (
@@ -312,18 +314,18 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                   return (
                     <div
                       key={c.id}
-                      className="rounded-2xl border border-border bg-card p-6 shadow-sm hover:border-purple-300 dark:hover:border-purple-800 transition-all space-y-4"
+                      className="rounded-2xl border border-border bg-card p-6 shadow-sm hover:border-[var(--ui-sage-soft)] dark:hover:border-[var(--ui-sage-soft)] transition-all space-y-4"
                     >
                       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-mono text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/70 px-2 py-0.5 rounded">
+                            <span className="font-mono text-xs font-bold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] bg-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/70 px-2 py-0.5 rounded">
                               {c.case_number}
                             </span>
                             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
                               {c.authority}
                             </span>
-                            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-950/70 px-2 py-0.5 rounded flex items-center gap-1">
+                            <span className="text-[10px] font-bold text-[var(--ui-sage)] bg-[var(--ui-sage-soft)] dark:text-[var(--ui-sage)] dark:bg-[var(--ui-sage)]/70 px-2 py-0.5 rounded flex items-center gap-1">
                               <CheckCircle2 className="w-3 h-3" />
                               MANDATED STATUTORY REQUIREMENT
                             </span>
@@ -334,11 +336,11 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                           </h4>
 
                           {/* Mandate Basis: Why It Applies */}
-                          <div className="p-3.5 rounded-xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/60 text-xs">
-                            <span className="font-bold text-purple-900 dark:text-purple-300 block mb-0.5">
+                          <div className="p-3.5 rounded-xl bg-[var(--ui-sage-faint)]/50 dark:bg-[var(--ui-sage)]/20 border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)]/60 text-xs">
+                            <span className="font-bold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] block mb-0.5">
                               Statutory Trigger & Applicability Basis:
                             </span>
-                            <p className="text-purple-950 dark:text-purple-200 leading-relaxed font-medium">
+                            <p className="text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)] leading-relaxed font-medium">
                               {c.mandate_basis}
                             </p>
                           </div>
@@ -349,11 +351,11 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-bold ${
                               isHumanReview
-                                ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300"
+                                ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                                 : isActionReq
                                 ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                                 : isCompleted
-                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                                 : "bg-muted text-muted-foreground"
                             }`}
                           >
@@ -367,7 +369,7 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                                 setActionType("APPROVE");
                                 setActionRemarks("");
                               }}
-                              className="px-3 py-1.5 rounded-lg border border-purple-300 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 text-xs font-semibold transition-colors"
+                              className="px-3 py-1.5 rounded-lg border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:text-[var(--ui-sage)] hover:bg-[var(--ui-sage-faint)] text-xs font-semibold transition-colors"
                             >
                               Fast Scrutiny
                             </button>
@@ -397,7 +399,7 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                         </div>
                         <div>
                           <span className="text-[10px] text-muted-foreground block">VERIFIED EVIDENCE</span>
-                          <span className="font-semibold text-emerald-600">
+                          <span className="font-semibold text-[var(--ui-sage)]">
                             {c.documents_approved_count} Approved
                           </span>
                         </div>
@@ -469,10 +471,10 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                           <span
                             className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                               isApproved
-                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                                 : isQuery
                                 ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                                : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                                : "bg-[var(--ui-info-soft)] text-[var(--ui-info)] dark:bg-[var(--ui-text)] dark:text-[var(--ui-info)]"
                             }`}
                           >
                             {d.status_code.replace(/_/g, " ")}
@@ -514,12 +516,12 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                         <div className="p-3 bg-muted/20 rounded-xl border border-border/60 text-xs space-y-1">
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-foreground flex items-center gap-1.5">
-                              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                              <Sparkles className="w-3.5 h-3.5 text-[var(--ui-sage)]" />
                               AI Pre-validation Check
                             </span>
                             <button
                               onClick={() => toggleOcr(d.id)}
-                              className="text-[11px] text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-1 font-semibold"
+                              className="text-[11px] text-[var(--ui-sage)] dark:text-[var(--ui-sage)] hover:underline flex items-center gap-1 font-semibold"
                             >
                               {ocrOpen ? "Hide Extracted Text" : "View Extracted OCR Findings"}
                               {ocrOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -564,7 +566,7 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
               <div className="flex items-center justify-between border-b border-border pb-4">
                 <div>
-                  <span className="font-mono text-xs font-bold text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/60 px-2.5 py-1 rounded-md">
+                  <span className="font-mono text-xs font-bold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] bg-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/60 px-2.5 py-1 rounded-md">
                     Evaluating Profile v{p.version_number || 1}
                   </span>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -620,7 +622,7 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                 <div key={hist.id} className="p-4 flex items-center justify-between gap-4 text-xs">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/70 px-2 py-0.5 rounded">
+                      <span className="font-mono font-bold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] bg-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/70 px-2 py-0.5 rounded">
                         Snapshot v{hist.version}
                       </span>
                       <span className="text-muted-foreground">
@@ -642,11 +644,11 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
 
         {/* Fast Scrutiny Determination Modal */}
         {actionCaseId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <Overlay open onClose={() => setActionCaseId(null)} title="Review decision">
             <div className="bg-card border border-border rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
-                  <ShieldAlert className="w-5 h-5 text-purple-600" />
+                  <ShieldAlert className="w-5 h-5 text-[var(--ui-sage)]" />
                   Statutory Determination
                 </h3>
                 <button
@@ -668,7 +670,7 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                       onClick={() => setActionType("APPROVE")}
                       className={`py-2 px-3 rounded-lg text-xs font-bold border transition-colors ${
                         actionType === "APPROVE"
-                          ? "bg-emerald-600 text-white border-emerald-600"
+                          ? "bg-[var(--ui-sage)] text-white border-[var(--ui-sage-soft)]"
                           : "border-border text-muted-foreground hover:bg-muted"
                       }`}
                     >
@@ -708,7 +710,7 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                     value={actionRemarks}
                     onChange={(e) => setActionRemarks(e.target.value)}
                     placeholder="Enter compliance scrutiny determination notes..."
-                    className="w-full p-2.5 bg-background border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                    className="w-full p-2.5 bg-background border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[var(--ui-sage-soft)]/20"
                     required={actionType !== "APPROVE"}
                   />
                 </div>
@@ -724,14 +726,14 @@ export default function AdminBusinessDetailPage({ params }: AdminBusinessPagePro
                   <button
                     type="submit"
                     disabled={submittingAction}
-                    className="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg shadow-sm disabled:opacity-50"
+                    className="px-4 py-1.5 bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] text-white text-xs font-semibold rounded-lg shadow-sm disabled:opacity-50"
                   >
                     {submittingAction ? "Submitting..." : "Confirm Determination"}
                   </button>
                 </div>
               </form>
             </div>
-          </div>
+          </Overlay>
         )}
       </div>
     </AdminShell>

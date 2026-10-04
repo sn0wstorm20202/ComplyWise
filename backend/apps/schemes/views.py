@@ -7,7 +7,9 @@ from __future__ import annotations
 
 from decimal import Decimal
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from common.permissions import IsComplianceReviewer
+from domain.intelligence.scheme_discovery import discover_business_schemes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -25,7 +27,7 @@ class BusinessSchemesListView(APIView):
 
     Matches verified, active schemes against the specific business's derived context.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, business_id=None) -> Response:  # noqa: ANN001
         user = request.user if (request.user and request.user.is_authenticated) else None
@@ -34,7 +36,7 @@ class BusinessSchemesListView(APIView):
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
         assessment_id = request.query_params.get("assessment_id")
-        payload = match_business_schemes(business, assessment_id=assessment_id)
+        payload = discover_business_schemes(business, assessment_id=assessment_id)
         return Response(envelope(payload), status=status.HTTP_200_OK)
 
 
@@ -53,10 +55,6 @@ class SchemeContextEvaluateView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request: Request) -> Response:
-        # Ensure database is populated
-        if Scheme.objects.count() == 0:
-            SchemePipelineService().run_pipeline(force=True)
-
         raw_state = request.data.get("state", "MH").strip().upper()
         state_code = "MH" if raw_state in ["MH", "MAHARASHTRA"] else ("GJ" if raw_state in ["GJ", "GUJARAT"] else raw_state)
         state_name = "Maharashtra" if state_code == "MH" else ("Gujarat" if state_code == "GJ" else state_code)
@@ -298,7 +296,7 @@ class SchemePipelineRunView(APIView):
     Triggers ingestion across official portals, computes content hashes,
     diffs against existing records, and publishes new immutable versions when updated.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request) -> Response:
         source_keys = request.data.get("source_keys")
@@ -313,7 +311,7 @@ class SchemePipelineStatusView(APIView):
 
     Audit overview: total schemes, state breakdown, recent snapshots, and verification dates.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsComplianceReviewer]
 
     def get(self, request: Request) -> Response:
         service = SchemePipelineService()
@@ -326,7 +324,7 @@ class SchemeRollbackView(APIView):
 
     Rolls back a scheme to an earlier immutable version.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request, scheme_code: str) -> Response:
         target_version = request.data.get("target_version")
@@ -353,7 +351,7 @@ class SchemeUpdatePublishView(APIView):
     Dynamically publishes an updated version of a scheme, demonstrating
     cryptographic content hashing, field-by-field diff generation, and version incrementation.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request, scheme_code: str) -> Response:
         scheme = Scheme.objects.filter(scheme_code=scheme_code).first()

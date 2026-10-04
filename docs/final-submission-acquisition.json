@@ -1,0 +1,177 @@
+{
+  "configuration": {
+    "llm_primary": "gemini",
+    "gemini_slots": 3,
+    "openai_configured": true,
+    "search_provider": "serpapi",
+    "search_configured": true,
+    "rag_configured": true,
+    "firecrawl_active": false
+  },
+  "packages": {
+    "crawlee": "1.7.2",
+    "playwright": "1.63.0",
+    "impit": "0.14.1",
+    "beautifulsoup4": "4.15.0",
+    "pypdf": "6.19.0"
+  },
+  "probes": [
+    {
+      "name": "search",
+      "provider": "serpapi",
+      "status": "SUCCESS",
+      "result_count": 3,
+      "duration_seconds": 0.549,
+      "candidate_urls": [
+        "https://alephindia.in/blog/bis-certification-schemes.php",
+        "https://www.bis.gov.in/apply-for-a-license/?lang=en",
+        "https://www.crsbis.in/BIS/products-bis.do"
+      ]
+    },
+    {
+      "name": "static_html",
+      "url": "https://www.bis.gov.in/?lang=en",
+      "final_url": "https://www.bis.gov.in/?lang=en",
+      "mode": "CRAWLEE_HTTP",
+      "http_status": 200,
+      "text_chars": 12576,
+      "status": "SUCCESS",
+      "errors": [],
+      "metadata": {
+        "redirect_chain": [
+          "https://www.bis.gov.in/?lang=en"
+        ],
+        "source_last_modified": null,
+        "extractor_version": "cw-crawlee-1",
+        "engine_version": "1.7.2",
+        "raw_content_hash": "c8fc0c122152b1006512253aa0d70632587eb66f092ffb7da2a30348b8a180cf",
+        "content_length_bytes": 559224,
+        "mime_type": "text/html",
+        "normalized_text_hash": "05e98803c3c0c4e1c5c3b415a8fd067723f1062b77e0d1bdcd20eeeabe4920d1",
+        "latency_ms": 3227.69
+      }
+    },
+    {
+      "name": "official_pdf",
+      "url": "https://www.msmedikarnal.gov.in/pdf/msme_defination.pdf",
+      "final_url": "https://www.msmedikarnal.gov.in/pdf/msme_defination.pdf",
+      "mode": "FAILED_ACQUISITION",
+      "http_status": 0,
+      "text_chars": 0,
+      "status": "FAILED",
+      "errors": [
+        "Crawlee produced no usable capture; blocked or failed source."
+      ],
+      "metadata": {
+        "latency_ms": 21483.05
+      }
+    },
+    {
+      "name": "failed_source",
+      "url": "https://www.bis.gov.in/complywise-missing-probe-2026",
+      "final_url": "https://www.bis.gov.in/?lang=hi",
+      "mode": "CRAWLEE_HTTP",
+      "http_status": 200,
+      "text_chars": 13905,
+      "status": "SUCCESS",
+      "errors": [],
+      "metadata": {
+        "redirect_chain": [
+          "https://www.bis.gov.in/complywise-missing-probe-2026",
+          "https://www.bis.gov.in/complywise-missing-probe-2026?lang=hi",
+          "https://www.bis.gov.in/",
+          "https://www.bis.gov.in/?lang=hi"
+        ],
+        "source_last_modified": null,
+        "extractor_version": "cw-crawlee-1",
+        "engine_version": "1.7.2",
+        "raw_content_hash": "c2e15ddf7c89a8291e8e54874c636ae6a2dbcf2021421f19ed3ea43c0c69d178",
+        "content_length_bytes": 583841,
+        "mime_type": "text/html",
+        "normalized_text_hash": "c1a527b1c3d4f9aad403dee8a225c6acaa9f2b17f234431cecfcafcf6b0ab321",
+        "latency_ms": 3524.89
+      }
+    },
+    {
+      "name": "unofficial_destination",
+      "url": "https://example.com",
+      "final_url": "https://example.com",
+      "mode": "FAILED_ACQUISITION",
+      "http_status": 0,
+      "text_chars": 0,
+      "status": "FAILED",
+      "errors": [
+        "Rejected unofficial source or redirect."
+      ],
+      "metadata": {
+        "latency_ms": 0.08
+      }
+    },
+    {
+      "name": "js_official_page",
+      "url": "https://www.crsbis.in/BIS/products-bis.do",
+      "final_url": "https://www.crsbis.in/BIS/products-bis.do",
+      "mode": "CRAWLEE_BROWSER",
+      "http_status": 200,
+      "text_chars": 7109,
+      "status": "SUCCESS",
+      "errors": [],
+      "metadata": {
+        "redirect_chain": [
+          "https://www.crsbis.in/BIS/products-bis.do"
+        ],
+        "source_last_modified": null,
+        "extractor_version": "cw-crawlee-1",
+        "engine_version": "1.7.2",
+        "raw_content_hash": "59112124f09a6c413e4e01e166ee9f17d0081b191a79669679caf66a27af1917",
+        "content_length_bytes": 23330,
+        "mime_type": "text/html",
+        "normalized_text_hash": "1be6ea6b3e436d24f10f25ef19bd5accfdacc3ae7d246968abe9052487e35790",
+        "latency_ms": 6578.84
+      }
+    },
+    {
+      "name": "gemini_slot",
+      "slot": 1,
+      "model": "gemini-3.5-flash-lite",
+      "status": "SUCCESS",
+      "duration_seconds": 1.544,
+      "usage": {
+        "promptTokenCount": 8,
+        "candidatesTokenCount": 5,
+        "totalTokenCount": 13
+      }
+    },
+    {
+      "name": "gemini_slot",
+      "slot": 2,
+      "model": "gemini-3.5-flash-lite",
+      "status": "SUCCESS",
+      "duration_seconds": 0.966,
+      "usage": {
+        "promptTokenCount": 8,
+        "candidatesTokenCount": 5,
+        "totalTokenCount": 13
+      }
+    },
+    {
+      "name": "gemini_slot",
+      "slot": 3,
+      "model": "gemini-3.5-flash-lite",
+      "status": "SUCCESS",
+      "duration_seconds": 0.978,
+      "usage": {
+        "promptTokenCount": 8,
+        "candidatesTokenCount": 5,
+        "totalTokenCount": 13
+      }
+    },
+    {
+      "name": "deployed_rag",
+      "status": "SUCCESS",
+      "accepted_passages": 2,
+      "rejected_count": 2,
+      "duration_seconds": 3.073
+    }
+  ]
+}

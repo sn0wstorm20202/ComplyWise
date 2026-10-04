@@ -88,9 +88,6 @@ class SchemePipelineService:
                 continue
 
             candidates = self.parser.parse(fetch_res.content, config)
-            if not candidates and config.key in SNAPSHOT_FALLBACK_MAP:
-                fallback_content = SNAPSHOT_FALLBACK_MAP[config.key]
-                candidates = self.parser.parse(fallback_content, config)
 
             new_count = 0
             updated_count = 0

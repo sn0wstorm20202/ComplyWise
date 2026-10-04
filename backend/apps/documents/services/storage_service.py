@@ -34,6 +34,10 @@ logger = logging.getLogger(__name__)
 DEFAULT_SIGNED_URL_EXPIRY_SECONDS = 300  # 5 minutes
 
 
+class DocumentStorageError(ValueError):
+    """No configured storage could durably accept an upload."""
+
+
 class DocumentStorageService:
     """Manages secure persistence, short-lived signed URL generation, and streaming access."""
 
@@ -87,6 +91,7 @@ class DocumentStorageService:
         checksum = hashlib.sha256(data).hexdigest() if data else ""
         file_size = len(data)
 
+        remote_saved = False
         # 1. Try Supabase Private Bucket upload if configured
         sb = cls.get_supabase_config()
         if sb["url"] and sb["key"]:
@@ -99,12 +104,13 @@ class DocumentStorageService:
                         "Authorization": f"Bearer {sb['key']}",
                         "apikey": sb["key"],
                         "Content-Type": "application/octet-stream",
-                        "x-upsert": "true",
+                        "x-upsert": "false",
                     },
                     method="POST",
                 )
                 with urllib.request.urlopen(req, timeout=15) as resp:
                     if resp.status in (200, 201):
+                        remote_saved = True
                         logger.info("Uploaded to Supabase private storage: %s", storage_path)
             except Exception as exc:
                 logger.warning("Supabase storage upload failed, falling back to default_storage: %s", exc)
@@ -112,10 +118,11 @@ class DocumentStorageService:
         # 2. Always persist to Django default_storage for reliable streaming/caching fallback
         try:
             if default_storage.exists(storage_path):
-                default_storage.delete(storage_path)
+                raise ValueError("An immutable upload already occupies this storage path.")
             default_storage.save(storage_path, ContentFile(data))
         except Exception as exc:
-            logger.warning("default_storage save error for %s: %s", storage_path, exc)
+            if not remote_saved:
+                raise DocumentStorageError("No document storage accepted the upload.") from exc
 
         return file_size, checksum
 

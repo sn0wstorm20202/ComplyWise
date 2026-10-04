@@ -145,11 +145,11 @@ export function TrustSection() {
                 Deterministic Rule Logic
               </span>
               <div className="font-mono text-xs text-[#171714] bg-[#EFEEE7] p-3 rounded-lg space-y-1">
-                <p className="text-[#557D6B] font-semibold">// RULE_IS_3055_QCO</p>
+                <p className="text-[#557D6B] font-semibold">{"// RULE_IS_3055_QCO"}</p>
                 <p>IF facility_type == &apos;MANUFACTURING&apos;</p>
                 <p>AND product_category == &apos;TEMPERATURE_APPARATUS&apos;</p>
                 <p>THEN mandate = &apos;BIS_SCHEME_I_MANDATORY&apos;</p>
-                <p className="text-[#6F6D66]">// STATUS: DETERMINISTICALLY VERIFIED</p>
+                <p className="text-[#6F6D66]">{"// STATUS: DETERMINISTICALLY VERIFIED"}</p>
               </div>
             </div>
           </div>

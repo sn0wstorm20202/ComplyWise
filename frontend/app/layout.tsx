@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import "@/components/product/product.css";
+import ProductBoundary from "@/components/product/ProductBoundary";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -46,7 +48,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans bg-[#F7F5EF] text-[#171714] selection:bg-[#DCEAE2] selection:text-[#171714]">
         <LanguageProvider>
           <AuthProvider>
-            <BusinessProvider>{children}</BusinessProvider>
+            <BusinessProvider><ProductBoundary>{children}</ProductBoundary></BusinessProvider>
           </AuthProvider>
         </LanguageProvider>
       </body>

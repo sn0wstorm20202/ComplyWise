@@ -1,0 +1,183 @@
+......................................s................................. [ 10%]
+........................................................................ [ 21%]
+........................................................................ [ 32%]
+..................................ss.................................... [ 43%]
+.............................................................F.......... [ 54%]
+........................................................................ [ 65%]
+........................................................................ [ 76%]
+........................................................................ [ 87%]
+........................................................................ [ 98%]
+.........                                                                [100%]
+================================== FAILURES ===================================
+____ test_contextual_quality_guidance_cannot_manufacture_official_metadata ____
+
+business = <Business: Synthetic charging equipment maker>
+assessment = <Assessment: Synthetic charging equipment maker - Assessment #1 [IN_PROGRESS]>
+profile = <BusinessProfileVersion: Synthetic charging equipment maker profile v1>
+deterministic = [], retrieved = None
+
+    def generate_workspace(business, assessment, profile, deterministic, retrieved=None):
+        if assessment is None or profile is None or assessment.business_id != business.id:
+            raise ValueError("A business-scoped assessment and profile are required.")
+        context = {"business_name": business.name, "profile_facts": profile.variables,
+                   "published_decisions": deterministic, "retrieved_context": retrieved or {}}
+        # Preserve the existing retrieval strategy and connect its actual passages to
+        # contextual interpretation. Failure here must not bypass provider recovery.
+        from apps.assistant.services import retrieve_evidence, _citation
+        description = profile.variables.get("product_description", {})
+        description = description.get("value", "") if isinstance(description, dict) else description
+        try:
+            matches = retrieve_evidence(str(description or business.name))
+            context["verified_passages"] = [_citation(i, ev) for i, ev in enumerate(matches, 1)]
+        except Exception as exc:
+            logging.getLogger(__name__).warning("Evidence retrieval failed; continuing contextual generation (%s)", type(exc).__name__)
+            context["verified_passages"] = []
+        from domain.intelligence.regulatory_retrieval import retrieve_regulatory_context
+        remote = ((retrieved or {}).get("metadata") or {}).get("external_retrieval")
+        if not isinstance(remote, dict):
+            remote = retrieve_regulatory_context(str(description or business.name), profile.variables)
+        context["external_retrieval"] = remote
+        serialized = json.dumps(context, sort_keys=True, default=str)
+        key = hashlib.sha256(serialized.encode()).hexdigest()
+        existing = WorkspaceGuidance.objects.filter(assessment=assessment, generation_key=key, profile_version=profile).first()
+        if existing:
+            return existing.payload
+        provider = get_llm_provider()
+        last_error = None
+        def validate_response(text):
+            cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip())
+            raw = json.loads(cleaned)
+            validate_workspace_shape(raw, serialized)
+            candidate = normalize_workspace(raw, deterministic)
+            if not candidate["compliance_items"] and not any(r.get("status") == "APPLICABLE" for r in deterministic):
+                raise ValueError("No contextual business guidance returned.")
+        for attempt in range(2):
+            try:
+                result = provider.complete([ChatMessage("system", PROMPT), ChatMessage("user", serialized)],
+                                           temperature=0.1, max_output_tokens=7000,
+                                           response_format={"type": "json_object"}, response_validator=validate_response,
+                                           workflow="workspace_guidance", assessment_id=str(assessment.id), business_id=str(business.id))
+                text = result.text.strip()
+                if text.startswith("```"):
+                    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text)
+                raw = json.loads(text)
+>               validate_workspace_shape(raw, serialized)
+
+domain\intelligence\workspace_guidance.py:175: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+value = {'compliance_items': [{'key': 'activity', 'title': 'Review drone filming permissions', 'why_it_may_apply': 'You film o...one operations', 'standard_code': 'FAKE-OFFICIAL-CODE', 'source_url': 'https://fabricated.gov.in/standard', ...}], ...}
+supplied_context = '{"business_name": "Synthetic charging equipment maker", "external_retrieval": {"passages": [], "rejected_count": 0, "...y advice.", "index": 1, "locator": "", "source_title": "Synthetic test standard", "verification_status": "VERIFIED"}]}'
+
+    def validate_workspace_shape(value, supplied_context):
+        from jsonschema import validate, ValidationError
+        row = {"type": "object", "required": ["title"], "properties": {"title": {"type": "string", "minLength": 1}}}
+        schema = {"type": "object", "required": ["compliance_items"], "properties": {
+            key: {"type": "array", "maxItems": 24, "items": row} for key in
+            ("compliance_items", "documents", "workflows", "standards", "schemes")}}
+        schema["properties"]["compliance_items"]["maxItems"] = 12
+        schema["properties"]["compliance_items"]["items"] = {
+            "type": "object", "required": ["key", "title", "why_it_may_apply"],
+            "properties": {k: {"type": "string", "minLength": 1} for k in ("key", "title", "why_it_may_apply")}}
+        try:
+            validate(value, schema)
+        except ValidationError:
+            raise ValueError("Workspace schema is invalid.") from None
+        encoded = json.dumps(value, ensure_ascii=False)
+        for link in re.findall(r"https?://[^\s\"<>]+", encoded):
+            if link not in supplied_context:
+>               raise ValueError("Workspace contains an unsupplied source URL.")
+E               ValueError: Workspace contains an unsupplied source URL.
+
+domain\intelligence\output_safety.py:53: ValueError
+
+The above exception was the direct cause of the following exception:
+
+standard_business = (<Business: Synthetic charging equipment maker>, <BusinessProfileVersion: Synthetic charging equipment maker profile v...eVersion: EXAMPLE_EV_RULE v1 [PUBLISHED] -> EXAMPLE_EV_STANDARD>, <Evidence: synthetic-standard-passage [VERIFIED] ()>)
+
+    def test_contextual_quality_guidance_cannot_manufacture_official_metadata(standard_business):
+        business, profile, assessment, *_ = standard_business
+        provider = Mock()
+        raw = interpretation()
+        raw["standards"][0].update(standard_code="FAKE-OFFICIAL-CODE", source_url="https://fabricated.gov.in/standard",
+            rule_version_id="fake-rule", citations=[{"evidence_id": "fake-evidence"}], is_mandatory=True)
+        provider.complete.return_value = CompletionResult(json.dumps(raw), "synthetic-fixture", "fixture")
+        with patch("domain.intelligence.workspace_guidance.get_llm_provider", return_value=provider):
+>           generate_workspace(business, assessment, profile, [])
+
+tests\test_standards_hardening.py:126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+business = <Business: Synthetic charging equipment maker>
+assessment = <Assessment: Synthetic charging equipment maker - Assessment #1 [IN_PROGRESS]>
+profile = <BusinessProfileVersion: Synthetic charging equipment maker profile v1>
+deterministic = [], retrieved = None
+
+    def generate_workspace(business, assessment, profile, deterministic, retrieved=None):
+        if assessment is None or profile is None or assessment.business_id != business.id:
+            raise ValueError("A business-scoped assessment and profile are required.")
+        context = {"business_name": business.name, "profile_facts": profile.variables,
+                   "published_decisions": deterministic, "retrieved_context": retrieved or {}}
+        # Preserve the existing retrieval strategy and connect its actual passages to
+        # contextual interpretation. Failure here must not bypass provider recovery.
+        from apps.assistant.services import retrieve_evidence, _citation
+        description = profile.variables.get("product_description", {})
+        description = description.get("value", "") if isinstance(description, dict) else description
+        try:
+            matches = retrieve_evidence(str(description or business.name))
+            context["verified_passages"] = [_citation(i, ev) for i, ev in enumerate(matches, 1)]
+        except Exception as exc:
+            logging.getLogger(__name__).warning("Evidence retrieval failed; continuing contextual generation (%s)", type(exc).__name__)
+            context["verified_passages"] = []
+        from domain.intelligence.regulatory_retrieval import retrieve_regulatory_context
+        remote = ((retrieved or {}).get("metadata") or {}).get("external_retrieval")
+        if not isinstance(remote, dict):
+            remote = retrieve_regulatory_context(str(description or business.name), profile.variables)
+        context["external_retrieval"] = remote
+        serialized = json.dumps(context, sort_keys=True, default=str)
+        key = hashlib.sha256(serialized.encode()).hexdigest()
+        existing = WorkspaceGuidance.objects.filter(assessment=assessment, generation_key=key, profile_version=profile).first()
+        if existing:
+            return existing.payload
+        provider = get_llm_provider()
+        last_error = None
+        def validate_response(text):
+            cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip())
+            raw = json.loads(cleaned)
+            validate_workspace_shape(raw, serialized)
+            candidate = normalize_workspace(raw, deterministic)
+            if not candidate["compliance_items"] and not any(r.get("status") == "APPLICABLE" for r in deterministic):
+                raise ValueError("No contextual business guidance returned.")
+        for attempt in range(2):
+            try:
+                result = provider.complete([ChatMessage("system", PROMPT), ChatMessage("user", serialized)],
+                                           temperature=0.1, max_output_tokens=7000,
+                                           response_format={"type": "json_object"}, response_validator=validate_response,
+                                           workflow="workspace_guidance", assessment_id=str(assessment.id), business_id=str(business.id))
+                text = result.text.strip()
+                if text.startswith("```"):
+                    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text)
+                raw = json.loads(text)
+                validate_workspace_shape(raw, serialized)
+                payload = normalize_workspace(raw, deterministic)
+                if not payload["compliance_items"] and not any(r.get("status") == "APPLICABLE" for r in deterministic):
+                    raise ProviderResponseError("The interpretation contained no usable business guidance.")
+                break
+            except (ValueError, ProviderResponseError) as exc:
+                last_error = exc
+            except ProviderError as exc:
+                # Transport/key fallback already ran in the provider boundary. Do not
+                # repeat the whole exhausted chain at the application layer.
+                raise ProviderError("We couldn't prepare your workspace. Your details are saved; please retry.",
+                                    failure_type=exc.failure_type) from exc
+        else:
+>           raise ProviderError("We couldn't prepare your workspace. Your details are saved; please retry.") from last_error
+E           domain.providers.base.ProviderError: We couldn't prepare your workspace. Your details are saved; please retry.
+
+domain\intelligence\workspace_guidance.py:188: ProviderError
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_api_orchestration_step03.py:695: Live integration smoke test disabled by default. Set COMPLYWISE_LIVE_INTEGRATION=1 to run.
+SKIPPED [1] tests\test_live_prototype_smoke.py:11: Real-provider smoke is opt-in.
+SKIPPED [1] tests\test_live_smoke_step05.py:73: Live integration smoke tests disabled by default. Set COMPLYWISE_LIVE_INTEGRATION=1 to run.
+FAILED tests/test_standards_hardening.py::test_contextual_quality_guidance_cannot_manufacture_official_metadata
+1 failed, 653 passed, 3 skipped in 68.82s (0:01:08)

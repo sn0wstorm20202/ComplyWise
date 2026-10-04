@@ -1,0 +1,130 @@
+{
+  "openai": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "validated": true,
+    "seconds": 2.847
+  },
+  "fallback": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "validated": true,
+    "seconds": 1.536
+  },
+  "precision": [
+    {
+      "business_id": "09f5d702-f83a-4b1d-bd5e-2c7b31b7a2fa",
+      "assessment_id": "8b0883ed-63f8-47a6-8e08-84874d71eae8",
+      "profile_keys": [
+        "state",
+        "district",
+        "annual_turnover",
+        "lifecycle_stage",
+        "total_workforce",
+        "primary_activity",
+        "legal_constitution",
+        "total_worker_count",
+        "product_description",
+        "connected_power_load",
+        "import_export_intent",
+        "industrial_zone_status",
+        "plant_machinery_investment",
+        "dynamic_industrial_waste_generation",
+        "dynamic_metal_processing_operations"
+      ],
+      "questions": [
+        {
+          "unit": null,
+          "order": 1,
+          "reason": "Chemical surface treatments and plating change the pollution potential and determine KSPCB industry categorization (Green, Orange, or Red).",
+          "options": [
+            {
+              "label": "Machining, cutting, and turning only",
+              "value": "Machining, cutting, and turning only"
+            },
+            {
+              "label": "Welding and fabrication",
+              "value": "Welding and fabrication"
+            },
+            {
+              "label": "Electroplating or metal coating",
+              "value": "Electroplating or metal coating"
+            },
+            {
+              "label": "Painting, powder coating, or surface treatment",
+              "value": "Painting, powder coating, or surface treatment"
+            },
+            {
+              "label": "Heat treatment",
+              "value": "Heat treatment"
+            }
+          ],
+          "category": "ENVIRONMENTAL_COMPLIANCE",
+          "question": "Which of the following metal processing or finishing operations are performed at your workshop?",
+          "required": true,
+          "help_text": "Chemical surface treatments and plating change the pollution potential and determine KSPCB industry categorization (Green, Orange, or Red).",
+          "answer_type": "SINGLE_SELECT",
+          "question_id": "Q_2",
+          "variable_key": "dynamic_metal_processing_operations",
+          "affected_rules": []
+        },
+        {
+          "unit": null,
+          "order": 2,
+          "reason": "Triggers statutory requirements under the Hazardous and Other Wastes Rules and state effluent discharge standards.",
+          "options": [],
+          "category": "ENVIRONMENTAL_COMPLIANCE",
+          "question": "Does your manufacturing process generate hazardous waste, waste cutting oils, chemical sludge, or effluent discharge?",
+          "required": true,
+          "help_text": "Triggers statutory requirements under the Hazardous and Other Wastes Rules and state effluent discharge standards.",
+          "answer_type": "BOOLEAN",
+          "question_id": "Q_3",
+          "variable_key": "dynamic_industrial_waste_generation",
+          "affected_rules": []
+        },
+        {
+          "unit": null,
+          "order": 3,
+          "reason": "Evaluated by 3 unresolved statutory compliance rule(s).",
+          "options": [],
+          "category": "STATUTORY_COMPLIANCE",
+          "question": "Please specify primary activity.",
+          "required": true,
+          "help_text": "Evaluated by 3 unresolved statutory compliance rule(s).",
+          "answer_type": "TEXT",
+          "question_id": "Q_PRIMARY_ACTIVITY",
+          "variable_key": "primary_activity",
+          "affected_rules": []
+        },
+        {
+          "unit": null,
+          "order": 4,
+          "reason": "Evaluated by 1 unresolved statutory compliance rule(s).",
+          "options": [],
+          "category": "STATUTORY_COMPLIANCE",
+          "question": "Please specify total workforce.",
+          "required": true,
+          "help_text": "Evaluated by 1 unresolved statutory compliance rule(s).",
+          "answer_type": "TEXT",
+          "question_id": "Q_TOTAL_WORKFORCE",
+          "variable_key": "total_workforce",
+          "affected_rules": []
+        },
+        {
+          "unit": null,
+          "order": 5,
+          "reason": "Used in conjunction with worker count to evaluate factory definition thresholds under the Factories Act and state electricity rules.",
+          "options": [],
+          "category": "FACTORY_COMPLIANCE",
+          "question": "What is the total connected electrical power load of all machinery installed in your workshop (in Kilowatts or Horsepower)?",
+          "required": true,
+          "help_text": "Used in conjunction with worker count to evaluate factory definition thresholds under the Factories Act and state electricity rules.",
+          "answer_type": "DECIMAL",
+          "question_id": "Q_1",
+          "variable_key": "connected_power_load",
+          "affected_rules": []
+        }
+      ]
+    }
+  ]
+}

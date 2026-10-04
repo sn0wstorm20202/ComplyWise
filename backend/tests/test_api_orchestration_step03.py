@@ -35,7 +35,7 @@ from rest_framework.test import APIClient
 from apps.accounts.models import User
 from apps.businesses.models import Assessment, Business, BusinessProfileVersion
 from apps.evidence.models import Evidence, Source
-from apps.ingestion import firecrawl
+from apps.ingestion import search_provider
 from apps.ingestion.models import DiscoveryRun
 from domain.context.business_context import DerivedBusinessContext, build_business_context
 from domain.intelligence.context_merge import EnrichedBusinessContext
@@ -63,7 +63,7 @@ from domain.intelligence.synthesis import (
     LiveComplianceSynthesisProvider,
     _sanitize_and_prune_irrelevant_requirements,
 )
-from domain.providers.base import CompletionResult
+from domain.providers.base import CompletionResult, ProviderError
 
 
 # ===========================================================================
@@ -108,9 +108,21 @@ def mock_external_network_services(request, monkeypatch):
     if "test_live_integration" in request.node.name:
         return
     # If the test explicitly tests firecrawl error handling, preserve is_configured
-    if "test_firecrawl" not in request.node.name:
-        monkeypatch.setattr("apps.ingestion.firecrawl.is_configured", lambda: False)
-        monkeypatch.setattr("domain.intelligence.discovery.firecrawl.is_configured", lambda: False)
+    if "test_search_provider" not in request.node.name:
+        monkeypatch.setattr("apps.ingestion.search_provider.is_configured", lambda: False)
+
+    def contextual_complete(messages, **kwargs):
+        facts = json.loads(messages[-1].content)
+        activity = facts["profile_facts"].get("product_description", {}).get("value", "business activities")
+        from tests.test_workspace_guidance import interpretation
+        raw = interpretation()
+        raw["compliance_items"][0].update(title="Review operating requirements for " + activity[:170],
+            description="Synthetic contextual test plan", why_it_may_apply="Your profile describes " + activity,
+            source_reference="Relevant sector authority", authority_or_regulator="Relevant sector authority")
+        return CompletionResult(json.dumps(raw), "synthetic-fixture", "fixture")
+    workspace_provider = MagicMock()
+    workspace_provider.complete.side_effect = contextual_complete
+    monkeypatch.setattr("domain.intelligence.workspace_guidance.get_llm_provider", lambda: workspace_provider)
 
     # Disable live LLM calls so synthesis uses fast deterministic synthesis
     if "test_llm" not in request.node.name and "test_actual_llm" not in request.node.name:
@@ -396,7 +408,7 @@ def test_all_five_demo_profiles_execute_complete_intelligence_chain(
         # 1. Discovery
         d_res = assessment_orchestrator.execute_stage(run, AssessmentStage.REGULATORY_DISCOVERY, context=ctx)
         assert d_res.status == "COMPLETED"
-        assert len(d_res.data.get("evidence_candidates", [])) > 0
+        assert d_res.data.get("evidence_candidates", []) == []
 
         # 2. Synthesis
         s_res = assessment_orchestrator.execute_stage(run, AssessmentStage.COMPLIANCE_SYNTHESIS, context=ctx)
@@ -404,12 +416,13 @@ def test_all_five_demo_profiles_execute_complete_intelligence_chain(
         reqs = s_res.data.get("requirements", [])
         assert len(reqs) > 0
 
-        # Verify evidence provenance on every requirement
+        # With no captured/verified evidence these are contextual suggestions.
         for r in reqs:
-            assert len(r.get("evidence_ids", [])) > 0, f"{name}: Requirement {r.get('title')} lacks evidence_ids"
-            assert len(r.get("source_urls", [])) > 0, f"{name}: Requirement {r.get('title')} lacks source_urls"
-            assert len(r.get("business_facts_used", [])) > 0, f"{name}: Requirement {r.get('title')} lacks business_facts_used"
-            assert r.get("status") in {"APPLICABLE", "NEEDS_INFORMATION", "NEEDS_VERIFICATION", "NOT_APPLICABLE"}
+            assert r["result_origin"] == "LLM_FALLBACK_RESULT"
+            assert r["status"] == "SUGGESTED"
+            assert r["evidence_ids"] == [] and r["rule_version_id"] is None
+            assert not r.get("source_urls") and not r.get("citations")
+            assert r["why_it_may_apply"]
 
         # 3. Schemes
         sch_res = assessment_orchestrator.execute_stage(run, AssessmentStage.SCHEMES, context=ctx)
@@ -426,22 +439,15 @@ def test_all_five_demo_profiles_execute_complete_intelligence_chain(
 # 5. Evidence & Provenance Invariant Tests (§13, §14, §16, §25, §37)
 # ===========================================================================
 
-def test_evidence_grounding_downgrades_unbacked_requirements():
-    """Requirements marked APPLICABLE without official evidence are downgraded to NEEDS_INFORMATION."""
-    ctx = OrchestrationContext(
-        business_id=str(uuid.uuid4()),
-        business_name="Unbacked Corp",
-        raw_business_description="Generic enterprise",
-    )
-    # Discovered material with NO evidence
-    discovered_empty = {"evidence_candidates": []}
-
-    prov = LiveComplianceSynthesisProvider()
-    res = prov.synthesize(ctx, discovered_empty)
-
-    for r in res.requirements:
-        if not r.get("evidence_ids"):
-            assert r.get("status") != "APPLICABLE", "Unbacked requirement cannot be APPLICABLE"
+def test_evidence_grounding_downgrades_unbacked_requirements(charger_business):
+    """Unpersisted discovery metadata cannot create a deterministic decision."""
+    ctx = OrchestrationContext.from_business(charger_business)
+    run = assessment_orchestrator.create_run(business=charger_business)
+    res = LiveComplianceSynthesisProvider().synthesize(ctx, {"evidence_candidates": []}, assessment_id=run.run_id)
+    assert res.requirements
+    for item in res.requirements:
+        assert item["status"] == "SUGGESTED"
+        assert item["rule_version_id"] is None and not item["evidence_ids"]
 
 
 def test_deduplication_removes_duplicate_evidence_and_requirements():
@@ -472,31 +478,40 @@ def test_deduplication_removes_duplicate_evidence_and_requirements():
 # 6. Provider Error Handling & Resilience Tests (§32, §33, §38)
 # ===========================================================================
 
-@patch("apps.ingestion.firecrawl.search")
-def test_firecrawl_timeout_handles_gracefully(mock_search, charger_business):
+@patch("apps.ingestion.search_provider.search")
+def test_search_provider_timeout_handles_gracefully(mock_search, charger_business):
     """When Firecrawl times out, discovery falls back gracefully without crashing."""
-    mock_search.side_effect = firecrawl.FirecrawlUnavailable("firecrawl request timed out.")
+    from domain.providers.base import ProviderError
+    from django.conf import settings
+    settings.SERPAPI_API_KEY = "synthetic"
+    mock_search.side_effect = ProviderError("firecrawl request timed out.")
 
     run = assessment_orchestrator.create_run(business=charger_business)
     ctx = OrchestrationContext.from_business(charger_business)
 
     disc_res = assessment_orchestrator.execute_stage(run, AssessmentStage.REGULATORY_DISCOVERY, context=ctx)
     assert disc_res.status == "COMPLETED"
-    assert len(disc_res.data.get("evidence_candidates", [])) > 0
-    assert disc_res.data.get("metadata", {}).get("fallback_used") is True
+    assert disc_res.data.get("evidence_candidates", []) == []
+    assert disc_res.data.get("metadata", {}).get("warnings")
+    result = assessment_orchestrator.execute_stage(run, AssessmentStage.COMPLIANCE_SYNTHESIS, context=ctx)
+    assert any(r["result_origin"] == "LLM_FALLBACK_RESULT" for r in result.data["requirements"])
 
 
-@patch("apps.ingestion.firecrawl.search")
-def test_firecrawl_429_rate_limit_handled(mock_search, charger_business):
+@patch("apps.ingestion.search_provider.search")
+def test_search_provider_429_rate_limit_handled(mock_search, charger_business):
     """When Firecrawl hits 429 rate limit, discovery logs warning and continues safely."""
-    mock_search.side_effect = firecrawl.FirecrawlUnavailable("firecrawl returned HTTP 429.")
+    from domain.providers.base import ProviderError
+    from django.conf import settings
+    settings.SERPAPI_API_KEY = "synthetic"
+    mock_search.side_effect = ProviderError("firecrawl returned HTTP 429.")
 
     run = assessment_orchestrator.create_run(business=charger_business)
     ctx = OrchestrationContext.from_business(charger_business)
 
     disc_res = assessment_orchestrator.execute_stage(run, AssessmentStage.REGULATORY_DISCOVERY, context=ctx)
     assert disc_res.status == "COMPLETED"
-    assert disc_res.data.get("metadata", {}).get("fallback_used") is True
+    assert disc_res.data.get("evidence_candidates", []) == []
+    assert disc_res.data.get("metadata", {}).get("warnings")
 
 
 @patch("domain.providers.get_llm_provider")
@@ -523,59 +538,23 @@ def test_llm_malformed_json_fallback(mock_get_provider, charger_business):
 
 
 def test_llm_cannot_override_deterministic_applicability(importer_business):
-    """The LLM is NOT the final authority for legal applicability (PRD_v2.0 §P4).
-
-    If the LLM falsely claims that a non-manufacturing business requires a Factory License,
-    the deterministic scope validator overrules the LLM and assigns NOT_APPLICABLE.
-    """
-    ctx = OrchestrationContext.from_business(importer_business)
-    assert ctx.normalized_facts.get("is_manufacturing") is False
-
-    mock_llm_proposals = {
-        "requirements": [
-            {
-                "requirement_id": "REQ-MOCK-FACTORY",
-                "title": "Factory License Registration",
-                "description": "Manufacturing premises license under Section 6 of Factories Act 1948",
-                "authority": "Directorate of Industrial Safety & Health (DISH)",
-                "jurisdiction": "MAHARASHTRA",
-                "status": "APPLICABLE",  # LLM erroneously claims this is APPLICABLE
-                "evidence_ids": ["EVD-MOCK-1"],
-                "source_urls": ["https://dish.maharashtra.gov.in"],
-                "actions": [],
-            }
-        ],
-        "executive_summary": {"applicable_count": 1},
-    }
-
-    mock_prov = MagicMock()
-    mock_prov.is_configured = True
-    mock_prov.complete.return_value = CompletionResult(
-        text=json.dumps(mock_llm_proposals),
-        provider="mock",
-        model="test-llm",
-        usage={"input_tokens": 100, "output_tokens": 50},
-    )
-
-    prov = LiveComplianceSynthesisProvider()
-    with patch("domain.intelligence.synthesis.get_llm_provider", return_value=mock_prov):
-        discovered = {
-            "evidence_candidates": [
-                {
-                    "evidence_id": "EVD-MOCK-1",
-                    "source_url": "https://dish.maharashtra.gov.in",
-                    "authority": "DISH",
-                    "jurisdiction": "MAHARASHTRA",
-                    "excerpt": "Notice under Factories Act 1948",
-                }
-            ]
-        }
-        res = prov.synthesize(ctx, discovered)
-
-    req = res.requirements[0]
-    # Deterministic authority must have overruled LLM's 'APPLICABLE' to 'NOT_APPLICABLE'
-    assert req["status"] == "NOT_APPLICABLE"
-    assert "non-manufacturing" in req.get("why_it_matters", "").lower()
+    """A persisted false rule wins over a conflicting model suggestion."""
+    from apps.knowledge.models import RequirementDefinition, RuleVersion
+    src = Source.objects.create(source_id="synthetic-factory-source", title="Synthetic scope", authority="Synthetic", status="ACTIVE")
+    ev = Evidence.objects.create(evidence_id="synthetic-factory-evidence", source=src, excerpt="Synthetic fixture scope", verification_status="VERIFIED")
+    req = RequirementDefinition.objects.create(requirement_id="synthetic-factory", name="Factory License Registration", status="PUBLISHED", domain="FIXTURE", jurisdiction="CENTRAL", evidence_refs=[ev.evidence_id])
+    RuleVersion.objects.create(requirement=req, rule_id="synthetic-factory-rule", status="PUBLISHED", jurisdiction="CENTRAL", domain="FIXTURE", evidence_refs=[ev.evidence_id], condition_ast={"op": "EQ", "left": {"var": "is_manufacturing"}, "right": True})
+    from tests.test_workspace_guidance import interpretation
+    raw = interpretation()
+    raw["compliance_items"].append({**raw["compliance_items"][0], "key": "conflict", "title": req.name})
+    provider = MagicMock(); provider.complete.return_value = CompletionResult(json.dumps(raw), "fixture", "fixture")
+    run = assessment_orchestrator.create_run(business=importer_business)
+    with patch("domain.intelligence.workspace_guidance.get_llm_provider", return_value=provider):
+        result = LiveComplianceSynthesisProvider().synthesize(OrchestrationContext.from_business(importer_business), {}, assessment_id=run.run_id)
+    item = next(r for r in result.requirements if r["requirement_id"] == req.requirement_id)
+    assert item["status"] == "NOT_APPLICABLE"
+    assert item["result_origin"] == "DETERMINISTIC_KB_RESULT"
+    assert sum(r["title"] == req.name for r in result.requirements) == 1
 
 
 # ===========================================================================
@@ -663,7 +642,7 @@ def test_public_response_safety(auth_client, charger_business):
         "system_prompt",
         "temperature",
         "api_key",
-        "firecrawl_api_key",
+        "serpapi_api_key",
         "emergency fallback",
     ]
     for term in forbidden_terms:
@@ -690,126 +669,23 @@ def test_idempotent_repeated_execution(auth_client, charger_business):
 
 @pytest.mark.django_db
 def test_actual_llm_invocation_budget_profile(charger_business):
-    """Verify actual LLM call counts and budget profile for Step 02 + Step 03 (§2).
-
-    Invariants:
-    - Search planning: 0 LLM calls (deterministic)
-    - Claim/evidence extraction: 0 LLM calls (deterministic scraping + hashing)
-    - Compliance synthesis: 1 LLM call
-    - Schemes: 0 LLM calls (deterministic matching)
-    - Standards: 0 LLM calls (deterministic catalog matching)
-    - Combined Step 02 + Step 03: <= 15 calls, <= 50,000 tokens, <= $0.50
-    """
-    ctx = OrchestrationContext.from_business(charger_business)
+    """Repeated completed stages and workspace reads make no extra LLM calls."""
+    from tests.test_workspace_guidance import interpretation
+    from domain.intelligence.workspace_guidance import get_workspace
+    provider = MagicMock(); provider.complete.return_value = CompletionResult(json.dumps(interpretation()), "fixture", "fixture", usage={"input_tokens": 100, "output_tokens": 200})
     run = assessment_orchestrator.create_run(business=charger_business)
-
-    call_counters = {
-        "search_planning": 0,
-        "claim_evidence_extraction": 0,
-        "compliance_synthesis": 0,
-        "schemes": 0,
-        "standards": 0,
-        "business_understanding": 0,
-        "question_generation": 0,
-        "answer_interpretation": 0,
-    }
-
-    mock_llm = MagicMock()
-    mock_llm.is_configured = True
-
-    def _mock_complete(messages, **kwargs):
-        content_str = " ".join(m.content for m in messages).lower()
-        if "understand the business" in content_str or "business_type" in content_str:
-            call_counters["business_understanding"] += 1
-            payload = {
-                "business_type": "Electronics Mfg",
-                "primary_activity": "Power Adapters",
-                "products": ["65W Charger"],
-                "manufacturing_or_service": "MANUFACTURING",
-                "market": "EXPORT",
-                "geography": {"state": "Maharashtra", "district": "Pune"},
-                "trade_intent": "EXPORT_ONLY",
-                "operational_characteristics": ["High power"],
-                "likely_regulatory_domains": ["BIS CRS"],
-                "important_unknowns": [],
-                "normalized_facts": [],
-            }
-            return CompletionResult(text=json.dumps(payload), provider="mock", model="test-llm", usage={"input_tokens": 1200, "output_tokens": 400})
-        elif "synthesize the compliance requirements" in content_str or "compliance requirements" in content_str or "statutory compliance synthesis" in content_str:
-            call_counters["compliance_synthesis"] += 1
-            reqs = [
-                {
-                    "requirement_id": "REQ-BIS-CRS",
-                    "title": "BIS Compulsory Registration Scheme (CRS) for Power Adapters",
-                    "description": "Safety standard under IS 13252",
-                    "regulatory_domain": "TECHNICAL_STANDARDS",
-                    "authority": "Bureau of Indian Standards (BIS)",
-                    "jurisdiction": "CENTRAL",
-                    "status": "APPLICABLE",
-                    "priority": "HIGH",
-                    "why_it_matters": "Mandatory testing",
-                    "business_facts_used": ["Manufacture of laptop chargers"],
-                    "evidence_ids": ["EVD-1"],
-                    "source_urls": ["https://crsbis.in"],
-                    "actions": [{"action": "Submit adapter samples to lab", "owner": "OPERATIONS", "documents_needed": [], "estimated_effort": "4 weeks"}],
-                }
-            ]
-            return CompletionResult(text=json.dumps({"requirements": reqs, "executive_summary": {"total_evaluated": 1, "applicable_count": 1}}), provider="mock", model="test-llm", usage={"input_tokens": 2000, "output_tokens": 600})
-        elif "15" in content_str or "questionnaire" in content_str:
-            call_counters["question_generation"] += 1
-            qs = [{"question_id": f"Q{i+1:02d}", "text": f"Question {i+1}?", "category": "OPS", "answer_type": "YES_NO", "reason": "Factual context"} for i in range(15)]
-            return CompletionResult(text=json.dumps({"questions": qs}), provider="mock", model="test-llm", usage={"input_tokens": 1500, "output_tokens": 800})
-        elif "interpret" in content_str or "interpretation" in content_str:
-            call_counters["answer_interpretation"] += 1
-            return CompletionResult(text=json.dumps({"interpreted_facts": [{"key": "is_manufacturing", "value": True, "confidence": "HIGH"}]}), provider="mock", model="test-llm", usage={"input_tokens": 1400, "output_tokens": 500})
-        return CompletionResult(text="{}", provider="mock", model="test-llm", usage={"input_tokens": 100, "output_tokens": 50})
-
-    mock_llm.complete.side_effect = _mock_complete
-
-    with patch("domain.providers.get_llm_provider", return_value=mock_llm), \
-         patch("domain.intelligence.business_understanding.get_llm_provider", return_value=mock_llm), \
-         patch("domain.intelligence.questionnaire.get_llm_provider", return_value=mock_llm), \
-         patch("domain.intelligence.answer_interpretation.get_llm_provider", return_value=mock_llm), \
-         patch("domain.intelligence.synthesis.get_llm_provider", return_value=mock_llm):
-
-        # Step 02 stages
-        assessment_orchestrator.execute_stage(run, AssessmentStage.BUSINESS_UNDERSTANDING, context=ctx)
-        assessment_orchestrator.execute_stage(run, AssessmentStage.QUESTION_GENERATION, context=ctx)
-        assessment_orchestrator.execute_stage(run, AssessmentStage.ANSWER_INTERPRETATION, context=ctx)
-        assessment_orchestrator.execute_stage(run, AssessmentStage.CONTEXT_SYNTHESIS, context=ctx)
-
-        # Step 03 stages
+    ctx = OrchestrationContext.from_business(charger_business)
+    with patch("domain.intelligence.workspace_guidance.get_llm_provider", return_value=provider):
         assessment_orchestrator.execute_stage(run, AssessmentStage.REGULATORY_DISCOVERY, context=ctx)
-        assessment_orchestrator.execute_stage(run, AssessmentStage.COMPLIANCE_SYNTHESIS, context=ctx)
+        first = assessment_orchestrator.execute_stage(run, AssessmentStage.COMPLIANCE_SYNTHESIS, context=ctx)
+        second = assessment_orchestrator.execute_stage(run, AssessmentStage.COMPLIANCE_SYNTHESIS, context=ctx)
         assessment_orchestrator.execute_stage(run, AssessmentStage.SCHEMES, context=ctx)
         assessment_orchestrator.execute_stage(run, AssessmentStage.STANDARDS, context=ctx)
-
-    # Invariants for Step 03
-    assert call_counters["search_planning"] == 0, "Search planning must be deterministic (0 LLM calls)"
-    assert call_counters["claim_evidence_extraction"] == 0, "Evidence extraction must be deterministic (0 LLM calls)"
-    assert call_counters["compliance_synthesis"] == 1, "Compliance synthesis uses exactly 1 LLM call"
-    assert call_counters["schemes"] == 0, "Schemes matching is deterministic (0 LLM calls)"
-    assert call_counters["standards"] == 0, "Standards matching is deterministic (0 LLM calls)"
-
-    # Total Step 03 LLM calls
-    step_03_total = sum(call_counters[k] for k in ["search_planning", "claim_evidence_extraction", "compliance_synthesis", "schemes", "standards"])
-    assert step_03_total == 1, f"Step 03 total LLM calls was {step_03_total}, expected 1"
-
-    # Total Step 02 LLM calls (2 with structured answers, 3 with unstructured free-text answers)
-    step_02_total = sum(call_counters[k] for k in ["business_understanding", "question_generation", "answer_interpretation"])
-    assert 2 <= step_02_total <= 3, f"Step 02 total LLM calls was {step_02_total}, expected 2-3"
-
-    # Combined Step 02 + Step 03 Budget Invariants
-    combined_total = step_02_total + step_03_total
-    assert 3 <= combined_total <= 4, f"Combined LLM calls was {combined_total}, expected 3-4"
-    assert combined_total <= 15, "Combined LLM calls must remain safely <= 15"
-
-    total_tokens = (1200 + 400) + (1500 + 800) + (1400 + 500) + (2000 + 600)  # = 8,400 tokens
-    assert total_tokens < 50000, f"Total tokens {total_tokens} must be < 50,000"
-
-    # Cost estimate (using blended $0.005/1k tokens):
-    cost_estimate = (total_tokens / 1000) * 0.005
-    assert cost_estimate < 0.50, f"Cost estimate ${cost_estimate:.4f} must be < $0.50"
+        assert get_workspace(charger_business, run.run_id)["compliance_items"]
+    assert [(r["requirement_id"], r["status"]) for r in first.data["requirements"]] == [(r["requirement_id"], r["status"]) for r in second.data["requirements"]]
+    assert first.data["executive_summary"] == second.data["executive_summary"]
+    assert provider.complete.call_count == 1
+    assert provider.complete.call_args.kwargs["workflow"] == "workspace_guidance"
 
 
 # ===========================================================================

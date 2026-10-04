@@ -432,112 +432,13 @@ def persist_synthesized_requirements(
     requirements_data: list[dict[str, Any]],
     business: Business,
 ) -> list[RequirementDefinition]:
-    """Persist synthesized requirements, sources, evidence, and rule versions into SQLite/Postgres."""
-    created_defs: list[RequirementDefinition] = []
+    """Generated legal claims cannot be promoted to verified knowledge automatically.
 
-    for item in requirements_data:
-        req_id = str(item.get("requirement_id") or "").strip().upper()
-        if not req_id:
-            continue
-
-        name = str(item.get("name") or req_id)[:255]
-        auth = str(item.get("authority") or "Regulatory Authority")[:100]
-        jur = str(item.get("jurisdiction") or "CENTRAL").strip().upper()
-        cat = str(item.get("category") or "LICENCE")[:50]
-        domain = str(item.get("domain") or "GENERAL")[:50]
-        portal_url = str(item.get("portal") or STATUTORY_PORTALS.get("INDIA_GOV", ""))[:500]
-        act = str(item.get("statutory_act") or "Indian Statutory Regulation")[:200]
-        rationale = str(item.get("applicability_rationale") or f"Statutory requirement under {auth}.")
-
-        # 1. Source Record
-        src_id = f"SRC-{req_id}"
-        source, _ = Source.objects.update_or_create(
-            source_id=src_id,
-            defaults={
-                "authority": auth,
-                "title": str(item.get("source_title") or f"Statutory Code: {name}")[:300],
-                "source_type": "STATUTORY_ACT",
-                "canonical_url": portal_url,
-                "status": SourceStatus.ACTIVE,
-                "metadata": {
-                    "auto_ingested": True,
-                    "synthesized_at": timezone.now().isoformat(),
-                    "business_id": str(business.id),
-                    "business_name": business.name,
-                },
-            },
-        )
-
-        # 2. Evidence Record
-        evd_id = f"EVD-{req_id}"
-        evidence, _ = Evidence.objects.update_or_create(
-            evidence_id=evd_id,
-            defaults={
-                "source": source,
-                "locator": act,
-                "excerpt": rationale,
-                "structured_fact": {
-                    "requirement_id": req_id,
-                    "jurisdiction": jur,
-                    "portal": portal_url,
-                    "statutory_act": act,
-                },
-                "verification_status": VerificationStatus.VERIFIED,
-            },
-        )
-
-        # 3. RequirementDefinition
-        metadata = {
-            "required_documents": item.get("required_documents") or [],
-            "statutory_fee": item.get("statutory_fee") or "Statutory schedule applies",
-            "validity_period": item.get("validity_period") or "1 to 5 years",
-            "portal": portal_url,
-            "application_steps": item.get("application_steps") or [],
-            "auto_ingested": True,
-            "statutory_act": act,
-            "applicability_rationale": rationale,
-        }
-
-        req_def, _ = RequirementDefinition.objects.update_or_create(
-            requirement_id=req_id,
-            defaults={
-                "name": name,
-                "category": cat,
-                "authority": auth,
-                "jurisdiction": jur,
-                "domain": domain,
-                "status": KnowledgeStatus.PUBLISHED,
-                "evidence_refs": [evd_id],
-                "metadata": metadata,
-            },
-        )
-        created_defs.append(req_def)
-
-        # 4. RuleVersion
-        cond_ast = item.get("condition_ast")
-        if not cond_ast or not isinstance(cond_ast, dict) or "op" not in cond_ast:
-            if jur != "CENTRAL":
-                cond_ast = {"op": "EQ", "left": {"var": "state"}, "right": jur}
-            else:
-                cond_ast = {"op": "GT", "left": {"var": "annual_turnover"}, "right": 0}
-
-        rule_id = f"RULE-{req_id}-01"
-        RuleVersion.objects.update_or_create(
-            rule_id=rule_id,
-            version=1,
-            defaults={
-                "requirement": req_def,
-                "domain": domain,
-                "jurisdiction": jur,
-                "status": KnowledgeStatus.PUBLISHED,
-                "condition_ast": cond_ast,
-                "result": ApplicabilityStatus.APPLICABLE,
-                "evidence_refs": [evd_id],
-            },
-        )
-
-    logger.info("Autonomous Ingestion: Persisted %d statutory requirements into knowledge base.", len(created_defs))
-    return created_defs
+    Source acquisition persists CandidateRequirement records for review instead.
+    This legacy entry point deliberately performs no production knowledge writes.
+    """
+    logger.warning("Automatic publication disabled: %d candidates require source review.", len(requirements_data))
+    return []
 
 
 def auto_ingest_regulatory_knowledge(

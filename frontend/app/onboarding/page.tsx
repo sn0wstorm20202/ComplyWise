@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, Suspense } from "react";
+import React, { useEffect, useMemo, useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import Disclosure from "@/components/product/Disclosure";
 import StatusBadge from "@/components/StatusBadge";
 import MetricCard from "@/components/MetricCard";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
@@ -24,7 +25,6 @@ import {
 } from "@/types";
 import { useBusinessContext } from "@/context/BusinessContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { DEMO_REQUIREMENTS } from "@/data/demo/compliance";
 import { CONTROLLED_DEMO_PROFILES, DemoPresetDefinition } from "@/data/demo/controlledPresets";
 import {
   OrchestrationQuestion,
@@ -32,16 +32,17 @@ import {
   ComplianceResponse,
 } from "@/lib/api/orchestration";
 import DemoPresetSelector from "@/components/onboarding/DemoPresetSelector";
+import { STARTER_SUGGESTIONS } from "@/data/businessStarters";
 import BusinessUnderstandingCard from "@/components/onboarding/BusinessUnderstandingCard";
 import FifteenQuestionsWizard from "@/components/onboarding/FifteenQuestionsWizard";
 import AssessmentResultsSummary from "@/components/onboarding/AssessmentResultsSummary";
 
 const STEPS = [
-  { num: 1, id: "profile", label: "Business Profile" },
-  { num: 2, id: "products", label: "Products & Activities" },
-  { num: 3, id: "questions", label: "Smart Questions" },
-  { num: 4, id: "analysis", label: "Regulatory Analysis" },
-  { num: 5, id: "results", label: "Initial Results" },
+  { num: 1, id: "profile", label: "Business" },
+  { num: 2, id: "products", label: "Activities" },
+  { num: 3, id: "questions", label: "Questions" },
+  { num: 4, id: "analysis", label: "Assessment" },
+  { num: 5, id: "results", label: "Results" },
 ];
 
 // Data type inspection helpers (supporting both domain uppercase and frontend lowercase)
@@ -551,11 +552,11 @@ function OnboardingContent() {
   const DEFAULT_STAGES = useMemo(() => [
     { name: "Business Context & Identity", done: false, detail: "Validating entity jurisdiction and canonical profile parameters" },
     { name: "Adaptive Statutory Assessment", done: false, detail: "Resolving decision-critical operational and compliance requirements" },
-    { name: "Live Regulatory Discovery (Firecrawl)", done: false, detail: "Harvesting official government notifications and portals" },
+    { name: "Finding relevant official sources", done: false, detail: "Searching official sources for your business" },
     { name: "Official Source Ranking & Claim Quarantining", done: false, detail: "Extracting regulatory claims as quarantined unverified evidence" },
     { name: "Deterministic Applicability Engine", done: false, detail: "Evaluating evidence-grounded rules over published statutory knowledge" },
     { name: "Procedural Clearance Workflows", done: false, detail: "Sequencing prerequisite-aware multi-step approvals" },
-    { name: "Statutory Document Checklist", done: false, detail: "Synthesizing mandatory paperwork for applicable authorities" },
+    { name: "Documents and preparation", done: false, detail: "Preparing source-backed checklists and contextual next steps" },
     { name: "Statutory Calendar & MSME Schemes", done: false, detail: "Calculating renewal cycles and matching central/state grants" },
   ], []);
   const [analysisStages, setAnalysisStages] = useState<
@@ -595,11 +596,11 @@ function OnboardingContent() {
         ? "PUBLIC_LIMITED"
         : preset.businessType.includes("Partnership")
         ? "PARTNERSHIP"
-        : "PRIVATE_LIMITED"
+        : "PROPRIETORSHIP"
     );
-    setRegisteredState("MAHARASHTRA");
+    setRegisteredState(preset.state.toUpperCase().replaceAll(" ", "_"));
     setDistrict(preset.district);
-    setIndustrialZone("INSIDE_NOTIFIED_INDUSTRIAL_AREA");
+    setIndustrialZone(preset.industrialZoneStatus);
     setLifecycleStage("OPERATIONAL");
     setPlantInvestmentLakhs(String(preset.plantInvestmentLakhs));
     setTurnoverLakhs(String(preset.annualTurnoverLakhs));
@@ -658,8 +659,14 @@ function OnboardingContent() {
     router.push("/onboarding?new=true");
   }, [router]);
 
+  // React development effects can replay. One initialization per route context
+  // prevents two simultaneous GETs from generating the same question plan.
+  const initializedContext = useRef<string | null>(null);
   // Load canonical variable definitions, assessment, and business state on mount
   useEffect(() => {
+    const contextKey = JSON.stringify([paramBusinessId, paramAssessmentId, isExplicitNew, isNewAssessment]);
+    if (initializedContext.current === contextKey) return;
+    initializedContext.current = contextKey;
     async function init() {
       await loadVariableDefinitions();
 
@@ -726,7 +733,7 @@ function OnboardingContent() {
         setStep(resumeStep);
 
         if (resolvedBizId && resumeStep === 3) {
-          handleProceedToQuestions();
+          handleProceedToQuestions(resolvedBizId, targetAss.id);
         }
 
         if (resolvedBizId && resumeStep === 5) {
@@ -784,7 +791,7 @@ function OnboardingContent() {
                   const resumeStep = Math.min(latest.current_step, 5);
                   setStep(resumeStep);
                   if (resumeStep === 3) {
-                    handleProceedToQuestions();
+                    handleProceedToQuestions(b.id, latest.id);
                   }
                 }
               }
@@ -896,6 +903,7 @@ function OnboardingContent() {
         const updatedStepState = {
           ...(currAssessment.step_state || {}),
           profile: profileState,
+          starting_profile: selectedPresetKey ? { key: selectedPresetKey, suggestions: STARTER_SUGGESTIONS[selectedPresetKey] || {} } : null,
         };
 
         await api.businesses.updateAssessment(currentBiz.id, currAssessment.id, {
@@ -905,33 +913,20 @@ function OnboardingContent() {
       }
       updateProfile({
         businessName: trimmedName,
-        businessType: legalConstitution || "Private Limited Company",
-        state: registeredState || "Gujarat",
-        district: district.trim() || "Ahmedabad",
-        location: `${district.trim() || "Sanand"}, ${registeredState || "Gujarat"}`,
-        employeeCount: employeeCount.trim() === "" ? 145 : Number(employeeCount),
-        annualTurnoverLakhs: turnoverLakhs ? Number(turnoverLakhs) : 4850,
-        plantInvestmentLakhs: plantInvestmentLakhs ? Number(plantInvestmentLakhs) : 1850,
-        industrialZoneStatus: industrialZone || "Approved GIDC Industrial Estate",
-        lifecycleStage: lifecycleStage || "Operational / Expansion",
+        businessType: legalConstitution || "Not provided",
+        state: registeredState || "Not provided",
+        district: district.trim() || "Not provided",
+        location: [district.trim(), registeredState].filter(Boolean).join(", ") || "Not provided",
+        employeeCount: employeeCount.trim() === "" ? 0 : Number(employeeCount),
+        annualTurnoverLakhs: turnoverLakhs ? Number(turnoverLakhs) : 0,
+        plantInvestmentLakhs: plantInvestmentLakhs ? Number(plantInvestmentLakhs) : 0,
+        industrialZoneStatus: industrialZone || "Not provided",
+        lifecycleStage: lifecycleStage || "Not provided",
       });
 
       setStep(2);
     } catch {
-      // Backend offline fallback: commit to reactive BusinessContext and advance to Step 2
-      updateProfile({
-        businessName: trimmedName,
-        businessType: legalConstitution || "Private Limited Company",
-        state: registeredState || "Gujarat",
-        district: district.trim() || "Ahmedabad",
-        location: `${district.trim() || "Sanand"}, ${registeredState || "Gujarat"}`,
-        employeeCount: employeeCount.trim() === "" ? 145 : Number(employeeCount),
-        annualTurnoverLakhs: turnoverLakhs ? Number(turnoverLakhs) : 4850,
-        plantInvestmentLakhs: plantInvestmentLakhs ? Number(plantInvestmentLakhs) : 1850,
-        industrialZoneStatus: industrialZone || "Approved GIDC Industrial Estate",
-        lifecycleStage: lifecycleStage || "Operational / Expansion",
-      });
-      setStep(2);
+      setError("Your business profile wasn't saved. Your details are preserved; please try again.");
     } finally {
       setLoading(false);
     }
@@ -946,7 +941,7 @@ function OnboardingContent() {
     updateProfile({
       activities: productDescription
         ? [productDescription]
-        : ["Electrical Switchgear Assembly", "Domestic & Industrial Plugs (IS 1293)"],
+        : [],
     });
 
     const answeredKeys = new Set<string>();
@@ -1029,26 +1024,9 @@ function OnboardingContent() {
             setUnderstandingLoading(false);
           }
 
-          // Pre-generate or fetch questions in the background
-          try {
-            api.orchestration.generateQuestions(currRunId).then((gRes) => {
-              if (gRes?.questions && gRes.questions.length > 0) {
-                setOrchestrationQuestions(gRes.questions);
-                const nextIdx = gRes.questions.findIndex((q: any) => !q.is_answered);
-                setActiveQuestionIndex(nextIdx !== -1 ? nextIdx : 0);
-              }
-            }).catch(() => {
-              api.orchestration.listQuestions(currRunId).then((lRes) => {
-                if (lRes?.questions && lRes.questions.length > 0) {
-                  setOrchestrationQuestions(lRes.questions);
-                  const nextIdx = lRes.questions.findIndex((q: any) => !q.is_answered);
-                  setActiveQuestionIndex(nextIdx !== -1 ? nextIdx : 0);
-                }
-              }).catch(() => {});
-            });
-          } catch (qErr) {
-            console.warn("Orchestration question trigger error:", qErr);
-          }
+          // The question-list endpoint prepares once when the owner continues.
+          // Avoid a concurrent background generation racing that same request.
+
         }
 
 
@@ -1074,94 +1052,48 @@ function OnboardingContent() {
           handleProceedToQuestions();
         }
       } else {
-        setIsQuestionsComplete(true);
-        setStep(3);
+        setError("Save your business profile before continuing. Your description is preserved.");
       }
     } catch {
-      setIsQuestionsComplete(true);
-      setStep(3);
+      setError("Your business activities weren't saved. Please try again; your description is preserved.");
     } finally {
       setLoading(false);
     }
   }
 
-  // Proceed from Business Understanding directly to 15-Question Regulatory Assessment
-  async function handleProceedToQuestions() {
+  // Proceed from business understanding to adaptive questions
+  async function handleProceedToQuestions(resumeBusinessId?: string, resumeRunId?: string) {
+    if (questionLoading) return;
     setQuestionLoading(true);
+    setQuestionError(null);
+    setError(null);
     setStep(3);
-
-    let runId = activeRunId || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
-    const bizId = business?.id || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
-
-    // If runId is missing or points to a non-existent run, ensure a valid run exists
-    if (!runId && bizId) {
-      try {
-        const orchRun = await api.orchestration.createRun({ business_id: bizId });
-        if (orchRun && orchRun.run_id) {
-          runId = orchRun.run_id;
-          setActiveRunId(runId);
-          localStorage.setItem("complywise_active_assessment_id", runId);
-        }
-      } catch (rErr) {
-        console.warn("Could not create orchestration run in handleProceedToQuestions:", rErr);
+    try {
+      const bizId = resumeBusinessId || business?.id;
+      if (!bizId) throw new Error("Save your business profile before continuing.");
+      let runId = resumeRunId || activeRunId || assessment?.id;
+      if (!runId) {
+        const run = await api.orchestration.createRun({ business_id: bizId });
+        runId = run.run_id;
+        setActiveRunId(runId);
       }
-    }
-
-    if (runId) {
-      try {
-        let qList: any = await api.orchestration.listQuestions(runId);
-        if (!qList?.questions || qList.questions.length < 4) {
-          try {
-            const genRes = await api.orchestration.generateQuestions(runId);
-            if (genRes?.questions && genRes.questions.length > 0) {
-              qList = genRes;
-            } else {
-              qList = await api.orchestration.listQuestions(runId);
-            }
-          } catch (gErr) {
-            console.warn("Generate questions failed, re-checking list:", gErr);
-            qList = await api.orchestration.listQuestions(runId);
-          }
-        }
-        if (qList && qList.questions && qList.questions.length >= 4) {
-          setOrchestrationQuestions(qList.questions);
-          const nextIdx = qList.questions.findIndex((q: any) => !q.is_answered);
-          setActiveQuestionIndex(nextIdx !== -1 ? nextIdx : 0);
-          setQuestionLoading(false);
-          return;
-        }
-      } catch (err: any) {
-        console.warn("Could not list questions from run:", err);
-        // If runId gave 404 or invalid, attempt one fresh run creation
-        if (bizId) {
-          try {
-            const freshRun = await api.orchestration.createRun({ business_id: bizId });
-            if (freshRun?.run_id) {
-              runId = freshRun.run_id;
-              setActiveRunId(runId);
-              localStorage.setItem("complywise_active_assessment_id", runId);
-              const genRes = await api.orchestration.generateQuestions(runId);
-              if (genRes?.questions && genRes.questions.length >= 4) {
-                setOrchestrationQuestions(genRes.questions);
-                const nextIdx = genRes.questions.findIndex((q: any) => !q.is_answered);
-                setActiveQuestionIndex(nextIdx !== -1 ? nextIdx : 0);
-                setQuestionLoading(false);
-                return;
-              }
-            }
-          } catch (freshErr) {
-            console.warn("Fresh run creation failed:", freshErr);
-          }
-        }
+      if (!runId) throw new Error("Your assessment could not be opened. Please retry.");
+      const qList = await api.orchestration.listQuestions(runId);
+      if (!Array.isArray(qList?.questions)) throw new Error("Your questions could not be prepared. Please retry.");
+      const questions = qList.questions.slice(0, 5);
+      setOrchestrationQuestions(questions);
+      const nextIdx = questions.findIndex((q: any) => !q.is_answered);
+      if (questions.length === 0 || nextIdx === -1) {
+        setStep(4);
+        await runRegulatoryAnalysis(bizId, runId);
+      } else {
+        setActiveQuestionIndex(nextIdx);
       }
+    } catch (err: any) {
+      setError(err?.message || "We couldn't prepare your questions. Your details are saved; please retry.");
+    } finally {
+      setQuestionLoading(false);
     }
-
-    // Emergency safety net: If backend is unreachable or DB pool exhausted,
-    // guarantee the 15-question questionnaire ALWAYS renders with contextual questions
-    const fallback15 = buildEmergencyFallback15Questions(productDescription, businessName || business?.name);
-    setOrchestrationQuestions(fallback15);
-    setActiveQuestionIndex(0);
-    setQuestionLoading(false);
   }
 
   // STEP 3: Submit single question answer, trigger AST re-evaluation, and receive next question
@@ -1262,15 +1194,16 @@ function OnboardingContent() {
 
   // STEP 3: Complete questions and transition to statutory evaluation
   async function handleProceedToAnalysis() {
-    if (assessment && business) {
-      try {
-        await api.businesses.updateAssessment(business.id, assessment.id, {
-          current_step: 4,
-        });
-      } catch {}
+    if (!business) { setError("Save your business profile before continuing."); return; }
+    try {
+      const assessmentId = activeRunId || assessment?.id;
+      if (!assessmentId) throw new Error("Your assessment could not be opened. Please retry.");
+      await api.businesses.updateAssessment(business.id, assessmentId, { current_step: 4 });
+      setStep(4);
+      await runRegulatoryAnalysis(business.id, assessmentId);
+    } catch (err: any) {
+      setError(err?.message || "We couldn't save your progress. Please retry.");
     }
-    setStep(4);
-    runRegulatoryAnalysis(business?.id || "demo-biz", assessment?.id);
   }
 
   // Open "Why do I need this?" modal
@@ -1281,9 +1214,9 @@ function OnboardingContent() {
           evidence_id: String(ref.evidence_id || ref.id || ""),
           authority: String(ref.authority || r.authority || "Regulatory Authority"),
           locator: String(ref.locator || "Official Statutory Citation"),
-          verification_status: (ref.verification_status || "VERIFIED") as any,
-          excerpt: String(ref.excerpt || `Statutory evidence evaluated by regulatory applicability rules.`),
-          source_title: String(ref.source_title || ref.title || "Official Government Gazette / Portal"),
+          verification_status: (ref.verification_status || "UNVERIFIED") as any,
+          excerpt: String(ref.excerpt || "Source passage not recorded."),
+          source_title: String(ref.source_title || ref.title || "Source not recorded"),
           canonical_url: ref.canonical_url || ref.source_url || undefined,
         };
       }
@@ -1292,21 +1225,23 @@ function OnboardingContent() {
         evidence_id: refStr,
         authority: String(r.authority || "Regulatory Authority"),
         locator: refStr,
-        verification_status: "VERIFIED" as const,
-        excerpt: `Statutory evidence citation ${refStr} evaluated by regulatory applicability rules.`,
-        source_title: "Official Government Gazette / Portal",
+        verification_status: "UNVERIFIED" as const,
+        excerpt: "Source passage not recorded.",
+        source_title: "Source not recorded",
       };
     });
 
     const reqItem: ComplianceRequirementItem = {
       requirement_id: String(r.requirement_id || ""),
+      result_origin: r.result_origin,
+      source_reference: r.source_reference,
       name: String(r.name || r.requirement_name || "Statutory Requirement"),
       authority: String(r.authority || "Regulatory Authority"),
       domain: String(r.domain || "Statutory Mandate"),
       category: String(r.category || r.domain || "STATUTORY"),
-      jurisdiction: String(r.jurisdiction || registeredState || "CENTRAL"),
+      jurisdiction: String(r.jurisdiction || "Not provided"),
       status: r.status,
-      evidence_count: citations.length || (r.evidence_ids?.length ?? 1),
+      evidence_count: citations.length || (r.evidence_ids?.length ?? 0),
       description: typeof r.explanation_trace?.reason === "string" 
         ? r.explanation_trace.reason 
         : (typeof r.description === "string" && r.description ? r.description : (typeof r.applicability_statement === "string" ? r.applicability_statement : "Statutory compliance mandate evaluated under Indian law.")),
@@ -1315,9 +1250,9 @@ function OnboardingContent() {
             evidence_id: String(c.evidence_id || ""),
             authority: String(c.authority || r.authority || "Regulatory Authority"),
             locator: String(c.locator || r.statutory_act || "Statutory Schedule"),
-            verification_status: (c.verification_status || "VERIFIED") as any,
-            excerpt: String(c.excerpt || r.description || "Official statutory evidence."),
-            source_title: String(c.source_title || "Official Government Gazette / Portal"),
+            verification_status: (c.verification_status || "UNVERIFIED") as any,
+            excerpt: String(c.excerpt || "Source passage not recorded."),
+            source_title: String(c.source_title || "Source not recorded"),
             canonical_url: c.canonical_url,
           }))
         : citations,
@@ -1337,21 +1272,9 @@ function OnboardingContent() {
     setLoading(true);
     setError(null);
 
-    setAnalysisStages(DEFAULT_STAGES.map((s, idx) => ({ ...s, done: idx < 2 })));
+    setAnalysisStages(DEFAULT_STAGES.map((s) => ({ ...s, done: false })));
 
-    const sampleQueries = [
-      `Querying official ${registeredState || "State"} Industrial portal...`,
-      "Harvesting FSSAI, Pollution Control Board, and Factories Act requirements...",
-      "Analyzing mandatory Bureau of Indian Standards (BIS) and QCO schedules...",
-      "Executing deterministic applicability evaluation over knowledge packs...",
-      "Sequencing clearance workflows and statutory document checklists...",
-    ];
-
-    let queryIdx = 0;
-    const queryTimer = setInterval(() => {
-      queryIdx = (queryIdx + 1) % sampleQueries.length;
-      setActiveQueryText(sampleQueries[queryIdx]);
-    }, 1200);
+    setActiveQueryText("Checking requirements against your business information…");
 
     try {
       const effectiveAssId = assId || assessment?.id;
@@ -1360,8 +1283,8 @@ function OnboardingContent() {
       const targetRunId = activeRunId || effectiveAssId;
       if (targetRunId) {
         try {
-          await api.orchestration.runDiscovery(targetRunId).catch(() => null);
-          const compRes = await api.orchestration.runSynthesis(targetRunId).catch(() => null);
+          await api.orchestration.runDiscovery(targetRunId); // Partial capture is a normal backend result; failed requests preserve inputs.
+          const compRes = await api.orchestration.runSynthesis(targetRunId);
           if (compRes && compRes.requirements) {
             setSynthesizedCompliance(compRes);
           }
@@ -1376,12 +1299,17 @@ function OnboardingContent() {
             setMatchedStandardsCount(stdRes.value.standards.length);
           }
         } catch (orchPipelineErr) {
-          console.warn("Could not execute orchestration pipeline:", orchPipelineErr);
+          throw orchPipelineErr;
         }
       }
 
-      const orchResult = await api.discovery.orchestrate(bizId, effectiveAssId).catch(() => null);
-      clearInterval(queryTimer);
+      const orchResult = await api.discovery.orchestrate(bizId, targetRunId || effectiveAssId, false);
+      const workspaceCompliance = await api.compliance.list(bizId, { assessment_id: targetRunId || effectiveAssId });
+      setSynthesizedCompliance({ requirements: workspaceCompliance.requirements as any, summary: {
+        total_applicable: workspaceCompliance.requirements.filter(r => r.status === "APPLICABLE").length,
+        total_needs_info: workspaceCompliance.requirements.filter(r => r.status === "NEEDS_INFORMATION").length,
+        total_not_applicable: workspaceCompliance.requirements.filter(r => r.status === "NOT_APPLICABLE").length,
+      } });
 
       if (orchResult?.stages && Array.isArray(orchResult.stages)) {
         setAnalysisStages(
@@ -1392,7 +1320,7 @@ function OnboardingContent() {
           }))
         );
       } else {
-        setAnalysisStages(DEFAULT_STAGES.map((s) => ({ ...s, done: true })));
+        setAnalysisStages(DEFAULT_STAGES.map((s) => ({ ...s, done: false })));
       }
 
       if (orchResult?.executive_summary) {
@@ -1404,8 +1332,7 @@ function OnboardingContent() {
       if (orchResult?.decision_run) {
         setDecisionRun(orchResult.decision_run);
       } else {
-        const run = await api.applicability.evaluate(bizId);
-        setDecisionRun(run);
+        throw new Error("The saved assessment result was not returned. Please retry.");
       }
 
       // Refresh assessment record to capture completed status
@@ -1422,32 +1349,9 @@ function OnboardingContent() {
         setLoading(false);
       }, 600);
     } catch {
-      clearInterval(queryTimer);
-      setAnalysisStages(DEFAULT_STAGES.map((s) => ({ ...s, done: true })));
-      setDecisionRun({
-        id: "dec-run-demo",
-        business_id: bizId,
-        created_at: new Date().toISOString(),
-        status: "COMPLETED",
-        results: DEMO_REQUIREMENTS.map((req) => ({
-          requirement_id: req.id,
-          requirement_name: req.title,
-          status: req.status,
-          evidence_refs: req.statutoryCitations.map((c) => ({
-            locator: c,
-            authority: req.authority,
-            excerpt: `Statutory mandate under ${c}`,
-            verification_status: "VERIFIED",
-          })),
-          explanation_trace: {
-            reason: req.explanation,
-          },
-        })),
-      } as any);
-      setTimeout(() => {
-        setStep(5);
-        setLoading(false);
-      }, 700);
+      setError("We couldn't complete your assessment. Your answers are preserved; please try again.");
+      setStep(3);
+      setLoading(false);
     }
   }
 
@@ -1461,27 +1365,27 @@ function OnboardingContent() {
   ).length;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans">
+    <div className="ui-onboarding min-h-screen bg-[var(--ui-bg)] text-[var(--ui-text)] flex flex-col font-sans">
       <Navbar variant="onboarding" />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Stepper Header */}
-        <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 shadow-2xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
+        <div className="bg-white rounded-2xl border border-[var(--ui-border)] p-6 shadow-2xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--ui-border)] pb-4">
             <div>
-              <span className="text-xs font-semibold text-amber-800 tracking-wide uppercase">
-                {t("onboarding.problemStatement")}
+              <span className="ui-eyebrow">
+                Building your business context
               </span>
-              <h1 className="text-xl sm:text-2xl font-sans font-bold tracking-tight text-[#0F172A] mt-0.5">
-                {steps.find((s) => s.num === step)?.label}
+              <h1 className="text-xl sm:text-2xl font-sans font-bold tracking-tight text-[var(--ui-text)] mt-0.5">
+                {step === 1 ? "Let's understand your business." : steps.find((s) => s.num === step)?.label}
               </h1>
             </div>
             {business ? (
               <div className="flex flex-wrap items-center gap-2.5">
-                <div className="flex items-center gap-2 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] px-3 py-1.5 text-xs text-[#475569]">
-                  <span className="font-semibold text-[#0F172A]">{business.name}</span>
-                  <span className="text-[#94A3B8]">·</span>
-                  <span className="font-mono text-[#64748B]">ID: {business.id.slice(0, 8)}</span>
+                <div className="flex items-center gap-2 rounded-full bg-[var(--ui-inset)] border border-[var(--ui-border)] px-3 py-1.5 text-xs text-[var(--ui-secondary)]">
+                  <span className="font-semibold text-[var(--ui-text)]">{business.name}</span>
+                  <span className="text-[var(--ui-muted)]">·</span>
+                  <span className="font-mono text-[var(--ui-secondary)]">ID: {business.id.slice(0, 8)}</span>
                 </div>
                 {assessment && (
                   <div className="flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-800">
@@ -1493,7 +1397,7 @@ function OnboardingContent() {
                 <button
                   type="button"
                   onClick={handleStartFresh}
-                  className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+                  className="rounded-full border border-[var(--ui-border)] bg-white px-3 py-1 text-xs font-semibold text-[var(--ui-text)] hover:bg-[var(--ui-bg)] transition-colors cursor-pointer shadow-2xs"
                 >
                   {t("onboarding.newEntity")}
                 </button>
@@ -1516,27 +1420,28 @@ function OnboardingContent() {
                     <button
                       type="button"
                       disabled={s.num > step}
+                      aria-current={isCurrent ? "step" : undefined}
                       onClick={() => s.num < step && setStep(s.num)}
                       className={`w-full flex items-center gap-2.5 p-2 rounded-xl text-left transition-all ${
                         isCurrent
-                          ? "bg-amber-50/70 border border-amber-300 ring-1 ring-amber-400/40 shadow-2xs"
+                          ? "bg-[var(--ui-sage-faint)] border border-[var(--ui-sage-soft)] shadow-2xs"
                           : isCompleted
-                          ? "hover:bg-slate-50 cursor-pointer border border-transparent"
+                          ? "hover:bg-[var(--ui-bg)] cursor-pointer border border-transparent"
                           : "opacity-40 cursor-not-allowed border border-transparent"
                       }`}
                     >
                       <span
                         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                           isCurrent
-                            ? "bg-[#0F172A] text-white shadow-2xs"
+                            ? "bg-[var(--ui-text)] text-white shadow-2xs"
                             : isCompleted
-                            ? "bg-emerald-600 text-white"
-                            : "bg-slate-100 border border-slate-200 text-slate-400"
+                            ? "bg-[var(--ui-sage)] text-white"
+                            : "bg-[var(--ui-inset)] border border-[var(--ui-border)] text-[var(--ui-muted)]"
                         }`}
                       >
                         {isCompleted ? "✓" : s.num}
                       </span>
-                      <span className={`text-xs font-semibold truncate ${isCurrent || isCompleted ? "text-[#0F172A]" : "text-[#94A3B8]"}`}>
+                      <span className={`text-xs font-semibold truncate ${isCurrent || isCompleted ? "text-[var(--ui-text)]" : "text-[var(--ui-muted)]"}`}>
                         {s.label}
                       </span>
                     </button>
@@ -1549,7 +1454,7 @@ function OnboardingContent() {
 
         {error && (
           <ErrorState
-            title="Action Error"
+            title="We couldn't complete this step."
             message={error}
             onRetry={() => setError(null)}
           />
@@ -1575,49 +1480,52 @@ function OnboardingContent() {
             <DemoPresetSelector
               selectedKey={selectedPresetKey}
               onSelectPreset={handleSelectPreset}
+              onStartOwn={() => { setSelectedPresetKey(null); setBusinessName(""); setProductDescription(""); setEmployeeCount(""); setTurnoverLakhs(""); setPlantInvestmentLakhs(""); setDistrict(""); setRegisteredState(""); setLegalConstitution(""); setIndustrialZone(""); setLifecycleStage(""); setTradeIntent("NONE"); }}
             />
 
             <form
               onSubmit={handleProfileSubmit}
-              className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6"
+              className="bg-white rounded-2xl border border-[var(--ui-border)] p-6 sm:p-8 shadow-2xs space-y-6"
             >
-            <div className="border-b border-[#E2E8F0] pb-4">
-              <h2 className="text-base font-sans font-bold text-[#0F172A]">
-                Establish Entity Identity &amp; Jurisdiction Scope
+            <div className="border-b border-[var(--ui-border)] pb-4">
+              <h2 className="text-base font-sans font-bold text-[var(--ui-text)]">
+                Start with the basics.
               </h2>
-              <p className="text-xs text-[#64748B] mt-1">
-                Canonical parameters define statutory jurisdiction, micro/small/medium scale, and applicable statutory authorities.
+              <p className="text-xs text-[var(--ui-secondary)] mt-1">
+                Tell us where you operate and the size of your business. These details help us find the requirements that matter.
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-secondary)] mb-1.5">
                   Legal Enterprise / Operating Name *
                 </label>
                 <input
                   type="text"
                   required
                   value={businessName}
+                  aria-label="Business name"
                   onChange={(e) => setBusinessName(e.target.value)}
                   placeholder="e.g. Apex Biotech Formulations LLP"
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2.5 text-sm text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-secondary)] mb-1.5">
                   Legal Constitution *
                 </label>
                 <select
                   required
                   value={legalConstitution}
+                  aria-label="Legal constitution"
                   onChange={(e) => setLegalConstitution(e.target.value)}
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2.5 text-sm text-[var(--ui-text)] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
                 >
-                  <option value="" className="bg-white text-[#64748B]">Select…</option>
+                  <option value="" className="bg-white text-[var(--ui-secondary)]">Select…</option>
                   {legalConstitutionOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-white text-[#0F172A]">
+                    <option key={opt.value} value={opt.value} className="bg-white text-[var(--ui-text)]">
                       {opt.label}
                     </option>
                   ))}
@@ -1625,53 +1533,56 @@ function OnboardingContent() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-secondary)] mb-1.5">
                   Operating State / Jurisdiction *
                 </label>
                 <select
                   required
                   value={registeredState}
+                  aria-label="Operating state"
                   onChange={(e) => setRegisteredState(e.target.value)}
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2.5 text-sm text-[var(--ui-text)] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
                 >
-                  <option value="" className="bg-white text-[#64748B]">Select a jurisdiction…</option>
+                  <option value="" className="bg-white text-[var(--ui-secondary)]">Select a jurisdiction…</option>
                   {stateOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-white text-[#0F172A]">
+                    <option key={opt.value} value={opt.value} className="bg-white text-[var(--ui-text)]">
                       {opt.label}
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-[#64748B] mt-1">
-                  Only jurisdictions present in the loaded knowledge base are listed.
+                <p className="text-[11px] text-[var(--ui-secondary)] mt-1">
+                  Choose from the jurisdictions currently supported by ComplyWise.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-secondary)] mb-1.5">
                   District / Industrial Hub *
                 </label>
                 <input
                   type="text"
                   required
                   value={district}
+                  aria-label="District"
                   onChange={(e) => setDistrict(e.target.value)}
                   placeholder="e.g. Ahmedabad, Pune, Bengaluru"
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2.5 text-sm text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-secondary)] mb-1.5">
                   Industrial Zone Siting *
                 </label>
                 <select
                   value={industrialZone}
+                  aria-label="Industrial zone"
                   onChange={(e) => setIndustrialZone(e.target.value)}
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2.5 text-sm text-[var(--ui-text)] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
                 >
-                  <option value="" className="bg-white text-[#64748B]">Not specified</option>
+                  <option value="" className="bg-white text-[var(--ui-secondary)]">Not specified</option>
                   {industrialZoneOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-white text-[#0F172A]">
+                    <option key={opt.value} value={opt.value} className="bg-white text-[var(--ui-text)]">
                       {opt.label}
                     </option>
                   ))}
@@ -1679,72 +1590,83 @@ function OnboardingContent() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-secondary)] mb-1.5">
                   Enterprise Lifecycle Stage *
                 </label>
                 <select
                   required
                   value={lifecycleStage}
+                  aria-label="Lifecycle stage"
                   onChange={(e) => setLifecycleStage(e.target.value)}
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2.5 text-sm text-[var(--ui-text)] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
                 >
-                  <option value="" className="bg-white text-[#64748B]">Select…</option>
+                  <option value="" className="bg-white text-[var(--ui-secondary)]">Select…</option>
                   {lifecycleStageOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-white text-[#0F172A]">
+                    <option key={opt.value} value={opt.value} className="bg-white text-[var(--ui-text)]">
                       {opt.label}
                     </option>
                   ))}
                 </select>
               </div>
 
+              <div className="sm:col-span-2">
+              <Disclosure title="Additional business details · optional">
+              <p className="text-xs text-[var(--ui-secondary)] mb-4">Add these figures if you know them. You can leave them blank and answer later if they affect a requirement.</p>
+              <div className="grid sm:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-secondary)] mb-1.5">
                   Plant &amp; Machinery Investment (₹ Lakhs)
                 </label>
                 <input
                   type="number"
                   min="0"
                   value={plantInvestmentLakhs}
+                  aria-label="Plant and machinery investment"
                   onChange={(e) => setPlantInvestmentLakhs(e.target.value)}
                   placeholder="Leave blank if not known"
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2.5 text-sm text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-secondary)] mb-1.5">
                   Estimated / Actual Annual Turnover (₹ Lakhs)
                 </label>
                 <input
                   type="number"
                   min="0"
                   value={turnoverLakhs}
+                  aria-label="Annual turnover"
                   onChange={(e) => setTurnoverLakhs(e.target.value)}
                   placeholder="Leave blank if not known"
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2.5 text-sm text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-secondary)] mb-1.5">
                   Direct Employees &amp; Workers (Count)
                 </label>
                 <input
                   type="number"
                   min="0"
                   value={employeeCount}
+                  aria-label="Workers"
                   onChange={(e) => setEmployeeCount(e.target.value)}
                   placeholder="Leave blank if not known"
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2.5 text-sm text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
                 />
+              </div>
+              </div>
+              </Disclosure>
               </div>
             </div>
 
-            <div className="flex justify-end pt-4 border-t border-[#E2E8F0]">
+            <div className="flex justify-end pt-4 border-t border-[var(--ui-border)]">
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--ui-text)] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[var(--ui-text)] disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
               >
                 {loading ? t("onboarding.savingProfile") : t("onboarding.continueToProducts")}
               </button>
@@ -1761,7 +1683,7 @@ function OnboardingContent() {
             businessName={businessName || business?.name || "Your Enterprise"}
             understanding={businessUnderstanding}
             loading={understandingLoading}
-            onProceed={handleProceedToQuestions}
+            onProceed={() => handleProceedToQuestions()}
             onEditProducts={() => setBusinessUnderstanding(null)}
           />
         )}
@@ -1769,47 +1691,49 @@ function OnboardingContent() {
         {step === 2 && !businessUnderstanding && (
           <form
             onSubmit={handleProductsSubmit}
-            className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6"
+            className="bg-white rounded-2xl border border-[var(--ui-border)] p-6 sm:p-8 shadow-2xs space-y-6"
           >
-            <div className="border-b border-[#E2E8F0] pb-4">
-              <h2 className="text-base font-sans font-bold text-[#0F172A]">
-                Products, Manufacturing Operations &amp; Trade Intent
+            <div className="border-b border-[var(--ui-border)] pb-4">
+              <h2 className="text-base font-sans font-bold text-[var(--ui-text)]">
+                What does your business do?
               </h2>
-              <p className="text-xs text-[#64748B] mt-1">
-                Provide natural-language descriptions of operations. The system detects regulatory keywords and prompts for missing statutory triggers dynamically.
+              <p className="text-xs text-[var(--ui-secondary)] mt-1">
+                Tell us what you make, sell or provide. We’ll use those details to find the relevant requirements and ask only when something important is missing.
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
-                  Describe your manufacturing processes, product lines, and plant operations *
+                <label className="block text-xs font-semibold text-[var(--ui-secondary)] mb-1.5">
+                  Describe your products, services and daily operations *
                 </label>
                 <textarea
                   required
                   rows={5}
                   value={productDescription}
+                  aria-label="Business activities"
                   onChange={(e) => setProductDescription(e.target.value)}
-                  placeholder="e.g. Processing and packaging of roasted snacks, operating a continuous frying furnace, packaging in nitrogen sealed pouches, storing raw grains in on-site warehouse..."
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-3 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 leading-relaxed"
+                  placeholder="For example: We make and package snacks, store ingredients at our facility, and supply shops across Maharashtra."
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] p-3 text-sm text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 leading-relaxed"
                 />
-                <p className="text-[11px] text-[#64748B] mt-1">
-                  Mention raw materials, industrial power, effluent generation, storage, and packaging.
+                <p className="text-[11px] text-[var(--ui-secondary)] mt-1">
+                  Include where you operate, who you supply and any manufacturing, storage or trade activities.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--ui-secondary)] mb-1.5">
                   Import or export intent
                 </label>
                 <select
                   value={tradeIntent}
+                  aria-label="Import or export intent"
                   onChange={(e) => setTradeIntent(e.target.value)}
-                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-sm text-[#0F172A] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+                  className="w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2.5 text-sm text-[var(--ui-text)] focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
                 >
-                  <option value="" className="bg-white text-[#64748B]">Not specified</option>
+                  <option value="" className="bg-white text-[var(--ui-secondary)]">Not specified</option>
                   {tradeIntentOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-white text-[#0F172A]">
+                    <option key={opt.value} value={opt.value} className="bg-white text-[var(--ui-text)]">
                       {opt.label}
                     </option>
                   ))}
@@ -1818,9 +1742,9 @@ function OnboardingContent() {
             </div>
 
             {detectedActivities.length > 0 && (
-              <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4">
-                <span className="text-xs font-semibold text-[#0F172A] block mb-2">
-                  Detected Activity Domains:
+              <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg)] p-4">
+                <span className="text-xs font-semibold text-[var(--ui-text)] block mb-2">
+                  Activities identified:
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {detectedActivities.map((act, idx) => (
@@ -1835,11 +1759,11 @@ function OnboardingContent() {
               </div>
             )}
 
-            <div className="flex justify-between items-center pt-4 border-t border-[#E2E8F0]">
+            <div className="flex justify-between items-center pt-4 border-t border-[var(--ui-border)]">
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+                className="rounded-full border border-[var(--ui-border)] bg-white px-5 py-2 text-xs font-semibold text-[var(--ui-secondary)] hover:bg-[var(--ui-bg)] transition-colors cursor-pointer shadow-2xs"
               >
                 {t("onboarding.backToProfile")}
               </button>
@@ -1847,7 +1771,7 @@ function OnboardingContent() {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--ui-text)] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[var(--ui-text)] disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
               >
                 {loading ? t("onboarding.analyzingOperations") : t("onboarding.generateQuestions")}
               </button>
@@ -1874,78 +1798,6 @@ function OnboardingContent() {
                 );
               }
             }}
-            hasPresetAnswers={Boolean(
-              selectedPresetKey && CONTROLLED_DEMO_PROFILES.find((p) => p.presetKey === selectedPresetKey)
-            )}
-            presetName={
-              CONTROLLED_DEMO_PROFILES.find((p) => p.presetKey === selectedPresetKey)?.businessName
-            }
-            onPrefillAllAnswers={async () => {
-              const preset = CONTROLLED_DEMO_PROFILES.find((p) => p.presetKey === selectedPresetKey);
-              const runId = activeRunId || (typeof window !== "undefined" ? localStorage.getItem("complywise_active_assessment_id") : null);
-              if (preset) {
-                setOrchestrationQuestions((prev) =>
-                  prev.map((q, idx) => {
-                    const fallbackKey = `Q${String(idx + 1).padStart(2, "0")}`;
-                    let val = preset.presetAnswers[q.question_id] ?? preset.presetAnswers[fallbackKey];
-                    if (val === undefined || (q.answer_type === "NUMBER" && typeof val !== "number") || (q.answer_type === "BOOLEAN" && typeof val !== "boolean")) {
-                      val = q.answer_type === "NUMBER" ? 100 : (q.answer_type === "BOOLEAN" ? true : "Standard");
-                    }
-                    return {
-                      ...q,
-                      is_answered: true,
-                      current_value: val,
-                    };
-                  })
-                );
-                setActiveQuestionIndex(14);
-                if (runId) {
-                  try {
-                    // Build a type-safe answers dict keyed by actual question IDs, not profile
-                    // variable keys. This prevents the 'Invalid boolean value: 450' error caused
-                    // by submitting profile-variable-keyed numeric values against BOOLEAN questions.
-                    const typeSafeAnswers: Record<string, unknown> = {};
-                    // Use a snapshot of current questions from the already-updated state above
-                    const currentQs = orchestrationQuestions;
-                    currentQs.forEach((q, idx) => {
-                      const fallbackKey = `Q${String(idx + 1).padStart(2, "0")}`;
-                      let val: unknown =
-                        preset.presetAnswers[q.question_id] ??
-                        preset.presetAnswers[fallbackKey];
-
-                      // Coerce to the question's declared type
-                      if (q.answer_type === "BOOLEAN") {
-                        if (typeof val === "boolean") {
-                          // already correct
-                        } else if (typeof val === "number") {
-                          val = val !== 0;
-                        } else if (typeof val === "string") {
-                          val = ["true", "yes", "y", "1"].includes(val.toLowerCase());
-                        } else {
-                          val = true; // safe boolean default
-                        }
-                      } else if (q.answer_type === "NUMBER" || q.answer_type === "PERCENTAGE") {
-                        if (typeof val !== "number") {
-                          val = typeof val === "string" ? parseFloat(val) || 100 : 100;
-                        }
-                      } else if (val === undefined || val === null) {
-                        val = "Standard";
-                      }
-
-                      if (val !== undefined && val !== null) {
-                        typeSafeAnswers[q.question_id] = val;
-                      }
-                    });
-
-                    if (Object.keys(typeSafeAnswers).length > 0) {
-                      await api.orchestration.submitAnswer(runId, { answers: typeSafeAnswers });
-                    }
-                  } catch (err) {
-                    console.warn("Background prefill submission error:", err);
-                  }
-                }
-              }
-            }}
             onCompleteQuestions={handleProceedToAnalysis}
             onBackToProducts={() => setStep(2)}
             loading={questionLoading}
@@ -1953,21 +1805,21 @@ function OnboardingContent() {
         )}
 
         {step === 3 && orchestrationQuestions.length === 0 && (
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-8 sm:p-12 text-center space-y-6 shadow-2xs">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-700 animate-pulse text-2xl font-bold">
+          <div className="bg-white rounded-2xl border border-[var(--ui-border)] p-8 sm:p-12 text-center space-y-6 shadow-2xs">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--ui-sage-faint)] border border-[var(--ui-sage-soft)] text-[var(--ui-sage)] animate-pulse text-2xl font-bold">
               ⚡
             </div>
             <div className="space-y-2 max-w-lg mx-auto">
-              <h2 className="text-lg sm:text-xl font-bold text-[#0F172A]">
-                Preparing Your 15-Question Regulatory Assessment
+              <h2 className="text-lg sm:text-xl font-bold text-[var(--ui-text)]">
+                Only the details that matter
               </h2>
-              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
-                ComplyWise is structuring 15 intelligent statutory questions tailored to {businessName || business?.name || "your enterprise"} covering electrical connected load, environmental clearances, labor thresholds, and product standards.
+              <p className="text-xs sm:text-sm text-[var(--ui-secondary)] leading-relaxed">
+                We’re checking which missing details would change the requirements or next steps for {businessName || business?.name || "your business"}.
               </p>
             </div>
             {questionLoading ? (
-              <div className="flex items-center justify-center gap-2 text-xs font-semibold text-indigo-600">
-                <span className="inline-block h-2 w-2 rounded-full bg-indigo-600 animate-ping" />
+              <div className="flex items-center justify-center gap-2 text-xs font-semibold text-[var(--ui-sage)]">
+                <span className="inline-block h-2 w-2 rounded-full bg-[var(--ui-sage)] animate-ping" />
                 <span>Generating questions...</span>
               </div>
             ) : (
@@ -1975,16 +1827,16 @@ function OnboardingContent() {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                  className="rounded-full border border-[var(--ui-border)] bg-white px-5 py-2 text-xs font-semibold text-[var(--ui-secondary)] hover:bg-[var(--ui-bg)] transition-colors shadow-2xs cursor-pointer"
                 >
                   ← Back to Operations
                 </button>
                 <button
                   type="button"
-                  onClick={handleProceedToQuestions}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
+                  onClick={() => handleProceedToQuestions()}
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--ui-text)] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[var(--ui-text)] transition-colors shadow-2xs cursor-pointer"
                 >
-                  Generate 15 Questions
+                  Prepare questions
                 </button>
               </div>
             )}
@@ -1994,19 +1846,19 @@ function OnboardingContent() {
         {/* ------------------------------------------------------------- */}
         {/* STEP 4: REGULATORY ANALYSIS (8-STAGE ORCHESTRATION PIPELINE) */}
         {step === 4 && (
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-8 shadow-2xs space-y-6 text-center">
+          <div className="bg-white rounded-2xl border border-[var(--ui-border)] p-8 shadow-2xs space-y-6 text-center">
             <div className="max-w-md mx-auto space-y-3">
               <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 font-bold text-2xl animate-pulse shadow-2xs">
                 ⚙️
               </div>
-              <h2 className="text-xl font-sans font-bold tracking-tight text-[#0F172A]">
+              <h2 className="text-xl font-sans font-bold tracking-tight text-[var(--ui-text)]">
                 Building Your Compliance Plan
               </h2>
-              <p className="text-xs text-[#64748B]">
-                Orchestrating regulatory applicability, statutory document checklists, clearance workflows, and official web harvesting for {business?.name || "your enterprise"}.
+              <p className="text-xs text-[var(--ui-secondary)]">
+                Checking the relevant requirements and their sources for {business?.name || "your business"}.
               </p>
               {/* Dynamic query feedback strip */}
-              <div className="p-2.5 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] text-xs font-semibold text-amber-800 flex items-center justify-center gap-2 shadow-2xs">
+              <div className="p-2.5 rounded-full bg-[var(--ui-bg)] border border-[var(--ui-border)] text-xs font-semibold text-amber-800 flex items-center justify-center gap-2 shadow-2xs">
                 <span className="inline-block h-2 w-2 rounded-full bg-amber-600 animate-ping" />
                 <span className="truncate">{activeQueryText}</span>
               </div>
@@ -2019,29 +1871,29 @@ function OnboardingContent() {
                   key={`${stage.name}-${idx}`}
                   className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                     stage.done
-                      ? "bg-white border-emerald-200 shadow-2xs"
-                      : "bg-[#F8FAFC] border-[#E2E8F0]"
+                      ? "bg-white border-[var(--ui-sage-soft)] shadow-2xs"
+                      : "bg-[var(--ui-bg)] border-[var(--ui-border)]"
                   }`}
                 >
                   <span
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                       stage.done
-                        ? "bg-emerald-600 text-white"
-                        : "bg-slate-100 text-slate-400 border border-slate-200 animate-pulse"
+                        ? "bg-[var(--ui-sage)] text-white"
+                        : "bg-[var(--ui-inset)] text-[var(--ui-muted)] border border-[var(--ui-border)] animate-pulse"
                     }`}
                   >
                     {stage.done ? "✓" : idx + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-[#0F172A] truncate">{stage.name}</div>
-                    <div className="text-[11px] text-[#64748B] truncate">{stage.detail}</div>
+                    <div className="text-xs font-semibold text-[var(--ui-text)] truncate">{stage.name}</div>
+                    <div className="text-[11px] text-[var(--ui-secondary)] truncate">{stage.detail}</div>
                   </div>
                   {stage.done ? (
-                    <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    <span className="text-[11px] font-semibold text-[var(--ui-sage)] bg-[var(--ui-sage-faint)] px-2.5 py-0.5 rounded-full border border-[var(--ui-sage-soft)]">
                       Completed
                     </span>
                   ) : (
-                    <span className="text-[11px] font-medium text-[#94A3B8]">
+                    <span className="text-[11px] font-medium text-[var(--ui-muted)]">
                       Processing...
                     </span>
                   )}
@@ -2049,8 +1901,8 @@ function OnboardingContent() {
               ))}
             </div>
 
-            <div className="text-[11px] text-[#94A3B8] pt-2">
-              Statutory truth guarantee: zero hallucinations, fully deterministically evaluated with legal citations.
+            <div className="text-[11px] text-[var(--ui-muted)] pt-2">
+              Published rules guide applicability. Source-backed decisions and contextual planning remain distinct.
             </div>
           </div>
         )}
@@ -2072,17 +1924,17 @@ function OnboardingContent() {
           ) : (
             <div className="space-y-6">
               {/* Executive Summary Hero Card */}
-              <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 sm:p-8 text-[#0F172A] shadow-2xs space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-6">
+              <div className="bg-white border border-[var(--ui-border)] rounded-2xl p-6 sm:p-8 text-[var(--ui-text)] shadow-2xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--ui-border)] pb-6">
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200 mb-2">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-[var(--ui-sage-faint)] px-3 py-1 text-xs font-semibold text-[var(--ui-sage)] border border-[var(--ui-sage-soft)] mb-2">
                     <span>✓</span>
                     <span>Compliance Plan Generated</span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-sans font-bold tracking-tight text-[#0F172A]">
+                  <h2 className="text-xl sm:text-2xl font-sans font-bold tracking-tight text-[var(--ui-text)]">
                     Compliance Plan for {business?.name || "Your Enterprise"}
                   </h2>
-                  <p className="text-xs text-[#64748B] mt-1 max-w-xl">
+                  <p className="text-xs text-[var(--ui-secondary)] mt-1 max-w-xl">
                     Evaluated across Central Acts, {registeredState || "State"} statutory notifications, and official regulatory requirements.
                   </p>
                 </div>
@@ -2090,14 +1942,14 @@ function OnboardingContent() {
                 <div className="flex items-center gap-3">
                   <Link
                     href={`/compliance?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-5 py-2.5 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800 transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-full bg-[var(--ui-text)] px-5 py-2.5 text-xs font-semibold text-white shadow-2xs hover:bg-[var(--ui-text)] transition-colors cursor-pointer"
                   >
                     <span>View Compliance Plan</span>
                     <span>→</span>
                   </Link>
                   <Link
                     href={`/dashboard?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
-                    className="inline-flex items-center gap-2 rounded-full bg-white border border-[#E2E8F0] px-5 py-2.5 text-xs font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-2 rounded-full bg-white border border-[var(--ui-border)] px-5 py-2.5 text-xs font-semibold text-[var(--ui-text)] hover:bg-[var(--ui-bg)] transition-colors cursor-pointer shadow-2xs"
                   >
                     <span>Founder Dashboard</span>
                   </Link>
@@ -2106,31 +1958,31 @@ function OnboardingContent() {
 
               {/* 4 Headline Metrics */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-                <div className="bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0]">
-                  <span className="text-[#64748B] text-xs font-semibold block">Applicable Mandates</span>
-                  <span className="text-2xl sm:text-3xl font-sans font-bold text-[#0F172A] mt-1 block">
+                <div className="bg-[var(--ui-bg)] rounded-xl p-4 border border-[var(--ui-border)]">
+                  <span className="text-[var(--ui-secondary)] text-xs font-semibold block">Applicable Mandates</span>
+                  <span className="text-2xl sm:text-3xl font-sans font-bold text-[var(--ui-text)] mt-1 block">
                     {applicableCount}
                   </span>
                   <span className="text-[11px] text-amber-800 font-medium mt-1 block">Obligations Required</span>
                 </div>
-                <div className="bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0]">
-                  <span className="text-[#64748B] text-xs font-semibold block">Required Documents</span>
-                  <span className="text-2xl sm:text-3xl font-sans font-bold text-[#0F172A] mt-1 block">
-                    {executiveSummary?.documents_count ?? (applicableCount > 0 ? applicableCount * 2 + 2 : 0)}
+                <div className="bg-[var(--ui-bg)] rounded-xl p-4 border border-[var(--ui-border)]">
+                  <span className="text-[var(--ui-secondary)] text-xs font-semibold block">Required Documents</span>
+                  <span className="text-2xl sm:text-3xl font-sans font-bold text-[var(--ui-text)] mt-1 block">
+                    {executiveSummary?.documents_count ?? "Not recorded"}
                   </span>
                   <span className="text-[11px] text-amber-800 font-medium mt-1 block">Statutory Proofs</span>
                 </div>
-                <div className="bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0]">
-                  <span className="text-[#64748B] text-xs font-semibold block">Clearance Workflows</span>
-                  <span className="text-2xl sm:text-3xl font-sans font-bold text-[#0F172A] mt-1 block">
-                    {executiveSummary?.workflows_count ?? (applicableCount > 0 ? Math.min(applicableCount, 3) : 0)}
+                <div className="bg-[var(--ui-bg)] rounded-xl p-4 border border-[var(--ui-border)]">
+                  <span className="text-[var(--ui-secondary)] text-xs font-semibold block">Clearance Workflows</span>
+                  <span className="text-2xl sm:text-3xl font-sans font-bold text-[var(--ui-text)] mt-1 block">
+                    {executiveSummary?.workflows_count ?? "Not recorded"}
                   </span>
                   <span className="text-[11px] text-amber-800 font-medium mt-1 block">Approval Procedures</span>
                 </div>
-                <div className="bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0]">
-                  <span className="text-[#64748B] text-xs font-semibold block">Statutory Deadlines</span>
-                  <span className="text-2xl sm:text-3xl font-sans font-bold text-[#0F172A] mt-1 block">
-                    {executiveSummary?.deadlines_count ?? (applicableCount > 0 ? 3 : 0)}
+                <div className="bg-[var(--ui-bg)] rounded-xl p-4 border border-[var(--ui-border)]">
+                  <span className="text-[var(--ui-secondary)] text-xs font-semibold block">Statutory Deadlines</span>
+                  <span className="text-2xl sm:text-3xl font-sans font-bold text-[var(--ui-text)] mt-1 block">
+                    {executiveSummary?.deadlines_count ?? "Not recorded"}
                   </span>
                   <span className="text-[11px] text-amber-800 font-medium mt-1 block">Filings &amp; Renewals</span>
                 </div>
@@ -2153,8 +2005,8 @@ function OnboardingContent() {
               />
               <MetricCard
                 label="Official Sources Reviewed"
-                value={discoveryResult?.official_sources_count ?? (discoveryResult?.candidate_urls_count ? Math.min(discoveryResult.candidate_urls_count, 6) : 0)}
-                subtext={discoveryResult?.ran ? "Discovered via Firecrawl" : "Local Knowledge Pack"}
+                value={discoveryResult?.official_sources_count ?? 0}
+                subtext={discoveryResult?.ran ? "Official-source discovery" : "Local Knowledge Pack"}
                 badge={{ text: "Discovery", variant: "info" }}
               />
               <MetricCard
@@ -2166,17 +2018,17 @@ function OnboardingContent() {
             </div>
 
             {/* Live Discovery Audit Summary (Part L) */}
-            <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-2xs space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-3">
+            <div className="bg-white rounded-2xl border border-[var(--ui-border)] p-5 shadow-2xs space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--ui-border)] pb-3">
                 <div className="flex items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-white text-xs font-bold">
                     ✓
                   </span>
                   <div>
-                    <h3 className="text-sm font-sans font-bold text-[#0F172A]">
+                    <h3 className="text-sm font-sans font-bold text-[var(--ui-text)]">
                       Regulatory Discovery Complete
                     </h3>
-                    <p className="text-xs text-[#64748B]">
+                    <p className="text-xs text-[var(--ui-secondary)]">
                       Real web discovery executed for {business?.name || "enterprise"} with official source prioritization.
                     </p>
                   </div>
@@ -2187,21 +2039,21 @@ function OnboardingContent() {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
-                <div className="bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0]">
-                  <span className="text-[#64748B] block text-[11px]">Queries Planned</span>
-                  <span className="font-sans font-bold text-[#0F172A] text-base">{discoveryResult?.queries?.length || 0}</span>
+                <div className="bg-[var(--ui-bg)] p-3 rounded-xl border border-[var(--ui-border)]">
+                  <span className="text-[var(--ui-secondary)] block text-[11px]">Queries Planned</span>
+                  <span className="font-sans font-bold text-[var(--ui-text)] text-base">{discoveryResult?.queries?.length || 0}</span>
                 </div>
-                <div className="bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0]">
-                  <span className="text-[#64748B] block text-[11px]">Sources Reviewed</span>
-                  <span className="font-sans font-bold text-[#0F172A] text-base">{discoveryResult?.candidate_urls_count || 0}</span>
+                <div className="bg-[var(--ui-bg)] p-3 rounded-xl border border-[var(--ui-border)]">
+                  <span className="text-[var(--ui-secondary)] block text-[11px]">Sources Reviewed</span>
+                  <span className="font-sans font-bold text-[var(--ui-text)] text-base">{discoveryResult?.candidate_urls_count || 0}</span>
                 </div>
-                <div className="bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0]">
-                  <span className="text-[#64748B] block text-[11px]">Official Portals</span>
-                  <span className="font-sans font-bold text-[#0F172A] text-base">{discoveryResult?.official_sources_count || 0}</span>
+                <div className="bg-[var(--ui-bg)] p-3 rounded-xl border border-[var(--ui-border)]">
+                  <span className="text-[var(--ui-secondary)] block text-[11px]">Official Portals</span>
+                  <span className="font-sans font-bold text-[var(--ui-text)] text-base">{discoveryResult?.official_sources_count || 0}</span>
                 </div>
-                <div className="bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0]">
-                  <span className="text-[#64748B] block text-[11px]">Claims Quarantined</span>
-                  <span className="font-sans font-bold text-[#0F172A] text-base">{discoveryResult?.candidate_requirements_count || 0}</span>
+                <div className="bg-[var(--ui-bg)] p-3 rounded-xl border border-[var(--ui-border)]">
+                  <span className="text-[var(--ui-secondary)] block text-[11px]">Claims Quarantined</span>
+                  <span className="font-sans font-bold text-[var(--ui-text)] text-base">{discoveryResult?.candidate_requirements_count || 0}</span>
                 </div>
               </div>
             </div>
@@ -2230,17 +2082,17 @@ function OnboardingContent() {
                       className="p-3.5 bg-white border border-amber-200 rounded-xl space-y-1.5 shadow-2xs"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <span className="font-bold text-xs text-[#0F172A] leading-snug">
+                        <span className="font-bold text-xs text-[var(--ui-text)] leading-snug">
                           {cr.name}
                         </span>
                         <span className="shrink-0 text-[10px] font-bold uppercase bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">
                           Quarantined
                         </span>
                       </div>
-                      <p className="text-[11px] text-[#475569] line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] text-[var(--ui-secondary)] line-clamp-2 leading-relaxed">
                         {cr.applicability_statement}
                       </p>
-                      <div className="text-[10px] text-[#64748B] font-mono flex items-center justify-between pt-1">
+                      <div className="text-[10px] text-[var(--ui-secondary)] font-mono flex items-center justify-between pt-1">
                         <span>Authority: {cr.authority}</span>
                         <span className="text-amber-800 font-semibold">Evidence Extracted</span>
                       </div>
@@ -2251,27 +2103,27 @@ function OnboardingContent() {
             )}
 
             {/* Categorized Requirements List (Part N — Filtered presentation) */}
-            <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 shadow-2xs space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-4">
+            <div className="bg-white rounded-2xl border border-[var(--ui-border)] p-6 shadow-2xs space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--ui-border)] pb-4">
                 <div>
-                  <h2 className="text-base font-sans font-bold text-[#0F172A]">
+                  <h2 className="text-base font-sans font-bold text-[var(--ui-text)]">
                     Statutory Applicability Results
                   </h2>
-                  <p className="text-xs text-[#64748B]">
+                  <p className="text-xs text-[var(--ui-secondary)]">
                     Evaluated deterministically against Central Acts and {registeredState} state notifications.
                   </p>
                 </div>
 
                 <Link
                   href={`/dashboard?business_id=${business?.id}`}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-5 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs"
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--ui-text)] px-5 py-2 text-xs font-semibold text-white hover:bg-[var(--ui-text)] transition-colors cursor-pointer shadow-2xs"
                 >
                   {t("onboarding.enterDashboard")}
                 </Link>
               </div>
 
               {results.length === 0 ? (
-                <div className="py-8 text-center text-[#64748B] text-xs">
+                <div className="py-8 text-center text-[var(--ui-secondary)] text-xs">
                   No decision rules were triggered for the current profile parameters.
                 </div>
               ) : (
@@ -2279,7 +2131,7 @@ function OnboardingContent() {
                   {/* Action Required: APPLICABLE & NEEDS_INFORMATION */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#64748B]">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-secondary)]">
                         Action Required ({results.filter((r) => r.status === "APPLICABLE" || r.status === "NEEDS_INFORMATION").length})
                       </span>
                     </div>
@@ -2289,26 +2141,26 @@ function OnboardingContent() {
                       .map((r, idx) => (
                         <div
                           key={r.id || `${r.requirement_id}-${idx}`}
-                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-white hover:border-slate-300 hover:shadow-2xs transition-colors"
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg)] hover:bg-white hover:border-[var(--ui-border-strong)] hover:shadow-2xs transition-colors"
                         >
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <span className="font-mono text-xs font-bold text-amber-800">
                                 {r.requirement_id}
                               </span>
-                              <span className="text-[#94A3B8]">·</span>
-                              <span className="text-xs font-sans font-bold text-[#0F172A]">
+                              <span className="text-[var(--ui-muted)]">·</span>
+                              <span className="text-xs font-sans font-bold text-[var(--ui-text)]">
                                 {r.requirement_name}
                               </span>
                             </div>
-                            <div className="text-[11px] text-[#64748B] flex items-center gap-2">
+                            <div className="text-[11px] text-[var(--ui-secondary)] flex items-center gap-2">
                               <span>
                                 Evidence: {r.evidence_refs ? r.evidence_refs.length : 0} statutory citation(s)
                               </span>
                               {Boolean(r.explanation_trace?.reason) && (
                                 <>
                                   <span>·</span>
-                                  <span className="italic text-[#475569]">
+                                  <span className="italic text-[var(--ui-secondary)]">
                                     {String(r.explanation_trace.reason)}
                                   </span>
                                 </>
@@ -2327,7 +2179,7 @@ function OnboardingContent() {
                             <StatusBadge status={r.status as ApplicabilityStatus} size="sm" />
                             <Link
                               href={`/compliance/${r.requirement_id}?business_id=${business?.id}`}
-                              className="text-xs font-semibold text-[#64748B] hover:text-[#0F172A]"
+                              className="text-xs font-semibold text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
                             >
                               Details →
                             </Link>
@@ -2357,12 +2209,12 @@ function OnboardingContent() {
                                 <span className="font-mono text-xs font-bold text-amber-800">
                                   {r.requirement_id}
                                 </span>
-                                <span className="text-[#94A3B8]">·</span>
-                                <span className="text-xs font-sans font-bold text-[#0F172A]">
+                                <span className="text-[var(--ui-muted)]">·</span>
+                                <span className="text-xs font-sans font-bold text-[var(--ui-text)]">
                                   {r.requirement_name}
                                 </span>
                               </div>
-                              <div className="text-[11px] text-[#475569]">
+                              <div className="text-[11px] text-[var(--ui-secondary)]">
                                 {String(r.explanation_trace?.reason || "Verification required")}
                               </div>
                             </div>
@@ -2383,16 +2235,16 @@ function OnboardingContent() {
 
                   {/* Not Applicable Requirements: Collapsible / Hidden by default (Part N) */}
                   {results.filter((r) => r.status === "NOT_APPLICABLE").length > 0 && (
-                    <div className="pt-2 border-t border-[#E2E8F0]">
+                    <div className="pt-2 border-t border-[var(--ui-border)]">
                       <button
                         type="button"
                         onClick={() => setShowNotApplicable((prev) => !prev)}
-                        className="flex items-center justify-between w-full py-2 text-xs font-semibold text-[#64748B] hover:text-[#0F172A] transition-colors cursor-pointer"
+                        className="flex items-center justify-between w-full py-2 text-xs font-semibold text-[var(--ui-secondary)] hover:text-[var(--ui-text)] transition-colors cursor-pointer"
                       >
                         <span>
                           {showNotApplicable ? "▾ Hide" : "▸ Show"} Not Applicable Requirements ({results.filter((r) => r.status === "NOT_APPLICABLE").length} hidden by default)
                         </span>
-                        <span className="text-[11px] text-[#94A3B8]">
+                        <span className="text-[11px] text-[var(--ui-muted)]">
                           {showNotApplicable ? "Click to collapse" : "Click to view full audit trail"}
                         </span>
                       </button>
@@ -2404,19 +2256,19 @@ function OnboardingContent() {
                             .map((r, idx) => (
                               <div
                                 key={r.id || `${r.requirement_id}-${idx}`}
-                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-[#E2E8F0] bg-slate-50 opacity-75"
+                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg)] opacity-75"
                               >
                                 <div className="space-y-0.5">
                                   <div className="flex items-center gap-2">
-                                    <span className="font-mono text-[11px] font-bold text-[#64748B]">
+                                    <span className="font-mono text-[11px] font-bold text-[var(--ui-secondary)]">
                                       {r.requirement_id}
                                     </span>
-                                    <span className="text-[#CBD5E1]">·</span>
-                                    <span className="text-xs font-medium text-[#475569]">
+                                    <span className="text-[var(--ui-border-strong)]">·</span>
+                                    <span className="text-xs font-medium text-[var(--ui-secondary)]">
                                       {r.requirement_name}
                                     </span>
                                   </div>
-                                  <div className="text-[10px] text-[#94A3B8]">
+                                  <div className="text-[10px] text-[var(--ui-muted)]">
                                     Reason: {String(r.explanation_trace?.reason || "Not triggered by business profile parameters")}
                                   </div>
                                 </div>
@@ -2431,11 +2283,11 @@ function OnboardingContent() {
               )}
 
               {/* Bottom CTAs */}
-              <div className="pt-4 border-t border-[#E2E8F0] flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="pt-4 border-t border-[var(--ui-border)] flex flex-col sm:flex-row items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="text-xs font-semibold text-[#64748B] hover:text-[#0F172A] cursor-pointer"
+                  className="text-xs font-semibold text-[var(--ui-secondary)] hover:text-[var(--ui-text)] cursor-pointer"
                 >
                   ← Refine Smart Questions
                 </button>
@@ -2443,21 +2295,21 @@ function OnboardingContent() {
                 <div className="flex items-center gap-3">
                   <Link
                     href={`/schemes?business_id=${business?.id}`}
-                    className="rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2 text-xs font-semibold text-indigo-800 hover:bg-indigo-100 transition-colors shadow-2xs"
+                    className="rounded-full border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] px-5 py-2 text-xs font-semibold text-[var(--ui-sage)] hover:bg-[var(--ui-sage-soft)] transition-colors shadow-2xs"
                   >
                     View Matched Schemes
                   </Link>
 
                   <Link
                     href={`/compliance?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
-                    className="rounded-full border border-[#E2E8F0] bg-white px-5 py-2 text-xs font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors shadow-2xs"
+                    className="rounded-full border border-[var(--ui-border)] bg-white px-5 py-2 text-xs font-semibold text-[var(--ui-text)] hover:bg-[var(--ui-bg)] transition-colors shadow-2xs"
                   >
                     {t("onboarding.viewAllMandates")}
                   </Link>
 
                   <Link
                     href={`/dashboard?business_id=${business?.id}${assessment ? `&assessment_id=${assessment.id}` : ""}`}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#0F172A] px-6 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors shadow-2xs"
+                    className="inline-flex items-center gap-2 rounded-full bg-[var(--ui-text)] px-6 py-2 text-xs font-semibold text-white hover:bg-[var(--ui-text)] transition-colors shadow-2xs"
                   >
                     {t("onboarding.enterDashboard")}
                   </Link>

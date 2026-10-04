@@ -57,7 +57,7 @@ export function Chart({
                 className={`w-full max-w-[26px] rounded-full transition-all duration-300 group-hover:scale-y-105 origin-bottom ${
                   d.isHighlight
                     ? "shadow-xs"
-                    : "bg-[#f1f5f9] group-hover:bg-slate-300/80"
+                    : "bg-[var(--ui-inset)] group-hover:bg-[var(--ui-inset)]/80"
                 }`}
                 style={{
                   height: `${heightPercent}%`,
@@ -66,7 +66,7 @@ export function Chart({
               />
               <span
                 className={`text-[11px] font-semibold transition-colors ${
-                  d.isHighlight ? "text-slate-900 font-bold" : "text-slate-400 group-hover:text-slate-700"
+                  d.isHighlight ? "text-[var(--ui-text)] font-bold" : "text-[var(--ui-muted)] group-hover:text-[var(--ui-secondary)]"
                 }`}
               >
                 {d.label}

@@ -156,7 +156,7 @@ def check_knowledge_packs() -> dict[str, Any]:
 def check_integrations() -> dict[str, Any]:
     """Booleans only — whether each integration has been given credentials.
 
-    Never the values. `firecrawl_api_key` in particular is server-side only and
+    Never the values. `serpapi_api_key` in particular is server-side only and
     must not reach the frontend in any form beyond this boolean (§13).
     """
     return {
@@ -169,7 +169,7 @@ def check_integrations() -> dict[str, Any]:
         "grok_api_key": bool(settings.GROK_API_KEY),
         "grok_model": bool(settings.GROK_MODEL),
         "azure_storage": bool(settings.AZURE_STORAGE_CONNECTION_STRING),
-        "firecrawl_api_key": bool(settings.FIRECRAWL_API_KEY),
+        "serpapi_api_key": bool(settings.SERPAPI_API_KEY),
     }
 
 

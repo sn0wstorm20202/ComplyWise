@@ -1,34 +1,11 @@
-"""Live Firecrawl smoke test.
-
-Authority: Milestone Section 9 (Automated Test Suite & Smoke Testing).
-Runs an actual live search against the Firecrawl API if FIRECRAWL_API_KEY is configured.
-Gracefully skips if FIRECRAWL_API_KEY is unset or empty.
-"""
-
-from __future__ import annotations
-
+"""Legacy boundary must never make a request, even with old credentials."""
+from unittest.mock import patch
 import pytest
-from apps.ingestion.firecrawl import is_configured, search
+from apps.ingestion import firecrawl
 
-
-@pytest.mark.django_db
-def test_live_firecrawl_smoke():
-    """Verify live communication with Firecrawl v2 search API using the configured key."""
-    if not is_configured():
-        pytest.skip("FIRECRAWL_API_KEY not configured; skipping live Firecrawl smoke test.")
-
-    # Execute a focused query against official Indian regulatory portals
-    query = "site:gov.in consent to establish pollution control board"
-    try:
-        results = search(query=query, limit=3, scrape_markdown=False)
-    except Exception as exc:
-        if any(term in str(exc).lower() for term in ["401", "402", "429", "unauthorized", "quota", "forbidden", "could not be reached", "getaddrinfo", "timeout"]):
-            pytest.skip(f"Firecrawl API service unavailable or network offline: {exc}")
-        pytest.fail(f"Live Firecrawl API call failed: {exc}")
-
-    assert isinstance(results, list), "Expected list of search results"
-    if results:
-        first = results[0]
-        assert "url" in first, "Search result missing 'url'"
-        assert isinstance(first["url"], str)
-        assert len(first["url"]) > 0
+def test_retired_firecrawl_cannot_execute():
+    with patch("urllib.request.urlopen") as network:
+        assert firecrawl.is_configured() is False
+        with pytest.raises(firecrawl.FirecrawlUnavailable): firecrawl.search("synthetic")
+        with pytest.raises(firecrawl.FirecrawlUnavailable): firecrawl.scrape("https://bis.gov.in")
+    network.assert_not_called()

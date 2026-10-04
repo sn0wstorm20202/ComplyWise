@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
+import ErrorState from "@/components/ErrorState";
 import { useBusinessContext } from "@/context/BusinessContext";
 import { api } from "@/lib/api";
 import { AssessmentSummary, BusinessSummary } from "@/types";
@@ -91,14 +92,18 @@ export default function BusinessProfilePage() {
     switchProfile,
     userBusinesses,
     recentAssessments: contextAssessments,
+    activeBusinessId,
+    isDemoMode,
   } = useBusinessContext();
 
   const [isEditing, setIsEditing] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [switchedNotice, setSwitchedNotice] = useState<string | null>(null);
 
-  // Database multi-tenant state initialized with persistent cache / seed data (NEVER empty)
-  const [loadingDb, setLoadingDb] = useState<boolean>(false);
+  // Keep the directory pending until the account's real businesses are loaded.
+  const [loadingDb, setLoadingDb] = useState<boolean>(true);
   const [businessesList, setBusinessesList] = useState<BusinessSummary[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -109,7 +114,7 @@ export default function BusinessProfilePage() {
         }
       } catch {}
     }
-    return INITIAL_DATABASE_BUSINESSES;
+    return [];
   });
 
   const [assessmentsList, setAssessmentsList] = useState<AssessmentSummary[]>(() => {
@@ -122,7 +127,7 @@ export default function BusinessProfilePage() {
         }
       } catch {}
     }
-    return INITIAL_DATABASE_ASSESSMENTS;
+    return [];
   });
 
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -169,13 +174,13 @@ export default function BusinessProfilePage() {
     try {
       const home = await api.businesses.getProfileHome();
       if (home) {
-        if (home.businesses && home.businesses.length > 0) {
+        if (home.businesses) {
           setBusinessesList(home.businesses);
           if (typeof window !== "undefined") {
             localStorage.setItem("complywise_cached_businesses", JSON.stringify(home.businesses));
           }
         }
-        if (home.recent_assessments && home.recent_assessments.length > 0) {
+        if (home.recent_assessments) {
           setAssessmentsList(home.recent_assessments);
           if (typeof window !== "undefined") {
             localStorage.setItem("complywise_cached_assessments", JSON.stringify(home.recent_assessments));
@@ -221,14 +226,14 @@ export default function BusinessProfilePage() {
   const displayBusinesses = useMemo(() => {
     if (businessesList && businessesList.length > 0) return businessesList;
     if (userBusinesses && userBusinesses.length > 0) return userBusinesses;
-    return INITIAL_DATABASE_BUSINESSES;
+    return [];
   }, [businessesList, userBusinesses]);
 
   // Guaranteed non-empty assessments list
   const displayAssessments = useMemo(() => {
     if (assessmentsList && assessmentsList.length > 0) return assessmentsList;
     if (contextAssessments && contextAssessments.length > 0) return contextAssessments;
-    return INITIAL_DATABASE_ASSESSMENTS;
+    return [];
   }, [assessmentsList, contextAssessments]);
 
   // Filtered businesses by search term
@@ -279,8 +284,32 @@ export default function BusinessProfilePage() {
   }
 
   // Handle save profile form
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (!isDemoMode) {
+      if (!activeBusinessId) { setSaveError("Select a business before saving its profile."); return; }
+      setSavingProfile(true); setSaveError(null);
+      try {
+        const definitions = await api.businesses.getVariableDefinitions();
+        const matchChoice = (key: string, text: string) => {
+          const definition = definitions.find(item => item.key === key);
+          const choice = definition?.options.find(item => item.label.toLowerCase() === text.trim().toLowerCase() || item.value.toLowerCase() === text.trim().toLowerCase());
+          if (definition?.options.length && !choice) throw new Error(`Choose a recognised ${definition.label.toLowerCase()}.`);
+          return choice?.value || text.trim();
+        };
+        await api.businesses.createProfileVersion(activeBusinessId, {
+          state: { value: matchChoice("state", formData.state), origin: "USER_PROVIDED" },
+          legal_constitution: { value: matchChoice("legal_constitution", formData.businessType), origin: "USER_PROVIDED" },
+          total_worker_count: { value: Number(formData.employeeCount), origin: "USER_PROVIDED" },
+        }, "Business details updated from profile", true);
+        await api.businesses.update(activeBusinessId, { name: formData.businessName.trim() });
+        await loadDatabaseDirectory();
+      } catch (error) {
+        setSaveError(error instanceof Error ? error.message : "Your profile wasn't saved. Please try again.");
+        setSavingProfile(false); return;
+      }
+      setSavingProfile(false);
+    }
     updateProfile({
       ...formData,
       employeeCount: Number(formData.employeeCount),
@@ -302,24 +331,29 @@ export default function BusinessProfilePage() {
     return lines.length > 0 ? lines : profile.activities;
   }, [activeEntityVariables, activeBusinessSummary, profile.activities]);
 
+  if (loadingDb && displayBusinesses.length === 0) return <AppShell activeView="profile"><p role="status">Loading your businesses…</p></AppShell>;
+  if (displayBusinesses.length === 0) return <AppShell activeView="profile"><div className="ui-object ui-empty"><h1 className="text-2xl">Your business starts here.</h1><p>Add your business to build an assessment and keep its requirements together.</p><Link href="/onboarding?new=true" className="ui-button ui-button-primary mt-5">Set up your business →</Link></div></AppShell>;
+
   return (
     <AppShell activeView="profile">
       <div className="space-y-6 pb-12 select-none max-w-6xl mx-auto">
+        {saveError && <ErrorState message={saveError} onRetry={() => setSaveError(null)} />}
+        {!loadingDb && displayBusinesses.length === 0 && <div className="ui-object ui-empty"><h2 className="text-2xl">Your business starts here.</h2><p>Add your business to build an assessment and keep its requirements together.</p><Link href="/onboarding?new=true" className="ui-button ui-button-primary mt-5">Set up your business →</Link></div>}
         {/* Header Breadcrumbs & Actions */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-1">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 text-xs text-[#64748B] font-medium">
-              <Folder className="h-3.5 w-3.5 text-[#64748B]" />
-              <Link href="/dashboard" className="hover:text-[#0F172A] transition-colors">
+            <div className="flex items-center gap-1.5 text-xs text-[var(--ui-secondary)] font-medium">
+              <Folder className="h-3.5 w-3.5 text-[var(--ui-secondary)]" />
+              <Link href="/dashboard" className="hover:text-[var(--ui-text)] transition-colors">
                 {t("navigation.dashboard")}
               </Link>
-              <ChevronRight className="h-3 w-3 text-[#94A3B8]" />
-              <span className="text-[#0F172A] font-semibold">{t("navigation.profile")}</span>
+              <ChevronRight className="h-3 w-3 text-[var(--ui-muted)]" />
+              <span className="text-[var(--ui-text)] font-semibold">{t("navigation.profile")}</span>
             </div>
-            <h1 className="text-3xl font-sans font-bold tracking-tight text-[#0F172A]">
+            <h1 className="text-3xl font-sans font-bold tracking-tight text-[var(--ui-text)]">
               {t("businessProfile.title")}
             </h1>
-            <p className="text-xs text-[#64748B]">
+            <p className="text-xs text-[var(--ui-secondary)]">
               {t("businessProfile.subtitle")}
             </p>
           </div>
@@ -329,24 +363,24 @@ export default function BusinessProfilePage() {
               type="button"
               onClick={loadDatabaseDirectory}
               disabled={loadingDb}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#E2E8F0] bg-white text-xs font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[var(--ui-border)] bg-white text-xs font-semibold text-[var(--ui-text)] hover:bg-[var(--ui-bg)] transition-colors shadow-2xs cursor-pointer"
             >
-              <RefreshCw className={`h-3.5 w-3.5 text-[#64748B] ${loadingDb ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-3.5 w-3.5 text-[var(--ui-secondary)] ${loadingDb ? "animate-spin" : ""}`} />
               <span>{t("common.refresh")}</span>
             </button>
 
             <Link
               href="/onboarding?new=true"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-semibold hover:bg-emerald-100 transition-colors shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] text-xs font-semibold hover:bg-[var(--ui-sage-soft)] transition-colors shadow-2xs"
             >
-              <Plus className="h-3.5 w-3.5 text-emerald-700" />
+              <Plus className="h-3.5 w-3.5 text-[var(--ui-sage)]" />
               <span>{t("navigation.onboarding")}</span>
             </Link>
 
             <button
               type="button"
               onClick={() => setIsEditing(!isEditing)}
-              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#0F172A] text-white text-xs font-semibold hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[var(--ui-text)] text-white text-xs font-semibold hover:bg-[var(--ui-text)] transition-colors shadow-2xs cursor-pointer"
             >
               <Edit3 className="h-3.5 w-3.5" />
               <span>{isEditing ? t("common.cancel") : t("common.edit")}</span>
@@ -356,21 +390,21 @@ export default function BusinessProfilePage() {
 
         {/* Notifications */}
         {savedNotice && (
-          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-semibold flex items-center gap-2 animate-in fade-in duration-200 shadow-2xs">
-            <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
-            <span>Profile successfully updated! All dashboard metrics and compliance mandates have re-synchronized.</span>
+          <div className="p-3.5 rounded-xl bg-[var(--ui-sage-faint)] border border-[var(--ui-sage-soft)] text-xs text-[var(--ui-sage)] font-semibold flex items-center gap-2 animate-in fade-in duration-200 shadow-2xs">
+            <CheckCircle className="h-4 w-4 text-[var(--ui-sage)] shrink-0" />
+            <span>Business details saved. Run an assessment to review requirements affected by your changes.</span>
           </div>
         )}
 
         {switchedNotice && (
-          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-xs text-emerald-800 font-semibold flex items-center justify-between gap-3 shadow-2xs animate-in fade-in duration-200">
+          <div className="p-3.5 rounded-xl bg-[var(--ui-sage-faint)] border border-[var(--ui-sage-soft)] text-xs text-[var(--ui-sage)] font-semibold flex items-center justify-between gap-3 shadow-2xs animate-in fade-in duration-200">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="h-4 w-4 text-[var(--ui-sage)] shrink-0" />
               <span>{switchedNotice}</span>
             </div>
             <Link
               href="/dashboard"
-              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-[11px] font-bold transition-colors"
+              className="px-3 py-1 bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] text-white rounded-full text-[11px] font-bold transition-colors"
             >
               Go to Dashboard →
             </Link>
@@ -378,19 +412,19 @@ export default function BusinessProfilePage() {
         )}
 
         {/* Enterprise Switching Guide Banner */}
-        <div className="p-4 rounded-[14px] bg-gradient-to-r from-slate-50 via-white to-emerald-50/40 border border-[#E2E8F0] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-4 rounded-[14px] bg-gradient-to-r from-[var(--ui-bg)] via-white to-[var(--ui-sage-faint)]/40 border border-[var(--ui-border)] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-start gap-3">
-            <div className="h-8 w-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 mt-0.5">
-              <Sparkles className="h-4 w-4 text-emerald-700" />
+            <div className="h-8 w-8 rounded-lg bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] flex items-center justify-center shrink-0 mt-0.5">
+              <Sparkles className="h-4 w-4 text-[var(--ui-sage)]" />
             </div>
             <div>
-              <h3 className="text-xs font-sans font-bold text-[#0F172A] flex items-center gap-2">
+              <h3 className="text-xs font-sans font-bold text-[var(--ui-text)] flex items-center gap-2">
                 <span>Multi-Enterprise Switching</span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold">
+                <span className="px-2 py-0.5 rounded-full bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] text-[10px] font-semibold">
                   1-Click Switchboard
                 </span>
               </h3>
-              <p className="text-[11px] text-[#64748B] mt-0.5">
+              <p className="text-[11px] text-[var(--ui-secondary)] mt-0.5">
                 Click <strong>&ldquo;Switch Context →&rdquo;</strong> on any of your 10 registered enterprises below. All platform tabs
                 (Dashboard, Compliance Mandates, Workflows, Statutory Documents, and Calendar) will immediately synchronize to that entity.
               </p>
@@ -398,30 +432,30 @@ export default function BusinessProfilePage() {
           </div>
           <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
             <div className="text-right">
-              <div className="text-[10px] text-[#64748B]">Active Entity</div>
-              <div className="text-xs font-bold text-[#0F172A] max-w-[200px] truncate">{profile.businessName}</div>
+              <div className="text-[10px] text-[var(--ui-secondary)]">Active Entity</div>
+              <div className="text-xs font-bold text-[var(--ui-text)] max-w-[200px] truncate">{profile.businessName}</div>
             </div>
-            <div className="h-2.5 w-2.5 rounded-full bg-emerald-600 ring-4 ring-emerald-100 shrink-0 ml-1" />
+            <div className="h-2.5 w-2.5 rounded-full bg-[var(--ui-sage)] ring-4 ring-[var(--ui-sage-soft)] shrink-0 ml-1" />
           </div>
         </div>
 
         {/* SECTION 1: Registered Enterprises Directory (All 10 Real Businesses) */}
-        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 shadow-2xs space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-4">
+        <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-6 shadow-2xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--ui-border)] pb-4">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">
-                <Building2 className="h-4 w-4 text-[#0F172A]" />
+              <div className="h-8 w-8 rounded-lg bg-[var(--ui-inset)] text-[var(--ui-text)] flex items-center justify-center">
+                <Building2 className="h-4 w-4 text-[var(--ui-text)]" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-sans font-bold text-[#0F172A]">
+                  <h2 className="text-sm font-sans font-bold text-[var(--ui-text)]">
                     Registered Enterprises Directory
                   </h2>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[#0F172A] text-[10px] font-mono font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-[var(--ui-inset)] text-[var(--ui-text)] text-[10px] font-mono font-bold">
                     {displayBusinesses.length} Enterprises
                   </span>
                 </div>
-                <p className="text-[11px] text-[#64748B]">
+                <p className="text-[11px] text-[var(--ui-secondary)]">
                   Select any manufacturing enterprise to view its detailed statutory parameters or switch platform context
                 </p>
               </div>
@@ -429,13 +463,13 @@ export default function BusinessProfilePage() {
 
             {/* Search Input */}
             <div className="relative w-full sm:w-64">
-              <Search className="h-3.5 w-3.5 text-[#94A3B8] absolute left-3 top-2.5" />
+              <Search className="h-3.5 w-3.5 text-[var(--ui-muted)] absolute left-3 top-2.5" />
               <input
                 type="text"
                 placeholder="Search enterprises, states..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-full border border-[#E2E8F0] bg-[#F8FAFC] text-[#0F172A] focus:outline-hidden focus:border-slate-400 focus:bg-white transition-all"
+                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-full border border-[var(--ui-border)] bg-[var(--ui-bg)] text-[var(--ui-text)] focus:outline-hidden focus:border-[var(--ui-border-strong)] focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -454,56 +488,56 @@ export default function BusinessProfilePage() {
                   onClick={() => handleSwitchEnterprise(biz)}
                   className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between group ${
                     isActive
-                      ? "bg-emerald-50/40 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs"
-                      : "bg-[#F8FAFC] border-[#E2E8F0] hover:border-slate-300 hover:bg-white hover:shadow-2xs"
+                      ? "bg-[var(--ui-sage-faint)]/40 border-[var(--ui-sage-soft)] ring-2 ring-[var(--ui-sage-soft)]/20 shadow-xs"
+                      : "bg-[var(--ui-bg)] border-[var(--ui-border)] hover:border-[var(--ui-border-strong)] hover:bg-white hover:shadow-2xs"
                   }`}
                 >
                   <div className="space-y-2">
                     {/* Header: Name + Active Status */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-0.5">
-                        <h4 className="font-sans font-bold text-xs text-[#0F172A] group-hover:text-emerald-700 transition-colors">
+                        <h4 className="font-sans font-bold text-xs text-[var(--ui-text)] group-hover:text-[var(--ui-sage)] transition-colors">
                           {biz.name}
                         </h4>
-                        <div className="flex items-center gap-1.5 text-[11px] text-[#64748B]">
-                          <MapPin className="h-3 w-3 text-[#94A3B8]" />
+                        <div className="flex items-center gap-1.5 text-[11px] text-[var(--ui-secondary)]">
+                          <MapPin className="h-3 w-3 text-[var(--ui-muted)]" />
                           <span>
                             {biz.district || "Industrial Zone"},{" "}
-                            <strong className="text-[#334155]">{formatStateName(biz.state)}</strong>
+                            <strong className="text-[var(--ui-secondary)]">{formatStateName(biz.state)}</strong>
                           </span>
                         </div>
                       </div>
 
                       {isActive ? (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200 shrink-0">
+                        <span className="px-2 py-0.5 rounded-full bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] text-[10px] font-bold border border-[var(--ui-sage-soft)] shrink-0">
                           ● Active
                         </span>
                       ) : (
-                        <span className="h-2 w-2 rounded-full bg-slate-300 group-hover:bg-slate-400 shrink-0 mt-1" />
+                        <span className="h-2 w-2 rounded-full bg-[var(--ui-inset)] group-hover:bg-[var(--ui-inset)] shrink-0 mt-1" />
                       )}
                     </div>
 
                     {/* Product description snippet */}
-                    <p className="text-[11px] text-[#64748B] leading-relaxed line-clamp-2">
+                    <p className="text-[11px] text-[var(--ui-secondary)] leading-relaxed line-clamp-2">
                       {cleanDesc}
                     </p>
                   </div>
 
                   {/* Badges & Switch Button */}
-                  <div className="pt-3 mt-3 border-t border-[#E2E8F0]/70 flex items-center justify-between gap-2">
+                  <div className="pt-3 mt-3 border-t border-[var(--ui-border)]/70 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5">
-                      <span className="px-2 py-0.5 rounded-md bg-white border border-[#E2E8F0] text-[10px] font-medium text-[#475569]">
+                      <span className="px-2 py-0.5 rounded-md bg-white border border-[var(--ui-border)] text-[10px] font-medium text-[var(--ui-secondary)]">
                         📋 {biz.assessment_count || 1} {biz.assessment_count === 1 ? "Assessment" : "Assessments"}
                       </span>
                       {biz.msme_scale && (
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[10px] font-medium text-[#334155]">
+                        <span className="px-2 py-0.5 rounded-md bg-[var(--ui-inset)] text-[10px] font-medium text-[var(--ui-secondary)]">
                           {biz.msme_scale}
                         </span>
                       )}
                     </div>
 
                     {isActive ? (
-                      <span className="text-[11px] font-bold text-emerald-700">Currently Selected</span>
+                      <span className="text-[11px] font-bold text-[var(--ui-sage)]">Currently Selected</span>
                     ) : (
                       <button
                         type="button"
@@ -511,7 +545,7 @@ export default function BusinessProfilePage() {
                           e.stopPropagation();
                           handleSwitchEnterprise(biz);
                         }}
-                        className="px-2.5 py-1 rounded-full bg-[#0F172A] hover:bg-slate-800 text-white text-[10px] font-semibold transition-colors cursor-pointer"
+                        className="px-2.5 py-1 rounded-full bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-white text-[10px] font-semibold transition-colors cursor-pointer"
                       >
                         Switch Context →
                       </button>
@@ -524,22 +558,22 @@ export default function BusinessProfilePage() {
         </div>
 
         {/* SECTION 2: Active Enterprise Detailed Regulatory Profile */}
-        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
+        <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-6 sm:p-8 shadow-2xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--ui-border)] pb-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0">
-                <Factory className="h-5 w-5 text-emerald-600" />
+              <div className="h-10 w-10 rounded-xl bg-[var(--ui-sage-faint)] border border-[var(--ui-sage-soft)] flex items-center justify-center shrink-0">
+                <Factory className="h-5 w-5 text-[var(--ui-sage)]" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-sans font-bold text-[#0F172A]">
+                  <h2 className="text-base font-sans font-bold text-[var(--ui-text)]">
                     {activeBusinessSummary?.name || profile.businessName}
                   </h2>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] text-[10px] font-bold border border-[var(--ui-sage-soft)]">
                     Live Database Profile
                   </span>
                 </div>
-                <p className="text-xs text-[#64748B]">
+                <p className="text-xs text-[var(--ui-secondary)]">
                   Statutory registration parameters, MSME thresholds, and manufacturing scope from verified database record.
                 </p>
               </div>
@@ -549,7 +583,7 @@ export default function BusinessProfilePage() {
               <button
                 type="button"
                 onClick={() => setIsEditing(!isEditing)}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-white text-xs font-semibold text-[#0F172A] transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-bg)] hover:bg-white text-xs font-semibold text-[var(--ui-text)] transition-colors cursor-pointer"
               >
                 <Edit3 className="h-3.5 w-3.5" />
                 <span>{isEditing ? "Close Form" : "Edit Details"}</span>
@@ -560,106 +594,108 @@ export default function BusinessProfilePage() {
           {/* Profile Content / Edit Form */}
           {isEditing ? (
             <form onSubmit={handleSave} className="space-y-6">
+              <p className="text-xs text-[var(--ui-secondary)]">Business name, state, constitution and workforce are saved to your business. Registration references and address notes are kept on this device.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
                 <div>
-                  <label className="font-medium text-[#475569] block mb-1.5">
+                  <label className="font-medium text-[var(--ui-secondary)] block mb-1.5">
                     Legal Business Name
                   </label>
                   <input
                     type="text"
                     value={formData.businessName}
                     onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-sm text-[#0F172A] focus:outline-hidden focus:border-slate-400"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] text-sm text-[var(--ui-text)] focus:outline-hidden focus:border-[var(--ui-border-strong)]"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="font-medium text-[#475569] block mb-1.5">
+                  <label className="font-medium text-[var(--ui-secondary)] block mb-1.5">
                     BIS License Number (CM/L) / Filing Status
                   </label>
                   <input
                     type="text"
                     value={formData.bisRegistration}
                     onChange={(e) => setFormData({ ...formData, bisRegistration: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-sm font-mono text-emerald-800 focus:outline-hidden focus:border-slate-400"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] text-sm font-mono text-[var(--ui-sage)] focus:outline-hidden focus:border-[var(--ui-border-strong)]"
                   />
                 </div>
 
                 <div>
-                  <label className="font-medium text-[#475569] block mb-1.5">
+                  <label className="font-medium text-[var(--ui-secondary)] block mb-1.5">
                     PAN (Permanent Account Number)
                   </label>
                   <input
                     type="text"
                     value={formData.pan}
                     onChange={(e) => setFormData({ ...formData, pan: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-sm font-mono text-[#0F172A] uppercase focus:outline-hidden focus:border-slate-400"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] text-sm font-mono text-[var(--ui-text)] uppercase focus:outline-hidden focus:border-[var(--ui-border-strong)]"
                   />
                 </div>
 
                 <div>
-                  <label className="font-medium text-[#475569] block mb-1.5">
+                  <label className="font-medium text-[var(--ui-secondary)] block mb-1.5">
                     Legal Constitution
                   </label>
                   <input
                     type="text"
                     value={formData.businessType}
                     onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-sm text-[#0F172A] focus:outline-hidden focus:border-slate-400"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] text-sm text-[var(--ui-text)] focus:outline-hidden focus:border-[var(--ui-border-strong)]"
                   />
                 </div>
 
                 <div>
-                  <label className="font-medium text-[#475569] block mb-1.5">
+                  <label className="font-medium text-[var(--ui-secondary)] block mb-1.5">
                     Registered State
                   </label>
                   <input
                     type="text"
                     value={formData.state}
                     onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-sm text-[#0F172A] focus:outline-hidden focus:border-slate-400"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] text-sm text-[var(--ui-text)] focus:outline-hidden focus:border-[var(--ui-border-strong)]"
                   />
                 </div>
 
                 <div>
-                  <label className="font-medium text-[#475569] block mb-1.5">
+                  <label className="font-medium text-[var(--ui-secondary)] block mb-1.5">
                     Total Active Workers
                   </label>
                   <input
                     type="number"
                     value={formData.employeeCount}
                     onChange={(e) => setFormData({ ...formData, employeeCount: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-sm text-[#0F172A] focus:outline-hidden focus:border-slate-400"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] text-sm text-[var(--ui-text)] focus:outline-hidden focus:border-[var(--ui-border-strong)]"
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="font-medium text-[#475569] block mb-1.5">
+                  <label className="font-medium text-[var(--ui-secondary)] block mb-1.5">
                     Manufacturing Facility Address
                   </label>
                   <input
                     type="text"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-sm text-[#0F172A] focus:outline-hidden focus:border-slate-400"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-bg)] text-sm text-[var(--ui-text)] focus:outline-hidden focus:border-[var(--ui-border-strong)]"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-[#E2E8F0]">
+              <div className="flex justify-end gap-3 pt-4 border-t border-[var(--ui-border)]">
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="px-5 py-2 rounded-full border border-[#E2E8F0] bg-white text-xs font-semibold text-[#475569] hover:bg-slate-50 cursor-pointer shadow-2xs"
+                  className="px-5 py-2 rounded-full border border-[var(--ui-border)] bg-white text-xs font-semibold text-[var(--ui-secondary)] hover:bg-[var(--ui-bg)] cursor-pointer shadow-2xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 rounded-full bg-[#0F172A] text-white text-xs font-semibold hover:bg-slate-800 cursor-pointer shadow-2xs"
+                  disabled={savingProfile}
+                  className="px-6 py-2 rounded-full bg-[var(--ui-text)] text-white text-xs font-semibold hover:bg-[var(--ui-text)] cursor-pointer shadow-2xs"
                 >
-                  Save Changes
+                  {savingProfile ? "Saving…" : "Save changes"}
                 </button>
               </div>
             </form>
@@ -668,57 +704,57 @@ export default function BusinessProfilePage() {
               {/* Main Parameter Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)]">
                     Legal Entity Name
                   </div>
-                  <div className="font-sans font-bold text-[#0F172A] text-sm sm:text-base mt-0.5">
+                  <div className="font-sans font-bold text-[var(--ui-text)] text-sm sm:text-base mt-0.5">
                     {activeBusinessSummary?.name || profile.businessName}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)]">
                     Legal Constitution
                   </div>
-                  <div className="text-[#0F172A] font-semibold text-sm mt-0.5">
+                  <div className="text-[var(--ui-text)] font-semibold text-sm mt-0.5">
                     {profile.businessType || formatConstitution(activeEntityVariables.legal_constitution)}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)]">
                     Permanent Account Number (PAN)
                   </div>
-                  <div className="font-mono font-bold text-[#0F172A] text-sm mt-0.5">
+                  <div className="font-mono font-bold text-[var(--ui-text)] text-sm mt-0.5">
                     {profile.pan}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)]">
                     Registered Jurisdiction
                   </div>
-                  <div className="text-[#334155] font-semibold text-xs mt-0.5">
+                  <div className="text-[var(--ui-secondary)] font-semibold text-xs mt-0.5">
                     {activeBusinessSummary?.district || profile.district || "Industrial Area"},{" "}
-                    <strong className="text-[#0F172A]">{formatStateName(activeBusinessSummary?.state || profile.state)}</strong>
+                    <strong className="text-[var(--ui-text)]">{formatStateName(activeBusinessSummary?.state || profile.state)}</strong>
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)]">
                     MSME Classification
                   </div>
-                  <div className="text-[#334155] font-semibold text-xs mt-0.5">
+                  <div className="text-[var(--ui-secondary)] font-semibold text-xs mt-0.5">
                     {activeBusinessSummary?.msme_scale || profile.scale || formatScale(activeEntityVariables.annual_turnover, activeEntityVariables.plant_machinery_investment)}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)]">
                     Total Active Workforce
                   </div>
-                  <div className="text-[#0F172A] font-semibold text-sm mt-0.5 flex items-center gap-1.5">
-                    <Users className="h-3.5 w-3.5 text-[#64748B]" />
+                  <div className="text-[var(--ui-text)] font-semibold text-sm mt-0.5 flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5 text-[var(--ui-secondary)]" />
                     <span>
                       {activeEntityVariables.total_worker_count || profile.employeeCount} active workers
                     </span>
@@ -726,10 +762,10 @@ export default function BusinessProfilePage() {
                 </div>
 
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)]">
                     Connected Power Load
                   </div>
-                  <div className="text-[#0F172A] font-semibold text-sm mt-0.5 flex items-center gap-1.5">
+                  <div className="text-[var(--ui-text)] font-semibold text-sm mt-0.5 flex items-center gap-1.5">
                     <Zap className="h-3.5 w-3.5 text-amber-500" />
                     <span>
                       {profile.connectedPowerLoad ||
@@ -741,43 +777,43 @@ export default function BusinessProfilePage() {
                 </div>
 
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)]">
                     Industrial Zone Status
                   </div>
-                  <div className="text-[#334155] font-medium text-xs mt-0.5">
+                  <div className="text-[var(--ui-secondary)] font-medium text-xs mt-0.5">
                     {profile.industrialZoneStatus || "Inside Notified Industrial Area"}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)]">
                     Statutory Lifecycle Stage
                   </div>
-                  <div className="text-[#334155] font-medium text-xs mt-0.5">
+                  <div className="text-[var(--ui-secondary)] font-medium text-xs mt-0.5">
                     {profile.lifecycleStage || "Operational"}
                   </div>
                 </div>
 
                 {/* Facility Address */}
-                <div className="sm:col-span-2 md:col-span-3 pt-4 border-t border-[#E2E8F0]">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+                <div className="sm:col-span-2 md:col-span-3 pt-4 border-t border-[var(--ui-border)]">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)]">
                     Manufacturing Premises Address
                   </div>
-                  <div className="text-[#334155] font-medium text-xs mt-1">
+                  <div className="text-[var(--ui-secondary)] font-medium text-xs mt-1">
                     {profile.location || `${activeBusinessSummary?.district || profile.district || "Industrial District"}, ${formatStateName(activeBusinessSummary?.state || profile.state)} - India`}
                   </div>
                 </div>
 
                 {/* Registered Activities & Products */}
-                <div className="sm:col-span-2 md:col-span-3 pt-4 border-t border-[#E2E8F0]">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B] mb-2.5">
+                <div className="sm:col-span-2 md:col-span-3 pt-4 border-t border-[var(--ui-border)]">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)] mb-2.5">
                     Registered Manufacturing Scope &amp; Activities
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {activeActivities.map((act: string, idx: number) => (
                       <span
                         key={idx}
-                        className="px-3.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-[#0F172A] font-medium text-xs hover:bg-slate-200 transition-colors"
+                        className="px-3.5 py-1 rounded-full bg-[var(--ui-inset)] border border-[var(--ui-border)] text-[var(--ui-text)] font-medium text-xs hover:bg-[var(--ui-inset)] transition-colors"
                       >
                         {act}
                       </span>
@@ -787,14 +823,14 @@ export default function BusinessProfilePage() {
 
                 {/* Assessments for this active business */}
                 {activeBusinessAssessments.length > 0 && (
-                  <div className="sm:col-span-2 md:col-span-3 pt-4 border-t border-[#E2E8F0]">
+                  <div className="sm:col-span-2 md:col-span-3 pt-4 border-t border-[var(--ui-border)]">
                     <div className="flex items-center justify-between mb-2.5">
-                      <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-secondary)]">
                         Statutory Assessments Conducted for {activeBusinessSummary?.name || profile.businessName} ({activeBusinessAssessments.length})
                       </div>
                       <Link
                         href="/workflows"
-                        className="text-xs font-semibold text-emerald-700 hover:underline flex items-center gap-1"
+                        className="text-xs font-semibold text-[var(--ui-sage)] hover:underline flex items-center gap-1"
                       >
                         <span>Open Workflows Pipeline</span>
                         <ArrowRight className="h-3 w-3" />
@@ -805,26 +841,26 @@ export default function BusinessProfilePage() {
                       {activeBusinessAssessments.map((a) => (
                         <div
                           key={a.id}
-                          className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2"
+                          className="p-3.5 rounded-xl bg-[var(--ui-bg)] border border-[var(--ui-border)] space-y-2"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-mono text-xs font-bold text-[#0F172A]">
+                            <span className="font-mono text-xs font-bold text-[var(--ui-text)]">
                               Assessment #{a.assessment_number || 1}
                             </span>
                             <span
                               className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full border ${
                                 a.status === "COMPLETED"
-                                  ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                  ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] border-[var(--ui-sage-soft)]"
                                   : "bg-amber-100 text-amber-800 border-amber-200"
                               }`}
                             >
                               {a.status}
                             </span>
                           </div>
-                          <div className="font-sans font-semibold text-xs text-[#0F172A]">
+                          <div className="font-sans font-semibold text-xs text-[var(--ui-text)]">
                             {a.title}
                           </div>
-                          <div className="text-[10px] text-[#64748B] flex items-center gap-3">
+                          <div className="text-[10px] text-[var(--ui-secondary)] flex items-center gap-3">
                             <span>📋 {a.summary?.requirements_identified ?? a.summary?.total_requirements_evaluated ?? 0} Requirements</span>
                             <span>🎯 {a.summary?.standards_identified ?? a.summary?.standards_count ?? 0} Standards</span>
                             <span>⚡ {a.summary?.major_approval_workflows ?? a.summary?.workflows_count ?? 0} Workflows</span>
@@ -840,31 +876,31 @@ export default function BusinessProfilePage() {
         </div>
 
         {/* SECTION 3: Statutory Assessments Repository (All 12 Real Assessments) */}
-        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 shadow-2xs space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-4">
+        <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-6 shadow-2xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--ui-border)] pb-4">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center">
-                <Layers className="h-4 w-4 text-emerald-600" />
+              <div className="h-8 w-8 rounded-lg bg-[var(--ui-sage-faint)] border border-[var(--ui-sage-soft)] flex items-center justify-center">
+                <Layers className="h-4 w-4 text-[var(--ui-sage)]" />
               </div>
               <div>
-                <h2 className="text-sm font-sans font-bold text-[#0F172A]">
+                <h2 className="text-sm font-sans font-bold text-[var(--ui-text)]">
                   Statutory Assessments Repository
                 </h2>
-                <p className="text-[11px] text-[#64748B]">
+                <p className="text-[11px] text-[var(--ui-secondary)]">
                   All manufacturing intake assessments and audit runs conducted in the database
                 </p>
               </div>
             </div>
 
             {/* Filter Pills */}
-            <div className="flex items-center p-1 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] text-xs">
+            <div className="flex items-center p-1 rounded-full bg-[var(--ui-inset)] border border-[var(--ui-border)] text-xs">
               <button
                 type="button"
                 onClick={() => setAssessmentFilter("all")}
                 className={`px-3 py-1 rounded-full transition-all cursor-pointer font-medium text-xs flex items-center gap-1.5 ${
                   assessmentFilter === "all"
-                    ? "bg-[#0F172A] text-white font-semibold shadow-2xs"
-                    : "text-[#64748B] hover:text-[#0F172A]"
+                    ? "bg-[var(--ui-text)] text-white font-semibold shadow-2xs"
+                    : "text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
                 }`}
               >
                 <span>All Assessments</span>
@@ -878,12 +914,12 @@ export default function BusinessProfilePage() {
                 onClick={() => setAssessmentFilter("active")}
                 className={`px-3 py-1 rounded-full transition-all cursor-pointer font-medium text-xs flex items-center gap-1.5 ${
                   assessmentFilter === "active"
-                    ? "bg-[#0F172A] text-white font-semibold shadow-2xs"
-                    : "text-[#64748B] hover:text-[#0F172A]"
+                    ? "bg-[var(--ui-text)] text-white font-semibold shadow-2xs"
+                    : "text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
                 }`}
               >
                 <span>Only for Active Entity</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-slate-200 text-[#0F172A] text-[10px] font-mono">
+                <span className="px-1.5 py-0.2 rounded-full bg-[var(--ui-inset)] text-[var(--ui-text)] text-[10px] font-mono">
                   {activeBusinessAssessments.length}
                 </span>
               </button>
@@ -902,61 +938,61 @@ export default function BusinessProfilePage() {
                   key={a.id}
                   className={`p-4 rounded-xl border text-left transition-all relative ${
                     isEntityActive
-                      ? "bg-emerald-50/40 border-emerald-300 ring-1 ring-emerald-200"
-                      : "bg-[#F8FAFC] border-[#E2E8F0] hover:border-slate-300 hover:bg-white"
+                      ? "bg-[var(--ui-sage-faint)]/40 border-[var(--ui-sage-soft)] ring-1 ring-[var(--ui-sage-soft)]"
+                      : "bg-[var(--ui-bg)] border-[var(--ui-border)] hover:border-[var(--ui-border-strong)] hover:bg-white"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[11px] font-bold text-[#0F172A]">
+                        <span className="font-mono text-[11px] font-bold text-[var(--ui-text)]">
                           #{a.assessment_number || 1}
                         </span>
                         <span
                           className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-full border ${
                             isCompleted
-                              ? "bg-emerald-100 text-emerald-800 border-emerald-200 font-bold"
+                              ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] border-[var(--ui-sage-soft)] font-bold"
                               : "bg-amber-100 text-amber-800 border-amber-200 font-bold"
                           }`}
                         >
                           {a.status}
                         </span>
                         {isEntityActive && (
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold text-[var(--ui-sage)] bg-[var(--ui-sage-soft)]/80 px-2 py-0.5 rounded-full">
                             Active Entity
                           </span>
                         )}
                       </div>
-                      <h4 className="font-sans font-bold text-[#0F172A] text-xs mt-1">
+                      <h4 className="font-sans font-bold text-[var(--ui-text)] text-xs mt-1">
                         {a.title}
                       </h4>
-                      <p className="text-[11px] text-[#64748B] mt-0.5">
-                        Enterprise: <strong className="text-[#334155]">{a.business_name}</strong>
+                      <p className="text-[11px] text-[var(--ui-secondary)] mt-0.5">
+                        Enterprise: <strong className="text-[var(--ui-secondary)]">{a.business_name}</strong>
                       </p>
                     </div>
                   </div>
 
                   {/* Summary Pills */}
-                  <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2.5 border-t border-[#E2E8F0]/70 text-[10px] text-[#64748B]">
-                    <span className="px-2 py-0.5 rounded-md bg-white border border-[#E2E8F0] font-medium">
+                  <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2.5 border-t border-[var(--ui-border)]/70 text-[10px] text-[var(--ui-secondary)]">
+                    <span className="px-2 py-0.5 rounded-md bg-white border border-[var(--ui-border)] font-medium">
                       📋 {s.requirements_identified ?? s.total_requirements_evaluated ?? 0} Requirements
                     </span>
-                    <span className="px-2 py-0.5 rounded-md bg-white border border-[#E2E8F0] font-medium">
+                    <span className="px-2 py-0.5 rounded-md bg-white border border-[var(--ui-border)] font-medium">
                       🎯 {s.standards_identified ?? s.standards_count ?? 0} Standards
                     </span>
-                    <span className="px-2 py-0.5 rounded-md bg-white border border-[#E2E8F0] font-medium">
+                    <span className="px-2 py-0.5 rounded-md bg-white border border-[var(--ui-border)] font-medium">
                       ⚡ {s.major_approval_workflows ?? s.workflows_count ?? 0} Workflows
                     </span>
-                    <span className="px-2 py-0.5 rounded-md bg-white border border-[#E2E8F0] font-medium">
+                    <span className="px-2 py-0.5 rounded-md bg-white border border-[var(--ui-border)] font-medium">
                       📄 {s.documents_to_prepare ?? s.documents_count ?? 0} Documents
                     </span>
-                    <span className="px-2 py-0.5 rounded-md bg-white border border-[#E2E8F0] font-medium">
+                    <span className="px-2 py-0.5 rounded-md bg-white border border-[var(--ui-border)] font-medium">
                       🏛️ {s.schemes_identified ?? s.schemes_count ?? 0} Schemes
                     </span>
                   </div>
 
                   {/* Date and Switch Action */}
-                  <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 text-[10px] text-[#94A3B8]">
+                  <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-[var(--ui-border)] text-[10px] text-[var(--ui-muted)]">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {a.completed_at ? new Date(a.completed_at).toLocaleDateString() : "In Progress"}
@@ -971,14 +1007,14 @@ export default function BusinessProfilePage() {
                             await handleSwitchEnterprise(target);
                           }
                         }}
-                        className="text-emerald-700 font-bold hover:underline cursor-pointer"
+                        className="text-[var(--ui-sage)] font-bold hover:underline cursor-pointer"
                       >
                         Switch to this Business →
                       </button>
                     ) : (
                       <Link
                         href="/workflows"
-                        className="text-emerald-700 font-bold hover:underline"
+                        className="text-[var(--ui-sage)] font-bold hover:underline"
                       >
                         Inspect Workflows →
                       </Link>

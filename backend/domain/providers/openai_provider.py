@@ -7,6 +7,7 @@ Endpoints: Chat Completions and Embeddings. Model names come from settings
 from __future__ import annotations
 
 import logging
+import json
 
 from django.conf import settings
 
@@ -18,6 +19,7 @@ from .base import (
     LLMProvider,
     ProviderError,
     ProviderNotConfigured,
+    ProviderResponseError,
 )
 from .http import post_json
 
@@ -52,6 +54,7 @@ def is_valid_openai_key(key: str | None) -> bool:
 
 
 import time
+import uuid
 from typing import Any
 
 from .telemetry import telemetry_tracker
@@ -96,6 +99,25 @@ class OpenAIProvider(LLMProvider):
         return bool(is_valid_openai_key(self.get_api_key()) and self.model)
 
     def complete(
+        self, messages: list[ChatMessage], *, temperature: float = 0.0,
+        max_output_tokens: int | None = None, **kwargs: Any,
+    ) -> CompletionResult:
+        kwargs.setdefault("logical_request_id", uuid.uuid4().hex)
+        try:
+            return self._complete_once(messages, temperature=temperature,
+                max_output_tokens=max_output_tokens, **kwargs)
+        except ProviderError as exc:
+            if exc.failure_type in {"invalid_request", "budget"} or getattr(self, "_is_fallback", False):
+                raise
+            from .gemini_provider import GeminiProvider
+            fallback = GeminiProvider()
+            if fallback.is_configured:
+                fallback._is_fallback = True
+                return fallback.complete(messages, temperature=temperature,
+                    max_output_tokens=max_output_tokens, **kwargs)
+            raise
+
+    def _complete_once(
         self,
         messages: list[ChatMessage],
         *,
@@ -113,9 +135,9 @@ class OpenAIProvider(LLMProvider):
             raise ProviderNotConfigured(self.name, "OPENAI_MODEL")
 
         # Guardrail check against cost / call limits per assessment
-        allowed, reason = telemetry_tracker.check_guardrails(assessment_id)
+        allowed, reason = telemetry_tracker.check_guardrails(assessment_id, kwargs.get("logical_request_id"))
         if not allowed:
-            raise ProviderError(f"Cost Guardrail Exceeded: {reason}")
+            raise ProviderError("Assessment provider budget reached.", failure_type="budget")
 
         payload: dict[str, object] = {
             "model": self.model,
@@ -142,7 +164,28 @@ class OpenAIProvider(LLMProvider):
 
         t0 = time.perf_counter()
         try:
-            data = post_json(CHAT_URL, payload, headers=headers, provider=self.name)
+            data = post_json(CHAT_URL, payload, headers=headers, provider=self.name, max_retries=0)
+            choices = data.get("choices") or []
+            if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+                raise ProviderResponseError(f"{self.name} returned no usable completion choices.")
+            message = choices[0].get("message") or {}
+            if isinstance(message, dict) and message.get("refusal"):
+                raise ProviderError(f"{self.name} could not produce usable content.", failure_type="unusable_output")
+            text = message.get("content") if isinstance(message, dict) else None
+            if not isinstance(text, str) or not text.strip():
+                raise ProviderResponseError(f"{self.name} returned a completion without text content.")
+            if response_format and response_format.get("type") == "json_object":
+                try:
+                    if not isinstance(json.loads(text), dict):
+                        raise ValueError()
+                except ValueError:
+                    raise ProviderResponseError(f"{self.name} returned invalid structured output.") from None
+            validator = kwargs.get("response_validator")
+            if validator:
+                try:
+                    validator(text)
+                except (ValueError, ProviderError):
+                    raise ProviderError(f"{self.name} response failed the requested schema.", failure_type="schema_failure") from None
         except ProviderError as exc:
             latency_ms = (time.perf_counter() - t0) * 1000
             telemetry_tracker.record_call(
@@ -152,40 +195,16 @@ class OpenAIProvider(LLMProvider):
                 call_type="chat_completion",
                 latency_ms=latency_ms,
                 status="ERROR",
-                error_message=str(exc),
+                error_message=f"{self.name}: {exc.failure_type}",
+                failure_type=exc.failure_type,
+                fallback=getattr(self, "_is_fallback", False),
                 assessment_id=assessment_id,
                 business_id=business_id,
+                logical_request_id=kwargs.get("logical_request_id"),
             )
-            gemini_key = getattr(settings, "GEMINI_API_KEY", "") or ""
-            if gemini_key and not getattr(self, "_is_fallback", False):
-                try:
-                    from .gemini_provider import GeminiProvider
-                    fallback = GeminiProvider()
-                    if fallback.is_configured:
-                        fallback._is_fallback = True
-                        logger.warning("OpenAI failed (%s), failing over to Gemini (%s)", exc, fallback.model)
-                        return fallback.complete(
-                            messages,
-                            temperature=temperature,
-                            max_output_tokens=max_output_tokens,
-                            workflow=workflow,
-                            assessment_id=assessment_id,
-                            business_id=business_id,
-                            **kwargs,
-                        )
-                except Exception as fallback_exc:
-                    logger.warning("Gemini fallback also failed: %s", fallback_exc)
             raise
 
         latency_ms = (time.perf_counter() - t0) * 1000
-        choices = data.get("choices") or []
-        if not choices:
-            raise ProviderError(f"{self.name} returned no completion choices.")
-        message = choices[0].get("message") or {}
-        text = message.get("content")
-        if not isinstance(text, str):
-            raise ProviderError(f"{self.name} returned a completion without text content.")
-
         usage = data.get("usage") or {}
         telemetry_tracker.record_call(
             provider=self.name,
@@ -197,6 +216,8 @@ class OpenAIProvider(LLMProvider):
             status="SUCCESS",
             assessment_id=assessment_id,
             business_id=business_id,
+                logical_request_id=kwargs.get("logical_request_id"),
+            fallback=getattr(self, "_is_fallback", False),
         )
 
         return CompletionResult(

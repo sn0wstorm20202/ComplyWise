@@ -1,7 +1,9 @@
 "use client";
+import Overlay from "@/components/product/Overlay";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
@@ -27,6 +29,8 @@ import {
 } from "lucide-react";
 
 export default function AdminCasesReviewPage() {
+  const searchParams = useSearchParams();
+  const isReviewQueue = searchParams.get("status") === "HUMAN_REVIEW";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<AdminCasesSummary | null>(null);
@@ -43,7 +47,7 @@ export default function AdminCasesReviewPage() {
 
   useEffect(() => {
     loadAdminData();
-  }, []);
+  }, [isReviewQueue]);
 
   async function loadAdminData() {
     setLoading(true);
@@ -51,7 +55,7 @@ export default function AdminCasesReviewPage() {
     try {
       const [sumRes, queueRes] = await Promise.all([
         api.cases.getAdminSummary(),
-        api.cases.getAdminReviewQueue(),
+        isReviewQueue ? api.cases.getAdminReviewQueue() : api.cases.getAdminCases(),
       ]);
       setSummary(sumRes);
       setQueueCases(queueRes.cases || []);
@@ -125,13 +129,13 @@ export default function AdminCasesReviewPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-6">
           <div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--ui-info-soft)] text-[var(--ui-info)] dark:bg-[var(--ui-text)]/60 dark:text-[var(--ui-info)]">
                 Staff & Compliance Officer Portal
               </span>
               <span className="text-xs text-muted-foreground font-mono">Platform Scrutiny Queue</span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground mt-1">
-              Compliance Review Workspace
+              Cases & decisions
             </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
               Internal regulatory officer desk. Scrutinize pre-validated document submissions, raise statutory queries,
@@ -160,11 +164,11 @@ export default function AdminCasesReviewPage() {
         {/* KPI Metrics (§6: What needs human attention right now?) */}
         {summary && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-50/40 dark:bg-blue-950/20 shadow-sm">
-              <span className="text-xs font-medium text-blue-700 dark:text-blue-400 flex items-center justify-between">
-                Pending Reviews <UserCheck className="w-4 h-4 text-blue-600" />
+            <div className="p-4 rounded-xl border border-[var(--ui-sage-soft)]/20 bg-[var(--ui-info-soft)]/40 dark:bg-[var(--ui-text)]/20 shadow-sm">
+              <span className="text-xs font-medium text-[var(--ui-info)] dark:text-[var(--ui-info)] flex items-center justify-between">
+                Pending Reviews <UserCheck className="w-4 h-4 text-[var(--ui-info)]" />
               </span>
-              <p className="text-2xl font-bold text-blue-900 dark:text-blue-300 mt-2">
+              <p className="text-2xl font-bold text-[var(--ui-info)] dark:text-[var(--ui-info)] mt-2">
                 {summary.pending_reviews ?? summary.in_human_review}
               </p>
               <span className="text-[10px] text-muted-foreground block mt-0.5">Awaiting officer verification</span>
@@ -180,11 +184,11 @@ export default function AdminCasesReviewPage() {
               <span className="text-[10px] text-muted-foreground block mt-0.5">User correction pending</span>
             </div>
 
-            <div className="p-4 rounded-xl border border-purple-500/20 bg-purple-50/40 dark:bg-purple-950/20 shadow-sm">
-              <span className="text-xs font-medium text-purple-700 dark:text-purple-400 flex items-center justify-between">
-                Forms Ready <FileCheck className="w-4 h-4 text-purple-600" />
+            <div className="p-4 rounded-xl border border-[var(--ui-sage-soft)]/20 bg-[var(--ui-sage-faint)]/40 dark:bg-[var(--ui-sage)]/20 shadow-sm">
+              <span className="text-xs font-medium text-[var(--ui-sage)] dark:text-[var(--ui-sage)] flex items-center justify-between">
+                Forms Ready <FileCheck className="w-4 h-4 text-[var(--ui-sage)]" />
               </span>
-              <p className="text-2xl font-bold text-purple-900 dark:text-purple-300 mt-2">
+              <p className="text-2xl font-bold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] mt-2">
                 {summary.forms_ready ?? 0}
               </p>
               <span className="text-[10px] text-muted-foreground block mt-0.5">Documents approved</span>
@@ -200,11 +204,11 @@ export default function AdminCasesReviewPage() {
               <span className="text-[10px] text-muted-foreground block mt-0.5">Statutory portal scrutiny</span>
             </div>
 
-            <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-sm">
-              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
-                Completed & Verified <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <div className="p-4 rounded-xl border border-[var(--ui-sage-soft)]/20 bg-[var(--ui-sage-faint)]/40 dark:bg-[var(--ui-sage)]/20 shadow-sm">
+              <span className="text-xs font-medium text-[var(--ui-sage)] dark:text-[var(--ui-sage)] flex items-center justify-between">
+                Completed & Verified <CheckCircle2 className="w-4 h-4 text-[var(--ui-sage)]" />
               </span>
-              <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-300 mt-2">
+              <p className="text-2xl font-bold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] mt-2">
                 {summary.completed_cases}
               </p>
               <span className="text-[10px] text-muted-foreground block mt-0.5">Clearance active</span>
@@ -215,7 +219,7 @@ export default function AdminCasesReviewPage() {
         {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-muted/40 p-3 rounded-xl border border-border">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-foreground">Officer Scrutiny Queue</span>
+            <span className="text-xs font-bold text-foreground">{isReviewQueue ? "Review queue" : "All compliance cases"}</span>
             <span className="text-xs font-mono text-muted-foreground">({filteredQueue.length} cases)</span>
           </div>
 
@@ -240,7 +244,7 @@ export default function AdminCasesReviewPage() {
           <ErrorState message={error} onRetry={loadAdminData} />
         ) : filteredQueue.length === 0 ? (
           <div className="text-center py-16 px-4 rounded-2xl border border-dashed border-border bg-card">
-            <CheckCircle2 className="w-12 h-12 text-emerald-500/40 mx-auto mb-2" />
+            <CheckCircle2 className="w-12 h-12 text-[var(--ui-sage)]/40 mx-auto mb-2" />
             <h3 className="text-base font-semibold text-foreground">Review Queue is Clear</h3>
             <p className="text-xs text-muted-foreground mt-1">
               No cases currently pending compliance officer scrutiny.
@@ -267,7 +271,7 @@ export default function AdminCasesReviewPage() {
                       c.status_code === "ACTION_REQUIRED"
                         ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                         : c.status_code === "HUMAN_REVIEW"
-                        ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                        ? "bg-[var(--ui-info-soft)] text-[var(--ui-info)] dark:bg-[var(--ui-text)] dark:text-[var(--ui-info)]"
                         : "bg-muted text-muted-foreground";
 
                     return (
@@ -320,7 +324,7 @@ export default function AdminCasesReviewPage() {
 
       {/* Review Action Modal */}
       {selectedCase && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <Overlay open onClose={() => setSelectedCase(null)} title="Review case">
           <div className="bg-card border border-border rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
@@ -336,8 +340,8 @@ export default function AdminCasesReviewPage() {
             </div>
 
             {actionSuccessMsg ? (
-              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div className="p-4 rounded-xl bg-[var(--ui-sage-faint)] border border-[var(--ui-sage-soft)] text-[var(--ui-sage)] text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-[var(--ui-sage)] shrink-0" />
                 {actionSuccessMsg}
               </div>
             ) : (
@@ -359,7 +363,7 @@ export default function AdminCasesReviewPage() {
                           <span
                             className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                               d.status_code === "VERIFIED"
-                                ? "bg-emerald-100 text-emerald-800"
+                                ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]"
                                 : "bg-amber-100 text-amber-800"
                             }`}
                           >
@@ -380,11 +384,11 @@ export default function AdminCasesReviewPage() {
                       onClick={() => setReviewAction("APPROVE")}
                       className={`p-2.5 rounded-lg border text-center font-semibold transition-all ${
                         reviewAction === "APPROVE"
-                          ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 ring-2 ring-emerald-500/20"
+                          ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)] ring-2 ring-[var(--ui-sage-soft)]/20"
                           : "border-border text-muted-foreground hover:bg-muted"
                       }`}
                     >
-                      <CheckCircle2 className="w-4 h-4 mx-auto mb-1 text-emerald-600" />
+                      <CheckCircle2 className="w-4 h-4 mx-auto mb-1 text-[var(--ui-sage)]" />
                       Approve & Advance
                     </button>
 
@@ -454,7 +458,7 @@ export default function AdminCasesReviewPage() {
               </form>
             )}
           </div>
-        </div>
+        </Overlay>
       )}
     </AdminShell>
   );

@@ -1,0 +1,10 @@
+2026-10-04 19:00:31,250 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:727, cached:0, out:532, reason:0) cost=$0.000784 latency=2665.6ms provider=gemini slot=1 fallback=False failure=None
+2026-10-04 19:00:33,318 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:727, cached:0, out:537, reason:0) cost=$0.000790 latency=2066.0ms provider=gemini slot=2 fallback=False failure=None
+2026-10-04 19:00:35,614 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:727, cached:0, out:506, reason:0) cost=$0.000753 latency=2294.5ms provider=gemini slot=3 fallback=False failure=None
+2026-10-04 19:00:41,551 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gpt-4o-mini status=SUCCESS tokens=(in:690, cached:0, out:393, reason:0) cost=$0.000339 latency=5936.7ms provider=openai slot=None fallback=False failure=None
+2026-10-04 19:00:46,285 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gpt-4o-mini status=SUCCESS tokens=(in:690, cached:0, out:343, reason:0) cost=$0.000309 latency=4732.3ms provider=openai slot=None fallback=True failure=None
+gemini_independent: SUCCESS; 2.666s
+gemini_independent: SUCCESS; 2.066s
+gemini_independent: SUCCESS; 2.295s
+openai_independent: SUCCESS; 5.937s
+controlled_gemini_unavailable_real_openai: SUCCESS; 4.733s

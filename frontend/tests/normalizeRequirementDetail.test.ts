@@ -14,6 +14,25 @@ test('normalizeRequirementDetail handles null/undefined input without crashing',
   assert.equal(res.evidence_count, 0);
 });
 
+test('missing decision, fee and procedure data never becomes a completed requirement', () => {
+  const res = normalizeRequirementDetail({requirement_id:'example'}, 'example');
+  assert.equal(res.status, 'UNVERIFIED');
+  assert.equal(res.evaluated, false);
+  assert.equal(res.what_you_need.statutory_fee_estimate, 'Not recorded');
+  assert.equal(res.what_you_need.validity_period, 'Not recorded');
+  assert.deepEqual(res.what_to_do_next.steps, []);
+  assert.equal(res.what_to_do_next.steps_available, false);
+  assert.equal(res.what_to_do_next.official_portal, '');
+});
+
+test('citation references retain unknown verification and never become source passages', () => {
+  const res = normalizeRequirementDetail({evidence_refs:[{id:'reference-only'}],penalty_notice:'A penalty is not an application fee.'}, 'example');
+  assert.equal(res.statutory_evidence[0].verification_status, 'UNVERIFIED');
+  assert.equal(res.statutory_evidence[0].canonical_url, '');
+  assert.equal(res.statutory_evidence[0].excerpt, 'Source passage not recorded.');
+  assert.equal(res.what_you_need.statutory_fee_estimate, 'Not recorded');
+});
+
 test('normalizeRequirementDetail prevents crash when why_it_applies is undefined (Crash Reproduction Test)', () => {
   // This was the EXACT payload that crashed RequirementDetailContent in production:
   const rawDataFromBackendOrDemo = {

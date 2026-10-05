@@ -41,6 +41,7 @@ export interface LLMScanAnalysis {
 
 export interface DocumentVerificationResult {
   verified: boolean;
+  precheck_passed?: boolean;
   overall_status: "PASSED" | "FAILED" | "WARNING";
   status: "VERIFIED" | "ISSUE" | "NEEDS_REVIEW";
   timestamp: string;
@@ -48,7 +49,7 @@ export interface DocumentVerificationResult {
   flag_message: string;
   llm_scan_analysis?: LLMScanAnalysis;
   admin_verification: {
-    status: "PENDING_LATER_PHASE";
+    status: "PENDING_LATER_PHASE" | "PENDING_REVIEW";
     message: string;
   };
   ocr_analysis: {

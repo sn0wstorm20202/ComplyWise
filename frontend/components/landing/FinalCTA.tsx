@@ -1,50 +1,155 @@
 "use client";
 
-import React from "react";
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import React, { useRef, useEffect } from "react";
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-interface FinalCTAProps {
-  onRequestDemo: () => void;
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
 }
 
-export function FinalCTA({ onRequestDemo }: FinalCTAProps) {
+interface FinalCTAProps {
+  onSeeWhatApplies?: () => void;
+}
+
+export function FinalCTA({ onSeeWhatApplies }: FinalCTAProps) {
+  const containerRef = useRef<HTMLElement>(null);
+  const circleRef = useRef<HTMLDivElement>(null);
+  const headlineRef = useRef<HTMLHeadingElement>(null);
+  const linkRef = useRef<HTMLAnchorElement>(null);
+  const fillRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const mm = gsap.matchMedia();
+    mm.add({
+      desktop: "(min-width: 1280px)",
+      compact: "(max-width: 1279px)",
+      reduced: "(prefers-reduced-motion: reduce)",
+    }, (context) => {
+      if (context.conditions?.reduced) return;
+      if (headlineRef.current) {
+        gsap.from(headlineRef.current, {
+          y: 40,
+          opacity: 0,
+          duration: 1,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: headlineRef.current,
+            start: "top 85%",
+            once: true,
+          },
+        });
+      }
+
+      if (circleRef.current) {
+        gsap.from(circleRef.current, {
+          scale: 0.85,
+          opacity: 0,
+          duration: 1.2,
+          ease: "expo.out",
+          scrollTrigger: {
+            trigger: circleRef.current,
+            start: "top 85%",
+            once: true,
+          },
+        });
+      }
+
+      const link = linkRef.current;
+      if (!link || !fillRef.current) return;
+      gsap.set(fillRef.current, { scale: 0 });
+      const expand = () => gsap.to(fillRef.current, { scale: 1, duration: .65, ease: "power3.out", overwrite: true });
+      const contract = () => gsap.to(fillRef.current, { scale: 0, duration: .55, ease: "power3.out", overwrite: true });
+      const moveX = gsap.quickTo(link, "x", { duration: .5, ease: "power3.out" });
+      const moveY = gsap.quickTo(link, "y", { duration: .5, ease: "power3.out" });
+      const move = (event: PointerEvent) => {
+        if (event.pointerType !== "mouse") return;
+        const bounds = circleRef.current!.getBoundingClientRect();
+        moveX((event.clientX - bounds.left - bounds.width / 2) * .025);
+        moveY((event.clientY - bounds.top - bounds.height / 2) * .08);
+      };
+      const leave = () => { if (!link.matches(":focus-visible")) contract(); moveX(0); moveY(0); };
+      link.addEventListener("pointerenter", expand);
+      link.addEventListener("pointerleave", leave);
+      link.addEventListener("pointermove", move);
+      link.addEventListener("focus", expand);
+      link.addEventListener("blur", contract);
+      return () => {
+        link.removeEventListener("pointerenter", expand);
+        link.removeEventListener("pointerleave", leave);
+        link.removeEventListener("pointermove", move);
+        link.removeEventListener("focus", expand);
+        link.removeEventListener("blur", contract);
+        gsap.killTweensOf([link, fillRef.current]);
+      };
+    }, containerRef);
+
+    return () => mm.revert();
+  }, []);
+
   return (
-    <section className="py-20 md:py-28 bg-white text-[#0F172A] relative border-t border-[#E2E8F0]">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-        <div className="inline-flex items-center gap-2 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] px-4 py-1 text-xs text-[#64748B]">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          <span>BIS Compliance Intelligence Platform</span>
+    <section
+      ref={containerRef}
+      className="py-36 md:py-52 bg-[#F7F5EF] border-t border-[rgba(23,23,20,0.06)] relative overflow-hidden text-center"
+    >
+      {/* Subtle Sage Ambient Radial Aura */}
+      <div className="pointer-events-none absolute inset-0 bg-ambient-sage opacity-80" />
+      <div className="pointer-events-none absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-[#EFEEE7] to-transparent" />
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14 relative z-10">
+        <div className="space-y-4">
+          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#96938A]">
+            06 &mdash; NEXT STEP
+          </span>
+          <h2
+            ref={headlineRef}
+            className="text-[clamp(2.5rem,6vw,5.5rem)] font-serif text-[#171714] leading-[1.04] tracking-[-0.02em]"
+          >
+            Know what applies.{" "}
+            <span className="italic font-light text-[#557D6B]">
+              Know what to do next.
+            </span>
+          </h2>
+          <p className="text-base text-[#6F6D66] font-light max-w-lg mx-auto">
+            Start with your business. See the requirements, the reasons and the next steps together.
+          </p>
         </div>
 
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#0F172A] max-w-2xl mx-auto leading-tight font-sans">
-          Compliance is easier when the right information is connected.
-        </h2>
-
-        <p className="text-sm sm:text-base text-[#64748B] max-w-xl mx-auto leading-relaxed font-sans">
-          ComplyWise brings standards, requirements, documents and regulatory intelligence into one calm, operational workspace.
-        </p>
-
-        <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <button
-            onClick={onRequestDemo}
-            type="button"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#0F172A] hover:bg-slate-800 text-white px-7 py-3 text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            <span>Request a Demo</span>
-            <ArrowRight className="h-4 w-4 text-white" />
-          </button>
-
-          <a
+        {/* Signature Circular Expanding Magnetic CTA (design.md Section 21 & Signature 8) */}
+        <div ref={circleRef} className="flex justify-center pt-2">
+          <Link
+            ref={linkRef}
             href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-[#0F172A] px-7 py-3 text-xs sm:text-sm font-semibold transition-colors shadow-2xs"
+            className="film-final-circle group relative flex h-44 w-44 sm:h-52 sm:w-52 flex-col items-center justify-center rounded-full bg-[#EFEEE7] border border-[rgba(23,23,20,0.12)] p-6 text-center shadow-[0_12px_40px_rgba(23,23,20,0.06)] active:scale-95 overflow-hidden"
           >
-            <span>Launch Live Dashboard</span>
-          </a>
+            {/* Sage circle expansion effect from center */}
+            <div ref={fillRef} className="film-final-fill pointer-events-none absolute inset-0 rounded-full bg-[#557D6B] scale-0" />
+
+            {/* Inner Content */}
+            <div className="relative z-10 flex flex-col items-center gap-2">
+              <span className="font-serif text-lg sm:text-xl text-[#171714] group-hover:text-[#F7F5EF] transition-colors duration-500 leading-tight">
+                Explore
+                <br />
+                Workspace
+              </span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#171714] group-hover:bg-[#F7F5EF] text-[#F7F5EF] group-hover:text-[#171714] transition-all duration-500">
+                <ArrowUpRight className="h-4 w-4 transition-transform duration-500 group-hover:rotate-45 group-focus-visible:rotate-45" strokeWidth={2} />
+              </div>
+            </div>
+          </Link>
         </div>
 
-        <p className="text-[11px] text-[#94A3B8] pt-2 font-mono">
-          Welcoming select industrial manufacturing and conformity testing teams for early evaluation.
-        </p>
+        {/* Secondary Auxiliary Link */}
+        <div className="pt-2">
+          <button
+            onClick={onSeeWhatApplies}
+            className="font-mono text-xs uppercase tracking-[0.16em] text-[#6F6D66] hover:text-[#171714] transition-colors underline underline-offset-4 cursor-pointer"
+          >
+            See what applies to your business &rarr;
+          </button>
+        </div>
       </div>
     </section>
   );

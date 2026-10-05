@@ -5,16 +5,19 @@ Authority: PRD_v2.0 §21, §P5; TRD_v2.0 §30, §31; Schemes Pipeline Specificat
 
 from __future__ import annotations
 
-from decimal import Decimal
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from common.permissions import IsComplianceReviewer
+from domain.intelligence.scheme_discovery import discover_business_schemes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.businesses.models import Business
-from apps.schemes.engine.matcher import evaluate_sector_eligibility, match_business_schemes
+from apps.schemes.engine.matcher import match_business_schemes
 from apps.schemes.models import Scheme, SchemeVersion
+from apps.schemes.presentation import scheme_evidence_projection, scheme_source_projection
+from apps.schemes.provenance import is_authored_fixture_version
 from apps.schemes.pipeline.service import SchemePipelineService
 from common.envelope import envelope, error_response
 from domain.context.business_context import DerivedBusinessContext
@@ -33,7 +36,9 @@ class BusinessSchemesListView(APIView):
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
         assessment_id = request.query_params.get("assessment_id")
-        payload = match_business_schemes(business, assessment_id=assessment_id)
+        if assessment_id and not business.assessments.filter(pk=assessment_id).exists():
+            return error_response("NOT_FOUND", "Assessment not found for this business.", http_status=404)
+        payload = discover_business_schemes(business, assessment_id=assessment_id)
         return Response(envelope(payload), status=status.HTTP_200_OK)
 
 
@@ -52,109 +57,41 @@ class SchemeContextEvaluateView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request: Request) -> Response:
-        # Ensure database is populated
-        if Scheme.objects.count() == 0:
-            SchemePipelineService().run_pipeline(force=True)
-
-        raw_state = request.data.get("state", "MH").strip().upper()
-        state_code = "MH" if raw_state in ["MH", "MAHARASHTRA"] else ("GJ" if raw_state in ["GJ", "GUJARAT"] else raw_state)
-        state_name = "Maharashtra" if state_code == "MH" else ("Gujarat" if state_code == "GJ" else state_code)
-        product_desc = request.data.get("product_description", "").strip()
-        msme_scale = request.data.get("msme_scale", "MICRO").strip().upper()
-        is_manufacturing = bool(request.data.get("is_manufacturing", True))
-        is_cross_border = bool(request.data.get("is_cross_border", False))
-
-        active_schemes = Scheme.objects.filter(is_active=True).prefetch_related("versions")
-        matched: list[dict] = []
-
-        for scheme in active_schemes:
-            ver = scheme.versions.filter(version_number=scheme.current_version_number, is_active=True).first()
-            if not ver:
-                ver = scheme.versions.filter(is_active=True).order_by("-version_number").first()
-            if not ver:
-                continue
-
-            # 1. Jurisdiction match
-            is_central = ver.jurisdiction == "CENTRAL"
-            is_state_match = ver.jurisdiction == state_code or (
-                ver.jurisdiction in ["MH", "MAHARASHTRA"] and state_code in ["MH", "MAHARASHTRA"]
-            )
-            if not (is_central or is_state_match):
-                continue
-
-            # 2. MSME scale match
-            if ver.scale_match and msme_scale != "UNKNOWN":
-                if msme_scale not in ver.scale_match:
-                    continue
-
-            # 3. Sector match
-            is_eligible, matched_name, is_universal = evaluate_sector_eligibility(
-                ver.sectors or ["ALL"], product_desc, is_manufacturing, is_cross_border
-            )
-            if not is_eligible:
-                continue
-
-            # 4. Rationale
-            scale_str = msme_scale.capitalize()
-            if is_universal:
-                if not is_central:
-                    rationale = f"Universal Maharashtra State incentive: Available for all eligible {scale_str} enterprises in {state_name}."
-                else:
-                    rationale = f"Universal National support program: Available for all eligible {scale_str} enterprises across India."
-            else:
-                if not is_central:
-                    rationale = f"Targeted state incentive: Specifically designed for {matched_name} enterprises in {state_name}."
-                else:
-                    rationale = f"Targeted Central scheme: Dedicated national incentive formulated for {matched_name} manufacturing."
-
-            dates_str = "Active"
-            if ver.effective_from and ver.effective_to:
-                dates_str = f"Active ({ver.effective_from.strftime('%b %Y')} – {ver.effective_to.strftime('%b %Y')})"
-
-            matched.append({
-                "id": scheme.scheme_code,
-                "scheme_code": scheme.scheme_code,
-                "title": ver.title,
-                "authority": ver.authority,
-                "jurisdiction": "Maharashtra State" if ver.jurisdiction in ["MH", "MAHARASHTRA"] else "Central Government",
-                "jurisdiction_code": ver.jurisdiction,
-                "benefit_type": ver.benefit_type,
-                "benefit": ver.benefit_summary,
-                "benefit_summary": ver.benefit_summary,
-                "eligibility": ver.eligibility_statement,
-                "eligibility_status": "ACTIVE_ELIGIBLE",
-                "effective_dates": dates_str,
-                "last_verified_at": ver.last_verified_at.strftime("%d %b %Y"),
-                "version": f"v{ver.version_number}.0",
-                "content_hash": ver.content_hash,
-                "source_url": ver.source_url,
-                "action_url": ver.application_url or ver.source_url,
-                "relevance_rationale": rationale,
-                "is_universal": is_universal,
-                "sector_category": matched_name,
-                "is_state_specific": not is_central,
-                "is_active": ver.is_active,
-            })
-
-        universal_count = sum(1 for s in matched if s["is_universal"])
-        sector_specific_count = len(matched) - universal_count
-
-        return Response(
-            envelope({
-                "state": state_code,
-                "state_name": state_name,
-                "msme_scale": msme_scale,
-                "product_description": product_desc,
-                "count": len(matched),
-                "total_schemes_found": len(matched),
-                "universal_schemes_count": universal_count,
-                "sector_specific_schemes_count": sector_specific_count,
-                "maharashtra_schemes_count": sum(1 for s in matched if s["is_state_specific"]),
-                "central_schemes_count": sum(1 for s in matched if not s["is_state_specific"]),
-                "schemes": matched,
-            }),
-            status=status.HTTP_200_OK,
-        )
+        # Use the same matching/status contract as authenticated business reads.
+        # This public endpoint evaluates supplied facts without creating a record.
+        from types import SimpleNamespace
+        from rest_framework import serializers
+        class ContextInput(serializers.Serializer):
+            state = serializers.CharField(default="MH")
+            product_description = serializers.CharField(default="", allow_blank=True)
+            msme_scale = serializers.ChoiceField(choices=["MICRO", "SMALL", "MEDIUM", "LARGE", "UNKNOWN"], default="UNKNOWN")
+            is_manufacturing = serializers.BooleanField(default=False)
+            is_cross_border = serializers.BooleanField(default=False)
+            trade_intent = serializers.ChoiceField(choices=["NONE", "IMPORT_ONLY", "EXPORT_ONLY", "IMPORT_AND_EXPORT", "PLANNED"], required=False)
+            exports = serializers.BooleanField(required=False)
+            lifecycle_stage = serializers.CharField(default="", allow_blank=True)
+            facts = serializers.DictField(default=dict)
+        serializer = ContextInput(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        supplied = serializer.validated_data
+        from domain.jurisdictions.resolver import normalize_jurisdiction
+        state_code = normalize_jurisdiction(supplied["state"]) or supplied["state"].upper()
+        facts = dict(supplied["facts"])
+        facts["is_manufacturing"] = supplied["is_manufacturing"]
+        if "exports" in supplied:
+            facts["exports"] = supplied["exports"]
+        trade = supplied.get("trade_intent", "PLANNED" if supplied["is_cross_border"] else "NONE")
+        context = DerivedBusinessContext(
+            business_id="context", business_name="Supplied business context", legal_constitution="",
+            state=state_code, state_name=state_code.replace("_", " ").title(), district="",
+            industrial_zone_status="", lifecycle_stage=supplied["lifecycle_stage"],
+            product_description=supplied["product_description"], trade_intent=trade,
+            annual_turnover=None, plant_machinery_investment=None, total_worker_count=None,
+            contract_worker_count=None, connected_power_load=None, effluent_emission_generation=None,
+            hazardous_waste_generation=None, ecommerce_operations=None, multi_state_operations=None,
+            msme_scale=supplied["msme_scale"], raw_variables=facts)
+        identity = SimpleNamespace(id="context", name="Supplied business context")
+        return Response(envelope(match_business_schemes(identity, context=context)), status=status.HTTP_200_OK)
 
 
 class SchemeCatalogListView(APIView):
@@ -178,9 +115,13 @@ class SchemeCatalogListView(APIView):
             queryset = queryset.filter(jurisdiction=jurisdiction)
 
         schemes_list = []
+        quarantined_count = 0
         for s in queryset:
             ver = s.current_version
             if not ver:
+                continue
+            if is_authored_fixture_version(ver):
+                quarantined_count += 1
                 continue
 
             if sector and sector != "ALL":
@@ -209,13 +150,15 @@ class SchemeCatalogListView(APIView):
                 "benefit_summary": ver.benefit_summary,
                 "benefit_details": ver.benefit_details,
                 "eligibility_statement": ver.eligibility_statement,
-                "eligibility_status": "ACTIVE_ELIGIBLE",
+                "eligibility_status": "CANDIDATE",
                 "effective_dates": dates_str,
                 "sectors": ver.sectors,
                 "scale_match": ver.scale_match,
-                "application_url": ver.application_url or ver.source_url,
-                "action_url": ver.application_url or ver.source_url,
-                "source_url": ver.source_url,
+                "application_url": ver.application_url or None,
+                "action_url": ver.application_url or None,
+                "source_url": scheme_source_projection(ver)["url"],
+                "source": scheme_source_projection(ver), "evidence": scheme_evidence_projection(ver),
+                "matched_facts": [],
                 "source_domain": s.source_domain,
                 "evidence_snippet": ver.evidence_snippet,
                 "effective_from": ver.effective_from.isoformat() if ver.effective_from else None,
@@ -234,6 +177,9 @@ class SchemeCatalogListView(APIView):
             envelope({
                 "count": len(schemes_list),
                 "total_catalog_count": len(schemes_list),
+                "excluded_unreviewed_count": quarantined_count,
+                "scope_status": "SOURCE_REVIEW_REQUIRED" if quarantined_count and not schemes_list else "CATALOGUE",
+                "scope_note": "Historical authored entries are excluded. No reviewed scheme sources are available in this catalogue scope." if quarantined_count and not schemes_list else "Catalogue entries are candidates, not business eligibility decisions.",
                 "maharashtra_schemes_count": sum(1 for s in schemes_list if s["is_state_specific"]),
                 "central_schemes_count": sum(1 for s in schemes_list if not s["is_state_specific"]),
                 "schemes": schemes_list,
@@ -256,6 +202,7 @@ class SchemeVersionHistoryView(APIView):
 
         versions_data = []
         for ver in scheme.versions.order_by("-version_number"):
+            authored = is_authored_fixture_version(ver)
             versions_data.append({
                 "version_number": ver.version_number,
                 "content_hash": ver.content_hash,
@@ -267,12 +214,15 @@ class SchemeVersionHistoryView(APIView):
                 "sectors": ver.sectors,
                 "scale_match": ver.scale_match,
                 "application_url": ver.application_url,
-                "source_url": ver.source_url,
-                "evidence_snippet": ver.evidence_snippet,
+                "source_url": scheme_source_projection(ver)["url"],
+                "source": scheme_source_projection(ver), "evidence": scheme_evidence_projection(ver),
+                "evidence_snippet": "" if authored else ver.evidence_snippet,
                 "effective_from": ver.effective_from.isoformat() if ver.effective_from else None,
                 "effective_to": ver.effective_to.isoformat() if ver.effective_to else None,
                 "last_verified_at": ver.last_verified_at.isoformat(),
-                "verification_status": ver.verification_status,
+                "verification_status": "UNVERIFIED" if authored else ver.verification_status,
+                "recorded_verification_status": ver.verification_status,
+                "provenance_origin": "AUTHORED_FIXTURE" if authored else "RECORDED_SCHEME_VERSION",
                 "is_active": ver.is_active,
                 "diff_summary": ver.diff_summary,
                 "created_at": ver.created_at.isoformat(),
@@ -297,7 +247,7 @@ class SchemePipelineRunView(APIView):
     Triggers ingestion across official portals, computes content hashes,
     diffs against existing records, and publishes new immutable versions when updated.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request) -> Response:
         source_keys = request.data.get("source_keys")
@@ -312,7 +262,7 @@ class SchemePipelineStatusView(APIView):
 
     Audit overview: total schemes, state breakdown, recent snapshots, and verification dates.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def get(self, request: Request) -> Response:
         service = SchemePipelineService()
@@ -325,7 +275,7 @@ class SchemeRollbackView(APIView):
 
     Rolls back a scheme to an earlier immutable version.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request, scheme_code: str) -> Response:
         target_version = request.data.get("target_version")
@@ -352,7 +302,7 @@ class SchemeUpdatePublishView(APIView):
     Dynamically publishes an updated version of a scheme, demonstrating
     cryptographic content hashing, field-by-field diff generation, and version incrementation.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request, scheme_code: str) -> Response:
         scheme = Scheme.objects.filter(scheme_code=scheme_code).first()
@@ -392,14 +342,16 @@ class SchemeUpdatePublishView(APIView):
             benefit_summary=new_benefit,
             benefit_details=benefit_details,
             eligibility_statement=new_eligibility,
-            eligibility_criteria={},
+            eligibility_criteria=current_ver.eligibility_criteria or {},
             sectors=current_ver.sectors or [],
             scale_match=current_ver.scale_match or [],
             application_route=current_ver.application_route,
             application_url=current_ver.application_url,
             source_url=current_ver.source_url,
             source_domain=scheme.source_domain,
-            evidence_snippet=f"{change_reason}. Verified via live official feed.",
+            # A review note is not a source quotation. Retain only the recorded
+            # passage and require review of changed terms against the source.
+            evidence_snippet="" if is_authored_fixture_version(current_ver) else current_ver.evidence_snippet,
             effective_from=current_ver.effective_from,
             effective_to=current_ver.effective_to,
         )
@@ -413,6 +365,9 @@ class SchemeUpdatePublishView(APIView):
             }), status=status.HTTP_200_OK)
 
         diff = compute_scheme_diff(current_ver, candidate)
+        diff["review_note"] = change_reason
+        if is_authored_fixture_version(current_ver):
+            diff["provenance_origin"] = "AUTHORED_FIXTURE"
         new_version_num = scheme.current_version_number + 1
 
         SchemeVersion.objects.create(
@@ -426,6 +381,7 @@ class SchemeUpdatePublishView(APIView):
             benefit_summary=candidate.benefit_summary,
             benefit_details=candidate.benefit_details,
             eligibility_statement=candidate.eligibility_statement,
+            eligibility_criteria=candidate.eligibility_criteria,
             sectors=candidate.sectors,
             scale_match=candidate.scale_match,
             application_route=candidate.application_route,
@@ -435,8 +391,9 @@ class SchemeUpdatePublishView(APIView):
             evidence_snippet=candidate.evidence_snippet,
             effective_from=candidate.effective_from,
             effective_to=candidate.effective_to,
+            published_date=current_ver.published_date,
             diff_summary=diff,
-            verification_status="AUTOMATICALLY_VERIFIED",
+            verification_status="PENDING_REVIEW",
             last_verified_at=timezone.now(),
             is_active=True,
         )

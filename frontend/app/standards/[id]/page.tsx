@@ -1,152 +1,40 @@
 "use client";
-
-import React, { use } from "react";
+import { use, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
+import LoadingSkeleton from "@/components/LoadingSkeleton";
+import ErrorState from "@/components/ErrorState";
+import { useBusinessContext } from "@/context/BusinessContext";
+import { api } from "@/lib/api";
+import { exactSourceUrl, standardClassification } from "@/lib/sourceProvenance";
+import SourceProvenance from "@/components/product/SourceProvenance";
+import type { StandardItem } from "@/types";
 import { DEMO_STANDARDS } from "@/data/demo/standards";
-import {
-  Folder,
-  ChevronRight,
-  ArrowLeft,
-} from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
-
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default function StandardDetailPage({ params }: PageProps) {
-  const { t } = useLanguage();
-  const resolvedParams = use(params);
-  const stdId = resolvedParams.id;
-
-  const normalizedId = stdId.replace(/-/g, " ");
-  const standard =
-    DEMO_STANDARDS.find(
-      (s) =>
-        s.id.toLowerCase() === stdId.toLowerCase() ||
-        s.code.toLowerCase() === normalizedId.toLowerCase()
-    ) || DEMO_STANDARDS[0];
-
-  return (
-    <AppShell activeView="standards">
-      <div className="space-y-6 pb-6 select-none max-w-4xl mx-auto">
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-2 text-xs text-[#64748B]">
-            <Folder className="h-3.5 w-3.5 text-[#64748B]" />
-            <Link href="/standards" className="hover:text-[#0F172A] transition-colors">
-              {t("navigation.standards")}
-            </Link>
-            <ChevronRight className="h-3 w-3 text-[#CBD5E1]" />
-            <span className="text-[#0F172A] font-mono font-medium">{standard.code}</span>
-          </div>
-
-          <Link
-            href="/standards"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#64748B] hover:text-[#0F172A] transition-colors"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>{t("common.back")}</span>
-          </Link>
-        </div>
-
-        {/* Standard Detail Card */}
-        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6">
-          <div className="border-b border-[#E2E8F0] pb-6 space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-xs font-semibold text-[#0F172A] bg-[#F1F5F9] px-3 py-1 rounded-full border border-[#E2E8F0]">
-                {standard.code}:{standard.year}
-              </span>
-              <span
-                className={`px-3 py-1 rounded-full font-semibold text-xs border ${
-                  standard.isMandatory
-                    ? "bg-rose-50 text-rose-700 border-rose-200"
-                    : "bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0]"
-                }`}
-              >
-                {standard.isMandatory ? "MANDATORY QCO" : "VOLUNTARY"}
-              </span>
-              <span className="text-xs font-semibold text-[#0F172A] bg-[#F1F5F9] border border-[#E2E8F0] px-3 py-1 rounded-full">
-                {standard.scheme}
-              </span>
-            </div>
-
-            <h1 className="font-sans text-2xl sm:text-3xl text-[#0F172A] font-bold tracking-tight">
-              {standard.title}
-            </h1>
-
-            <div className="flex flex-wrap items-center gap-6 text-xs text-[#64748B] pt-2">
-              <div>
-                Issuing Authority: <strong className="text-[#0F172A] font-semibold">{standard.authority}</strong>
-              </div>
-              <div>
-                Applicable Clauses: <strong className="text-[#0F172A] font-mono font-semibold">{standard.applicableClauses} of {standard.totalClauses}</strong>
-              </div>
-              <div>
-                Amendment: <strong className="text-[#0F172A] font-semibold">{standard.lastAmendment}</strong>
-              </div>
-            </div>
-          </div>
-
-          {/* Standard Description */}
-          <div className="space-y-2">
-            <h2 className="text-xs font-semibold text-[#0F172A] uppercase tracking-wider">
-              Scope & Purpose
-            </h2>
-            <p className="text-xs text-[#334155] leading-relaxed bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0]">
-              {standard.description}
-            </p>
-          </div>
-
-          {/* Mandatory Clauses & Testing Protocol */}
-          <div className="space-y-3">
-            <h2 className="text-xs font-semibold text-[#0F172A] uppercase tracking-wider">
-              Mandatory Testing Clauses & Acceptance Thresholds
-            </h2>
-            <div className="space-y-3">
-              {standard.clauses.map((c) => (
-                <div
-                  key={c.clauseNumber}
-                  className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2.5 text-xs"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-[#0F172A]">
-                      Clause {c.clauseNumber}: {c.clauseTitle}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-[10px] uppercase font-bold">
-                      Mandatory
-                    </span>
-                  </div>
-                  <div className="text-[#64748B]">
-                    <strong className="text-[#0F172A]">Test Protocol:</strong> {c.testMethod}
-                  </div>
-                  <div className="text-[#334155] bg-white p-3 rounded-lg border border-[#E2E8F0] leading-relaxed shadow-2xs">
-                    <strong className="text-[#0F172A]">Statutory Acceptance Criteria:</strong> {c.acceptanceCriteria}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Action CTAs */}
-          <div className="pt-4 border-t border-[#E2E8F0] flex items-center justify-between">
-            <Link
-              href="/compliance"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0F172A] hover:underline"
-            >
-              <span>View Mandate in Compliance Matrix →</span>
-            </Link>
-
-            <Link
-              href="/workflows"
-              className="px-5 py-2 rounded-full bg-[#18181B] text-white text-xs font-semibold hover:bg-[#27272A] transition-all shadow-2xs"
-            >
-              Initiate Certification Workflow
-            </Link>
-          </div>
-        </div>
-      </div>
-    </AppShell>
-  );
+export default function StandardDetailPage({ params }: { params: Promise<{id:string}> }) {
+  const { id } = use(params);
+  const { activeBusinessId, activeAssessmentId, isDemoMode } = useBusinessContext();
+  const searchParams = useSearchParams();
+  const businessId = searchParams.get("business_id") || activeBusinessId;
+  const assessmentId = searchParams.get("assessment_id") || (businessId === activeBusinessId ? activeAssessmentId : null);
+  const [standard,setStandard] = useState<StandardItem | null>(null);
+  const [loading,setLoading] = useState(true);
+  const [error,setError] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setError(null); setStandard(null);
+    api.standards.search("",businessId || undefined,assessmentId || undefined).then(response => { if(active) setStandard(response.standards.find(item => item.requirement_id === id) || null); }).catch(() => { if(active) setError("We couldn't load this standard."); }).finally(() => { if(active) setLoading(false); });
+    return () => { active = false; };
+  },[id,businessId,assessmentId]);
+  const sample = isDemoMode ? DEMO_STANDARDS.find(item => item.id === id || item.code === id.replaceAll("-"," ")) : null;
+  return <AppShell activeView="standards"><div className="max-w-4xl space-y-8">
+    <Link href="/standards" className="text-sm text-[var(--ui-secondary)]">← Standards</Link>
+    {loading ? <LoadingSkeleton count={3} /> : standard ? <>
+      <header><p className="ui-eyebrow mb-3">{standard.authority} · {standard.jurisdiction}</p><h1 className="text-3xl">{standard.title}</h1><p className="text-sm text-[var(--ui-secondary)] mt-4">{standard.description}</p></header>
+      <section className="ui-object"><h2 className="font-semibold">Basis & relevance</h2><p className="text-sm mt-2">{standard.why_it_matters || "See the saved assessment decision and its evidence."}</p><p className="text-sm mt-2">{standardClassification(standard.status, standard.is_mandatory, standard.result_origin)}</p>{standard.source_reference && <p className="text-sm mt-2">Contextual source/authority: {standard.source_reference}</p>}{standard.rule_version_id && <p className="font-mono text-xs mt-2">Rule version: {standard.rule_version_id}</p>}</section>
+      {(standard.source || !standard.citations?.length) && <SourceProvenance source={standard.source} evidence={standard.evidence} />}
+      <section><h2 className="font-semibold mb-4">Relevant clauses & evidence</h2>{standard.citations?.length ? standard.citations.map((citation,index) => <article key={citation.evidence_id || index} className="ui-object"><div className="flex justify-between gap-4"><h3 className="font-medium">{citation.source_title}</h3><span className="ui-eyebrow">{citation.verification_status}</span></div><p className="font-mono text-xs text-[var(--ui-secondary)] mt-2">{citation.locator}</p><blockquote className="border-l-2 border-[var(--ui-sage-soft)] pl-4 my-4">{citation.excerpt || "Source passage not recorded."}</blockquote>{exactSourceUrl(citation.source?.url === undefined ? citation.canonical_url : citation.source.url) ? <a className="ui-button" href={exactSourceUrl(citation.source?.url === undefined ? citation.canonical_url : citation.source.url)!} target="_blank" rel="noopener noreferrer">View source ↗</a> : <p className="text-sm text-[var(--ui-secondary)]">Source link not recorded.</p>}</article>) : <p className="text-sm text-[var(--ui-secondary)]">No source clauses are linked to this standard yet.</p>}</section>
+      <footer className="font-mono text-xs text-[var(--ui-muted)]">{standard.requirement_id} · {standard.domain}</footer>
+    </> : sample ? <article className="ui-object"><p className="ui-eyebrow">Sample standard</p><h1 className="text-3xl mt-3">{sample.code}: {sample.title}</h1><p className="mt-4">{sample.description}</p></article> : error ? <ErrorState message={error} onRetry={() => window.location.reload()} /> : <div className="ui-object ui-empty"><h1 className="text-2xl">This standard isn't available.</h1><p>Return to standards to find a current source-linked requirement.</p><Link href="/standards" className="ui-button mt-5">Browse standards →</Link></div>}
+  </div></AppShell>;
 }

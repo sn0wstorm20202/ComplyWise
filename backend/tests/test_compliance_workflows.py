@@ -362,9 +362,11 @@ class ComplianceWorkflowsTestCase(TestCase):
         self.assertEqual(sub1.file_name, "water_test_v1.pdf")
 
     def test_contract_parity_with_frontend_types(self):
-        """Verify that every new status enum value is mirrored in frontend/types/index.ts."""
+        """Verify workflow enums in the frontend's publicly exported status contract."""
         self.assertTrue(FRONTEND_TYPES_PATH.exists(), "Frontend types file missing.")
-        content = FRONTEND_TYPES_PATH.read_text(encoding="utf-8")
+        barrel = FRONTEND_TYPES_PATH.read_text(encoding="utf-8")
+        self.assertIn('export type * from "./status";', barrel)
+        content = FRONTEND_TYPES_PATH.with_name("status.ts").read_text(encoding="utf-8")
 
         enum_checks = [
             (enums.CaseStatus, "CaseStatus"),

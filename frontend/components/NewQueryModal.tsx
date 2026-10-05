@@ -1,4 +1,5 @@
 "use client";
+import Overlay from "@/components/product/Overlay";
 
 import React, { useState } from "react";
 import { X, CheckCircle2 } from "lucide-react";
@@ -72,29 +73,29 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+    <Overlay open onClose={() => onClose()} title="Details">
       <div
-        className="w-full max-w-xl bg-white rounded-[16px] shadow-2xl border border-[#E2E8F0] overflow-hidden animate-in zoom-in-95 duration-150 text-xs text-[#0F172A]"
+        className="w-full max-w-xl bg-white rounded-[16px] shadow-2xl border border-[var(--ui-border)] overflow-hidden animate-in zoom-in-95 duration-150 text-xs text-[var(--ui-text)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--ui-border)]">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-[#0F172A] text-sm">
+              <span className="font-bold text-[var(--ui-text)] text-sm">
                 New BIS Compliance Query
               </span>
-              <span className="bg-[#F1F5F9] text-[#0F172A] font-semibold px-2 py-0.5 rounded-full text-[10px] border border-[#E2E8F0]">
+              <span className="bg-[var(--ui-inset)] text-[var(--ui-text)] font-semibold px-2 py-0.5 rounded-full text-[10px] border border-[var(--ui-border)]">
                 Deterministic Evaluator
               </span>
             </div>
-            <p className="text-[#64748B] text-[11px] mt-0.5">
+            <p className="text-[var(--ui-secondary)] text-[11px] mt-0.5">
               Evaluate product specifications or components against published Quality Control Orders.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-[#64748B] hover:text-[#0F172A] rounded-[6px] transition-colors cursor-pointer"
+            className="p-1 text-[var(--ui-secondary)] hover:text-[var(--ui-text)] rounded-[6px] transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -105,7 +106,7 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
           {!result ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="font-medium text-[#0F172A] text-xs">
+                <label className="font-medium text-[var(--ui-text)] text-xs">
                   Product Description or Component Name
                 </label>
                 <input
@@ -113,20 +114,20 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
                   value={productText}
                   onChange={(e) => setProductText(e.target.value)}
                   placeholder="e.g., 16A 3-Pin Molded Plug with Earth Pin, or AC/DC LED Driver"
-                  className="w-full rounded-[10px] border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2.5 text-xs text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#0F172A] focus:outline-hidden"
+                  className="w-full rounded-[10px] border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3.5 py-2.5 text-xs text-[var(--ui-text)] placeholder:text-[var(--ui-muted)] focus:border-[var(--ui-text)] focus:outline-hidden"
                   autoFocus
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="font-medium text-[#0F172A] text-xs">
+                  <label className="font-medium text-[var(--ui-text)] text-xs">
                     Regulatory Category
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full rounded-[10px] border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs text-[#0F172A] focus:border-[#0F172A] focus:outline-hidden cursor-pointer"
+                    className="w-full rounded-[10px] border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3 py-2 text-xs text-[var(--ui-text)] focus:border-[var(--ui-text)] focus:outline-hidden cursor-pointer"
                   >
                     <option>Electrical Accessories</option>
                     <option>Household Appliances</option>
@@ -136,10 +137,10 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-medium text-[#0F172A] text-xs">
+                  <label className="font-medium text-[var(--ui-text)] text-xs">
                     Manufacturing Origin
                   </label>
-                  <select className="w-full rounded-[10px] border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs text-[#0F172A] focus:border-[#0F172A] focus:outline-hidden cursor-pointer">
+                  <select className="w-full rounded-[10px] border border-[var(--ui-border)] bg-[var(--ui-bg)] px-3 py-2 text-xs text-[var(--ui-text)] focus:border-[var(--ui-text)] focus:outline-hidden cursor-pointer">
                     <option>Domestic Production (India)</option>
                     <option>Imported Finished Product</option>
                     <option>Component for Assembly</option>
@@ -147,15 +148,15 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
                 </div>
               </div>
 
-              <div className="p-3 rounded-[10px] bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] text-[#64748B] space-y-1.5">
-                <div className="font-semibold text-[#0F172A]">Quick Test Suggestions:</div>
+              <div className="p-3 rounded-[10px] bg-[var(--ui-bg)] border border-[var(--ui-border)] text-[11px] text-[var(--ui-secondary)] space-y-1.5">
+                <div className="font-semibold text-[var(--ui-text)]">Quick Test Suggestions:</div>
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {["16A Re-wireable Plug", "LED Controlgear 45W", "Electric Immersion Heater"].map((s) => (
                     <button
                       key={s}
                       type="button"
                       onClick={() => setProductText(s)}
-                      className="bg-white hover:bg-[#F1F5F9] border border-[#E2E8F0] px-2.5 py-1 rounded-full text-[11px] text-[#0F172A] transition-colors cursor-pointer"
+                      className="bg-white hover:bg-[var(--ui-inset)] border border-[var(--ui-border)] px-2.5 py-1 rounded-full text-[11px] text-[var(--ui-text)] transition-colors cursor-pointer"
                     >
                       {s}
                     </button>
@@ -163,18 +164,18 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E2E8F0]">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--ui-border)]">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 rounded-full border border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] font-medium cursor-pointer transition-colors"
+                  className="px-4 py-2 rounded-full border border-[var(--ui-border)] text-[var(--ui-secondary)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-inset)] font-medium cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isEvaluating || !productText.trim()}
-                  className="px-5 py-2 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white font-medium disabled:opacity-40 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2 rounded-full bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-white font-medium disabled:opacity-40 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   {isEvaluating ? "Evaluating Mandates..." : "Run Compliance Check"}
                 </button>
@@ -182,58 +183,58 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
             </form>
           ) : (
             <div className="space-y-4 animate-in fade-in">
-              <div className="p-4 rounded-[10px] border border-[#E2E8F0] bg-[#F8FAFC] space-y-2">
+              <div className="p-4 rounded-[10px] border border-[var(--ui-border)] bg-[var(--ui-bg)] space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    <span className="font-bold text-[#0F172A] text-xs">
+                    <CheckCircle2 className="h-4 w-4 text-[var(--ui-sage)]" />
+                    <span className="font-bold text-[var(--ui-text)] text-xs">
                       Evaluation Result: Mandatory Compliance Identified
                     </span>
                   </div>
-                  <span className="font-mono text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2 py-0.5 rounded-full">
+                  <span className="font-mono text-[10px] bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)] font-bold px-2 py-0.5 rounded-full">
                     MATCH CONFIRMED
                   </span>
                 </div>
 
                 <div className="pt-1">
-                  <div className="font-mono text-sm font-bold text-[#0F172A]">
+                  <div className="font-mono text-sm font-bold text-[var(--ui-text)]">
                     {result.standardCode}
                   </div>
-                  <div className="text-[#0F172A] text-xs font-medium mt-0.5">
+                  <div className="text-[var(--ui-text)] text-xs font-medium mt-0.5">
                     {result.standardTitle}
                   </div>
                 </div>
 
-                <div className="text-[11px] text-[#475569] leading-relaxed pt-1">
+                <div className="text-[11px] text-[var(--ui-secondary)] leading-relaxed pt-1">
                   {result.reason}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-[11px]">
-                <div className="p-3 rounded-[10px] bg-[#F8FAFC] border border-[#E2E8F0]">
-                  <div className="text-[#64748B] font-semibold uppercase text-[10px]">
+                <div className="p-3 rounded-[10px] bg-[var(--ui-bg)] border border-[var(--ui-border)]">
+                  <div className="text-[var(--ui-secondary)] font-semibold uppercase text-[10px]">
                     Enforcing QCO Order
                   </div>
-                  <div className="font-medium text-[#0F172A] mt-0.5">
+                  <div className="font-medium text-[var(--ui-text)] mt-0.5">
                     {result.qcoNotice}
                   </div>
                 </div>
 
-                <div className="p-3 rounded-[10px] bg-[#F8FAFC] border border-[#E2E8F0]">
-                  <div className="text-[#64748B] font-semibold uppercase text-[10px]">
+                <div className="p-3 rounded-[10px] bg-[var(--ui-bg)] border border-[var(--ui-border)]">
+                  <div className="text-[var(--ui-secondary)] font-semibold uppercase text-[10px]">
                     Applicable Scope
                   </div>
-                  <div className="font-medium text-[#0F172A] mt-0.5">
+                  <div className="font-medium text-[var(--ui-text)] mt-0.5">
                     {result.applicableClauses} Mandatory Testing Clauses
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-[#E2E8F0]">
+              <div className="flex items-center justify-between pt-2 border-t border-[var(--ui-border)]">
                 <button
                   type="button"
                   onClick={() => setResult(null)}
-                  className="text-[#64748B] hover:text-[#0F172A] font-medium cursor-pointer transition-colors"
+                  className="text-[var(--ui-secondary)] hover:text-[var(--ui-text)] font-medium cursor-pointer transition-colors"
                 >
                   ← Test Another Product
                 </button>
@@ -242,7 +243,7 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-4 py-2 rounded-full border border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] font-medium cursor-pointer transition-colors"
+                    className="px-4 py-2 rounded-full border border-[var(--ui-border)] text-[var(--ui-secondary)] hover:text-[var(--ui-text)] hover:bg-[var(--ui-inset)] font-medium cursor-pointer transition-colors"
                   >
                     Done
                   </button>
@@ -253,7 +254,7 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
                         onClose();
                         onViewStandard(result.standardCode);
                       }}
-                      className="px-5 py-2 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white font-medium transition-colors cursor-pointer"
+                      className="px-5 py-2 rounded-full bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-white font-medium transition-colors cursor-pointer"
                     >
                       Inspect Standard Details
                     </button>
@@ -264,7 +265,7 @@ export function NewQueryModal({ isOpen, onClose, onViewStandard }: NewQueryModal
           )}
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }
 

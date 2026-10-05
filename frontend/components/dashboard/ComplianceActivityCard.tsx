@@ -5,7 +5,7 @@ import { ArrowUpDown, ArrowUpRight } from "lucide-react";
 import { ActivityDay } from "@/data/demo";
 
 interface ComplianceActivityCardProps {
-  activityData?: {
+  activityData: {
     weeklyTasks: number;
     growthPercentage: string;
     maxTasks: number;
@@ -16,20 +16,7 @@ interface ComplianceActivityCardProps {
 }
 
 export function ComplianceActivityCard({
-  activityData = {
-    weeklyTasks: 186,
-    growthPercentage: "+32%",
-    maxTasks: 100,
-    daily: [
-      { day: "Mon", tasks: 26, isHighlight: false, dateStr: "20 Jan" },
-      { day: "Tue", tasks: 42, isHighlight: false, dateStr: "21 Jan" },
-      { day: "Wed", tasks: 36, isHighlight: false, dateStr: "22 Jan" },
-      { day: "Thu", tasks: 60, isHighlight: false, dateStr: "23 Jan" },
-      { day: "Fri", tasks: 88, isHighlight: true, dateStr: "24 Jan" },
-      { day: "Sat", tasks: 48, isHighlight: false, dateStr: "25 Jan" },
-      { day: "Sun", tasks: 54, isHighlight: false, dateStr: "26 Jan" },
-    ],
-  },
+  activityData,
   onSort,
   onExpand,
 }: ComplianceActivityCardProps) {
@@ -52,12 +39,12 @@ export function ComplianceActivityCard({
   }
 
   return (
-    <div className="bg-white rounded-[20px] p-5 sm:p-6 border border-[#E5E7EB] shadow-sm flex flex-col justify-between h-full min-h-[270px] relative select-none w-full">
+    <div className="bg-white rounded-[20px] p-5 sm:p-6 border border-[var(--ui-border)] shadow-sm flex flex-col justify-between h-full min-h-[270px] relative select-none w-full">
       {/* Header */}
       <div>
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-sm font-semibold text-[#111827] whitespace-nowrap">
-            Compliance Activity
+          <h3 className="text-sm font-semibold text-[var(--ui-text)] whitespace-nowrap">
+            Workspace activity
           </h3>
           <div className="flex items-center gap-1 shrink-0">
             <button
@@ -67,8 +54,8 @@ export function ComplianceActivityCard({
               aria-label="Sort activity"
               className={`h-6 w-6 rounded-[6px] flex items-center justify-center transition-colors cursor-pointer border ${
                 sortOrder === "volume"
-                  ? "bg-[#18181B] border-[#18181B] text-white"
-                  : "bg-[#F8FAFC] hover:bg-[#F1F5F9] border-[#E2E8F0] text-[#64748B] hover:text-[#111827]"
+                  ? "bg-[var(--ui-text)] border-[var(--ui-text)] text-white"
+                  : "bg-[var(--ui-bg)] hover:bg-[var(--ui-inset)] border-[var(--ui-border)] text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
               }`}
             >
               <ArrowUpDown className="h-3 w-3" />
@@ -77,7 +64,7 @@ export function ComplianceActivityCard({
               type="button"
               onClick={onExpand}
               aria-label="Expand activity details"
-              className="h-6 w-6 rounded-[6px] bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#111827] transition-colors cursor-pointer"
+              className="h-6 w-6 rounded-[6px] bg-[var(--ui-bg)] hover:bg-[var(--ui-inset)] border border-[var(--ui-border)] flex items-center justify-center text-[var(--ui-secondary)] hover:text-[var(--ui-text)] transition-colors cursor-pointer"
             >
               <ArrowUpRight className="h-3 w-3" />
             </button>
@@ -87,17 +74,17 @@ export function ComplianceActivityCard({
         {/* Metric Summary */}
         <div className="mt-2.5 flex items-baseline justify-between">
           <div>
-            <div className="text-xs font-normal text-[#9CA3AF]">This week</div>
+            <div className="text-xs font-normal text-[var(--ui-muted)]">Last seven days</div>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-3xl sm:text-4xl font-bold text-[#111827] tracking-tight leading-none">
+              <span className="text-3xl sm:text-4xl font-bold text-[var(--ui-text)] tracking-tight leading-none">
                 {activityData.weeklyTasks}
               </span>
-              <span className="text-xs text-[#9CA3AF]">tasks</span>
+              <span className="text-xs text-[var(--ui-muted)]">events</span>
             </div>
           </div>
 
           {/* Growth Highlight Pill */}
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#E5F77D] text-[#3F6212] font-semibold text-xs shadow-2xs">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] font-semibold text-xs shadow-2xs">
             {activityData.growthPercentage}
           </span>
         </div>
@@ -107,8 +94,8 @@ export function ComplianceActivityCard({
       <div className="mt-2 relative">
         {/* Floating Tooltip */}
         {hoveredDay && (
-          <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 bg-[#18181B] text-white text-[10px] font-medium px-2.5 py-1 rounded-full shadow-lg pointer-events-none whitespace-nowrap">
-            {hoveredDay.day} ({hoveredDay.dateStr}): {hoveredDay.tasks} tasks verified
+          <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 bg-[var(--ui-text)] text-white text-[10px] font-medium px-2.5 py-1 rounded-full shadow-lg pointer-events-none whitespace-nowrap">
+            {hoveredDay.day} ({hoveredDay.dateStr}): {hoveredDay.tasks} recorded events
           </div>
         )}
 
@@ -129,13 +116,13 @@ export function ComplianceActivityCard({
                   className={`w-full max-w-[24px] rounded-full transition-all duration-300 group-hover:scale-y-105 origin-bottom ${
                     isHighlighted
                       ? "bg-[#D4F66C] group-hover:bg-[#C9EE5B] shadow-2xs"
-                      : "bg-[#EEF2F6] group-hover:bg-[#E2E8F0]"
+                      : "bg-[#EEF2F6] group-hover:bg-[var(--ui-border)]"
                   }`}
                   style={{ height: `${heightPercent}%` }}
                 />
                 <span
                   className={`text-[11px] transition-colors ${
-                    isHighlighted ? "text-[#111827] font-bold" : "text-[#9CA3AF] group-hover:text-[#4B5563]"
+                    isHighlighted ? "text-[var(--ui-text)] font-bold" : "text-[var(--ui-muted)] group-hover:text-[#4B5563]"
                   }`}
                 >
                   {d.day}

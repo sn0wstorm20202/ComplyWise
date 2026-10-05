@@ -1,0 +1,1736 @@
+{
+  "kind": "REAL_PROVIDER_RUNTIME_POSTGRESQL_API",
+  "cases": [
+    {
+      "business": "Precision Workshop QA",
+      "type": "Manufacturing",
+      "stages": [
+        {
+          "stage": "businesses",
+          "status": 201,
+          "seconds": 1.09
+        },
+        {
+          "stage": "profile",
+          "status": 201,
+          "seconds": 0.261
+        },
+        {
+          "stage": "",
+          "status": 201,
+          "seconds": 0.769
+        },
+        {
+          "stage": "understand",
+          "status": 200,
+          "seconds": 3.428
+        },
+        {
+          "stage": "generate",
+          "status": 200,
+          "seconds": 6.55
+        },
+        {
+          "stage": "answers",
+          "status": 200,
+          "seconds": 1.627
+        },
+        {
+          "stage": "regulatory-discovery",
+          "status": 200,
+          "seconds": 44.518
+        },
+        {
+          "stage": "compliance-synthesis",
+          "status": 200,
+          "seconds": 16.013
+        },
+        {
+          "stage": "orchestrate",
+          "status": 200,
+          "seconds": 7.3
+        },
+        {
+          "stage": "compliance",
+          "status": 200,
+          "seconds": 0.766
+        },
+        {
+          "stage": "documents",
+          "status": 200,
+          "seconds": 0.661
+        },
+        {
+          "stage": "workflows",
+          "status": 200,
+          "seconds": 2.479
+        },
+        {
+          "stage": "schemes",
+          "status": 200,
+          "seconds": 2.004
+        },
+        {
+          "stage": "calendar",
+          "status": 200,
+          "seconds": 0.419
+        },
+        {
+          "stage": "dashboard",
+          "status": 200,
+          "seconds": 6.4
+        },
+        {
+          "stage": "search",
+          "status": 200,
+          "seconds": 0.427
+        }
+      ],
+      "failures": [],
+      "assessment_id": "e192f84e-f241-4915-a5fb-27076d37240e",
+      "questions": [
+        {
+          "question_id": "Q_2",
+          "question": "Besides mechanical cutting and turning, do your workshop operations include welding, thermal cutting, or heavy abrasive grinding processes?",
+          "category": "ENVIRONMENTAL_AND_LABOUR_SAFETY",
+          "answer_type": "MULTI_SELECT",
+          "required": true,
+          "options": [
+            {
+              "value": "Welding or brazing",
+              "label": "Welding or brazing"
+            },
+            {
+              "value": "Plasma or gas thermal cutting",
+              "label": "Plasma or gas thermal cutting"
+            },
+            {
+              "value": "Heavy abrasive grinding or polishing",
+              "label": "Heavy abrasive grinding or polishing"
+            },
+            {
+              "value": "None of the above (Only mechanical cutting and turning)",
+              "label": "None of the above (Only mechanical cutting and turning)"
+            }
+          ],
+          "unit": null,
+          "help_text": "Welding and grinding introduce localized fume and particulate management requirements under factory safety regulations.",
+          "reason": "Welding and grinding introduce localized fume and particulate management requirements under factory safety regulations.",
+          "order": 1,
+          "variable_key": "dynamic_secondary_machining_processes",
+          "affected_rules": [],
+          "fact_key": "dynamic_secondary_machining_processes",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        },
+        {
+          "question_id": "Q_1",
+          "question": "Do you have any steam boilers, steam pipes, or fired/unfired pressure vessels installed or operated within your workshop premises?",
+          "category": "FACTORY_SAFETY_AND_BOILERS",
+          "answer_type": "BOOLEAN",
+          "required": true,
+          "options": [
+            {
+              "value": "true",
+              "label": "true"
+            },
+            {
+              "value": "false",
+              "label": "false"
+            }
+          ],
+          "unit": null,
+          "help_text": "Crucial for determining whether the Indian Boilers Act applies to the facility's physical equipment.",
+          "reason": "Crucial for determining whether the Indian Boilers Act applies to the facility's physical equipment.",
+          "order": 2,
+          "variable_key": "boiler_installed",
+          "affected_rules": [],
+          "fact_key": "boiler_installed",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        }
+      ],
+      "repeated_known_facts": [],
+      "suggested_answers": [],
+      "answers": {
+        "Q_2": [
+          "None of the above (Only mechanical cutting and turning)"
+        ],
+        "Q_1": false
+      },
+      "suggestion_edits": [],
+      "completion_extra_provider_calls": 0,
+      "status": "COMPLETED",
+      "decisions": {
+        "APPLICABLE": 2,
+        "NOT_APPLICABLE": 61,
+        "NEEDS_INFORMATION": 0,
+        "UNVERIFIED": 30
+      },
+      "guidance": {
+        "compliance_items": 5,
+        "documents": 5,
+        "workflows": 5,
+        "schemes": 1,
+        "standards": 2
+      },
+      "discovery": [
+        {
+          "provider": "serpapi",
+          "status": "PARTIAL",
+          "queries": [
+            "Karnataka Factories Rules applicability for 18 workers with power official portal",
+            "Karnataka State Pollution Control Board Consent to Establish Operate classification for metal cutting workshop without effluent or chemical coating official portal",
+            "Karnataka Shops and Commercial Establishments vs Factories Act applicability for manufacturing workshop official portal",
+            "Karnataka pollution control board consent to establish metal component manufacturing workshop using powered official",
+            "Karnataka factories directorate factory licence registration eligibility",
+            "BIS mandatory certification Quality Control Order metal component manufacturing workshop using powered India"
+          ],
+          "candidate_count": 20,
+          "official_count": 4,
+          "captures": 1,
+          "modes": [
+            "CRAWLEE_HTTP"
+          ],
+          "error": "Source capture rejected: Crawlee produced no usable capture; blocked or failed source.; Source capture rejected: Source was empty or exceeded the capture byte limit."
+        }
+      ],
+      "retrieval": {},
+      "workspace": {
+        "compliance": {
+          "counts": {
+            "requirements": 98
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "documents": {
+          "counts": {
+            "documents": 11,
+            "requirements_summary": 2,
+            "requirements_without_checklist": 0
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "workflows": {
+          "counts": {
+            "workflows": 23
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "schemes": {
+          "counts": {
+            "schemes": 17
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "calendar": {
+          "counts": {
+            "events": 0,
+            "covers": 2,
+            "not_covered": 2
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "dashboard": {
+          "counts": {
+            "schemes_preview": 3,
+            "standards_preview": 2,
+            "priority_actions": 6,
+            "upcoming_deadlines": 0,
+            "recent_updates": 0
+          },
+          "available": null,
+          "has_evaluation": true
+        }
+      },
+      "standards": {
+        "business_id": "b2dd62a4-a835-436d-be66-1755c15f39b4",
+        "query": "",
+        "count": 2,
+        "standards": [
+          {
+            "id": "94b2c1be-6cdb-46b0-a229-d574f1580c09",
+            "title": "General Quality Management Assessment",
+            "citations": [],
+            "source_url": null,
+            "description": "Guideline areas for quality inspection of precision metal components.",
+            "is_mandatory": null,
+            "result_origin": "LLM_FALLBACK_RESULT",
+            "requirement_id": "94b2c1be-6cdb-46b0-a229-d574f1580c09",
+            "source_reference": "Quality Management Guidelines",
+            "why_it_may_apply": "Supported by business facts: precision metal component manufacturing workshop.",
+            "recommended_next_step": "Establish dimensional inspection checkpoints and calibration logs for cutting and turning equipment.",
+            "authority_or_regulator": "Industry Best Practice",
+            "standard_code": "94b2c1be-6cdb-46b0-a229-d574f1580c09",
+            "authority": "Industry Best Practice",
+            "jurisdiction": "",
+            "domain": "QUALITY",
+            "nature": "QUALITY_PLANNING",
+            "why_it_matters": "Supported by business facts: precision metal component manufacturing workshop.",
+            "decision_result_id": null,
+            "rule_version_id": null,
+            "category": "QUALITY_PLANNING",
+            "citation_count": 0
+          },
+          {
+            "id": "49229ff3-2ebf-4e1c-8ea3-52803221e78a",
+            "title": "Occupational Health and Safety Assessment",
+            "citations": [],
+            "source_url": null,
+            "description": "Assessment areas covering machine guards, PPE usage, and workshop safety.",
+            "is_mandatory": null,
+            "result_origin": "LLM_FALLBACK_RESULT",
+            "requirement_id": "49229ff3-2ebf-4e1c-8ea3-52803221e78a",
+            "source_reference": "Industrial Safety Best Practices",
+            "why_it_may_apply": "Supported by business facts: 18 workers operating powered cutting and turning machines.",
+            "recommended_next_step": "Implement machine safety guards and provide mandatory PPE for workshop staff.",
+            "authority_or_regulator": "Factory Safety Standards",
+            "standard_code": "49229ff3-2ebf-4e1c-8ea3-52803221e78a",
+            "authority": "Factory Safety Standards",
+            "jurisdiction": "",
+            "domain": "QUALITY",
+            "nature": "QUALITY_PLANNING",
+            "why_it_matters": "Supported by business facts: 18 workers operating powered cutting and turning machines.",
+            "decision_result_id": null,
+            "rule_version_id": null,
+            "category": "QUALITY_PLANNING",
+            "citation_count": 0
+          }
+        ],
+        "catalogue_available": false,
+        "scope_status": "PARTIAL_SCOPE",
+        "scope_note": "No reviewed standards matched this assessment within the currently supported knowledge scope. Additional product or quality review may be needed.",
+        "assessment_id": "e192f84e-f241-4915-a5fb-27076d37240e",
+        "reviewed_match_count": 0,
+        "catalogue_note": "Matched requirements and quality areas to explore for your business."
+      },
+      "workspace_get_provider_calls": 0,
+      "isolation_checks": 0,
+      "seconds": 95.197,
+      "providers": [
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "business_understanding",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 3036.34
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "smart_questions_planner",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 5137.87
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "claim_extraction",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 1260.56
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 8072.96
+        }
+      ]
+    },
+    {
+      "business": "Neighbourhood Kitchen QA",
+      "type": "Restaurant",
+      "stages": [
+        {
+          "stage": "businesses",
+          "status": 201,
+          "seconds": 0.459
+        },
+        {
+          "stage": "profile",
+          "status": 201,
+          "seconds": 0.24
+        },
+        {
+          "stage": "",
+          "status": 201,
+          "seconds": 0.556
+        },
+        {
+          "stage": "understand",
+          "status": 200,
+          "seconds": 3.039
+        },
+        {
+          "stage": "generate",
+          "status": 200,
+          "seconds": 6.214
+        },
+        {
+          "stage": "answers",
+          "status": 200,
+          "seconds": 1.918
+        },
+        {
+          "stage": "regulatory-discovery",
+          "status": 200,
+          "seconds": 19.456
+        },
+        {
+          "stage": "compliance-synthesis",
+          "status": 200,
+          "seconds": 11.863
+        },
+        {
+          "stage": "orchestrate",
+          "status": 200,
+          "seconds": 8.695
+        },
+        {
+          "stage": "compliance",
+          "status": 200,
+          "seconds": 0.762
+        },
+        {
+          "stage": "documents",
+          "status": 200,
+          "seconds": 0.667
+        },
+        {
+          "stage": "workflows",
+          "status": 200,
+          "seconds": 2.63
+        },
+        {
+          "stage": "schemes",
+          "status": 200,
+          "seconds": 2.213
+        },
+        {
+          "stage": "calendar",
+          "status": 200,
+          "seconds": 0.434
+        },
+        {
+          "stage": "dashboard",
+          "status": 200,
+          "seconds": 7.811
+        },
+        {
+          "stage": "search",
+          "status": 200,
+          "seconds": 0.45
+        }
+      ],
+      "failures": [],
+      "assessment_id": "412412fc-e55c-4ca6-b99f-9a7d3e4191cf",
+      "questions": [
+        {
+          "question_id": "Q_1",
+          "question": "What is the total connected electrical power load of your kitchen equipment and restaurant operations (in kW or HP)?",
+          "category": "PHYSICAL_INFRASTRUCTURE",
+          "answer_type": "NUMBER",
+          "required": true,
+          "options": [],
+          "unit": null,
+          "help_text": "Needed to verify local electrical load thresholds and municipal commercial utility guidelines.",
+          "reason": "Needed to verify local electrical load thresholds and municipal commercial utility guidelines.",
+          "order": 1,
+          "variable_key": "connected_power_load",
+          "affected_rules": [],
+          "fact_key": "connected_power_load",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        },
+        {
+          "question_id": "Q_2",
+          "question": "Does your restaurant generate commercial kitchen wastewater effluent requiring a grease trap or specific discharge management, or exhaust air emissions from cooking appliances?",
+          "category": "ENVIRONMENTAL_COMPLIANCE",
+          "answer_type": "BOOLEAN",
+          "required": true,
+          "options": [
+            {
+              "value": "True",
+              "label": "True"
+            },
+            {
+              "value": "False",
+              "label": "False"
+            }
+          ],
+          "unit": null,
+          "help_text": "Required to assess State Pollution Control Board (KSPCB) categorization or municipal drainage requirements.",
+          "reason": "Required to assess State Pollution Control Board (KSPCB) categorization or municipal drainage requirements.",
+          "order": 2,
+          "variable_key": "effluent_emission_generation",
+          "affected_rules": [],
+          "fact_key": "effluent_emission_generation",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        },
+        {
+          "question_id": "Q_3",
+          "question": "Do you generate used cooking oil (UCO) or other waste materials that require structured disposal or handover to authorized aggregators?",
+          "category": "WASTE_MANAGEMENT",
+          "answer_type": "BOOLEAN",
+          "required": true,
+          "options": [
+            {
+              "value": "True",
+              "label": "True"
+            },
+            {
+              "value": "False",
+              "label": "False"
+            }
+          ],
+          "unit": null,
+          "help_text": "Important for determining FSSAI and environmental guidelines regarding used cooking oil collection.",
+          "reason": "Important for determining FSSAI and environmental guidelines regarding used cooking oil collection.",
+          "order": 3,
+          "variable_key": "hazardous_waste_generation",
+          "affected_rules": [],
+          "fact_key": "hazardous_waste_generation",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        }
+      ],
+      "repeated_known_facts": [],
+      "suggested_answers": [],
+      "answers": {
+        "Q_1": 3,
+        "Q_2": false,
+        "Q_3": false
+      },
+      "suggestion_edits": [],
+      "completion_extra_provider_calls": 0,
+      "status": "COMPLETED",
+      "decisions": {
+        "APPLICABLE": 0,
+        "NOT_APPLICABLE": 63,
+        "NEEDS_INFORMATION": 0,
+        "UNVERIFIED": 30
+      },
+      "guidance": {
+        "compliance_items": 3,
+        "documents": 3,
+        "workflows": 3,
+        "schemes": 1,
+        "standards": 1
+      },
+      "discovery": [
+        {
+          "provider": "serpapi",
+          "status": "PARTIAL",
+          "queries": [
+            "Karnataka food safety restaurant licensing FSSAI official portal",
+            "Karnataka Bengaluru municipal trade license food establishment rules official portal",
+            "Karnataka commercial establishment worker regulations official portal",
+            "Karnataka pollution control board consent to establish neighbourhood restaurant preparing meals site dine official",
+            "BIS mandatory certification Quality Control Order neighbourhood restaurant preparing meals site dine India",
+            "Karnataka industrial policy micro enterprise incentives neighbourhood restaurant preparing meals site dine"
+          ],
+          "candidate_count": 20,
+          "official_count": 5,
+          "captures": 1,
+          "modes": [
+            "CRAWLEE_HTTP"
+          ],
+          "error": "Source capture rejected: Crawlee produced no usable capture; blocked or failed source.; Source capture rejected: Crawlee produced no usable capture; blocked or failed source."
+        }
+      ],
+      "retrieval": {},
+      "workspace": {
+        "compliance": {
+          "counts": {
+            "requirements": 96
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "documents": {
+          "counts": {
+            "documents": 3,
+            "requirements_summary": 0,
+            "requirements_without_checklist": 0
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "workflows": {
+          "counts": {
+            "workflows": 8
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "schemes": {
+          "counts": {
+            "schemes": 6
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "calendar": {
+          "counts": {
+            "events": 0,
+            "covers": 2,
+            "not_covered": 2
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "dashboard": {
+          "counts": {
+            "schemes_preview": 3,
+            "standards_preview": 1,
+            "priority_actions": 3,
+            "upcoming_deadlines": 0,
+            "recent_updates": 0
+          },
+          "available": null,
+          "has_evaluation": true
+        }
+      },
+      "standards": {
+        "business_id": "8cc71937-69f6-481e-ad49-b0ee16300083",
+        "query": "",
+        "count": 1,
+        "standards": [
+          {
+            "id": "ab06525f-e42d-4ada-afbb-88af560c2026",
+            "title": "Good Hygiene Practices (GHP) and Good Manufacturing Practices (GMP) for Food Service",
+            "citations": [],
+            "source_url": null,
+            "description": "Voluntary quality assessment areas focusing on safe food handling, cross-contamination prevention, cleaning schedules, and staff hygiene training.",
+            "is_mandatory": null,
+            "result_origin": "LLM_FALLBACK_RESULT",
+            "requirement_id": "ab06525f-e42d-4ada-afbb-88af560c2026",
+            "source_reference": "National Food Safety Standards Framework",
+            "why_it_may_apply": "The business operates a neighbourhood restaurant preparing meals on-site for dine-in and takeaway customers.",
+            "recommended_next_step": "Implement standard operating procedures for food storage, preparation surfaces, and sanitation.",
+            "authority_or_regulator": "Quality Council of India / Food Safety Industry Bodies",
+            "standard_code": "ab06525f-e42d-4ada-afbb-88af560c2026",
+            "authority": "Quality Council of India / Food Safety Industry Bodies",
+            "jurisdiction": "",
+            "domain": "QUALITY",
+            "nature": "QUALITY_PLANNING",
+            "why_it_matters": "The business operates a neighbourhood restaurant preparing meals on-site for dine-in and takeaway customers.",
+            "decision_result_id": null,
+            "rule_version_id": null,
+            "category": "QUALITY_PLANNING",
+            "citation_count": 0
+          }
+        ],
+        "catalogue_available": false,
+        "scope_status": "PARTIAL_SCOPE",
+        "scope_note": "No reviewed standards matched this assessment within the currently supported knowledge scope. Additional product or quality review may be needed.",
+        "assessment_id": "412412fc-e55c-4ca6-b99f-9a7d3e4191cf",
+        "reviewed_match_count": 0,
+        "catalogue_note": "Matched requirements and quality areas to explore for your business."
+      },
+      "workspace_get_provider_calls": 0,
+      "isolation_checks": 1,
+      "seconds": 68.071,
+      "providers": [
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "business_understanding",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 2705.49
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "smart_questions_planner",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 5093.04
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "claim_extraction",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 1105.56
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 6251.63
+        }
+      ]
+    },
+    {
+      "business": "Clearpath Digital QA",
+      "type": "IT",
+      "stages": [
+        {
+          "stage": "businesses",
+          "status": 201,
+          "seconds": 0.497
+        },
+        {
+          "stage": "profile",
+          "status": 201,
+          "seconds": 0.281
+        },
+        {
+          "stage": "",
+          "status": 201,
+          "seconds": 0.637
+        },
+        {
+          "stage": "understand",
+          "status": 200,
+          "seconds": 3.057
+        },
+        {
+          "stage": "generate",
+          "status": 200,
+          "seconds": 5.84
+        },
+        {
+          "stage": "answers",
+          "status": 200,
+          "seconds": 1.903
+        },
+        {
+          "stage": "regulatory-discovery",
+          "status": 200,
+          "seconds": 12.401
+        },
+        {
+          "stage": "compliance-synthesis",
+          "status": 200,
+          "seconds": 12.835
+        },
+        {
+          "stage": "orchestrate",
+          "status": 200,
+          "seconds": 7.139
+        },
+        {
+          "stage": "compliance",
+          "status": 200,
+          "seconds": 0.7
+        },
+        {
+          "stage": "documents",
+          "status": 200,
+          "seconds": 0.908
+        },
+        {
+          "stage": "workflows",
+          "status": 200,
+          "seconds": 2.25
+        },
+        {
+          "stage": "schemes",
+          "status": 200,
+          "seconds": 2.002
+        },
+        {
+          "stage": "calendar",
+          "status": 200,
+          "seconds": 0.413
+        },
+        {
+          "stage": "dashboard",
+          "status": 200,
+          "seconds": 7.732
+        },
+        {
+          "stage": "search",
+          "status": 200,
+          "seconds": 0.425
+        }
+      ],
+      "failures": [],
+      "assessment_id": "be45d162-aefe-42c7-bc23-04c045f4a139",
+      "questions": [
+        {
+          "question_id": "Q_1",
+          "question": "Does your software consultancy process or store personal data or sensitive personal data of end-users on behalf of your clients?",
+          "category": "DIGITAL_DATA_PRIVACY",
+          "answer_type": "BOOLEAN",
+          "required": true,
+          "options": [
+            {
+              "value": "True",
+              "label": "True"
+            },
+            {
+              "value": "False",
+              "label": "False"
+            }
+          ],
+          "unit": null,
+          "help_text": "Essential for identifying applicability under digital data protection frameworks and information technology security practices.",
+          "reason": "Essential for identifying applicability under digital data protection frameworks and information technology security practices.",
+          "order": 1,
+          "variable_key": "processes_personal_data",
+          "affected_rules": [],
+          "fact_key": "processes_personal_data",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        },
+        {
+          "question_id": "Q_2",
+          "question": "Where is the primary cloud hosting infrastructure or server environment located for the web applications you build?",
+          "category": "IT_INFRASTRUCTURE",
+          "answer_type": "SINGLE_SELECT",
+          "required": true,
+          "options": [
+            {
+              "value": "INDIA_DOMESTIC",
+              "label": "India Domestic Data Center"
+            },
+            {
+              "value": "MULTI_REGION_GLOBAL",
+              "label": "Multi-Region Global Cloud"
+            },
+            {
+              "value": "CROSS_BORDER",
+              "label": "Cross-Border Exclusively"
+            }
+          ],
+          "unit": null,
+          "help_text": "Clarifies digital hosting architecture and jurisdictional data storage considerations.",
+          "reason": "Clarifies digital hosting architecture and jurisdictional data storage considerations.",
+          "order": 2,
+          "variable_key": "cloud_hosting_location",
+          "affected_rules": [],
+          "fact_key": "cloud_hosting_location",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        }
+      ],
+      "repeated_known_facts": [],
+      "suggested_answers": [],
+      "answers": {
+        "Q_1": false,
+        "Q_2": "CROSS_BORDER"
+      },
+      "suggestion_edits": [],
+      "completion_extra_provider_calls": 0,
+      "status": "COMPLETED",
+      "decisions": {
+        "APPLICABLE": 2,
+        "NOT_APPLICABLE": 61,
+        "NEEDS_INFORMATION": 0,
+        "UNVERIFIED": 30
+      },
+      "guidance": {
+        "compliance_items": 0,
+        "documents": 0,
+        "workflows": 0,
+        "schemes": 1,
+        "standards": 1
+      },
+      "discovery": [
+        {
+          "provider": "serpapi",
+          "status": "PARTIAL",
+          "queries": [
+            "Karnataka Shops and Commercial Establishments Act applicability for IT consultancy official portal",
+            "Professional Tax registration Karnataka for micro software firms official portal",
+            "Karnataka Central Goods and Services Tax applicability on domestic software consultancy official portal",
+            "Karnataka pollution control board consent to establish office based software consultancy building applications official",
+            "Karnataka factories directorate factory licence registration eligibility",
+            "BIS mandatory certification Quality Control Order office based software consultancy building applications India"
+          ],
+          "candidate_count": 20,
+          "official_count": 8,
+          "captures": 2,
+          "modes": [
+            "CRAWLEE_HTTP",
+            "CRAWLEE_HTTP"
+          ],
+          "error": "Source capture rejected: Crawlee produced no usable capture; blocked or failed source."
+        }
+      ],
+      "retrieval": {},
+      "workspace": {
+        "compliance": {
+          "counts": {
+            "requirements": 93
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "documents": {
+          "counts": {
+            "documents": 6,
+            "requirements_summary": 2,
+            "requirements_without_checklist": 0
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "workflows": {
+          "counts": {
+            "workflows": 16
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "schemes": {
+          "counts": {
+            "schemes": 15
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "calendar": {
+          "counts": {
+            "events": 0,
+            "covers": 2,
+            "not_covered": 2
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "dashboard": {
+          "counts": {
+            "schemes_preview": 3,
+            "standards_preview": 1,
+            "priority_actions": 2,
+            "upcoming_deadlines": 0,
+            "recent_updates": 0
+          },
+          "available": null,
+          "has_evaluation": true
+        }
+      },
+      "standards": {
+        "business_id": "6bc10a10-7d61-47d0-9348-2e506f44d4b6",
+        "query": "",
+        "count": 1,
+        "standards": [
+          {
+            "id": "e311e28b-a87d-4fa2-b86d-219882b78d9e",
+            "title": "Information Security Management Quality Assessment (ISO/IEC 27001)",
+            "citations": [],
+            "source_url": null,
+            "description": "Voluntary assessment areas covering software development security, data access controls, and asset management for office-based software consultancies.",
+            "is_mandatory": null,
+            "result_origin": "LLM_FALLBACK_RESULT",
+            "requirement_id": "e311e28b-a87d-4fa2-b86d-219882b78d9e",
+            "source_reference": "ISO/IEC 27001 Information Security Standards",
+            "why_it_may_apply": "Clearpath Digital QA operates as a software consultancy building web applications, making information security controls relevant for client trust.",
+            "recommended_next_step": "Conduct an internal gap assessment of current web application development practices against standard security controls.",
+            "authority_or_regulator": "International Organization for Standardization (Voluntary Standard)",
+            "standard_code": "e311e28b-a87d-4fa2-b86d-219882b78d9e",
+            "authority": "International Organization for Standardization (Voluntary Standard)",
+            "jurisdiction": "",
+            "domain": "QUALITY",
+            "nature": "QUALITY_PLANNING",
+            "why_it_matters": "Clearpath Digital QA operates as a software consultancy building web applications, making information security controls relevant for client trust.",
+            "decision_result_id": null,
+            "rule_version_id": null,
+            "category": "QUALITY_PLANNING",
+            "citation_count": 0
+          }
+        ],
+        "catalogue_available": false,
+        "scope_status": "PARTIAL_SCOPE",
+        "scope_note": "No reviewed standards matched this assessment within the currently supported knowledge scope. Additional product or quality review may be needed.",
+        "assessment_id": "be45d162-aefe-42c7-bc23-04c045f4a139",
+        "reviewed_match_count": 0,
+        "catalogue_note": "Matched requirements and quality areas to explore for your business."
+      },
+      "workspace_get_provider_calls": 0,
+      "isolation_checks": 2,
+      "seconds": 59.726,
+      "providers": [
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "business_understanding",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 2667.32
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "smart_questions_planner",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 4425.47
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "claim_extraction",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 1261.34
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "claim_extraction",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 1241.18
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 5463.0
+        }
+      ]
+    },
+    {
+      "business": "City Storage QA",
+      "type": "Warehouse",
+      "stages": [
+        {
+          "stage": "businesses",
+          "status": 201,
+          "seconds": 0.48
+        },
+        {
+          "stage": "profile",
+          "status": 201,
+          "seconds": 0.255
+        },
+        {
+          "stage": "",
+          "status": 201,
+          "seconds": 0.558
+        },
+        {
+          "stage": "understand",
+          "status": 200,
+          "seconds": 3.151
+        },
+        {
+          "stage": "generate",
+          "status": 200,
+          "seconds": 5.946
+        },
+        {
+          "stage": "answers",
+          "status": 200,
+          "seconds": 1.401
+        },
+        {
+          "stage": "regulatory-discovery",
+          "status": 200,
+          "seconds": 25.57
+        },
+        {
+          "stage": "compliance-synthesis",
+          "status": 200,
+          "seconds": 13.293
+        },
+        {
+          "stage": "orchestrate",
+          "status": 200,
+          "seconds": 7.054
+        },
+        {
+          "stage": "compliance",
+          "status": 200,
+          "seconds": 0.738
+        },
+        {
+          "stage": "documents",
+          "status": 200,
+          "seconds": 0.648
+        },
+        {
+          "stage": "workflows",
+          "status": 200,
+          "seconds": 2.336
+        },
+        {
+          "stage": "schemes",
+          "status": 200,
+          "seconds": 1.831
+        },
+        {
+          "stage": "calendar",
+          "status": 200,
+          "seconds": 0.366
+        },
+        {
+          "stage": "dashboard",
+          "status": 200,
+          "seconds": 6.241
+        },
+        {
+          "stage": "search",
+          "status": 200,
+          "seconds": 0.423
+        }
+      ],
+      "failures": [],
+      "assessment_id": "5dabcd5a-e3e8-45df-9b42-6a0305cc53cb",
+      "questions": [
+        {
+          "question_id": "Q_2",
+          "question": "What is the total built-up floor area of your warehouse facility in square meters?",
+          "category": "MUNICIPAL_AND_FIRE_SAFETY",
+          "answer_type": "NUMBER",
+          "required": true,
+          "options": [],
+          "unit": null,
+          "help_text": "Municipal trade licensing and local fire safety requirements frequently depend on the exact square footage of storage premises.",
+          "reason": "Municipal trade licensing and local fire safety requirements frequently depend on the exact square footage of storage premises.",
+          "order": 1,
+          "variable_key": "dynamic_warehouse_built_up_area_sqm",
+          "affected_rules": [],
+          "fact_key": "dynamic_warehouse_built_up_area_sqm",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        },
+        {
+          "question_id": "Q_FOOD_CONTACT_PACKAGING",
+          "question": "Do you manufacture, pack, or store materials that come into direct contact with food products?",
+          "category": "STATUTORY_COMPLIANCE",
+          "answer_type": "BOOLEAN",
+          "required": true,
+          "options": [],
+          "unit": null,
+          "help_text": "Evaluated by 2 unresolved statutory compliance rule(s).",
+          "reason": "Evaluated by 2 unresolved statutory compliance rule(s).",
+          "order": 2,
+          "variable_key": "food_contact_packaging",
+          "affected_rules": [
+            "RULE-CPCB-EPR-PLASTIC-01",
+            "RULE-LEGAL-METROLOGY-01"
+          ],
+          "fact_key": "food_contact_packaging",
+          "reason_code": "MISSING_RULE_FACT",
+          "source_decision_refs": [
+            "RULE-CPCB-EPR-PLASTIC-01",
+            "RULE-LEGAL-METROLOGY-01"
+          ],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        }
+      ],
+      "repeated_known_facts": [],
+      "suggested_answers": [],
+      "answers": {
+        "Q_2": 3,
+        "Q_FOOD_CONTACT_PACKAGING": false
+      },
+      "suggestion_edits": [],
+      "completion_extra_provider_calls": 0,
+      "status": "COMPLETED",
+      "decisions": {
+        "APPLICABLE": 2,
+        "NOT_APPLICABLE": 61,
+        "NEEDS_INFORMATION": 0,
+        "UNVERIFIED": 30
+      },
+      "guidance": {
+        "compliance_items": 2,
+        "documents": 2,
+        "workflows": 2,
+        "schemes": 1,
+        "standards": 1
+      },
+      "discovery": [
+        {
+          "provider": "serpapi",
+          "status": "FAILED",
+          "queries": [
+            "Karnataka Shops and Commercial Establishments Act warehousing rules official portal",
+            "Karnataka municipal trade license for storage and warehousing official portal",
+            "Goods storage and warehousing safety norms Karnataka official portal",
+            "Karnataka pollution control board consent to establish warehouse storing hazardous packaged household goods official",
+            "Karnataka factories directorate factory licence registration eligibility",
+            "BIS mandatory certification Quality Control Order warehouse storing hazardous packaged household goods India"
+          ],
+          "candidate_count": 20,
+          "official_count": 8,
+          "captures": 0,
+          "modes": [],
+          "error": "Query 'BIS mandatory certification Qu...' failed: SerpApi timed out.; Source capture rejected: Crawlee produced no usable capture; blocked or failed source.; Source capture rejected: PDF exceeded page limit."
+        }
+      ],
+      "retrieval": {},
+      "workspace": {
+        "compliance": {
+          "counts": {
+            "requirements": 95
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "documents": {
+          "counts": {
+            "documents": 8,
+            "requirements_summary": 2,
+            "requirements_without_checklist": 0
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "workflows": {
+          "counts": {
+            "workflows": 17
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "schemes": {
+          "counts": {
+            "schemes": 14
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "calendar": {
+          "counts": {
+            "events": 0,
+            "covers": 2,
+            "not_covered": 2
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "dashboard": {
+          "counts": {
+            "schemes_preview": 3,
+            "standards_preview": 1,
+            "priority_actions": 4,
+            "upcoming_deadlines": 0,
+            "recent_updates": 0
+          },
+          "available": null,
+          "has_evaluation": true
+        }
+      },
+      "standards": {
+        "business_id": "141e3e7e-a2f5-4a85-b425-2acb583ffc2c",
+        "query": "",
+        "count": 1,
+        "standards": [
+          {
+            "id": "8ceeac26-b3be-420e-a713-1806021ab5db",
+            "title": "Warehouse Storage and Good Management Practices",
+            "citations": [],
+            "source_url": null,
+            "description": "General guidelines for safe stacking, inventory handling, pest control, and housekeeping in non-hazardous goods storage facilities.",
+            "is_mandatory": null,
+            "result_origin": "LLM_FALLBACK_RESULT",
+            "requirement_id": "8ceeac26-b3be-420e-a713-1806021ab5db",
+            "source_reference": "General Warehousing Guidelines",
+            "why_it_may_apply": "Supported by the business fact that product_description involves a warehouse storing non-hazardous packaged household goods.",
+            "recommended_next_step": "Implement systematic pallet racking, fire extinguisher placement, and regular stock audits.",
+            "authority_or_regulator": "Bureau of Indian Standards / Industry Best Practice",
+            "standard_code": "8ceeac26-b3be-420e-a713-1806021ab5db",
+            "authority": "Bureau of Indian Standards / Industry Best Practice",
+            "jurisdiction": "",
+            "domain": "QUALITY",
+            "nature": "QUALITY_PLANNING",
+            "why_it_matters": "Supported by the business fact that product_description involves a warehouse storing non-hazardous packaged household goods.",
+            "decision_result_id": null,
+            "rule_version_id": null,
+            "category": "QUALITY_PLANNING",
+            "citation_count": 0
+          }
+        ],
+        "catalogue_available": false,
+        "scope_status": "PARTIAL_SCOPE",
+        "scope_note": "No reviewed standards matched this assessment within the currently supported knowledge scope. Additional product or quality review may be needed.",
+        "assessment_id": "5dabcd5a-e3e8-45df-9b42-6a0305cc53cb",
+        "reviewed_match_count": 0,
+        "catalogue_note": "Matched requirements and quality areas to explore for your business."
+      },
+      "workspace_get_provider_calls": 0,
+      "isolation_checks": 3,
+      "seconds": 71.096,
+      "providers": [
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "business_understanding",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 2798.73
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "smart_questions_planner",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 4298.69
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 6896.6
+        }
+      ]
+    },
+    {
+      "business": "Community Clinic QA",
+      "type": "Healthcare",
+      "stages": [
+        {
+          "stage": "businesses",
+          "status": 201,
+          "seconds": 0.44
+        },
+        {
+          "stage": "profile",
+          "status": 201,
+          "seconds": 0.225
+        },
+        {
+          "stage": "",
+          "status": 201,
+          "seconds": 0.529
+        },
+        {
+          "stage": "understand",
+          "status": 200,
+          "seconds": 3.175
+        },
+        {
+          "stage": "generate",
+          "status": 200,
+          "seconds": 6.312
+        },
+        {
+          "stage": "answers",
+          "status": 200,
+          "seconds": 1.899
+        },
+        {
+          "stage": "regulatory-discovery",
+          "status": 200,
+          "seconds": 38.168
+        },
+        {
+          "stage": "compliance-synthesis",
+          "status": 200,
+          "seconds": 18.962
+        },
+        {
+          "stage": "orchestrate",
+          "status": 200,
+          "seconds": 8.055
+        },
+        {
+          "stage": "compliance",
+          "status": 200,
+          "seconds": 0.994
+        },
+        {
+          "stage": "documents",
+          "status": 200,
+          "seconds": 0.808
+        },
+        {
+          "stage": "workflows",
+          "status": 200,
+          "seconds": 2.797
+        },
+        {
+          "stage": "schemes",
+          "status": 200,
+          "seconds": 2.331
+        },
+        {
+          "stage": "calendar",
+          "status": 200,
+          "seconds": 0.485
+        },
+        {
+          "stage": "dashboard",
+          "status": 200,
+          "seconds": 8.262
+        },
+        {
+          "stage": "search",
+          "status": 200,
+          "seconds": 0.426
+        }
+      ],
+      "failures": [],
+      "assessment_id": "9a617cf2-1d7c-45e6-a935-5882d310debf",
+      "questions": [
+        {
+          "question_id": "Q_1",
+          "question": "Does your outpatient clinic generate bio-medical waste (such as syringes, cotton, bandages, or sharps) from consultations and minor procedures?",
+          "category": "ENVIRONMENTAL_AND_WASTE",
+          "answer_type": "BOOLEAN",
+          "required": true,
+          "options": [
+            {
+              "value": "True",
+              "label": "True"
+            },
+            {
+              "value": "False",
+              "label": "False"
+            }
+          ],
+          "unit": null,
+          "help_text": "Crucial for identifying mandatory authorization requirements under the Bio-Medical Waste Management Rules and Karnataka SPCB guidelines.",
+          "reason": "Crucial for identifying mandatory authorization requirements under the Bio-Medical Waste Management Rules and Karnataka SPCB guidelines.",
+          "order": 1,
+          "variable_key": "hazardous_waste_generation",
+          "affected_rules": [],
+          "fact_key": "hazardous_waste_generation",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        },
+        {
+          "question_id": "Q_2",
+          "question": "What is the total connected electrical power load of your clinic premises (in kilowatts or horsepower)?",
+          "category": "ELECTRICAL_SAFETY",
+          "answer_type": "NUMBER",
+          "required": true,
+          "options": [],
+          "unit": null,
+          "help_text": "Required to verify state electricity board commercial categorization and electrical inspection thresholds.",
+          "reason": "Required to verify state electricity board commercial categorization and electrical inspection thresholds.",
+          "order": 2,
+          "variable_key": "connected_power_load",
+          "affected_rules": [],
+          "fact_key": "connected_power_load",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        },
+        {
+          "question_id": "Q_3",
+          "question": "Does your clinic generate any trade effluent or specialized wastewater from clinical washing or medical procedures apart from ordinary domestic sewage?",
+          "category": "ENVIRONMENTAL_AND_WASTE",
+          "answer_type": "BOOLEAN",
+          "required": true,
+          "options": [
+            {
+              "value": "True",
+              "label": "True"
+            },
+            {
+              "value": "False",
+              "label": "False"
+            }
+          ],
+          "unit": null,
+          "help_text": "Determines applicability of Water Act consent requirements and discharge standards for healthcare facilities in Karnataka.",
+          "reason": "Determines applicability of Water Act consent requirements and discharge standards for healthcare facilities in Karnataka.",
+          "order": 3,
+          "variable_key": "effluent_emission_generation",
+          "affected_rules": [],
+          "fact_key": "effluent_emission_generation",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        }
+      ],
+      "repeated_known_facts": [],
+      "suggested_answers": [],
+      "answers": {
+        "Q_1": false,
+        "Q_2": 3,
+        "Q_3": false
+      },
+      "suggestion_edits": [],
+      "completion_extra_provider_calls": 0,
+      "status": "COMPLETED",
+      "decisions": {
+        "APPLICABLE": 0,
+        "NOT_APPLICABLE": 63,
+        "NEEDS_INFORMATION": 0,
+        "UNVERIFIED": 30
+      },
+      "guidance": {
+        "compliance_items": 3,
+        "documents": 3,
+        "workflows": 3,
+        "schemes": 1,
+        "standards": 1
+      },
+      "discovery": [
+        {
+          "provider": "serpapi",
+          "status": "PARTIAL",
+          "queries": [
+            "Karnataka Clinical Establishments registration requirements outpatient clinic official portal",
+            "Bio-Medical Waste Management authorization for outpatient clinics Karnataka official portal",
+            "Karnataka Shops and Commercial Establishments registration for clinics official portal",
+            "Karnataka pollution control board consent to establish outpatient clinic providing consultations minor procedures official",
+            "BIS mandatory certification Quality Control Order outpatient clinic providing consultations minor procedures India",
+            "Karnataka industrial policy micro enterprise incentives outpatient clinic providing consultations minor procedures"
+          ],
+          "candidate_count": 20,
+          "official_count": 12,
+          "captures": 1,
+          "modes": [
+            "CRAWLEE_HTTP"
+          ],
+          "error": "Source capture rejected: Crawlee produced no usable capture; blocked or failed source.; Source capture rejected: Source was empty or exceeded the capture byte limit."
+        }
+      ],
+      "retrieval": {},
+      "workspace": {
+        "compliance": {
+          "counts": {
+            "requirements": 96
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "documents": {
+          "counts": {
+            "documents": 3,
+            "requirements_summary": 0,
+            "requirements_without_checklist": 0
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "workflows": {
+          "counts": {
+            "workflows": 8
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "schemes": {
+          "counts": {
+            "schemes": 6
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "calendar": {
+          "counts": {
+            "events": 0,
+            "covers": 2,
+            "not_covered": 2
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "dashboard": {
+          "counts": {
+            "schemes_preview": 3,
+            "standards_preview": 1,
+            "priority_actions": 3,
+            "upcoming_deadlines": 0,
+            "recent_updates": 0
+          },
+          "available": null,
+          "has_evaluation": true
+        }
+      },
+      "standards": {
+        "business_id": "28d4742e-567e-4a07-aad3-aa21b0bea522",
+        "query": "",
+        "count": 1,
+        "standards": [
+          {
+            "id": "46040b02-6ac5-43b0-af13-fd683e6e4d79",
+            "title": "Outpatient Clinic Quality and Patient Safety Practices",
+            "citations": [],
+            "source_url": null,
+            "description": "Quality assessment areas covering infection control, patient record management, hygiene protocols, and safe injection practices.",
+            "is_mandatory": null,
+            "result_origin": "LLM_FALLBACK_RESULT",
+            "requirement_id": "46040b02-6ac5-43b0-af13-fd683e6e4d79",
+            "source_reference": "Good Clinical Practice Guidelines",
+            "why_it_may_apply": "Helps ensure standard clinical governance for an outpatient facility offering minor procedures.",
+            "recommended_next_step": "Implement standard operating procedures for sterilization, waste handling, and patient triage.",
+            "authority_or_regulator": "National Health Authority / Quality Council of India (Advisory)",
+            "standard_code": "46040b02-6ac5-43b0-af13-fd683e6e4d79",
+            "authority": "National Health Authority / Quality Council of India (Advisory)",
+            "jurisdiction": "",
+            "domain": "QUALITY",
+            "nature": "QUALITY_PLANNING",
+            "why_it_matters": "Helps ensure standard clinical governance for an outpatient facility offering minor procedures.",
+            "decision_result_id": null,
+            "rule_version_id": null,
+            "category": "QUALITY_PLANNING",
+            "citation_count": 0
+          }
+        ],
+        "catalogue_available": false,
+        "scope_status": "PARTIAL_SCOPE",
+        "scope_note": "No reviewed standards matched this assessment within the currently supported knowledge scope. Additional product or quality review may be needed.",
+        "assessment_id": "9a617cf2-1d7c-45e6-a935-5882d310debf",
+        "reviewed_match_count": 0,
+        "catalogue_note": "Matched requirements and quality areas to explore for your business."
+      },
+      "workspace_get_provider_calls": 0,
+      "isolation_checks": 4,
+      "seconds": 95.51,
+      "providers": [
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "business_understanding",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 2839.6
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "smart_questions_planner",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 5272.98
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "claim_extraction",
+          "status": "ERROR",
+          "failure_type": "schema_failure",
+          "fallback": false,
+          "latency_ms": 1810.31
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "claim_extraction",
+          "status": "ERROR",
+          "failure_type": "schema_failure",
+          "fallback": true,
+          "latency_ms": 2128.04
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "claim_extraction",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": true,
+          "latency_ms": 1548.79
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "ERROR",
+          "failure_type": "malformed_response",
+          "fallback": false,
+          "latency_ms": 7121.43
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": true,
+          "latency_ms": 6532.83
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Temporary synthetic business facts/answers; actual runtime published knowledge and real external providers. Not an expert legal benchmark."
+  ],
+  "temporary_identities_removed": true
+}

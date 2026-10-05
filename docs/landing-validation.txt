@@ -1,0 +1,10 @@
+
+Running 2 tests using 1 worker
+
+
+
+(node:2996) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1/2] [chromium] › e2e\architecture-landing-regression.spec.cjs:3:3 › existing landing CSS and CTA routes remain intact at 1440px
+[2/2] [chromium] › e2e\architecture-landing-regression.spec.cjs:3:3 › existing landing CSS and CTA routes remain intact at 390px
+  2 passed (4.1s)

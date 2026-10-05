@@ -1,0 +1,3 @@
+63 objects imported automatically (use -v 2 for details).
+
+{"database": {"engine": "postgresql", "is_target_engine": true, "status": "ok"}, "pgvector": {"status": "ok", "installed": true}, "integrations": {"openai_api_key": true, "openai_model": true, "openai_embedding_model": true, "gemini_api_key": true, "gemini_model": true, "gemini_embedding_model": true, "grok_api_key": true, "grok_model": true, "azure_storage": false, "serpapi_api_key": true}, "published_requirement_count": 93, "published_rule_count": 34}

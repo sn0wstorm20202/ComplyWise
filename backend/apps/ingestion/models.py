@@ -2,7 +2,7 @@
 
 Authority: Milestone Task — Parts C, D, E, F, J; PRD_v2.0 §27A; TRD_v2.0 §11A.
 
-DiscoveryRun: Audit trail of Firecrawl searches, candidate URL captures and scraping passes.
+DiscoveryRun: Audit trail of SerpApi searches, candidate URL captures and scraping passes.
 CandidateRequirement: Quarantined regulatory claims extracted from discovered official sources.
                       UNVERIFIED discoveries cannot produce APPLICABLE decisions.
 """
@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import uuid
 from django.db import models
+from django.utils import timezone
 from common.enums import VerificationStatus
 from apps.businesses.models import Business
 from apps.evidence.models import Evidence, Source
@@ -32,7 +33,7 @@ class DiscoveryRun(models.Model):
         blank=True,
         related_name="discovery_run_records",
     )
-    provider = models.CharField(max_length=50, default="firecrawl")
+    provider = models.CharField(max_length=50, default="serpapi")
     status = models.CharField(
         max_length=30,
         default="PENDING",
@@ -117,3 +118,16 @@ class CandidateRequirement(models.Model):
 
     def __str__(self) -> str:
         return f"CandidateRequirement: {self.requirement_name} ({self.authority}) [{self.verification_status}]"
+
+
+class RetrievedDocument(models.Model):
+    """Immutable captured content version. Unknown publication dates remain unknown."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    source = models.ForeignKey(Source, on_delete=models.CASCADE, related_name="retrieved_documents")
+    content_hash = models.CharField(max_length=64)
+    normalized_content = models.TextField()
+    retrieved_at = models.DateTimeField(default=timezone.now)
+    metadata = models.JSONField(default=dict)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["source", "content_hash"], name="unique_captured_source_version")]

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import "@/components/product/product.css";
+import ProductBoundary from "@/components/product/ProductBoundary";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -16,10 +18,17 @@ const playfair = Playfair_Display({
   weight: ["400", "500", "600", "700"],
 });
 
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
-  title: "ComplyWise — AI-Powered Industrial Compliance Intelligence",
+  title: "ComplyWise — Know what applies to your business",
   description:
-    "Enterprise-grade statutory compliance intelligence, Bureau of Indian Standards (BIS) mandates, Quality Control Orders (QCOs), and automated workflows.",
+    "Understand what applies to your business, see why, and keep requirements, documents and next steps together.",
 };
 
 import { AuthProvider } from "@/context/AuthContext";
@@ -32,11 +41,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans bg-[#EDEFF2] text-[#111827] selection:bg-black/10 selection:text-[#111827]">
+    <html
+      lang="en"
+      className={`${inter.variable} ${playfair.variable} ${jetbrainsMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col font-sans bg-[#F7F5EF] text-[#171714] selection:bg-[#DCEAE2] selection:text-[#171714]">
         <LanguageProvider>
           <AuthProvider>
-            <BusinessProvider>{children}</BusinessProvider>
+            <BusinessProvider><ProductBoundary>{children}</ProductBoundary></BusinessProvider>
           </AuthProvider>
         </LanguageProvider>
       </body>

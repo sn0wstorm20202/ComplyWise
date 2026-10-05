@@ -17,6 +17,8 @@ Never searches generic terms such as "company name compliance" or "licenses requ
 
 from __future__ import annotations
 
+from domain.context.activity_text import strip_negations
+
 import re
 from typing import Any
 
@@ -39,14 +41,6 @@ def _extract_core_product_tokens(text: str, max_words: int = 4) -> str:
     return " ".join(words[:max_words])
 
 
-def strip_negations(text: str) -> str:
-    """Strip negative clauses (e.g. 'no cement manufacturing', 'does not produce...')
-    so negative exclusions are not falsely matched as positive business activities.
-    """
-    if not text:
-        return ""
-    pattern = r"\b(?:no|not|neither|nor|without|does\s+not|doesn't|do\s+not|don't|has\s+no|have\s+no|excluding|except\s+for|except)\s+[^.;\n]+"
-    return re.sub(pattern, " ", text, flags=re.IGNORECASE)
 
 
 def plan_regulatory_searches(

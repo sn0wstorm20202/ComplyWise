@@ -1,6 +1,7 @@
 "use client";
+import { ProductMotion } from "@/components/product/ProductMotion";
 
-import React, { useEffect, useState, useMemo, Suspense } from "react";
+import React, { useEffect, useState, useMemo, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
@@ -38,11 +39,13 @@ type StatusFilter = "ALL" | "IN_PROGRESS" | "COMPLETED" | "NOT_STARTED";
 
 function WorkflowsContent() {
   const { t } = useLanguage();
-  const { activeBusinessId } = useBusinessContext();
+  const { activeBusinessId, activeAssessmentId } = useBusinessContext();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
   const paramWorkflowId = searchParams.get("workflow_id");
   const paramReqId = searchParams.get("requirement_id");
+  const assessmentId = searchParams.get("assessment_id") || (!paramBusinessId || paramBusinessId === activeBusinessId ? activeAssessmentId : undefined) || undefined;
+  const requestVersion = useRef(0);
 
   const [businessId, setBusinessId] = useState<string>("");
   const [businessName, setBusinessName] = useState<string>("Active Enterprise");
@@ -63,6 +66,7 @@ function WorkflowsContent() {
   const [stepUserRef, setStepUserRef] = useState<string>("");
   const [stepNotes, setStepNotes] = useState<string>("");
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+  const [stepError, setStepError] = useState<string | null>(null);
 
   useEffect(() => {
     const bizId =
@@ -70,24 +74,29 @@ function WorkflowsContent() {
       activeBusinessId ||
       (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
 
-    if (!bizId) return;
+    setUpdatingStep(false); setSaveSuccessMsg(null); setStepError(null);
+    setStepUserRef(""); setStepNotes("");
+    if (!bizId) { setWorkflows([]); setSelectedWorkflowId(null); setLoading(false); return; }
     setBusinessId(bizId);
     setWorkflows([]); // clear old business workflows immediately
     loadWorkflows(bizId);
-  }, [paramBusinessId, activeBusinessId]);
+    return () => { ++requestVersion.current; };
+  }, [paramBusinessId, activeBusinessId, assessmentId]);
 
   async function loadWorkflows(bizId: string) {
+    const version = ++requestVersion.current;
     setLoading(true);
     setError(null);
     try {
-      const res = await api.workflows.list(bizId);
+      const res = await api.workflows.list(bizId, assessmentId);
+      if (version !== requestVersion.current) return;
       if ("available" in res && res.available) {
         if (res.business_name) {
           setBusinessName(res.business_name);
         }
         const wfList = (res.workflows || []).map((w: WorkflowItem) => ({
           ...w,
-          portal_url: resolveAuthorityPortalUrl(w.authority, w.title, w.portal_url),
+          portal_url: w.result_origin === "LLM_FALLBACK_RESULT" ? undefined : resolveAuthorityPortalUrl(w.authority, w.title, w.portal_url),
           steps: (w.steps || []).map((s: WorkflowStep) => ({
             ...s,
             portal_url: s.portal_url
@@ -131,10 +140,11 @@ function WorkflowsContent() {
         setWorkflows([]);
       }
     } catch (err: unknown) {
+      if (version !== requestVersion.current) return;
       const msg = err instanceof Error ? err.message : "Failed to load workflows.";
       setError(msg);
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) setLoading(false);
     }
   }
 
@@ -193,7 +203,6 @@ function WorkflowsContent() {
     if (activeStep) {
       setStepUserRef(activeStep.user_reference || "");
       setStepNotes(activeStep.notes || "");
-      setSaveSuccessMsg(null);
     }
   }, [activeStep]);
 
@@ -241,14 +250,18 @@ function WorkflowsContent() {
   // Handle Step Status Update (Persists to Database)
   async function handleUpdateStepStatus(newStatus: "COMPLETED" | "IN_PROGRESS" | "NOT_STARTED") {
     if (!activeWf || !activeStep || !businessId) return;
+    const version = requestVersion.current;
     const stepNum = activeStep.step_number || activeStep.step;
 
     setUpdatingStep(true);
+    setSaveSuccessMsg(null);
+    setStepError(null);
     setSaveSuccessMsg(null);
 
     try {
       const resp = await api.workflows.updateStep(businessId, {
         workflow_id: activeWf.id,
+        assessment_id: assessmentId,
         step_number: stepNum,
         status: newStatus,
         user_reference: stepUserRef.trim(),
@@ -258,6 +271,7 @@ function WorkflowsContent() {
         authority: activeWf.authority,
         category: activeWf.category,
       });
+      if (version !== requestVersion.current) return;
 
       // Update local workflow state
       setWorkflows((prev) =>
@@ -301,16 +315,18 @@ function WorkflowsContent() {
         setSelectedStepNumber(stepNum + 1);
       }
     } catch (err: unknown) {
+      if (version !== requestVersion.current) return;
       const msg = err instanceof Error ? err.message : "Failed to update step.";
-      alert(`Could not save step update: ${msg}`);
+      setStepError(`Could not save this step: ${msg}`);
     } finally {
-      setUpdatingStep(false);
+      if (version === requestVersion.current) setUpdatingStep(false);
     }
   }
 
   // Handle saving notes / reference without changing status
   async function handleSaveReferenceOnly() {
     if (!activeWf || !activeStep || !businessId) return;
+    const version = requestVersion.current;
     const stepNum = activeStep.step_number || activeStep.step;
     setUpdatingStep(true);
     setSaveSuccessMsg(null);
@@ -318,12 +334,14 @@ function WorkflowsContent() {
     try {
       await api.workflows.updateStep(businessId, {
         workflow_id: activeWf.id,
+        assessment_id: assessmentId,
         step_number: stepNum,
         status: activeStep.status || "IN_PROGRESS",
         user_reference: stepUserRef.trim(),
         notes: stepNotes.trim(),
         total_steps: activeWf.total_steps || activeWf.steps.length,
       });
+      if (version !== requestVersion.current) return;
 
       // Update local state
       setWorkflows((prev) =>
@@ -345,10 +363,11 @@ function WorkflowsContent() {
 
       setSaveSuccessMsg("Reference number & notes saved to database.");
     } catch (err: unknown) {
+      if (version !== requestVersion.current) return;
       const msg = err instanceof Error ? err.message : "Failed to save reference.";
-      alert(`Error saving reference: ${msg}`);
+      setStepError(`Could not save your reference: ${msg}`);
     } finally {
-      setUpdatingStep(false);
+      if (version === requestVersion.current) setUpdatingStep(false);
     }
   }
 
@@ -356,17 +375,17 @@ function WorkflowsContent() {
     <AppShell activeView="workflows">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-sans">
         {/* Top Header Banner */}
-        <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-8 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-white rounded-3xl border border-[var(--ui-border)] p-6 sm:p-8 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1.5 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 border border-purple-200 text-purple-800 text-xs font-bold tracking-wide uppercase">
-              <Zap className="w-3.5 h-3.5 text-purple-600" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--ui-sage-faint)] border border-[var(--ui-sage-soft)] text-[var(--ui-sage)] text-xs font-bold tracking-wide uppercase">
+              <Zap className="w-3.5 h-3.5 text-[var(--ui-sage)]" />
               <span>Statutory Compliance &bull; Standards &bull; Government Schemes</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0F172A]">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--ui-text)]">
               Compliance &amp; Clearance Process Workflows
             </h1>
-            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
-              Step-by-step regulatory execution roadmaps for <strong className="text-[#0F172A]">{businessName}</strong>. Complete each procedural step, track government portal filings, and keep clearance progress automatically synchronized in the database.
+            <p className="text-xs sm:text-sm text-[var(--ui-secondary)] leading-relaxed">
+              Step-by-step regulatory execution roadmaps for <strong className="text-[var(--ui-text)]">{businessName}</strong>. Complete each procedural step, track government portal filings, and keep clearance progress automatically synchronized in the database.
             </p>
           </div>
 
@@ -374,9 +393,9 @@ function WorkflowsContent() {
             <button
               onClick={() => loadWorkflows(businessId)}
               disabled={loading}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-slate-100 text-[#0F172A] text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg)] hover:bg-[var(--ui-inset)] text-[var(--ui-text)] text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-purple-600" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[var(--ui-sage)]" : ""}`} />
               <span>Refresh Synced Roadmaps</span>
             </button>
           </div>
@@ -390,57 +409,57 @@ function WorkflowsContent() {
           <>
             {/* Summary Statistics Bar */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-2xs flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
+              <div className="p-4 rounded-2xl bg-white border border-[var(--ui-border)] shadow-2xs flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] flex items-center justify-center font-bold">
                   <Layers className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-xl font-extrabold text-[#0F172A]">{metrics.total}</div>
-                  <div className="text-[11px] font-semibold text-[#64748B]">Total Roadmaps</div>
+                  <div className="text-xl font-extrabold text-[var(--ui-text)]">{metrics.total}</div>
+                  <div className="text-[11px] font-semibold text-[var(--ui-secondary)]">Total Roadmaps</div>
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-2xs flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+              <div className="p-4 rounded-2xl bg-white border border-[var(--ui-border)] shadow-2xs flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[var(--ui-info-soft)] text-[var(--ui-info)] flex items-center justify-center font-bold">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-xl font-extrabold text-[#0F172A]">{metrics.compliance}</div>
-                  <div className="text-[11px] font-semibold text-[#64748B]">Statutory Compliance</div>
+                  <div className="text-xl font-extrabold text-[var(--ui-text)]">{metrics.compliance}</div>
+                  <div className="text-[11px] font-semibold text-[var(--ui-secondary)]">Statutory Compliance</div>
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-2xs flex items-center gap-3.5">
+              <div className="p-4 rounded-2xl bg-white border border-[var(--ui-border)] shadow-2xs flex items-center gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
                   <Award className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-xl font-extrabold text-[#0F172A]">{metrics.standards}</div>
-                  <div className="text-[11px] font-semibold text-[#64748B]">Quality Standards</div>
+                  <div className="text-xl font-extrabold text-[var(--ui-text)]">{metrics.standards}</div>
+                  <div className="text-[11px] font-semibold text-[var(--ui-secondary)]">Quality Standards</div>
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-2xs flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+              <div className="p-4 rounded-2xl bg-white border border-[var(--ui-border)] shadow-2xs flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] flex items-center justify-center font-bold">
                   <Landmark className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-xl font-extrabold text-[#0F172A]">{metrics.schemes}</div>
-                  <div className="text-[11px] font-semibold text-[#64748B]">Government Schemes</div>
+                  <div className="text-xl font-extrabold text-[var(--ui-text)]">{metrics.schemes}</div>
+                  <div className="text-[11px] font-semibold text-[var(--ui-secondary)]">Government Schemes</div>
                 </div>
               </div>
             </div>
 
             {/* Category Navigation Tabs & Search Controls */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--ui-border)] pb-4">
               {/* Category Pills */}
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => setCategoryFilter("ALL")}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                     categoryFilter === "ALL"
-                      ? "bg-[#0F172A] text-white shadow-xs"
-                      : "bg-[#F1F5F9] text-[#64748B] hover:text-[#0F172A]"
+                      ? "bg-[var(--ui-text)] text-white shadow-xs"
+                      : "bg-[var(--ui-inset)] text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5" />
@@ -451,8 +470,8 @@ function WorkflowsContent() {
                   onClick={() => setCategoryFilter("COMPLIANCE")}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                     categoryFilter === "COMPLIANCE"
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                      ? "bg-[var(--ui-text)] text-white shadow-xs"
+                      : "bg-[var(--ui-info-soft)] text-[var(--ui-info)] hover:bg-[var(--ui-info-soft)]"
                   }`}
                 >
                   <ShieldCheck className="w-3.5 h-3.5" />
@@ -475,8 +494,8 @@ function WorkflowsContent() {
                   onClick={() => setCategoryFilter("SCHEME")}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                     categoryFilter === "SCHEME"
-                      ? "bg-emerald-600 text-white shadow-xs"
-                      : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                      ? "bg-[var(--ui-sage)] text-white shadow-xs"
+                      : "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] hover:bg-[var(--ui-sage-soft)]"
                   }`}
                 >
                   <Landmark className="w-3.5 h-3.5" />
@@ -489,7 +508,7 @@ function WorkflowsContent() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                  className="rounded-xl border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-semibold text-[#0F172A] focus:outline-none"
+                  className="rounded-xl border border-[var(--ui-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ui-text)] focus:outline-none"
                 >
                   <option value="ALL">All Statuses</option>
                   <option value="IN_PROGRESS">In Progress</option>
@@ -498,13 +517,13 @@ function WorkflowsContent() {
                 </select>
 
                 <div className="relative w-48 sm:w-60">
-                  <Search className="w-3.5 h-3.5 text-[#94A3B8] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Search className="w-3.5 h-3.5 text-[var(--ui-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     placeholder="Search workflows..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8.5 pr-3 py-1.5 bg-white border border-[#E2E8F0] rounded-xl text-xs text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:border-purple-600"
+                    className="w-full pl-8.5 pr-3 py-1.5 bg-white border border-[var(--ui-border)] rounded-xl text-xs text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:outline-none focus:border-[var(--ui-sage-soft)]"
                   />
                 </div>
               </div>
@@ -512,10 +531,10 @@ function WorkflowsContent() {
 
             {/* Empty State */}
             {filteredWorkflows.length === 0 && (
-              <div className="bg-white rounded-3xl border border-dashed border-[#E2E8F0] p-12 text-center space-y-3">
-                <Layers className="w-12 h-12 text-[#94A3B8] mx-auto" />
-                <h3 className="text-base font-bold text-[#0F172A]">No Matching Roadmaps Found</h3>
-                <p className="text-xs text-[#64748B] max-w-md mx-auto">
+              <div className="bg-white rounded-3xl border border-dashed border-[var(--ui-border)] p-12 text-center space-y-3">
+                <Layers className="w-12 h-12 text-[var(--ui-muted)] mx-auto" />
+                <h3 className="text-base font-bold text-[var(--ui-text)]">No Matching Roadmaps Found</h3>
+                <p className="text-xs text-[var(--ui-secondary)] max-w-md mx-auto">
                   Try clearing your search query or selecting &quot;All Roadmaps&quot; to inspect all procedural roadmaps evaluated for this enterprise.
                 </p>
                 <button
@@ -524,7 +543,7 @@ function WorkflowsContent() {
                     setStatusFilter("ALL");
                     setSearchQuery("");
                   }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0F172A] text-white text-xs font-bold"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--ui-text)] text-white text-xs font-bold"
                 >
                   Reset Filters
                 </button>
@@ -533,18 +552,18 @@ function WorkflowsContent() {
 
             {/* MAIN WORKFLOW EXECUTION STUDIO (Selected Workflow) */}
             {activeWf && (
-              <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="bg-white rounded-3xl border border-[var(--ui-border)] p-6 sm:p-8 shadow-xs space-y-6">
                 {/* Workflow Header Banner */}
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-[#E2E8F0] pb-6">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-[var(--ui-border)] pb-6">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
                           activeWf.category === "COMPLIANCE"
-                            ? "bg-blue-100 text-blue-800 border border-blue-200"
+                            ? "bg-[var(--ui-info-soft)] text-[var(--ui-info)] border border-[var(--ui-sage-soft)]"
                             : activeWf.category === "STANDARD"
                             ? "bg-amber-100 text-amber-800 border border-amber-200"
-                            : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                            : "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]"
                         }`}
                       >
                         {activeWf.category === "COMPLIANCE"
@@ -554,25 +573,25 @@ function WorkflowsContent() {
                           : "Government Scheme"}
                       </span>
 
-                      <span className="text-[11px] font-semibold text-[#475569] bg-[#F1F5F9] px-2.5 py-0.5 rounded-full border border-[#E2E8F0]">
+                      <span className="text-[11px] font-semibold text-[var(--ui-secondary)] bg-[var(--ui-inset)] px-2.5 py-0.5 rounded-full border border-[var(--ui-border)]">
                         🏛️ {activeWf.authority}
                       </span>
 
                       {activeWf.case_number && (
-                        <span className="font-mono text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                        <span className="font-mono text-[10px] font-bold text-[var(--ui-sage)] bg-[var(--ui-sage-faint)] px-2 py-0.5 rounded border border-[var(--ui-sage-soft)]">
                           {activeWf.case_number}
                         </span>
                       )}
                     </div>
 
-                    <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F172A]">
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--ui-text)]">
                       {activeWf.title}
                     </h2>
 
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-[#64748B]">
-                      <span>Estimated Process Time: <strong className="text-[#0F172A]">{activeWf.estimated_duration || "15-30 Days"}</strong></span>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--ui-secondary)]">
+                      <span>Estimated Process Time: <strong className="text-[var(--ui-text)]">{activeWf.estimated_duration || "15-30 Days"}</strong></span>
                       <span>&bull;</span>
-                      <span>Total Stages: <strong className="text-[#0F172A]">{activeWf.total_steps || activeWf.steps.length} Steps</strong></span>
+                      <span>Total Stages: <strong className="text-[var(--ui-text)]">{activeWf.total_steps || activeWf.steps.length} Steps</strong></span>
                     </div>
                   </div>
 
@@ -584,7 +603,7 @@ function WorkflowsContent() {
                           href={activeWf.portal_url || resolveAuthorityPortalUrl(activeWf.authority, activeWf.title)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] text-white text-xs font-bold shadow-xs transition-colors"
                           title="Open official government filing portal in new tab"
                         >
                           <span>Launch {activeWf.portal_name || "Official Portal"}</span>
@@ -595,10 +614,10 @@ function WorkflowsContent() {
                       <span
                         className={`text-xs font-bold px-3 py-1.5 rounded-full border ${
                           activeWf.status === "COMPLETED"
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            ? "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border-[var(--ui-sage-soft)]"
                             : activeWf.status === "IN_PROGRESS"
-                            ? "bg-purple-50 text-purple-800 border-purple-200"
-                            : "bg-slate-50 text-slate-700 border-slate-200"
+                            ? "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border-[var(--ui-sage-soft)]"
+                            : "bg-[var(--ui-bg)] text-[var(--ui-secondary)] border-[var(--ui-border)]"
                         }`}
                       >
                         {activeWf.status === "COMPLETED"
@@ -611,14 +630,14 @@ function WorkflowsContent() {
 
                     {/* Progress Bar */}
                     <div className="w-full sm:w-56 space-y-1">
-                      <div className="flex justify-between text-[11px] font-semibold text-[#64748B]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[var(--ui-secondary)]">
                         <span>Overall Progress</span>
-                        <span className="font-mono text-purple-700 font-bold">{activeWf.progress_percent || 0}%</span>
+                        <span className="font-mono text-[var(--ui-sage)] font-bold">{activeWf.progress_percent || 0}%</span>
                       </div>
-                      <div className="w-full h-2 rounded-full bg-[#E2E8F0] overflow-hidden">
+                      <div className="w-full h-2 rounded-full bg-[var(--ui-border)] overflow-hidden">
                         <div
                           className={`h-full transition-all duration-500 rounded-full ${
-                            activeWf.status === "COMPLETED" ? "bg-emerald-600" : "bg-purple-600"
+                            activeWf.status === "COMPLETED" ? "bg-[var(--ui-sage)]" : "bg-[var(--ui-sage)]"
                           }`}
                           style={{ width: `${activeWf.progress_percent || 0}%` }}
                         />
@@ -629,15 +648,15 @@ function WorkflowsContent() {
 
                 {/* MULTI-STAGE STEPPER TRACK */}
                 <div className="py-2 overflow-x-auto">
-                  <div className="min-w-[650px] flex items-center justify-between relative px-6">
+                  <div className="ui-step-rail min-w-[650px] flex items-center justify-between relative px-6">
                     {/* Connecting line */}
-                    <div className="absolute left-8 right-8 top-5 h-1.5 bg-[#E2E8F0] rounded-full overflow-hidden -z-0">
+                    <div className="absolute left-8 right-8 top-5 h-1.5 bg-[var(--ui-border)] rounded-full overflow-hidden -z-0">
                       <div
-                        className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
+                        className="h-full bg-[var(--ui-sage)] transition-all duration-500 rounded-full"
                         style={{
                           width: `${
                             activeWf.steps.length > 1
-                              ? (activeWf.steps.filter((s) => s.status === "COMPLETED").length / (activeWf.steps.length - 1)) * 100
+                              ? Math.min(100, (activeWf.steps.filter((s) => s.status === "COMPLETED").length / (activeWf.steps.length - 1)) * 100)
                               : 0
                           }%`,
                         }}
@@ -655,20 +674,21 @@ function WorkflowsContent() {
                         <button
                           key={num}
                           type="button"
+                          aria-current={isSelected ? "step" : undefined}
                           onClick={() => setSelectedStepNumber(num)}
                           className="relative z-10 flex flex-col items-center group cursor-pointer focus:outline-none"
                         >
                           <div
                             className={`h-11 w-11 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
                               isSelected
-                                ? "ring-4 ring-purple-300 scale-110 shadow-md"
+                                ? "ring-4 ring-[var(--ui-sage-soft)] scale-110 shadow-md"
                                 : "hover:scale-105"
                             } ${
                               isCompleted
-                                ? "bg-emerald-600 text-white shadow-xs"
+                                ? "bg-[var(--ui-sage)] text-white shadow-xs"
                                 : isInProgress
-                                ? "bg-purple-600 text-white shadow-xs ring-2 ring-purple-400"
-                                : "bg-white text-[#64748B] border-2 border-[#CBD5E1]"
+                                ? "bg-[var(--ui-sage)] text-white shadow-xs ring-2 ring-[var(--ui-sage-soft)]"
+                                : "bg-white text-[var(--ui-secondary)] border-2 border-[var(--ui-border-strong)]"
                             }`}
                           >
                             {isCompleted ? (
@@ -682,10 +702,10 @@ function WorkflowsContent() {
                             <span
                               className={`text-[11px] font-bold block leading-tight ${
                                 isSelected
-                                  ? "text-purple-700 font-extrabold"
+                                  ? "text-[var(--ui-sage)] font-extrabold"
                                   : isCompleted
-                                  ? "text-[#0F172A]"
-                                  : "text-[#64748B]"
+                                  ? "text-[var(--ui-text)]"
+                                  : "text-[var(--ui-secondary)]"
                               }`}
                             >
                               {st.title}
@@ -699,27 +719,27 @@ function WorkflowsContent() {
 
                 {/* ACTIVE STEP INTERACTIVE DETAIL PANEL */}
                 {activeStep && (
-                  <div
+                  <ProductMotion stateKey={selectedStepNumber}
                     className={`rounded-2xl border p-6 transition-all space-y-5 ${
                       activeStep.status === "COMPLETED"
-                        ? "bg-emerald-50/40 border-emerald-300"
-                        : "bg-purple-50/30 border-purple-200"
+                        ? "bg-[var(--ui-sage-faint)]/40 border-[var(--ui-sage-soft)]"
+                        : "bg-[var(--ui-sage-faint)]/30 border-[var(--ui-sage-soft)]"
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                       <div className="space-y-1 max-w-2xl">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white border border-[#E2E8F0] text-[#0F172A]">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white border border-[var(--ui-border)] text-[var(--ui-text)]">
                             Stage {activeStep.step_number || activeStep.step} of {activeWf.steps.length}
                           </span>
 
                           <span
                             className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                               activeStep.status === "COMPLETED"
-                                ? "bg-emerald-100 text-emerald-800"
+                                ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]"
                                 : activeStep.status === "IN_PROGRESS"
-                                ? "bg-purple-100 text-purple-800"
-                                : "bg-slate-100 text-slate-700"
+                                ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]"
+                                : "bg-[var(--ui-inset)] text-[var(--ui-secondary)]"
                             }`}
                           >
                             {activeStep.status === "COMPLETED"
@@ -730,17 +750,17 @@ function WorkflowsContent() {
                           </span>
 
                           {activeStep.duration && (
-                            <span className="text-[10px] font-semibold text-[#64748B] flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-[#94A3B8]" />
+                            <span className="text-[10px] font-semibold text-[var(--ui-secondary)] flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-[var(--ui-muted)]" />
                               <span>{activeStep.duration}</span>
                             </span>
                           )}
                         </div>
 
-                        <h3 className="text-lg font-extrabold text-[#0F172A] mt-1">
+                        <h3 className="text-lg font-extrabold text-[var(--ui-text)] mt-1">
                           {activeStep.title}
                         </h3>
-                        <p className="text-xs sm:text-sm text-[#475569] leading-relaxed">
+                        <p className="text-xs sm:text-sm text-[var(--ui-secondary)] leading-relaxed">
                           {activeStep.description}
                         </p>
                       </div>
@@ -751,7 +771,7 @@ function WorkflowsContent() {
                           href={activeStep.portal_url || activeWf.portal_url || resolveAuthorityPortalUrl(activeWf.authority, activeStep.title || activeWf.title)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[#CBD5E1] hover:border-purple-500 text-[#0F172A] text-xs font-bold transition-all shadow-2xs"
+                          className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[var(--ui-border-strong)] hover:border-[var(--ui-sage-soft)] text-[var(--ui-text)] text-xs font-bold transition-all shadow-2xs"
                         >
                           <span>Open Government Portal ↗</span>
                         </a>
@@ -761,9 +781,9 @@ function WorkflowsContent() {
                     {/* Step Required Documents Checklist */}
                     {((activeStep.documents_required && activeStep.documents_required.length > 0) ||
                       (activeWf.documents_required && activeWf.documents_required.length > 0)) && (
-                      <div className="bg-white rounded-xl border border-[#E2E8F0] p-4 space-y-2.5">
-                        <div className="text-xs font-bold text-[#0F172A] flex items-center gap-1.5">
-                          <FileText className="w-4 h-4 text-purple-600" />
+                      <div className="bg-white rounded-xl border border-[var(--ui-border)] p-4 space-y-2.5">
+                        <div className="text-xs font-bold text-[var(--ui-text)] flex items-center gap-1.5">
+                          <FileText className="w-4 h-4 text-[var(--ui-sage)]" />
                           <span>Statutory Documents Required for this Stage:</span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -773,9 +793,9 @@ function WorkflowsContent() {
                           ).map((doc, idx) => (
                             <div
                               key={idx}
-                              className="flex items-center gap-2 p-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] text-xs text-[#334155]"
+                              className="flex items-center gap-2 p-2 rounded-lg bg-[var(--ui-bg)] border border-[var(--ui-border)] text-xs text-[var(--ui-secondary)]"
                             >
-                              <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] shrink-0">
+                              <span className="w-4 h-4 rounded-full bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] flex items-center justify-center font-bold text-[10px] shrink-0">
                                 ✓
                               </span>
                               <span className="font-medium line-clamp-1">{doc}</span>
@@ -786,10 +806,10 @@ function WorkflowsContent() {
                     )}
 
                     {/* Interactive Step Advancement & Persistence Inputs */}
-                    <div className="bg-white rounded-xl border border-[#E2E8F0] p-4 space-y-4">
+                    <div className="bg-white rounded-xl border border-[var(--ui-border)] p-4 space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[11px] font-bold text-[#475569] mb-1">
+                          <label className="block text-[11px] font-bold text-[var(--ui-secondary)] mb-1">
                             Application ARN / Receipt / Challan Ref No. (Optional):
                           </label>
                           <input
@@ -797,12 +817,12 @@ function WorkflowsContent() {
                             placeholder="e.g. ARN-2026-98124 or Portal Reg ID"
                             value={stepUserRef}
                             onChange={(e) => setStepUserRef(e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] focus:outline-none focus:border-purple-600"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-bg)] text-[var(--ui-text)] focus:outline-none focus:border-[var(--ui-sage-soft)]"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-[11px] font-bold text-[#475569] mb-1">
+                          <label className="block text-[11px] font-bold text-[var(--ui-secondary)] mb-1">
                             Execution Notes &amp; Status Remarks:
                           </label>
                           <input
@@ -810,20 +830,20 @@ function WorkflowsContent() {
                             placeholder="e.g. Uploaded all attested certificates, fee paid online"
                             value={stepNotes}
                             onChange={(e) => setStepNotes(e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] focus:outline-none focus:border-purple-600"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-bg)] text-[var(--ui-text)] focus:outline-none focus:border-[var(--ui-sage-soft)]"
                           />
                         </div>
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#E2E8F0]">
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[var(--ui-border)]">
                         <div className="flex items-center gap-2">
                           {activeStep.status !== "COMPLETED" ? (
                             <button
                               type="button"
                               onClick={() => handleUpdateStepStatus("COMPLETED")}
                               disabled={updatingStep}
-                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                             >
                               {updatingStep ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -848,7 +868,7 @@ function WorkflowsContent() {
                               type="button"
                               onClick={() => handleUpdateStepStatus("IN_PROGRESS")}
                               disabled={updatingStep}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-bold transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] hover:bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] text-xs font-bold transition-colors cursor-pointer"
                             >
                               <span>Set In Progress</span>
                             </button>
@@ -858,21 +878,22 @@ function WorkflowsContent() {
                             type="button"
                             onClick={handleSaveReferenceOnly}
                             disabled={updatingStep}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] hover:bg-slate-100 text-[#0F172A] text-xs font-semibold transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-bg)] hover:bg-[var(--ui-inset)] text-[var(--ui-text)] text-xs font-semibold transition-colors cursor-pointer"
                           >
                             <span>Save Reference Notes Only</span>
                           </button>
                         </div>
 
+                        {stepError && <p role="alert" className="text-sm text-[var(--ui-danger)]">{stepError}</p>}
                         {saveSuccessMsg && (
-                          <div className="text-xs font-semibold text-emerald-700 flex items-center gap-1 animate-pulse">
+                          <div role="status" className="text-xs font-semibold text-[var(--ui-sage)] flex items-center gap-1">
                             <span>✓</span>
                             <span>{saveSuccessMsg}</span>
                           </div>
                         )}
                       </div>
                     </div>
-                  </div>
+                  </ProductMotion>
                 )}
               </div>
             )}
@@ -881,11 +902,11 @@ function WorkflowsContent() {
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-lg font-extrabold text-[#0F172A] flex items-center gap-2">
-                    <Layers className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-lg font-extrabold text-[var(--ui-text)] flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-[var(--ui-sage)]" />
                     <span>Applicable Roadmaps ({filteredWorkflows.length})</span>
                   </h3>
-                  <p className="text-xs text-[#64748B]">
+                  <p className="text-xs text-[var(--ui-secondary)]">
                     Click any workflow card below to inspect its procedural steps, required documents, and track clearance progress.
                   </p>
                 </div>
@@ -900,14 +921,18 @@ function WorkflowsContent() {
                   return (
                     <div
                       key={wf.id}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isSelected}
+                      onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedWorkflowId(wf.id); setSelectedStepNumber(wf.current_step || 1); } }}
                       onClick={() => {
                         setSelectedWorkflowId(wf.id);
                         setSelectedStepNumber(wf.current_step || 1);
                       }}
                       className={`p-5 rounded-2xl border transition-all cursor-pointer shadow-2xs space-y-4 ${
                         isSelected
-                          ? "border-purple-600 bg-purple-50/30 ring-2 ring-purple-600/20 shadow-sm"
-                          : "border-[#E2E8F0] bg-white hover:border-purple-300"
+                          ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/30 ring-2 ring-[var(--ui-sage-soft)]/20 shadow-sm"
+                          : "border-[var(--ui-border)] bg-white hover:border-[var(--ui-sage-soft)]"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -915,10 +940,10 @@ function WorkflowsContent() {
                           <span
                             className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                               wf.category === "COMPLIANCE"
-                                ? "bg-blue-100 text-blue-800"
+                                ? "bg-[var(--ui-info-soft)] text-[var(--ui-info)]"
                                 : wf.category === "STANDARD"
                                 ? "bg-amber-100 text-amber-800"
-                                : "bg-emerald-100 text-emerald-800"
+                                : "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]"
                             }`}
                           >
                             {wf.category === "COMPLIANCE"
@@ -927,7 +952,7 @@ function WorkflowsContent() {
                               ? "Quality Standard"
                               : "Government Scheme"}
                           </span>
-                          <h4 className="text-sm font-extrabold text-[#0F172A] line-clamp-2 mt-1">
+                          <h4 className="text-sm font-extrabold text-[var(--ui-text)] line-clamp-2 mt-1">
                             {wf.title}
                           </h4>
                         </div>
@@ -935,31 +960,31 @@ function WorkflowsContent() {
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                             isCompleted
-                              ? "bg-emerald-100 text-emerald-800"
+                              ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]"
                               : isInProgress
-                              ? "bg-purple-100 text-purple-800"
-                              : "bg-slate-100 text-slate-700"
+                              ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]"
+                              : "bg-[var(--ui-inset)] text-[var(--ui-secondary)]"
                           }`}
                         >
                           {isCompleted ? "✓ Completed" : isInProgress ? `Step ${wf.current_step}` : "Ready"}
                         </span>
                       </div>
 
-                      <div className="text-[11px] text-[#64748B] flex items-center justify-between">
+                      <div className="text-[11px] text-[var(--ui-secondary)] flex items-center justify-between">
                         <span className="truncate max-w-[180px]">🏛️ {wf.authority}</span>
                         <span>{wf.steps ? wf.steps.length : wf.total_steps} Stages</span>
                       </div>
 
                       {/* Progress Track */}
                       <div className="space-y-1">
-                        <div className="flex justify-between text-[10px] font-semibold text-[#64748B]">
+                        <div className="flex justify-between text-[10px] font-semibold text-[var(--ui-secondary)]">
                           <span>Clearance Progress</span>
-                          <span className="font-mono text-purple-700 font-bold">{wf.progress_percent || 0}%</span>
+                          <span className="font-mono text-[var(--ui-sage)] font-bold">{wf.progress_percent || 0}%</span>
                         </div>
-                        <div className="w-full h-1.5 rounded-full bg-[#E2E8F0] overflow-hidden">
+                        <div className="w-full h-1.5 rounded-full bg-[var(--ui-border)] overflow-hidden">
                           <div
                             className={`h-full transition-all duration-500 rounded-full ${
-                              isCompleted ? "bg-emerald-600" : "bg-purple-600"
+                              isCompleted ? "bg-[var(--ui-sage)]" : "bg-[var(--ui-sage)]"
                             }`}
                             style={{ width: `${wf.progress_percent || 0}%` }}
                           />
@@ -967,12 +992,12 @@ function WorkflowsContent() {
                       </div>
 
                       {/* Card Footer */}
-                      <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between text-[11px]">
-                        <span className="text-[#64748B] truncate max-w-[180px]">
+                      <div className="pt-2 border-t border-[var(--ui-border)] flex items-center justify-between text-[11px]">
+                        <span className="text-[var(--ui-secondary)] truncate max-w-[180px]">
                           {wf.portal_name || "Portal Filing"}
                         </span>
 
-                        <span className="font-bold text-purple-700 hover:text-purple-800 inline-flex items-center gap-1">
+                        <span className="font-bold text-[var(--ui-sage)] hover:text-[var(--ui-sage)] inline-flex items-center gap-1">
                           <span>Open Studio</span>
                           <ArrowRight className="w-3 h-3" />
                         </span>
@@ -993,7 +1018,7 @@ export default function WorkflowsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center text-xs text-[#64748B]">
+        <div className="min-h-screen bg-[var(--ui-bg)] flex items-center justify-center text-xs text-[var(--ui-secondary)]">
           Loading compliance &amp; clearance workflows...
         </div>
       }

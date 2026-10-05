@@ -83,7 +83,7 @@ export function ComplianceActionsCard({
       {/* Header */}
       <div>
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-sm font-semibold text-[#111827] whitespace-nowrap">
+          <h3 className="text-sm font-semibold text-[var(--ui-text)] whitespace-nowrap">
             Compliance Actions
           </h3>
           <div className="flex items-center gap-1 shrink-0">
@@ -94,8 +94,8 @@ export function ComplianceActionsCard({
               title={`Filter: currently ${activeFilter === "all" ? "All Actions" : "High Priority Only"}`}
               className={`h-6 w-6 rounded-[6px] flex items-center justify-center transition-colors cursor-pointer border ${
                 activeFilter === "high"
-                  ? "bg-[#18181B] border-[#18181B] text-white"
-                  : "bg-[#F8FAFC] hover:bg-[#F1F5F9] border-[#E2E8F0] text-[#64748B] hover:text-[#111827]"
+                  ? "bg-[var(--ui-text)] border-[var(--ui-text)] text-white"
+                  : "bg-[var(--ui-bg)] hover:bg-[var(--ui-inset)] border-[var(--ui-border)] text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
               }`}
             >
               <ArrowUpDown className="h-3 w-3" />
@@ -104,7 +104,7 @@ export function ComplianceActionsCard({
               type="button"
               onClick={onExpand}
               aria-label="Expand actions details"
-              className="h-6 w-6 rounded-[6px] bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#111827] transition-colors cursor-pointer"
+              className="h-6 w-6 rounded-[6px] bg-[var(--ui-bg)] hover:bg-[var(--ui-inset)] border border-[var(--ui-border)] flex items-center justify-center text-[var(--ui-secondary)] hover:text-[var(--ui-text)] transition-colors cursor-pointer"
             >
               <ArrowUpRight className="h-3 w-3" />
             </button>
@@ -116,7 +116,7 @@ export function ComplianceActionsCard({
           <div>
             <div className="text-xs font-normal text-[#9CA3AF]">Open Actions</div>
             <div className="flex items-baseline gap-2 mt-0.5">
-              <span className="text-3xl sm:text-4xl font-bold text-[#111827] tracking-tight leading-none">
+              <span className="text-3xl sm:text-4xl font-bold text-[var(--ui-text)] tracking-tight leading-none">
                 {activeFilter === "high" ? actionsData.highPriorityCount : actionsData.openCount}
               </span>
               <span className="text-xs font-semibold text-[#EF4444]">
@@ -136,24 +136,24 @@ export function ComplianceActionsCard({
             onClick={() => setActiveFilter("high")}
             className={`px-3 py-1.5 rounded-[10px] border flex items-center justify-between text-xs transition-all cursor-pointer ${
               activeFilter === "high"
-                ? "bg-[#18181B] border-[#18181B] text-white font-semibold shadow-xs"
-                : "bg-white border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#334155]"
+                ? "bg-[var(--ui-text)] border-[var(--ui-text)] text-white font-semibold shadow-xs"
+                : "bg-white border-[var(--ui-border)] hover:bg-[var(--ui-bg)] text-[var(--ui-secondary)]"
             }`}
           >
             <span className="font-semibold">{actionsData.highPriorityCount}</span>
-            <span className={`text-[10px] ml-1 ${activeFilter === "high" ? "text-gray-300" : "text-[#9CA3AF]"}`}>High</span>
+            <span className={`text-[10px] ml-1 ${activeFilter === "high" ? "text-[var(--ui-muted)]" : "text-[#9CA3AF]"}`}>High</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveFilter("all")}
             className={`px-3 py-1.5 rounded-[10px] border flex items-center justify-between text-xs transition-all cursor-pointer ${
               activeFilter === "all"
-                ? "bg-[#18181B] border-[#18181B] text-white font-semibold shadow-xs"
-                : "bg-white border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#334155]"
+                ? "bg-[var(--ui-text)] border-[var(--ui-text)] text-white font-semibold shadow-xs"
+                : "bg-white border-[var(--ui-border)] hover:bg-[var(--ui-bg)] text-[var(--ui-secondary)]"
             }`}
           >
             <span className="font-semibold">{actionsData.totalCount}</span>
-            <span className={`text-[10px] ml-1 ${activeFilter === "all" ? "text-gray-300" : "text-[#9CA3AF]"}`}>Total</span>
+            <span className={`text-[10px] ml-1 ${activeFilter === "all" ? "text-[var(--ui-muted)]" : "text-[#9CA3AF]"}`}>Total</span>
           </button>
         </div>
 
@@ -161,7 +161,7 @@ export function ComplianceActionsCard({
         <div className="col-span-9 relative h-32 flex flex-col justify-end">
           {/* Hover Tooltip */}
           {hoveredPoint && (
-            <div className="absolute top-0 right-2 z-20 bg-[#18181B] text-white text-[10px] font-medium px-2 py-0.5 rounded-full shadow-md">
+            <div className="absolute top-0 right-2 z-20 bg-[var(--ui-text)] text-white text-[10px] font-medium px-2 py-0.5 rounded-full shadow-md">
               {hoveredPoint.day}: {hoveredPoint.count} open actions
             </div>
           )}
@@ -240,7 +240,7 @@ export function ComplianceActionsCard({
                 top: `${(peakPoint.y / 100) * 100 - 6}%`,
               }}
             >
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#E5F77D] text-[#111827] font-semibold text-[10px] shadow-2xs whitespace-nowrap">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#E5F77D] text-[var(--ui-text)] font-semibold text-[10px] shadow-2xs whitespace-nowrap">
                 {actionsData.openCount} actions
               </span>
             </div>
@@ -249,7 +249,7 @@ export function ComplianceActionsCard({
           {/* Weekday Labels matching X positions */}
           <div className="flex items-center justify-between px-1 pt-1.5 text-[10px] text-[#9CA3AF]">
             {actionsData.timeline.map((d) => (
-              <span key={d.day} className={d.isPeak ? "text-[#0F172A] font-bold" : ""}>
+              <span key={d.day} className={d.isPeak ? "text-[var(--ui-text)] font-bold" : ""}>
                 {d.day}
               </span>
             ))}

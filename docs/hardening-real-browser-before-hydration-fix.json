@@ -1,0 +1,833 @@
+{
+  "kind": "REAL_BROWSER_NATIVE_BACKEND_NO_API_MOCKS",
+  "stages": [
+    "actual registration",
+    "manual browser login",
+    "editable starter through real assessment and results",
+    "compliance",
+    "documents",
+    "workflows",
+    "schemes",
+    "standards",
+    "dashboard",
+    "calendar",
+    "assistant",
+    "settings"
+  ],
+  "errors": [],
+  "external_browser_calls": [],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/profile/variables"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/onboarding/products-activities"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/understand/"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/questions/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/answers/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/answers/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/answers/"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/regulatory-discovery/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/compliance-synthesis/"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/schemes/"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/standards/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/analysis/orchestrate"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/compliance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/compliance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/discovery/candidates"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/documents"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/workflows"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/schemes"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/standards/search"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/calendar/google/status"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/preferences"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/standards/search"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/standards/search"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    }
+  ],
+  "responses": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/profile/variables",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/profile",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments",
+      "status": 201
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/onboarding/products-activities",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/understand/",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/questions/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/answers/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/answers/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/answers/",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/regulatory-discovery/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/compliance-synthesis/",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/standards/",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/schemes/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/analysis/orchestrate",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/compliance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/discovery/candidates",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/compliance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/documents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/standards/search",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/calendar/google/status",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/preferences",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/standards/search",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/standards/search",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    }
+  ],
+  "questions": [
+    {
+      "question_id": "Q_1",
+      "variable_key": "connected_power_load",
+      "affected_rules": [],
+      "question": "What is the total connected power load at this business, in HP?",
+      "category": "FACTORY_OPERATIONS",
+      "answer_type": "NUMBER",
+      "required": true,
+      "options": [],
+      "unit": "HP",
+      "help_text": "Power load threshold combined with worker count determines factory licensing and safety rules under state statutes.",
+      "reason": "Power load threshold combined with worker count determines factory licensing and safety rules under state statutes.",
+      "order": 1,
+      "is_answered": false,
+      "current_value": null,
+      "fact_key": "connected_power_load",
+      "reason_code": "SOURCE_DISCOVERY_GAP",
+      "source_decision_refs": [],
+      "already_known": false,
+      "suggested_answer": null,
+      "suggested_answer_origin": "NONE"
+    },
+    {
+      "question_id": "Q_2",
+      "variable_key": "effluent_emission_generation",
+      "affected_rules": [],
+      "question": "Do your metal cutting and turning operations generate any industrial wastewater, trade effluent, or air emissions?",
+      "category": "ENVIRONMENTAL_COMPLIANCE",
+      "answer_type": "BOOLEAN",
+      "required": true,
+      "options": [
+        {
+          "label": "True",
+          "value": "True"
+        },
+        {
+          "label": "False",
+          "value": "False"
+        }
+      ],
+      "unit": "",
+      "help_text": "Mandatory for assessing whether State Pollution Control Board (KSPCB) Consent to Establish or Operate is required.",
+      "reason": "Mandatory for assessing whether State Pollution Control Board (KSPCB) Consent to Establish or Operate is required.",
+      "order": 2,
+      "is_answered": false,
+      "current_value": null,
+      "fact_key": "effluent_emission_generation",
+      "reason_code": "SOURCE_DISCOVERY_GAP",
+      "source_decision_refs": [],
+      "already_known": false,
+      "suggested_answer": null,
+      "suggested_answer_origin": "NONE"
+    },
+    {
+      "question_id": "Q_3",
+      "variable_key": "hazardous_waste_generation",
+      "affected_rules": [],
+      "question": "Do your machining processes generate hazardous waste such as used cutting oil, spent coolants, or oily sludge?",
+      "category": "HAZARDOUS_WASTE",
+      "answer_type": "BOOLEAN",
+      "required": true,
+      "options": [
+        {
+          "label": "True",
+          "value": "True"
+        },
+        {
+          "label": "False",
+          "value": "False"
+        }
+      ],
+      "unit": "",
+      "help_text": "Determines applicability of the Hazardous and Other Wastes Rules and authorization requirements on the SPCB portal.",
+      "reason": "Determines applicability of the Hazardous and Other Wastes Rules and authorization requirements on the SPCB portal.",
+      "order": 3,
+      "is_answered": false,
+      "current_value": null,
+      "fact_key": "hazardous_waste_generation",
+      "reason_code": "SOURCE_DISCOVERY_GAP",
+      "source_decision_refs": [],
+      "already_known": false,
+      "suggested_answer": null,
+      "suggested_answer_origin": "NONE"
+    }
+  ],
+  "screenshots": [
+    "docs\\hardening-screenshots\\01-login.png",
+    "docs\\hardening-screenshots\\02-starters.png",
+    "docs\\hardening-screenshots\\03-editable-autofill.png",
+    "docs\\hardening-screenshots\\04-dynamic-questions.png",
+    "docs\\hardening-screenshots\\05-analysis.png",
+    "docs\\hardening-screenshots\\06-results.png",
+    "docs\\hardening-screenshots\\07-compliance.png",
+    "docs\\hardening-screenshots\\07-documents.png",
+    "docs\\hardening-screenshots\\07-workflows.png",
+    "docs\\hardening-screenshots\\07-schemes.png",
+    "docs\\hardening-screenshots\\07-standards.png",
+    "docs\\hardening-screenshots\\07-dashboard.png",
+    "docs\\hardening-screenshots\\07-calendar.png",
+    "docs\\hardening-screenshots\\07-assistant.png",
+    "docs\\hardening-screenshots\\07-settings.png",
+    "docs\\hardening-screenshots\\08-standards-768.png",
+    "docs\\hardening-screenshots\\08-standards-390.png"
+  ],
+  "business_id": "b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca",
+  "assessment_id": "3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7",
+  "overflow_768": false,
+  "overflow_390": false,
+  "status": "COMPLETED",
+  "seconds": 131.733,
+  "temporary_identity_removed": true
+}

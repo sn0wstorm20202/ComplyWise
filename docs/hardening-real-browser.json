@@ -1,0 +1,1399 @@
+{
+  "kind": "REAL_BROWSER_NATIVE_BACKEND_NO_API_MOCKS",
+  "stages": [
+    "actual registration",
+    "manual browser login",
+    "editable starter through real assessment and results",
+    "compliance",
+    "documents",
+    "workflows",
+    "schemes",
+    "standards",
+    "dashboard",
+    "calendar",
+    "assistant",
+    "settings"
+  ],
+  "errors": [],
+  "external_browser_calls": [],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/profile/variables"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/onboarding/products-activities"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/understand/"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/questions/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/answers/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/answers/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/answers/"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/regulatory-discovery/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/compliance-synthesis/"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/schemes/"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/standards/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/analysis/orchestrate"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/compliance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/compliance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/discovery/candidates"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/documents"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/workflows"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/schemes"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/schemes"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/standards/search"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/calendar/google/status"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/preferences"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/standards/search"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/standards/search"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32"
+    }
+  ],
+  "responses": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/profile/variables",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments",
+      "status": 201
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/onboarding/products-activities",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/understand/",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/questions/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/answers/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/answers/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/answers/",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/regulatory-discovery/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/compliance-synthesis/",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/standards/",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/schemes/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/analysis/orchestrate",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/compliance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/discovery/candidates",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/compliance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/documents",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/workflows",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/schemes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/schemes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/standards/search",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/calendar/google/status",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/preferences",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/standards/search",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/standards/search",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard",
+      "status": 200
+    }
+  ],
+  "questions": [
+    {
+      "question_id": "Q_1",
+      "variable_key": "connected_power_load",
+      "affected_rules": [],
+      "question": "What is the total connected power load at this business, in HP?",
+      "category": "FACTORY_COMPLIANCE",
+      "answer_type": "NUMBER",
+      "required": true,
+      "options": [],
+      "unit": "HP",
+      "help_text": "Required to check power-driven machinery thresholds and safety regulations under state factory rules.",
+      "reason": "Required to check power-driven machinery thresholds and safety regulations under state factory rules.",
+      "order": 1,
+      "is_answered": false,
+      "current_value": null,
+      "fact_key": "connected_power_load",
+      "reason_code": "SOURCE_DISCOVERY_GAP",
+      "source_decision_refs": [],
+      "already_known": false,
+      "suggested_answer": null,
+      "suggested_answer_origin": "NONE"
+    },
+    {
+      "question_id": "Q_2",
+      "variable_key": "effluent_emission_generation",
+      "affected_rules": [],
+      "question": "Do your metal cutting and turning operations generate any industrial wastewater, coolant discharge, or air emissions?",
+      "category": "ENVIRONMENTAL_COMPLIANCE",
+      "answer_type": "BOOLEAN",
+      "required": true,
+      "options": [
+        {
+          "label": "True",
+          "value": "True"
+        },
+        {
+          "label": "False",
+          "value": "False"
+        }
+      ],
+      "unit": "",
+      "help_text": "Needed to determine State Pollution Control Board (KSPCB) consent requirements for emissions or effluent discharge.",
+      "reason": "Needed to determine State Pollution Control Board (KSPCB) consent requirements for emissions or effluent discharge.",
+      "order": 2,
+      "is_answered": false,
+      "current_value": null,
+      "fact_key": "effluent_emission_generation",
+      "reason_code": "SOURCE_DISCOVERY_GAP",
+      "source_decision_refs": [],
+      "already_known": false,
+      "suggested_answer": null,
+      "suggested_answer_origin": "NONE"
+    },
+    {
+      "question_id": "Q_3",
+      "variable_key": "hazardous_waste_generation",
+      "affected_rules": [],
+      "question": "Do your machining processes generate hazardous waste such as used cutting oil, spent coolants, or oil-contaminated cotton waste?",
+      "category": "HAZARDOUS_WASTE",
+      "answer_type": "BOOLEAN",
+      "required": true,
+      "options": [
+        {
+          "label": "True",
+          "value": "True"
+        },
+        {
+          "label": "False",
+          "value": "False"
+        }
+      ],
+      "unit": "",
+      "help_text": "Determines applicability of Hazardous Waste Management Rules and SPCB authorization for used oil disposal.",
+      "reason": "Determines applicability of Hazardous Waste Management Rules and SPCB authorization for used oil disposal.",
+      "order": 3,
+      "is_answered": false,
+      "current_value": null,
+      "fact_key": "hazardous_waste_generation",
+      "reason_code": "SOURCE_DISCOVERY_GAP",
+      "source_decision_refs": [],
+      "already_known": false,
+      "suggested_answer": null,
+      "suggested_answer_origin": "NONE"
+    }
+  ],
+  "screenshots": [
+    "docs\\hardening-screenshots\\01-login.png",
+    "docs\\hardening-screenshots\\02-starters.png",
+    "docs\\hardening-screenshots\\03-editable-autofill.png",
+    "docs\\hardening-screenshots\\04-dynamic-questions.png",
+    "docs\\hardening-screenshots\\05-analysis.png",
+    "docs\\hardening-screenshots\\06-results.png",
+    "docs\\hardening-screenshots\\07-compliance.png",
+    "docs\\hardening-screenshots\\07-documents.png",
+    "docs\\hardening-screenshots\\07-workflows.png",
+    "docs\\hardening-screenshots\\07-schemes.png",
+    "docs\\hardening-screenshots\\07-standards.png",
+    "docs\\hardening-screenshots\\07-dashboard.png",
+    "docs\\hardening-screenshots\\07-calendar.png",
+    "docs\\hardening-screenshots\\07-assistant.png",
+    "docs\\hardening-screenshots\\07-settings.png",
+    "docs\\hardening-screenshots\\08-standards-768.png",
+    "docs\\hardening-screenshots\\08-standards-390.png"
+  ],
+  "business_id": "d24971fc-1183-4970-a356-5d0f8929b587",
+  "assessment_id": "7e642717-bf84-46c7-9af9-54df15dc4a32",
+  "overflow_768": false,
+  "overflow_390": false,
+  "status": "COMPLETED",
+  "seconds": 245.6,
+  "temporary_identity_removed": true
+}

@@ -1,0 +1,1000 @@
+2026-10-04 18:44:11,691 INFO domain.intelligence.orchestration Created new AssessmentRun e192f84e-f241-4915-a5fb-27076d37240e for business b2dd62a4-a835-436d-be66-1755c15f39b4 (strategy LLM_FIRST, correlation 205caa39-f5dd-4115-9397-303fcbf83b3d)
+2026-10-04 18:44:15,369 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:769, cached:0, out:834, reason:0) cost=$0.001155 latency=3036.3ms provider=gemini slot=1 fallback=False failure=None
+2026-10-04 18:44:21,432 INFO domain.providers.telemetry LLM Telemetry: workflow=smart_questions_planner model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1897, cached:0, out:1205, reason:0) cost=$0.001825 latency=5137.9ms provider=gemini slot=2 fallback=False failure=None
+2026-10-04 18:44:21,701 INFO domain.intelligence.questionnaire Persisted compact questions in metadata for assessment run e192f84e-f241-4915-a5fb-27076d37240e
+2026-10-04 18:44:26,206 INFO domain.intelligence.regulatory_retrieval ComplianceRAG retrieval EMPTY: 0 passages, 2234ms
+2026-10-04 18:44:35,114 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:44:35,114 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:44:35,114 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:44:45,097 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 11.
+2026-10-04 18:44:55,098 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 12.
+2026-10-04 18:44:56,316 ERROR HttpCrawler Request to https://cag.gov.in/webroot/uploads/download_audit_report/2026/Karnataka_Report-No-4-of-2026---English-06ab39376933f34.39425674.pdf failed and reached maximum retries
+ Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: All connection attempts failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 100, in __call__
+    result = await middleware_instance.action()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 40, in action
+    self.output_context = await self.generator.__anext__()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_abstract_http\_abstract_http_crawler.py", line 278, in _make_http_request
+    result = await self._http_client.crawl(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 167, in crawl
+    response = await client.send(http_request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 74, in handle_async_request
+    response = await super().handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: All connection attempts failed
+2026-10-04 18:44:56,318 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:44:56,318 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:44:56,318 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:44:56,319 INFO HttpCrawler Error analysis: total_errors=1 unique_errors=1
+2026-10-04 18:44:56,320 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0      \u2502
+\u2502 requests_failed               \u2502 1      \u2502
+\u2502 retry_histogram               \u2502 [1]    \u2502
+\u2502 request_avg_failed_duration   \u2502 21.20s \u2502
+\u2502 request_avg_finished_duration \u2502 None   \u2502
+\u2502 requests_finished_per_minute  \u2502 0      \u2502
+\u2502 requests_failed_per_minute    \u2502 2      \u2502
+\u2502 request_total_duration        \u2502 21.20s \u2502
+\u2502 requests_total                \u2502 1      \u2502
+\u2502 crawler_runtime               \u2502 21.21s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:44:56,700 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:44:56,700 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:44:56,700 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:44:57,008 INFO httpx HTTP Request: GET https://rera.karnataka.gov.in/download_jc?DOC_ID=x%2Be9FHP2l%2F8IsOU5k8e6gw%3D%3D "HTTP/1.1 200 "
+2026-10-04 18:44:57,491 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:44:57,491 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:44:57,491 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:44:57,493 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1       \u2502
+\u2502 requests_failed               \u2502 0       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 None    \u2502
+\u2502 request_avg_finished_duration \u2502 789.2ms \u2502
+\u2502 requests_finished_per_minute  \u2502 76      \u2502
+\u2502 requests_failed_per_minute    \u2502 0       \u2502
+\u2502 request_total_duration        \u2502 789.2ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 792.4ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:45:05,241 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1741, cached:0, out:14, reason:0) cost=$0.000365 latency=1260.6ms provider=gemini slot=3 fallback=False failure=None
+2026-10-04 18:45:05,654 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:45:05,655 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:45:05,655 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:45:06,301 INFO httpx HTTP Request: GET https://erajyapatra.karnataka.gov.in/WriteReadData/2022/4013.pdf "HTTP/1.1 200 OK"
+2026-10-04 18:45:07,741 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:45:07,741 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:45:07,741 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:45:07,743 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 2.09s \u2502
+\u2502 requests_finished_per_minute  \u2502 29    \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 2.09s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 2.09s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:45:23,309 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:8316, cached:0, out:2264, reason:0) cost=$0.004380 latency=8073.0ms provider=gemini slot=1 fallback=False failure=None
+2026-10-04 18:45:46,165 INFO domain.intelligence.orchestration Created new AssessmentRun 412412fc-e55c-4ca6-b99f-9a7d3e4191cf for business 8cc71937-69f6-481e-ad49-b0ee16300083 (strategy LLM_FIRST, correlation 869d84b7-bb80-44b6-b541-71a948f07aff)
+2026-10-04 18:45:49,330 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:758, cached:0, out:725, reason:0) cost=$0.001022 latency=2705.5ms provider=gemini slot=2 fallback=False failure=None
+2026-10-04 18:45:55,003 INFO domain.providers.telemetry LLM Telemetry: workflow=smart_questions_planner model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1859, cached:0, out:1282, reason:0) cost=$0.001910 latency=5093.0ms provider=gemini slot=3 fallback=False failure=None
+2026-10-04 18:45:55,326 INFO domain.intelligence.questionnaire Persisted compact questions in metadata for assessment run 412412fc-e55c-4ca6-b99f-9a7d3e4191cf
+2026-10-04 18:45:58,726 INFO domain.intelligence.regulatory_retrieval ComplianceRAG retrieval EMPTY: 0 passages, 938ms
+2026-10-04 18:46:02,145 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:46:02,145 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:46:02,145 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:46:03,706 INFO httpx HTTP Request: GET https://asi.nic.in/admin/tender/download/583 "HTTP/2 200 OK"
+2026-10-04 18:46:04,072 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:46:04,073 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:46:04,073 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:46:04,075 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 1.93s \u2502
+\u2502 requests_finished_per_minute  \u2502 31    \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 1.93s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 1.93s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:46:07,017 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1268, cached:0, out:14, reason:0) cost=$0.000270 latency=1105.6ms provider=gemini slot=1 fallback=False failure=None
+2026-10-04 18:46:07,403 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:46:07,404 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:46:07,404 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:46:08,430 INFO httpx HTTP Request: GET http://www.holalkeretown.mrc.gov.in/sites/holalkeretown.mrc.gov.in/files/users/user4/RTI%204_1__B.pdf "HTTP/1.1 404 Not Found"
+2026-10-04 18:46:08,434 ERROR HttpCrawler Request to http://www.holalkeretown.mrc.gov.in/sites/holalkeretown.mrc.gov.in/files/users/user4/RTI%204_1__B.pdf failed and reached maximum retries
+ Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\domain\acquisition\crawlee_provider.py", line 217, in _run_async
+    try: asyncio.get_running_loop()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: no running event loop
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 100, in __call__
+    result = await middleware_instance.action()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 40, in action
+    self.output_context = await self.generator.__anext__()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_abstract_http\_abstract_http_crawler.py", line 313, in _handle_status_code_response
+    self._raise_for_error_status_code(status_code)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_basic_crawler.py", line 1541, in _raise_for_error_status_code
+    raise HttpClientStatusCodeError('Client error status code returned', status_code)
+crawlee.errors.HttpClientStatusCodeError: Client error status code returned (status code: 404).
+2026-10-04 18:46:08,434 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:46:08,434 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:46:08,435 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:46:08,436 INFO HttpCrawler Error analysis: total_errors=1 unique_errors=1
+2026-10-04 18:46:08,436 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0     \u2502
+\u2502 requests_failed               \u2502 1     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 1.03s \u2502
+\u2502 request_avg_finished_duration \u2502 None  \u2502
+\u2502 requests_finished_per_minute  \u2502 0     \u2502
+\u2502 requests_failed_per_minute    \u2502 58    \u2502
+\u2502 request_total_duration        \u2502 1.03s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 1.03s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:46:08,756 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:46:08,756 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:46:08,756 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:46:08,977 INFO httpx HTTP Request: GET https://www.fssai.gov.in/docs/footer/other/cac/Adopted%20Minutes%2048th%20CAC.pdf?csrt=11107935609276266457 "HTTP/1.1 200 OK"
+2026-10-04 18:46:10,055 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:46:10,055 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:46:10,055 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:46:10,057 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 1.30s \u2502
+\u2502 requests_finished_per_minute  \u2502 46    \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 1.30s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 1.30s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:46:10,089 INFO crawlee.crawlers._playwright._playwright_crawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:46:10,089 INFO crawlee.crawlers._playwright._playwright_crawler Crawled 0/1 pages, 0 failed requests, desired concurrency 1.
+2026-10-04 18:46:11,549 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 1; cpu = 0.0; mem = 0.0; event_loop = 1.0; client_info = 0.0
+2026-10-04 18:46:16,003 ERROR crawlee.crawlers._playwright._playwright_crawler Request to https://www.fssai.gov.in/docs/footer/other/cac/Adopted%20Minutes%2048th%20CAC.pdf?csrt=11107935609276266457 failed and reached maximum retries
+ Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 100, in __call__
+    result = await middleware_instance.action()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 40, in action
+    self.output_context = await self.generator.__anext__()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_playwright\_playwright_crawler.py", line 422, in _navigate
+    response = await context.page.goto(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 9901, in goto
+    await self._impl_obj.goto(
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\playwright\_impl\_page.py", line 562, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\playwright\_impl\_frame.py", line 157, in goto
+    await self._channel.send(
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: Page.goto: Download is starting
+Call log:
+  - navigating to "https://www.fssai.gov.in/docs/footer/other/cac/Adopted%20Minutes%2048th%20CAC.pdf?csrt=11107935609276266457", waiting until "load"
+2026-10-04 18:46:16,024 INFO crawlee.crawlers._playwright._playwright_crawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:46:16,025 INFO crawlee.crawlers._playwright._playwright_crawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:46:16,025 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:46:16,572 INFO crawlee.crawlers._playwright._playwright_crawler Error analysis: total_errors=1 unique_errors=1
+2026-10-04 18:46:16,572 INFO crawlee.crawlers._playwright._playwright_crawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0     \u2502
+\u2502 requests_failed               \u2502 1     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 3.44s \u2502
+\u2502 request_avg_finished_duration \u2502 None  \u2502
+\u2502 requests_finished_per_minute  \u2502 0     \u2502
+\u2502 requests_failed_per_minute    \u2502 9     \u2502
+\u2502 request_total_duration        \u2502 3.44s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 6.48s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:46:28,159 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:7610, cached:0, out:1706, reason:0) cost=$0.003569 latency=6251.6ms provider=gemini slot=2 fallback=False failure=None
+Not Found: /api/v1/standards/search
+2026-10-04 18:46:53,053 WARNING django.request Not Found: /api/v1/standards/search
+2026-10-04 18:46:54,388 INFO domain.intelligence.orchestration Created new AssessmentRun be45d162-aefe-42c7-bc23-04c045f4a139 for business 6bc10a10-7d61-47d0-9348-2e506f44d4b6 (strategy LLM_FIRST, correlation ae2f82b9-ffdf-4d08-b3c8-fe66d0a1fa46)
+2026-10-04 18:46:57,568 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:763, cached:0, out:689, reason:0) cost=$0.000979 latency=2667.3ms provider=gemini slot=3 fallback=False failure=None
+2026-10-04 18:47:02,613 INFO domain.providers.telemetry LLM Telemetry: workflow=smart_questions_planner model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1871, cached:0, out:1066, reason:0) cost=$0.001653 latency=4425.5ms provider=gemini slot=1 fallback=False failure=None
+2026-10-04 18:47:02,876 INFO domain.intelligence.questionnaire Persisted compact questions in metadata for assessment run be45d162-aefe-42c7-bc23-04c045f4a139
+2026-10-04 18:47:06,640 INFO domain.intelligence.regulatory_retrieval ComplianceRAG retrieval EMPTY: 0 passages, 891ms
+2026-10-04 18:47:09,668 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:47:09,668 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:47:09,669 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:47:11,365 INFO httpx HTTP Request: GET https://gstcouncil.gov.in/node/3877 "HTTP/2 200 OK"
+2026-10-04 18:47:11,487 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:47:11,487 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:47:11,487 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:47:11,489 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 1.82s \u2502
+\u2502 requests_finished_per_minute  \u2502 33    \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 1.82s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 1.82s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:47:13,334 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1129, cached:0, out:14, reason:0) cost=$0.000243 latency=1261.3ms provider=gemini slot=2 fallback=False failure=None
+2026-10-04 18:47:13,712 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:47:13,712 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:47:13,712 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:47:13,976 ERROR HttpCrawler Request to https://environmentclearance.nic.in/writereaddata/FormB/agenda/09032020JGRPF9PY183SEIAA.pdf failed and reached maximum retries
+ Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 156, in _connect
+    stream = await stream.start_tls(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 67, in start_tls
+    with map_exceptions(exc_map):
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 100, in __call__
+    result = await middleware_instance.action()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 40, in action
+    self.output_context = await self.generator.__anext__()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_abstract_http\_abstract_http_crawler.py", line 278, in _make_http_request
+    result = await self._http_client.crawl(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 167, in crawl
+    response = await client.send(http_request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 74, in handle_async_request
+    response = await super().handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)
+2026-10-04 18:47:13,977 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:47:13,977 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:47:13,978 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:47:13,979 INFO HttpCrawler Error analysis: total_errors=1 unique_errors=1
+2026-10-04 18:47:13,979 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0       \u2502
+\u2502 requests_failed               \u2502 1       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 264.2ms \u2502
+\u2502 request_avg_finished_duration \u2502 None    \u2502
+\u2502 requests_finished_per_minute  \u2502 0       \u2502
+\u2502 requests_failed_per_minute    \u2502 225     \u2502
+\u2502 request_total_duration        \u2502 264.2ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 265.8ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:47:14,406 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:47:14,407 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:47:14,407 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:47:14,558 INFO httpx HTTP Request: GET https://www.pib.gov.in/PressReleasePage.aspx?PRID=2110935 "HTTP/2 302 Found"
+2026-10-04 18:47:14,569 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:47:14,569 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:47:14,569 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:47:14,571 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1       \u2502
+\u2502 requests_failed               \u2502 0       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 None    \u2502
+\u2502 request_avg_finished_duration \u2502 161.1ms \u2502
+\u2502 requests_finished_per_minute  \u2502 368     \u2502
+\u2502 requests_failed_per_minute    \u2502 0       \u2502
+\u2502 request_total_duration        \u2502 161.1ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 163.1ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:47:14,889 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:47:14,889 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:47:14,890 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:47:15,266 INFO httpx HTTP Request: GET https://www.pib.gov.in/PressReleasePage.aspx?PRID=2110935&reg=48&lang=2 "HTTP/2 200 OK"
+2026-10-04 18:47:15,271 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:47:15,271 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:47:15,272 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:47:15,273 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1       \u2502
+\u2502 requests_failed               \u2502 0       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 None    \u2502
+\u2502 request_avg_finished_duration \u2502 380.7ms \u2502
+\u2502 requests_finished_per_minute  \u2502 156     \u2502
+\u2502 requests_failed_per_minute    \u2502 0       \u2502
+\u2502 request_total_duration        \u2502 380.7ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 383.6ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:47:17,053 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1083, cached:0, out:14, reason:0) cost=$0.000233 latency=1241.2ms provider=gemini slot=3 fallback=False failure=None
+2026-10-04 18:47:29,819 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:8080, cached:0, out:1337, reason:0) cost=$0.003220 latency=5463.0ms provider=gemini slot=1 fallback=False failure=None
+Not Found: /api/v1/standards/search
+2026-10-04 18:47:52,671 WARNING django.request Not Found: /api/v1/standards/search
+Not Found: /api/v1/standards/search
+2026-10-04 18:47:52,782 WARNING django.request Not Found: /api/v1/standards/search
+2026-10-04 18:47:54,007 INFO domain.intelligence.orchestration Created new AssessmentRun 5dabcd5a-e3e8-45df-9b42-6a0305cc53cb for business 141e3e7e-a2f5-4a85-b425-2acb583ffc2c (strategy LLM_FIRST, correlation e141b16d-ac69-4773-a67b-2737b170af76)
+2026-10-04 18:47:57,263 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:761, cached:0, out:750, reason:0) cost=$0.001052 latency=2798.7ms provider=gemini slot=2 fallback=False failure=None
+2026-10-04 18:48:02,124 INFO domain.providers.telemetry LLM Telemetry: workflow=smart_questions_planner model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1835, cached:0, out:1010, reason:0) cost=$0.001579 latency=4298.7ms provider=gemini slot=3 fallback=False failure=None
+2026-10-04 18:48:02,357 INFO domain.intelligence.questionnaire Persisted compact questions in metadata for assessment run 5dabcd5a-e3e8-45df-9b42-6a0305cc53cb
+2026-10-04 18:48:05,891 INFO domain.intelligence.regulatory_retrieval ComplianceRAG retrieval EMPTY: 0 passages, 938ms
+2026-10-04 18:48:28,094 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:48:28,095 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:48:28,095 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:48:28,248 ERROR HttpCrawler Request to https://environmentclearance.nic.in/DownloadPfdFile.aspx?FileName=UnkvY9sJFWrUhaoaK6q9kAAZHXN7ESBeDgRaHatnirNPZDDcUraIrKKPjiJCBPhPfXq66awhOxGYNYU15qirNw==&FilePath=93ZZBm8LWEXfg+HAlQix2fE2t8z/pgnoBhDlYdZCxzWEg5krvYDBGh93XnKqWA8seD4MtaNw0LUiciA11QmqMQYG97XmFQhY2Rjqih8D1PE= failed and reached maximum retries
+ Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 156, in _connect
+    stream = await stream.start_tls(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 67, in start_tls
+    with map_exceptions(exc_map):
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 100, in __call__
+    result = await middleware_instance.action()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 40, in action
+    self.output_context = await self.generator.__anext__()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_abstract_http\_abstract_http_crawler.py", line 278, in _make_http_request
+    result = await self._http_client.crawl(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 167, in crawl
+    response = await client.send(http_request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 74, in handle_async_request
+    response = await super().handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)
+2026-10-04 18:48:28,250 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:48:28,250 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:48:28,250 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:48:28,252 INFO HttpCrawler Error analysis: total_errors=1 unique_errors=1
+2026-10-04 18:48:28,252 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0       \u2502
+\u2502 requests_failed               \u2502 1       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 153.8ms \u2502
+\u2502 request_avg_finished_duration \u2502 None    \u2502
+\u2502 requests_finished_per_minute  \u2502 0       \u2502
+\u2502 requests_failed_per_minute    \u2502 381     \u2502
+\u2502 request_total_duration        \u2502 153.8ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 157.3ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:48:28,680 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:48:28,681 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:48:28,681 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:48:28,905 INFO httpx HTTP Request: GET https://ospcboard.odisha.gov.in/wp-content/plugins/publication//uploads/files_1558442311_1473.pdf "HTTP/1.1 200 OK"
+2026-10-04 18:48:29,355 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:48:29,355 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:48:29,355 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:48:29,357 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1       \u2502
+\u2502 requests_failed               \u2502 0       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 None    \u2502
+\u2502 request_avg_finished_duration \u2502 673.7ms \u2502
+\u2502 requests_finished_per_minute  \u2502 89      \u2502
+\u2502 requests_failed_per_minute    \u2502 0       \u2502
+\u2502 request_total_duration        \u2502 673.7ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 677.5ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:48:29,781 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:48:29,781 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:48:29,781 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:48:29,958 ERROR HttpCrawler Request to https://dpal.karnataka.gov.in/uploads/media_to_upload1749620106.pdf failed and reached maximum retries
+ Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 156, in _connect
+    stream = await stream.start_tls(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 67, in start_tls
+    with map_exceptions(exc_map):
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 100, in __call__
+    result = await middleware_instance.action()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 40, in action
+    self.output_context = await self.generator.__anext__()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_abstract_http\_abstract_http_crawler.py", line 278, in _make_http_request
+    result = await self._http_client.crawl(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 167, in crawl
+    response = await client.send(http_request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 74, in handle_async_request
+    response = await super().handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)
+2026-10-04 18:48:29,959 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:48:29,959 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:48:29,959 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:48:29,961 INFO HttpCrawler Error analysis: total_errors=1 unique_errors=1
+2026-10-04 18:48:29,962 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0       \u2502
+\u2502 requests_failed               \u2502 1       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 176.6ms \u2502
+\u2502 request_avg_finished_duration \u2502 None    \u2502
+\u2502 requests_finished_per_minute  \u2502 0       \u2502
+\u2502 requests_failed_per_minute    \u2502 334     \u2502
+\u2502 request_total_duration        \u2502 176.6ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 179.2ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:48:42,912 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:6592, cached:0, out:1906, reason:0) cost=$0.003606 latency=6896.6ms provider=gemini slot=1 fallback=False failure=None
+Not Found: /api/v1/standards/search
+2026-10-04 18:49:03,646 WARNING django.request Not Found: /api/v1/standards/search
+Not Found: /api/v1/standards/search
+2026-10-04 18:49:03,753 WARNING django.request Not Found: /api/v1/standards/search
+Not Found: /api/v1/standards/search
+2026-10-04 18:49:03,881 WARNING django.request Not Found: /api/v1/standards/search
+2026-10-04 18:49:05,004 INFO domain.intelligence.orchestration Created new AssessmentRun 9a617cf2-1d7c-45e6-a935-5882d310debf for business 28d4742e-567e-4a07-aad3-aa21b0bea522 (strategy LLM_FIRST, correlation f6224aad-2034-4bfa-b429-0205b4a16772)
+2026-10-04 18:49:08,283 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:752, cached:0, out:714, reason:0) cost=$0.001007 latency=2839.6ms provider=gemini slot=2 fallback=False failure=None
+2026-10-04 18:49:14,099 INFO domain.providers.telemetry LLM Telemetry: workflow=smart_questions_planner model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1839, cached:0, out:1305, reason:0) cost=$0.001934 latency=5273.0ms provider=gemini slot=3 fallback=False failure=None
+2026-10-04 18:49:14,365 INFO domain.intelligence.questionnaire Persisted compact questions in metadata for assessment run 9a617cf2-1d7c-45e6-a935-5882d310debf
+2026-10-04 18:49:17,750 INFO domain.intelligence.regulatory_retrieval ComplianceRAG retrieval EMPTY: 0 passages, 922ms
+2026-10-04 18:49:21,016 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:49:21,017 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:49:21,017 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:49:21,557 INFO httpx HTTP Request: GET https://rera.karnataka.gov.in/download_jc?DOC_ID=r9S%2Bxegs1XrvamiUmDd9hg%3D%3D "HTTP/1.1 200 "
+2026-10-04 18:49:22,041 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:49:22,041 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:49:22,041 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:49:22,043 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 1.02s \u2502
+\u2502 requests_finished_per_minute  \u2502 58    \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 1.02s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 1.03s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:49:24,429 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=1810.3ms provider=gemini slot=1 fallback=False failure=schema_failure
+2026-10-04 18:49:26,557 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=2128.0ms provider=gemini slot=2 fallback=True failure=schema_failure
+2026-10-04 18:49:28,105 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1366, cached:0, out:293, reason:0) cost=$0.000625 latency=1548.8ms provider=gemini slot=3 fallback=True failure=None
+2026-10-04 18:49:28,716 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:49:28,716 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:49:28,716 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:49:38,707 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:49:48,707 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:49:49,879 ERROR HttpCrawler Request to https://saiindia.gov.in/webroot/uploads/download_audit_report/2022/PUBLIC-HEALTH-Report-No.-8-Eng-0675bff96bd2ca2.88544443.pdf failed and reached maximum retries
+ Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: All connection attempts failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 100, in __call__
+    result = await middleware_instance.action()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 40, in action
+    self.output_context = await self.generator.__anext__()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_abstract_http\_abstract_http_crawler.py", line 278, in _make_http_request
+    result = await self._http_client.crawl(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 167, in crawl
+    response = await client.send(http_request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 74, in handle_async_request
+    response = await super().handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: All connection attempts failed
+2026-10-04 18:49:49,880 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:49:49,881 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:49:49,881 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:49:49,883 INFO HttpCrawler Error analysis: total_errors=1 unique_errors=1
+2026-10-04 18:49:49,884 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0      \u2502
+\u2502 requests_failed               \u2502 1      \u2502
+\u2502 retry_histogram               \u2502 [1]    \u2502
+\u2502 request_avg_failed_duration   \u2502 21.16s \u2502
+\u2502 request_avg_finished_duration \u2502 None   \u2502
+\u2502 requests_finished_per_minute  \u2502 0      \u2502
+\u2502 requests_failed_per_minute    \u2502 2      \u2502
+\u2502 request_total_duration        \u2502 21.16s \u2502
+\u2502 requests_total                \u2502 1      \u2502
+\u2502 crawler_runtime               \u2502 21.17s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:49:50,342 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:49:50,342 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 18:49:50,343 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 18:49:50,664 INFO httpx HTTP Request: GET https://igotorgan.karnataka.gov.in/storage/pdf-files/BMW.pdf "HTTP/1.1 200 OK"
+2026-10-04 18:49:54,402 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 18:49:54,402 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 18:49:54,402 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 18:49:54,404 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 4.06s \u2502
+\u2502 requests_finished_per_minute  \u2502 15    \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 4.06s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 4.06s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 18:50:06,483 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=7121.4ms provider=gemini slot=2 fallback=False failure=malformed_response
+2026-10-04 18:50:13,016 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:7973, cached:0, out:1695, reason:0) cost=$0.003629 latency=6532.8ms provider=gemini slot=3 fallback=True failure=None
+Not Found: /api/v1/standards/search
+2026-10-04 18:50:38,960 WARNING django.request Not Found: /api/v1/standards/search
+Not Found: /api/v1/standards/search
+2026-10-04 18:50:39,118 WARNING django.request Not Found: /api/v1/standards/search
+Not Found: /api/v1/standards/search
+2026-10-04 18:50:39,261 WARNING django.request Not Found: /api/v1/standards/search
+Not Found: /api/v1/standards/search
+2026-10-04 18:50:39,394 WARNING django.request Not Found: /api/v1/standards/search
+Manufacturing: COMPLETED; 95.197s; safe report checkpointed.
+Restaurant: COMPLETED; 68.071s; safe report checkpointed.
+IT: COMPLETED; 59.726s; safe report checkpointed.
+Warehouse: COMPLETED; 71.096s; safe report checkpointed.
+Healthcare: COMPLETED; 95.51s; safe report checkpointed.

@@ -75,11 +75,11 @@ const DEMO_APPLICATIONS: ApplicationRecord[] = [
 
 function ApplicationsContent() {
   const { t } = useLanguage();
-  const { profile } = useBusinessContext();
+  const { profile, isDemoMode, activeBusinessId } = useBusinessContext();
   const [filter, setFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  const filtered = DEMO_APPLICATIONS.filter((app) => {
+  const filtered = (isDemoMode ? DEMO_APPLICATIONS : []).filter((app) => {
     if (filter !== "ALL" && app.status !== filter) return false;
     if (
       searchTerm &&
@@ -96,37 +96,37 @@ function ApplicationsContent() {
     <AppShell activeView="workflows">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-[10px] border border-[#E2E8F0] p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-white rounded-[10px] border border-[var(--ui-border)] p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#64748B] tracking-wide uppercase">
-                {t("common.appName")} · {profile.businessName}
+              <span className="text-xs font-semibold text-[var(--ui-secondary)] tracking-wide uppercase">
+                {t("common.appName")}{activeBusinessId ? ` · ${profile.businessName}` : ""}
               </span>
-              <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 border border-emerald-200">
+              <span className="inline-flex items-center rounded-full bg-[var(--ui-sage-faint)] px-2.5 py-0.5 text-xs font-semibold text-[var(--ui-sage)] border border-[var(--ui-sage-soft)]">
                 {t("navigation.applications")}
               </span>
             </div>
-            <h1 className="text-2xl font-sans font-bold tracking-tight text-[#0F172A] mt-1">
+            <h1 className="text-2xl font-sans font-bold tracking-tight text-[var(--ui-text)] mt-1">
               {t("navigation.applications")}
             </h1>
-            <p className="text-xs text-[#64748B] mt-0.5">
+            <p className="text-xs text-[var(--ui-secondary)] mt-0.5">
               {t("dashboard.activeWorkflows")}
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E2E8F0] text-[11px] text-[#475569] shadow-2xs font-medium">
-              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-              Demo Portal Sync Active
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[var(--ui-border)] text-[11px] text-[var(--ui-secondary)] shadow-2xs font-medium">
+              {isDemoMode ? "Illustrative application records" : "Manage submissions in Cases"}
             </span>
           </div>
         </div>
 
         {/* Regulatory Boundary Notice (Image B Contract) */}
+        {!isDemoMode && <div className="ui-object"><h2 className="font-medium">Your submission records</h2><p className="text-sm text-[var(--ui-secondary)] mt-2">Record portal references, authority responses and follow-up dates in the relevant compliance case.</p><Link href="/cases" className="ui-button ui-button-primary mt-4">Open compliance cases →</Link></div>}
         <div className="bg-amber-50/50 border border-amber-200/80 rounded-[10px] p-4 flex items-start gap-3 text-xs">
           <AlertCircle className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
-          <div className="text-[#334155] leading-relaxed">
-            <strong className="text-[#0F172A] font-semibold">Statutory Jurisdiction Boundary: </strong>
+          <div className="text-[var(--ui-secondary)] leading-relaxed">
+            <strong className="text-[var(--ui-text)] font-semibold">Statutory Jurisdiction Boundary: </strong>
             ComplyWise pre-validates application dossiers and tracks submission milestones.
             Official license grants, query notices, and statutory approvals are issued solely by
             respective government departments (BIS, WPC, DGFT, State PCB).
@@ -135,15 +135,15 @@ function ApplicationsContent() {
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-1 bg-white p-1 rounded-full border border-[#E2E8F0] text-xs shadow-2xs">
+          <div className="flex items-center gap-1 bg-white p-1 rounded-full border border-[var(--ui-border)] text-xs shadow-2xs">
             {["ALL", "SUBMITTED", "UNDER_SCRUTINY", "DOCUMENTS_REQUESTED", "APPROVED"].map((st) => (
               <button
                 key={st}
                 onClick={() => setFilter(st)}
                 className={`px-3 py-1 rounded-full font-semibold transition-colors cursor-pointer ${
                   filter === st
-                    ? "bg-[#0F172A] text-white shadow-2xs"
-                    : "text-[#64748B] hover:text-[#0F172A]"
+                    ? "bg-[var(--ui-text)] text-white shadow-2xs"
+                    : "text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
                 }`}
               >
                 {st === "ALL" ? t("common.all") : st.replace(/_/g, " ")}
@@ -152,13 +152,13 @@ function ApplicationsContent() {
           </div>
 
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#94A3B8]" />
+            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[var(--ui-muted)]" />
             <input
               type="text"
               placeholder={`${t("common.search")}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="rounded-full bg-white border border-[#E2E8F0] pl-8 pr-4 py-1.5 text-xs text-[#0F172A] placeholder-[#94A3B8] focus:border-amber-500 focus:outline-none shadow-2xs"
+              className="rounded-full bg-white border border-[var(--ui-border)] pl-8 pr-4 py-1.5 text-xs text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:border-amber-500 focus:outline-none shadow-2xs"
             />
           </div>
         </div>
@@ -168,7 +168,7 @@ function ApplicationsContent() {
           {filtered.map((app) => (
             <div
               key={app.id}
-              className="bg-white rounded-[10px] border border-[#E2E8F0] p-5 shadow-2xs hover:border-slate-300 transition-colors space-y-4"
+              className="bg-white rounded-[10px] border border-[var(--ui-border)] p-5 shadow-2xs hover:border-[var(--ui-border-strong)] transition-colors space-y-4"
             >
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                 <div className="space-y-1">
@@ -176,16 +176,16 @@ function ApplicationsContent() {
                     <span className="font-mono text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
                       {app.referenceNumber}
                     </span>
-                    <span className="text-xs text-[#64748B] flex items-center gap-1 font-medium">
+                    <span className="text-xs text-[var(--ui-secondary)] flex items-center gap-1 font-medium">
                       <Building className="h-3 w-3" />
                       {app.authority}
                     </span>
                   </div>
-                  <h3 className="text-base font-sans font-bold text-[#0F172A]">
+                  <h3 className="text-base font-sans font-bold text-[var(--ui-text)]">
                     {app.requirementName}
                   </h3>
-                  <div className="flex items-center gap-2 text-xs text-[#64748B]">
-                    <span>Portal: <strong className="text-[#0F172A] font-semibold">{app.portalName}</strong></span>
+                  <div className="flex items-center gap-2 text-xs text-[var(--ui-secondary)]">
+                    <span>Portal: <strong className="text-[var(--ui-text)] font-semibold">{app.portalName}</strong></span>
                     <span>·</span>
                     <span>Submitted: {app.submittedDate}</span>
                     <span>·</span>
@@ -197,7 +197,7 @@ function ApplicationsContent() {
                   <span
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
                       app.status === "APPROVED"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        ? "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border-[var(--ui-sage-soft)]"
                         : app.status === "DOCUMENTS_REQUESTED"
                         ? "bg-rose-50 text-rose-700 border-rose-200"
                         : "bg-amber-50 text-amber-800 border-amber-200"
@@ -209,21 +209,21 @@ function ApplicationsContent() {
               </div>
 
               {/* Officer Remark & Pre-validation strip */}
-              <div className="bg-[#F8FAFC] rounded-lg border border-[#E2E8F0] p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="bg-[var(--ui-bg)] rounded-lg border border-[var(--ui-border)] p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-[#64748B] block">
+                  <span className="text-[10px] uppercase font-bold text-[var(--ui-secondary)] block">
                     Official Scrutiny Note
                   </span>
-                  <p className="text-[#1E293B] mt-0.5 leading-relaxed">{app.officerRemark}</p>
+                  <p className="text-[var(--ui-text)] mt-0.5 leading-relaxed">{app.officerRemark}</p>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-[11px] text-[#64748B]">
+                  <span className="text-[11px] text-[var(--ui-secondary)]">
                     Pre-validation:{" "}
                     <strong
                       className={
                         app.prevalidationStatus === "PASS"
-                          ? "text-emerald-700 font-semibold"
+                          ? "text-[var(--ui-sage)] font-semibold"
                           : "text-amber-700 font-semibold"
                       }
                     >
@@ -251,7 +251,7 @@ function ApplicationsContent() {
 
 export default function ApplicationsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F8FAFC]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[var(--ui-bg)]" />}>
       <ApplicationsContent />
     </Suspense>
   );

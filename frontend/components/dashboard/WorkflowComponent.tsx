@@ -41,20 +41,20 @@ export function WorkflowComponent({
   className = "",
 }: WorkflowComponentProps) {
   return (
-    <div className={`bg-white rounded-[28px] p-6 border border-slate-200/60 shadow-xs space-y-4 ${className}`}>
+    <div className={`bg-white rounded-[28px] p-6 border border-[var(--ui-border)]/60 shadow-xs space-y-4 ${className}`}>
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-mono font-bold text-[10px] border border-indigo-100">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] font-mono font-bold text-[10px] border border-[var(--ui-sage-soft)]">
               <GitFork className="h-3 w-3" />
               <span>{scheme}</span>
             </span>
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-xs font-semibold text-[var(--ui-secondary)]">
               {authority}
             </span>
           </div>
-          <h3 className="text-base font-bold text-slate-900 tracking-tight">
+          <h3 className="text-base font-bold text-[var(--ui-text)] tracking-tight">
             {title}
           </h3>
         </div>
@@ -64,14 +64,14 @@ export function WorkflowComponent({
             type="button"
             onClick={onViewDetails}
             aria-label="View workflow details"
-            className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200/70 flex items-center justify-center text-slate-600 transition-colors"
+            className="h-8 w-8 rounded-full bg-[var(--ui-inset)] hover:bg-[var(--ui-inset)]/70 flex items-center justify-center text-[var(--ui-secondary)] transition-colors"
           >
             <ArrowUpRight className="h-3.5 w-3.5" />
           </button>
         ) : (
           <Link
             href={`/workflows/${workflowId}`}
-            className="h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200/70 flex items-center justify-center text-slate-600 transition-colors"
+            className="h-8 w-8 rounded-full bg-[var(--ui-inset)] hover:bg-[var(--ui-inset)]/70 flex items-center justify-center text-[var(--ui-secondary)] transition-colors"
           >
             <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
@@ -100,12 +100,12 @@ export function WorkflowComponent({
       </div>
 
       {/* Bottom Status Bar */}
-      <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
-        <div className="flex items-center gap-1.5 text-slate-500 font-medium">
-          <Clock className="h-3.5 w-3.5 text-slate-400" />
+      <div className="flex items-center justify-between pt-3 border-t border-[var(--ui-border)] text-xs">
+        <div className="flex items-center gap-1.5 text-[var(--ui-secondary)] font-medium">
+          <Clock className="h-3.5 w-3.5 text-[var(--ui-muted)]" />
           <span>Stage 3 of 4: Factory Audit scheduled at Vadodara plant</span>
         </div>
-        <span className="inline-flex items-center gap-1 font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full">
+        <span className="inline-flex items-center gap-1 font-semibold text-[var(--ui-sage)] bg-[var(--ui-sage-faint)] px-2.5 py-1 rounded-full">
           <ShieldCheck className="h-3 w-3" />
           <span>{overallStatus}</span>
         </span>

@@ -2,7 +2,7 @@
 
 Authority: Milestone Section 2 (DerivedBusinessContext).
 Validates:
-- MSME scale calculation according to MSMED Act 2020 thresholds.
+- MSME scale calculation according to revised 2025 MSME classification thresholds.
 - Derived manufacturing indicators, trade indicators, environmental footprints.
 - Detection of missing variables required by published knowledge rules.
 - Isolation and serialization safety.
@@ -29,10 +29,10 @@ def _create_profile(business: Business, version: int, **variables) -> BusinessPr
 
 @pytest.mark.django_db
 def test_msme_scale_derivation(make_business, user):
-    """Test MSME classification under MSMED Act 2020:
-    - Micro: Investment <= 1 Cr AND Turnover <= 5 Cr
-    - Small: Investment <= 10 Cr AND Turnover <= 50 Cr
-    - Medium: Investment <= 50 Cr AND Turnover <= 250 Cr
+    """Test MSME classification under revised 2025 MSME classification:
+    - Micro: Investment <= 2.5 Cr AND Turnover <= 10 Cr
+    - Small: Investment <= 25 Cr AND Turnover <= 100 Cr
+    - Medium: Investment <= 125 Cr AND Turnover <= 500 Cr
     - Large: Exceeds Medium thresholds
     """
     biz = make_business(owner=user, name="Scale Testing Ltd")
@@ -71,8 +71,8 @@ def test_msme_scale_derivation(make_business, user):
     _create_profile(
         biz,
         4,
-        plant_machinery_investment=600000000,  # 60 Cr (> 50 Cr)
-        annual_turnover=3000000000,           # 300 Cr (> 250 Cr)
+        plant_machinery_investment=1300000000,  # 130 Cr (> 125 Cr)
+        annual_turnover=5100000000,           # 510 Cr (> 500 Cr)
     )
     ctx = build_business_context(biz)
     assert ctx.msme_scale == "LARGE"

@@ -54,10 +54,10 @@ from apps.onboarding.models import SmartQuestionInstance, SmartQuestionPlan
 
 logger = logging.getLogger(__name__)
 
-TARGET_QUESTIONS_COUNT = 4
+TARGET_QUESTIONS_COUNT = 5
 MIN_QUESTIONS_PER_ROUND = 0
-MAX_QUESTIONS_PER_ROUND = 4
-MAX_ROUNDS = 2
+MAX_QUESTIONS_PER_ROUND = 5
+MAX_ROUNDS = 1
 
 
 @dataclass
@@ -109,7 +109,7 @@ Your goal is to:
 1. UNDERSTAND THE BUSINESS: Analyze what the company actually manufactures, formulates, processes, stores, provides, sells, imports, exports, or operates under Indian law.
 2. DETECT CONFLICTS & DIVERGENCES: If the business name (e.g. 'BluePeak MedTech Devices') and product/activity description (e.g. 'collect waste and convert into pesticides') appear divergent or contradictory, ask a high-priority clarification question to establish the real operational scope being assessed.
 3. IDENTIFY REGULATORY DISCOVERY GAPS: Formulate DiscoveryInformationGap objects for operational facts that are currently unknown or ambiguous, where knowing the answer materially changes which official portals, gazettes, acts, approvals, registrations, or standards (e.g., CIBRC, SPCB, CDSCO, FSSAI, PESO, DGFT, BIS, etc.) must be searched.
-4. GENERATE 3 TO 4 HIGH-VALUE QUESTIONS: Convert the most valuable information gaps into clear, professional, founder-friendly questions. The interview questionnaire should be tailored to the business profile, manufacturing scale, and state jurisdiction.
+4. GENERATE ZERO TO FIVE DECISION-CRITICAL QUESTIONS: Convert the most valuable information gaps into clear, professional, founder-friendly questions. The interview questionnaire must be standardized to at most five decision-critical questions tailored to the business profile, manufacturing scale, and state jurisdiction.
 
 CANONICAL VARIABLES vs DYNAMIC FIELDS:
 You are provided with a catalog of platform canonical variables (CANONICAL_VARIABLE_CATALOG) for reference mapping.
@@ -165,6 +165,10 @@ OUTPUT FORMAT (STRICT JSON ONLY, NO CODEBLOCKS, NO MARKDOWN):
   ]
 }
 """
+
+
+from domain.intelligence.output_safety import EVIDENCE_CONSTRAINTS, validate_question_plan
+QUESTION_PLANNER_SYSTEM_PROMPT += EVIDENCE_CONSTRAINTS
 
 
 def _build_canonical_catalog() -> list[dict[str, Any]]:
@@ -1400,19 +1404,20 @@ def plan_adaptive_smart_questions(
     4. Smart Question Generation: Convert high-value gaps and decision-relevant variables into
        founder-friendly questions.
     """
-    context = build_business_context(business)
-
     # Resolve assessment if passed or latest
     assessment = None
     if assessment_id:
         assessment = business.assessments.filter(pk=assessment_id).first()
+        if assessment is None:
+            raise ValueError("Assessment does not belong to this business.")
     if assessment is None:
         assessment = business.assessments.order_by("-assessment_number").first()
+    context = build_business_context(business, profile_version=assessment.profile_version if assessment else None)
 
     # If exceeding MAX_ROUNDS, terminate with COMPLETED
     if round_number > MAX_ROUNDS:
         reason = "ROUNDS_EXHAUSTED"
-        plan = SmartQuestionPlan.objects.filter(business=business, round_number=round_number).order_by("-created_at").first()
+        plan = SmartQuestionPlan.objects.filter(business=business, assessment=assessment, round_number=round_number).order_by("-created_at").first()
         if plan:
             plan.status = "COMPLETED"
             plan.stopping_reason = reason
@@ -1463,12 +1468,18 @@ def plan_adaptive_smart_questions(
         "trade_intent": context.trade_intent,
         "msme_scale": context.msme_scale,
     }
-    for k in context.known_variable_keys:
+    for k in context.raw_variables:
         val = context.raw_variables.get(k)
         if val is not None and val != "":
             known_facts[k] = val
 
+    known_facts = {key:value for key,value in known_facts.items() if value not in (None, "", "UNKNOWN")}
     known_keys = set(known_facts.keys())
+    from .question_policy import normalize_candidate
+    starting = (assessment.step_state or {}).get("starting_profile") if assessment else None
+    suggestions = starting.get("suggestions", {}) if isinstance(starting,dict) else {}
+    if not isinstance(suggestions, dict):
+        suggestions = {}
 
     # Build reference catalog of canonical variables
     canonical_catalog = _build_canonical_catalog()
@@ -1476,7 +1487,7 @@ def plan_adaptive_smart_questions(
     # Multi-round history
     previous_rounds_answers: dict[str, Any] = {}
     if round_number > 1:
-        prev_plans = business.question_plans.filter(round_number__lt=round_number)
+        prev_plans = business.question_plans.filter(assessment=assessment, round_number__lt=round_number)
         for p in prev_plans:
             for q in p.questions.filter(is_answered=True):
                 previous_rounds_answers[q.variable_key] = q.answer_value
@@ -1524,30 +1535,35 @@ def plan_adaptive_smart_questions(
     existing_plan = SmartQuestionPlan.objects.filter(
         business=business,
         round_number=round_number,
+        assessment=assessment,
         status="ACTIVE",
     ).order_by("-created_at").first()
 
     if existing_plan and existing_plan.questions.exists():
         cached_qs = []
         for q in existing_plan.questions.all():
-            if q.is_answered or q.variable_key in known_keys or q.variable_key in context.known_variable_keys:
+            policy = normalize_candidate({"variable_key":q.variable_key, "question_text":q.question_text,
+                "reason":q.reason, "why_it_matters":q.why_it_matters, "options":q.options or [],
+                "answer_type":q.data_type}, known_facts, kb_analysis.variable_rules_map, suggestions)
+            if q.is_answered or policy is None:
                 continue
             cached_qs.append({
                 "question_id": q.question_id or f"Q_{q.variable_key}",
                 "target_variable_id": q.target_variable_id or q.variable_key,
                 "variable_key": q.variable_key,
-                "question_text": q.question_text,
-                "why_it_matters": q.why_it_matters,
-                "reason": q.reason,
+                "question_text": policy["question_text"],
+                "why_it_matters": policy["why_it_matters"],
+                "reason": policy["reason"],
                 "domains": q.domains or ["STATUTORY_COMPLIANCE"],
                 "data_type": q.data_type,
+                "unit": policy.get("unit"),
                 "options": q.options or [],
                 "priority": q.priority,
                 "is_canonical": bool(q.variable_key in VARIABLES_BY_KEY),
+                **{key:policy[key] for key in ("fact_key", "already_known", "reason_code", "source_decision_refs", "suggested_answer", "suggested_answer_origin")},
             })
         if cached_qs:
-            if batch_size is not None:
-                cached_qs = cached_qs[:batch_size]
+            cached_qs = cached_qs[:min(batch_size or 5, 5)]
             return {
                 "business_id": str(business.id),
                 "business_name": business.name,
@@ -1573,7 +1589,8 @@ def plan_adaptive_smart_questions(
         provider.is_configured
         and (batch_size is None)
         and (round_number == 1)
-        and (len(kb_analysis.ranked_variables) < 3)
+        and bool(context.missing_variable_keys)
+        and not any((rule.requirement.metadata or {}).get("complete_business_coverage") is True for rule in candidate_rules)
     )
 
     if should_call_llm:
@@ -1594,6 +1611,15 @@ def plan_adaptive_smart_questions(
 
 RELEVANT TARGET VARIABLES FOR THIS INTERVIEW:
 {json.dumps(compact_vars, indent=2)}
+These are unresolved published-rule dependencies, not a quota to fill. Ask zero to five
+questions. A different field name does not make a known fact missing. Worker count,
+total workforce and employee count share identity. Primary activity is already described
+by product_description. Ask a refinement only when a particular operation remains missing.
+Include a concrete source-search or unresolved-rule reason. Do not ask about legal approvals.
+No legal passages are supplied in this interview. Ask only about business operations;
+do not name legislation, standard identifiers, legal thresholds, mandatory status or
+statutory deadlines in questions, answer choices or explanations. These will be
+checked after source retrieval. Search topics may name candidate instruments to find.
 
 ALREADY KNOWN FACTS (DO NOT ASK ABOUT THESE):
 {json.dumps(known_facts, indent=2)}
@@ -1613,9 +1639,11 @@ MSME Scale: {context.msme_scale}"""
                     ChatMessage(role="user", content=prompt),
                 ],
                 temperature=0.1,
-                max_output_tokens=2500,
+                max_output_tokens=3200,
+                response_format={"type": "json_object"},
                 reasoning_effort="none",
                 workflow="smart_questions_planner",
+                response_validator=validate_question_plan,
                 assessment_id=str(assessment.id) if assessment else None,
                 business_id=str(business.id),
             )
@@ -1977,28 +2005,35 @@ MSME Scale: {context.msme_scale}"""
             }
         ]
 
-    if batch_size is not None:
-        # Pure sequential adaptive mode: driven strictly by unresolved rules
-        if candidate_rules and kb_analysis.unresolved_count == 0:
-            planned_items = []
-        elif candidate_rules and not kb_analysis.ranked_variables:
-            planned_items = []
-        else:
-            # Only ask decision-relevant variables for candidate rules (or discovery if no rules)
-            rule_vars = set(kb_analysis.ranked_variables)
-            relevant_items = [q for q in combined_items if not candidate_rules or q["variable_key"] in rule_vars]
-            planned_items = relevant_items[:max(1, batch_size)]
-    else:
-        # Standard adaptive mode: driven strictly by unresolved rules and genuine gaps (0-4 questions)
-        if candidate_rules and (kb_analysis.unresolved_count == 0 or not kb_analysis.ranked_variables):
-            planned_items = []
-        else:
-            rule_vars = set(kb_analysis.ranked_variables) if candidate_rules else set()
-            if rule_vars:
-                relevant_items = [q for q in combined_items if q["variable_key"] in rule_vars]
-                planned_items = relevant_items[:TARGET_QUESTIONS_COUNT]
-            else:
-                planned_items = combined_items[:TARGET_QUESTIONS_COUNT]
+    # No padding: only gaps that can change a candidate rule or source search.
+    rule_vars = set(kb_analysis.ranked_variables)
+    combined_items = [q for q in combined_items if q.get("reason") or q.get("expected_discovery_impact")]
+    normalized = []
+    identities = set()
+    for candidate in combined_items:
+        item = normalize_candidate(candidate, known_facts, kb_analysis.variable_rules_map, suggestions)
+        if item is not None and item["fact_key"] not in identities:
+            identities.add(item["fact_key"])
+            normalized.append(item)
+    combined_items = normalized
+    answered = SmartQuestionInstance.objects.filter(business=business, is_answered=True)
+    if assessment:
+        answered = answered.filter(plan__assessment=assessment)
+    budget = max(0, 5 - answered.values("variable_key").distinct().count())
+    limit = min(budget, batch_size or 5)
+    # General labour/environment rules must not consume the entire compact
+    # interview before the business-specific facts needed for source discovery.
+    discovery_items = [q for q in combined_items if q.get("domain") in {
+        "FOOD_SAFETY", "MEDICAL_DEVICES", "DIGITAL_SAAS", "ENVIRONMENTAL_SAFETY", "AGROCHEMICALS",
+    } or str(q["variable_key"]).startswith("dynamic_")]
+    discovery_items.sort(key=lambda q: int(q.get("priority", 2)))
+    reserved = discovery_items[:min(2, limit)]
+    reserved_keys = {q["variable_key"] for q in reserved}
+    planned_items = (reserved + [q for q in combined_items if q["variable_key"] not in reserved_keys])[:limit]
+    selected_keys = {q["variable_key"] for q in planned_items}
+    information_gaps_list += [{"target_field":q["variable_key"], "description":q["question_text"],
+        "reason_code":q["reason_code"], "source_decision_refs":q["source_decision_refs"], "deferred":True}
+        for q in combined_items if q["variable_key"] not in selected_keys]
 
     # Stopping condition: If no questions remain
     if not planned_items:
@@ -2007,7 +2042,7 @@ MSME Scale: {context.msme_scale}"""
             if candidate_rules and kb_analysis.unresolved_count == 0
             else ("SUFFICIENT_INFORMATION_GATHERED" if round_number > 1 else "ALL_CRITICAL_VARIABLES_SATISFIED")
         )
-        plan = SmartQuestionPlan.objects.filter(business=business, round_number=round_number).order_by("-created_at").first()
+        plan = SmartQuestionPlan.objects.filter(business=business, assessment=assessment, round_number=round_number).order_by("-created_at").first()
         if plan:
             plan.status = "COMPLETED"
             plan.stopping_reason = reason
@@ -2077,10 +2112,8 @@ MSME Scale: {context.msme_scale}"""
         if var_def and var_def.options:
             resolved_options = resolve_variable_options(var_def)
         elif raw_opts:
-            resolved_options = [
-                {"value": str(opt), "label": str(opt)}
-                for opt in raw_opts
-            ]
+            resolved_options = [{"value":str(opt.get("value",opt.get("label",""))),"label":str(opt.get("label",opt.get("value","")))}
+                                if isinstance(opt,dict) else {"value":str(opt),"label":str(opt)} for opt in raw_opts]
         else:
             resolved_options = []
 
@@ -2112,6 +2145,7 @@ MSME Scale: {context.msme_scale}"""
         )
 
         output_questions.append({
+            **{key:item[key] for key in ("fact_key", "already_known", "reason_code", "source_decision_refs", "suggested_answer", "suggested_answer_origin")},
             "id": str(q_inst.id),
             "question_id": q_inst.question_id,
             "code": var_def.code if var_def else "DYN",
@@ -2173,30 +2207,19 @@ def get_next_adaptive_question(
     assessment_id: str | None = None,
 ) -> dict[str, Any] | None:
     """Sequential adaptive questioning: returns the single highest-impact unresolved question."""
-    active_plan = SmartQuestionPlan.objects.filter(
+    plans = SmartQuestionPlan.objects.filter(
         business=business,
         status="ACTIVE",
-    ).order_by("-created_at").first()
+    )
+    if assessment_id:
+        plans = plans.filter(assessment_id=assessment_id)
+    active_plan = plans.order_by("-created_at").first()
 
-    if active_plan:
-        unanswered_instance = active_plan.questions.filter(is_answered=False).first()
-        if unanswered_instance:
-            return {
-                "question_id": unanswered_instance.question_id or f"Q_{unanswered_instance.variable_key}",
-                "target_variable_id": unanswered_instance.target_variable_id or unanswered_instance.variable_key,
-                "variable_key": unanswered_instance.variable_key,
-                "question_text": unanswered_instance.question_text,
-                "why_it_matters": unanswered_instance.why_it_matters,
-                "data_type": unanswered_instance.data_type,
-                "options": unanswered_instance.options or [],
-                "domains": unanswered_instance.domains or ["STATUTORY_COMPLIANCE"],
-                "is_canonical": bool(unanswered_instance.variable_key in VARIABLES_BY_KEY),
-                "reason": unanswered_instance.reason,
-            }
-
+    # Reuse the same fact/provenance projection as batch intake. A raw cached
+    # instance would otherwise bypass known-fact and source-grounding guards.
     plan_result = plan_adaptive_smart_questions(
         business,
-        round_number=1,
+        round_number=active_plan.round_number if active_plan else 1,
         assessment_id=assessment_id,
         batch_size=1,
     )

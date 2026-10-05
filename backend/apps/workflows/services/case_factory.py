@@ -26,6 +26,7 @@ from apps.applicability.models import DecisionResult, DecisionRun
 from apps.businesses.models import Assessment, Business
 from apps.documents.models import DocumentRequirement
 from apps.knowledge.models import RequirementDefinition
+from apps.requirements.presentation import decision_presentation, standard_mandatory_status
 from apps.workflows.models import (
     ComplianceCase,
     WorkflowEvent,
@@ -46,13 +47,17 @@ def generate_compliance_cases_for_business(
 
     for every APPLICABLE requirement.
     """
+    if assessment and assessment.business_id != business.id:
+        raise ValueError("Assessment does not belong to this business.")
+    # Serialize generation within the business; retries reuse only this snapshot.
+    Business.objects.select_for_update().get(pk=business.pk)
     latest_run = None
     if assessment and assessment.decision_run:
         latest_run = assessment.decision_run
     elif assessment:
         latest_run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
 
-    if latest_run is None:
+    if latest_run is None and assessment is None:
         latest_run = (
             DecisionRun.objects.filter(business=business)
             .prefetch_related("results")
@@ -63,6 +68,9 @@ def generate_compliance_cases_for_business(
     if latest_run is None:
         logger.info("No decision runs found for business %s; skipping case creation.", business.id)
         return []
+    if (latest_run.business_id != business.id
+            or (assessment and latest_run.profile_version_id != assessment.profile_version_id)):
+        raise ValueError("The decision run does not match this business assessment snapshot.")
 
     # Filter applicable results
     applicable_results = latest_run.results.filter(
@@ -75,16 +83,23 @@ def generate_compliance_cases_for_business(
     cases: list[ComplianceCase] = []
 
     for res in applicable_results:
+        req_def = RequirementDefinition.objects.filter(requirement_id=res.requirement_id).first()
+        if decision_presentation(res, req_def)[0] not in {
+                ApplicabilityStatus.APPLICABLE, ApplicabilityStatus.NEEDS_INFORMATION}:
+            # Preserve recorded history, but do not start a legal workflow from
+            # an old broad standard match that has no typed product predicate.
+            continue
         existing_case = ComplianceCase.objects.filter(
             business=business,
             requirement_id_code=res.requirement_id,
+            assessment=assessment,
+            profile_version=latest_run.profile_version,
         ).first()
 
         if existing_case:
             cases.append(existing_case)
             continue
 
-        req_def = RequirementDefinition.objects.filter(requirement_id=res.requirement_id).first()
         case_seq = ComplianceCase.objects.count() + 10001
         case_number = f"CASE-{case_seq}"
 
@@ -107,6 +122,11 @@ def generate_compliance_cases_for_business(
                 "requirement_name": res.requirement_name,
                 "authority": req_def.authority if req_def else "",
                 "category": req_def.category if req_def else "",
+                "assessment_id": str(assessment.id) if assessment else None,
+                "applicability_status": res.status,
+                "is_mandatory": (standard_mandatory_status(res, req_def)
+                                 if req_def and req_def.category.strip().upper() == "STANDARD"
+                                 else res.status == ApplicabilityStatus.APPLICABLE),
             },
         )
 
@@ -164,6 +184,9 @@ def _populate_case_document_requirements(
 ) -> None:
     """Derive initial DocumentRequirement rows from requirement definition metadata."""
     doc_specs: list[dict[str, Any]] = []
+    applicability_confirmed = case.metadata.get("applicability_status") == ApplicabilityStatus.APPLICABLE
+    if req_def and req_def.category.strip().upper() == "STANDARD":
+        applicability_confirmed = applicability_confirmed and case.metadata.get("is_mandatory") is True
 
     if req_def and req_def.metadata:
         raw_docs = req_def.metadata.get("documents") or req_def.metadata.get("required_documents") or []
@@ -172,39 +195,29 @@ def _populate_case_document_requirements(
                 doc_specs.append({
                     "code": f"DOC_{case.requirement_id_code}_{idx}",
                     "name": doc,
-                    "description": f"Mandatory evidence for {req_def.name}.",
-                    "required": True,
+                    "description": (f"Recorded filing document for {req_def.name}."
+                                    if applicability_confirmed else "Preparation checklist; applicability still needs confirmation."),
+                    "required": applicability_confirmed,
                 })
             elif isinstance(doc, dict):
                 doc_specs.append({
                     "code": doc.get("code") or f"DOC_{case.requirement_id_code}_{idx}",
                     "name": doc.get("name") or doc.get("title") or f"Statutory Document {idx}",
                     "description": doc.get("description") or "",
-                    "required": doc.get("required", True),
+                    "required": bool(doc.get("required", True) and applicability_confirmed),
                 })
 
-    # Default statutory document requirements if none specified in knowledge pack
+    # Missing knowledge does not authorize invented statutory filing documents.
+    # Keep one explicitly optional preparation aid for the case instead.
     if not doc_specs:
         req_name = req_def.name if req_def else case.requirement_id_code
-        auth = req_def.authority if req_def else "Regulatory Authority"
         doc_specs = [
             {
-                "code": f"DOC_{case.requirement_id_code}_IDENTITY",
-                "name": f"Identity Proof & Entity Registration ({auth})",
-                "description": f"Official proof of incorporation or business registration for {req_name}.",
-                "required": True,
-            },
-            {
-                "code": f"DOC_{case.requirement_id_code}_PREMISES",
-                "name": "Premises Proof & Site Layout Blueprint",
-                "description": "Proof of possession of premises (Lease agreement/ownership deed) and layout plan.",
-                "required": True,
-            },
-            {
-                "code": f"DOC_{case.requirement_id_code}_UNDERTAKING",
-                "name": "Statutory Declaration & Compliance Undertaking",
-                "description": f"Authorized signatory declaration conforming to {auth} regulatory guidelines.",
-                "required": True,
+                "code": f"DOC_{case.requirement_id_code}_PLANNING",
+                "name": f"Business information checklist for {req_name}",
+                "description": "Optional preparation aid. The source does not record a filing checklist; confirm documents with the authority.",
+                "required": False,
+                "configuration": {"result_origin": "PLANNING_CHECKLIST", "checklist_source": "NOT_RECORDED"},
             },
         ]
 
@@ -218,6 +231,6 @@ def _populate_case_document_requirements(
                 "description": spec.get("description", ""),
                 "required": spec.get("required", True),
                 "status_code": DocumentStatus.NOT_UPLOADED,
-                "configuration": {},
+                "configuration": spec.get("configuration", {}),
             },
         )

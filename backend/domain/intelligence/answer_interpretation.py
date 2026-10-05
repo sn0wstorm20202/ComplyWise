@@ -33,7 +33,7 @@ from domain.intelligence.orchestration import (
     StageInputInvalid,
     StructuredOutputInvalid,
 )
-from domain.intelligence.questionnaire import QuestionAnswerType, SmartQuestion
+from domain.intelligence.question_types import QuestionAnswerType, SmartQuestion
 
 logger = logging.getLogger(__name__)
 
@@ -174,6 +174,9 @@ class AnswerInterpreter:
                 alt_qid = f"Q{int(digits):02d}" if digits.isdigit() else qid
                 inst = SmartQuestionInstance.objects.filter(plan=plan, question_id=alt_qid).first()
 
+        if not matched_q:
+            raise StageInputInvalid("This question does not belong to the assessment.")
+        qid = matched_q["question_id"]
         answer_type = (inst.data_type if inst and inst.data_type else None) or (matched_q.get("answer_type") if matched_q else "TEXT")
         options = (inst.options if inst and inst.options else None) or (matched_q.get("options") if matched_q else [])
 
@@ -189,6 +192,13 @@ class AnswerInterpreter:
                 inst.status = "ANSWERED"
                 inst.save(update_fields=["is_answered", "answer_value", "status"])
 
+        variable_key = matched_q.get("variable_key") or (inst.variable_key if inst else None)
+        if variable_key:
+            from apps.onboarding.services import save_smart_question_answers
+            profile = save_smart_question_answers(business=run.assessment.business, answers={variable_key: normalized_value}, assessment_id=str(run.assessment.pk))
+            run.assessment.profile_version = profile
+            run.assessment.save(update_fields=["profile_version", "updated_at"])
+
         # Update run state answers
         state = dict(run.stage_metadata)
         answers = dict(state.get("answers") or {})
@@ -198,7 +208,7 @@ class AnswerInterpreter:
         run.save()
 
         # Calculate progress
-        total_questions = len(q_meta) or 15
+        total_questions = len(q_meta)
         answered_count = len(answers)
         is_complete = answered_count >= total_questions
 

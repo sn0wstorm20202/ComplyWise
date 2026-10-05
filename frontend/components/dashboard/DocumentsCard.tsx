@@ -4,7 +4,7 @@ import React from "react";
 import { FileText, ArrowUpRight } from "lucide-react";
 
 interface DocumentsCardProps {
-  documentsData?: {
+  documentsData: {
     totalCount: number;
     onTrackCount: number;
     changeThisWeek: string;
@@ -15,24 +15,20 @@ interface DocumentsCardProps {
 }
 
 export function DocumentsCard({
-  documentsData = {
-    totalCount: 11,
-    onTrackCount: 11,
-    changeThisWeek: "3 this week",
-    verifiedPercentage: 72,
-    underReviewPercentage: 28,
-  },
+  documentsData,
   onOpen,
 }: DocumentsCardProps) {
   return (
     <div
       onClick={onOpen}
-      className="bg-white rounded-[20px] p-5 sm:p-6 border border-[#E5E7EB] shadow-sm flex flex-col justify-between h-full min-h-[270px] cursor-pointer group hover:border-[#CBD5E1] transition-all select-none w-full"
+      role="button" tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen?.(); } }}
+      className="bg-white rounded-[20px] p-5 sm:p-6 border border-[var(--ui-border)] shadow-sm flex flex-col justify-between h-full min-h-[270px] cursor-pointer group hover:border-[var(--ui-border-strong)] transition-all select-none w-full"
     >
       {/* Header */}
       <div>
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[#111827] group-hover:text-indigo-600 transition-colors">
+          <h3 className="text-sm font-semibold text-[var(--ui-text)] group-hover:text-[var(--ui-sage)] transition-colors">
             Documents
           </h3>
           <button
@@ -42,7 +38,7 @@ export function DocumentsCard({
               if (onOpen) onOpen();
             }}
             aria-label="View documents"
-            className="h-6 w-6 rounded-[6px] bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#111827] transition-colors"
+            className="h-6 w-6 rounded-[6px] bg-[var(--ui-bg)] hover:bg-[var(--ui-inset)] border border-[var(--ui-border)] flex items-center justify-center text-[var(--ui-secondary)] hover:text-[var(--ui-text)] transition-colors"
           >
             <FileText className="h-3 w-3" />
           </button>
@@ -50,14 +46,14 @@ export function DocumentsCard({
 
         {/* Metric Summary */}
         <div className="mt-2.5">
-          <div className="text-xs font-normal text-[#9CA3AF]">Total Documents</div>
+          <div className="text-xs font-normal text-[var(--ui-muted)]">Uploaded documents</div>
           <div className="flex items-baseline gap-2 mt-0.5">
-            <span className="text-3xl sm:text-4xl font-bold text-[#111827] tracking-tight leading-none">
+            <span className="text-3xl sm:text-4xl font-bold text-[var(--ui-text)] tracking-tight leading-none">
               {documentsData.totalCount}
             </span>
-            <span className="text-xs text-[#9CA3AF]">on track</span>
+            <span className="text-xs text-[var(--ui-muted)]">uploaded</span>
           </div>
-          <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-[#059669]">
+          <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-[var(--ui-sage)]">
             <ArrowUpRight className="h-3.5 w-3.5" />
             <span>{documentsData.changeThisWeek}</span>
           </div>
@@ -68,28 +64,28 @@ export function DocumentsCard({
       <div className="space-y-3 pt-2">
         {/* Verified Row */}
         <div className="flex items-center justify-between gap-2.5 text-xs">
-          <span className="text-[#6B7280] text-[11px] w-20 shrink-0">Verified</span>
-          <div className="flex-1 h-3 rounded-full bg-[#F1F5F9] p-0.5 overflow-hidden">
+          <span className="text-[var(--ui-secondary)] text-[11px] w-20 shrink-0">Approved</span>
+          <div className="flex-1 h-3 rounded-full bg-[var(--ui-inset)] p-0.5 overflow-hidden">
             <div
               className="h-full rounded-full bg-[#A7F3D0] transition-all duration-500"
               style={{ width: `${documentsData.verifiedPercentage}%` }}
             />
           </div>
-          <span className="text-[#111827] font-semibold text-[11px] w-7 text-right">
+          <span className="text-[var(--ui-text)] font-semibold text-[11px] w-7 text-right">
             {documentsData.verifiedPercentage}%
           </span>
         </div>
 
-        {/* Under Review Row */}
+        {/* Awaiting review Row */}
         <div className="flex items-center justify-between gap-2.5 text-xs">
-          <span className="text-[#6B7280] text-[11px] w-20 shrink-0">Under Review</span>
-          <div className="flex-1 h-3 rounded-full bg-[#F1F5F9] p-0.5 overflow-hidden">
+          <span className="text-[var(--ui-secondary)] text-[11px] w-20 shrink-0">Awaiting review</span>
+          <div className="flex-1 h-3 rounded-full bg-[var(--ui-inset)] p-0.5 overflow-hidden">
             <div
-              className="h-full rounded-full bg-[#E2E8F0] transition-all duration-500"
+              className="h-full rounded-full bg-[var(--ui-border)] transition-all duration-500"
               style={{ width: `${documentsData.underReviewPercentage}%` }}
             />
           </div>
-          <span className="text-[#111827] font-semibold text-[11px] w-7 text-right">
+          <span className="text-[var(--ui-text)] font-semibold text-[11px] w-7 text-right">
             {documentsData.underReviewPercentage}%
           </span>
         </div>

@@ -1,0 +1,74 @@
+2026-10-04 17:51:15,225 INFO domain.intelligence.orchestration Created new AssessmentRun ee5d95e9-8c9d-4c9e-be91-7c934886ecec for business 7eed6e8b-a3d6-42cf-bc3e-d5d2b3696c13 (strategy LLM_FIRST, correlation 30d5e53c-14a4-4794-b946-1faa068ffffb)
+2026-10-04 17:51:18,497 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:768, cached:0, out:718, reason:0) cost=$0.001015 latency=2848.1ms provider=gemini slot=1 fallback=False failure=None
+2026-10-04 17:51:23,114 INFO domain.providers.telemetry LLM Telemetry: workflow=smart_questions_planner model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1767, cached:0, out:996, reason:0) cost=$0.001549 latency=3937.1ms provider=gemini slot=2 fallback=False failure=None
+2026-10-04 17:51:23,444 INFO domain.intelligence.questionnaire Persisted compact questions in metadata for assessment run ee5d95e9-8c9d-4c9e-be91-7c934886ecec
+2026-10-04 17:51:23,650 INFO domain.intelligence.questionnaire Persisted compact questions to SmartQuestionPlan for assessment run ee5d95e9-8c9d-4c9e-be91-7c934886ecec
+2026-10-04 17:51:27,853 INFO domain.intelligence.regulatory_retrieval ComplianceRAG retrieval EMPTY: 0 passages, 907ms
+2026-10-04 17:51:49,620 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:51:49,621 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 17:51:49,621 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 17:51:50,047 INFO httpx HTTP Request: GET https://www.fssai.gov.in/docs/knowledge-hub/manuals/7729566bb3f339ffbdFSO%20Manual%20final-8%20web.pdf?csrt=6424801248599847411 "HTTP/1.1 200 OK"
+2026-10-04 17:51:53,302 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 17:51:53,302 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 17:51:53,302 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 17:51:53,305 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 3.68s \u2502
+\u2502 requests_finished_per_minute  \u2502 16    \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 3.68s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 3.68s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:51:53,643 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:51:53,643 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 17:51:53,643 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 17:51:53,883 INFO httpx HTTP Request: GET https://dste.py.gov.in/SEIAA/pdf/Sector/Industrial_Estates.pdf "HTTP/2 200 OK"
+2026-10-04 17:51:54,562 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 17:51:54,563 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 17:51:54,563 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 17:51:54,565 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1       \u2502
+\u2502 requests_failed               \u2502 0       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 None    \u2502
+\u2502 request_avg_finished_duration \u2502 918.8ms \u2502
+\u2502 requests_finished_per_minute  \u2502 65      \u2502
+\u2502 requests_failed_per_minute    \u2502 0       \u2502
+\u2502 request_total_duration        \u2502 918.8ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 921.1ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 17:52:09,963 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=9262.0ms provider=gemini slot=3 fallback=False failure=malformed_response
+2026-10-04 17:52:19,273 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=9310.4ms provider=gemini slot=1 fallback=True failure=malformed_response
+2026-10-04 17:52:29,680 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:6927, cached:0, out:2867, reason:0) cost=$0.004826 latency=10406.8ms provider=gemini slot=2 fallback=True failure=None
+Safe journey report written; temporary QA account/business removed.

@@ -97,6 +97,10 @@ You must output a strictly valid JSON object conforming exactly to this schema:
 Output ONLY the JSON object. Do not include markdown fences or preamble."""
 
 
+from domain.intelligence.output_safety import EVIDENCE_CONSTRAINTS
+BUSINESS_UNDERSTANDING_SYSTEM_PROMPT += EVIDENCE_CONSTRAINTS
+
+
 @dataclass
 class BusinessUnderstandingResult:
     business_type: str
@@ -493,11 +497,9 @@ def generate_emergency_business_understanding(context: OrchestrationContext) -> 
     market = "DOMESTIC_AND_EXPORT" if (is_export and not is_import) else ("EXPORT" if is_export else "DOMESTIC")
     mfg_type = "MANUFACTURING" if is_mfg else ("TRADING" if (is_export or is_import) else "SERVICE")
 
-    likely_domains = [
-        "State Pollution Control Board (CTE/CTO)",
-        "Factories Act & Industrial Safety",
-        "Shops & Commercial Establishments",
-    ]
+    likely_domains = ["Establishment requirements for the declared operations"]
+    if is_mfg:
+        likely_domains.extend(["Industrial safety requirements to review", "Environmental requirements to review"])
     if is_export or is_import:
         likely_domains.append("Directorate General of Foreign Trade (IEC & Customs)")
     if any(w in desc for w in ["food", "dairy", "beverage", "snack"]):
@@ -517,26 +519,17 @@ def generate_emergency_business_understanding(context: OrchestrationContext) -> 
         manufacturing_or_service=mfg_type,
         market=market,
         geography={
-            "state": context.geography.get("state") or "Maharashtra",
-            "district": context.geography.get("district") or "Pune",
-            "industrial_zone_status": context.geography.get("industrial_zone_status") or "APPROVED_ESTATE",
+            "state": context.geography.get("state") or "Not specified",
+            "district": context.geography.get("district") or "Not specified",
+            "industrial_zone_status": context.geography.get("industrial_zone_status") or "Not specified",
         },
         trade_intent=trade_intent,
-        operational_characteristics=[
-            "Industrial power connectivity required",
-            "Workforce scaling planned",
-            "Statutory environmental clearances applicable",
-        ],
+        operational_characteristics=[f"{key.replace('_', ' ')}: {value}" for key,value in context.operational_facts.items() if value is not None],
         likely_regulatory_domains=likely_domains,
-        important_unknowns=[
-            "Sanctioned electrical load (HP/kVA)",
-            "Total workforce and contract labor count",
-            "Effluent and emission generation parameters",
-            "Plant & machinery capital investment tier",
-        ],
+        important_unknowns=[key.replace('_', ' ') for key,value in context.operational_facts.items() if value is None],
         normalized_facts=[
-            {"key": "is_manufacturing", "value": is_mfg, "source": "LLM_BUSINESS_UNDERSTANDING", "confidence": "INFERRED"},
-            {"key": "trade_intent", "value": trade_intent, "source": "LLM_BUSINESS_UNDERSTANDING", "confidence": "INFERRED"},
+            {"key": "is_manufacturing", "value": is_mfg, "source": "LOCAL_DESCRIPTION_HEURISTIC", "confidence": "INFERRED"},
+            {"key": "trade_intent", "value": trade_intent, "source": "LOCAL_DESCRIPTION_HEURISTIC", "confidence": "INFERRED"},
         ],
         secondary_activities=["Cross-border trade"] if (is_export or is_import) else ["Domestic distribution"],
         canonical_operational_facts={},
@@ -567,8 +560,8 @@ class BusinessUnderstandingEngine:
             f"Business Name: {context.business_name}",
             f"Jurisdiction State: {context.geography.get('state_name') or context.geography.get('state') or 'India'}",
             f"District: {context.geography.get('district') or 'Not specified'}",
-            f"Legal Constitution: {context.normalized_facts.get('legal_constitution') or 'Private Limited'}",
-            f"Business Description / Activity: {context.raw_business_description or context.product or 'Industrial manufacturing and commercial operations'}",
+            f"Legal Constitution: {context.normalized_facts.get('legal_constitution') or 'Not specified'}",
+            f"Business Description / Activity: {context.raw_business_description or context.product or 'Not provided'}",
         ]
         if context.financial_facts.get("annual_turnover"):
             user_prompt_parts.append(f"Declared Turnover: {context.financial_facts['annual_turnover']} INR")
@@ -580,6 +573,12 @@ class BusinessUnderstandingEngine:
             ChatMessage(role="user", content="\n".join(user_prompt_parts)),
         ]
 
+        def validate_response(text):
+            try:
+                return validate_business_understanding_schema(json.loads(_clean_json_text(text)))
+            except StructuredOutputInvalid as exc:
+                raise ValueError("Business understanding schema is invalid.") from exc
+
         try:
             provider = self.get_provider()
             response = provider.complete(
@@ -587,6 +586,7 @@ class BusinessUnderstandingEngine:
                 temperature=0.1,
                 max_output_tokens=1500,
                 response_format={"type": "json_object"},
+                response_validator=validate_response,
                 workflow="business_understanding",
                 assessment_id=assessment_id,
                 business_id=context.business_id,
@@ -595,7 +595,7 @@ class BusinessUnderstandingEngine:
             try:
                 parsed_json = json.loads(raw_text)
             except json.JSONDecodeError as json_err:
-                logger.warning("LLM returned non-JSON business understanding: %s", raw_text)
+                logger.warning("Business understanding returned malformed JSON.")
                 raise StructuredOutputInvalid(f"Malformed JSON from business understanding provider: {json_err}")
 
             result = validate_business_understanding_schema(parsed_json)

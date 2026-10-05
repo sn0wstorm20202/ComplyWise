@@ -1,167 +1,88 @@
 "use client";
+import Overlay from "@/components/product/Overlay";
 
-import React, { useEffect, useState, useCallback, Suspense } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import { api } from "@/lib/api";
-import type {
-  AdminCasesSummary,
-  AdminScrutinyData,
-  Business,
-  ComplianceCaseDetail,
-  ComplianceCaseItem,
-} from "@/types";
-
-// Modular Admin Tab Components
-import { AdminOverviewTab } from "@/components/admin/AdminOverviewTab";
-import { AdminComplianceScrutinyTab } from "@/components/admin/AdminComplianceScrutinyTab";
-import { AdminSchemesTab } from "@/components/admin/AdminSchemesTab";
-import { AdminStandardsTab } from "@/components/admin/AdminStandardsTab";
-import { AdminDocumentsTab } from "@/components/admin/AdminDocumentsTab";
-import { AdminWorkflowsTab } from "@/components/admin/AdminWorkflowsTab";
-import { AdminCalendarTab } from "@/components/admin/AdminCalendarTab";
-import { AdminFactProvenanceTab } from "@/components/admin/AdminFactProvenanceTab";
-
+import type { AdminCasesSummary, Business, ComplianceCaseDetail, ComplianceCaseItem } from "@/types";
 import {
   AlertCircle,
   AlertTriangle,
   ArrowRight,
   Building2,
-  Calendar,
+  Check,
   CheckCircle2,
   Clock,
+  Copy,
   ExternalLink,
   Eye,
   FileCheck,
   FileText,
-  GitPullRequest,
+  Filter,
   Layers,
+  Mail,
   MapPin,
   RefreshCw,
   Search,
   Shield,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
   User,
+  UserCheck,
   XCircle,
-  Award,
-  Gift,
-  Database,
+  Zap,
 } from "lucide-react";
 
-export type AdminTabType =
-  | "overview"
-  | "compliance"
-  | "schemes"
-  | "standards"
-  | "documents"
-  | "workflows"
-  | "calendar"
-  | "provenance";
-
-function AdminControlRoomContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const businessId = searchParams?.get("business_id") || null;
-  const assessmentId = searchParams?.get("assessment_id") || null;
-  const currentTab = (searchParams?.get("tab") as AdminTabType) || "overview";
-
-  // State when no business is selected (Global Control Room)
-  const [globalLoading, setGlobalLoading] = useState(true);
-  const [globalError, setGlobalError] = useState<string | null>(null);
+export default function AdminControlRoomPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<AdminCasesSummary | null>(null);
   const [queueCases, setQueueCases] = useState<ComplianceCaseItem[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [businessSearchQuery, setBusinessSearchQuery] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [priorityFilter, setPriorityFilter] = useState<string>("ALL");
 
-  // Quick Review Modal State for Global Queue
+  // Quick Review Modal State
   const [selectedCase, setSelectedCase] = useState<ComplianceCaseDetail | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [reviewAction, setReviewAction] = useState<"APPROVE" | "QUERY" | "REJECT">("APPROVE");
   const [reviewComments, setReviewComments] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
 
-  // State when a business IS selected (Business Scrutiny Cockpit)
-  const [scrutinyLoading, setScrutinyLoading] = useState(false);
-  const [scrutinyError, setScrutinyError] = useState<string | null>(null);
-  const [scrutinyData, setScrutinyData] = useState<AdminScrutinyData | null>(null);
-
-  // Load global data if no business is selected
   useEffect(() => {
-    if (!businessId) {
-      loadGlobalData();
-    }
-  }, [businessId]);
+    loadControlRoomData();
+  }, []);
 
-  // Load scrutiny data when businessId or assessmentId changes
-  useEffect(() => {
-    if (businessId) {
-      loadScrutinyData(businessId, assessmentId);
-    }
-  }, [businessId, assessmentId]);
-
-  async function loadGlobalData() {
-    setGlobalLoading(true);
-    setGlobalError(null);
+  async function loadControlRoomData() {
+    setLoading(true);
+    setError(null);
     try {
       const [sumRes, queueRes, bizRes] = await Promise.all([
-        api.cases.getAdminSummary().catch(() => null),
-        api.cases.getAdminReviewQueue().catch(() => ({ queue_count: 0, cases: [] })),
+        api.cases.getAdminSummary(),
+        api.cases.getAdminReviewQueue(),
         api.businesses.getAdminBusinesses().catch(() => ({ total_count: 0, businesses: [] })),
       ]);
       setSummary(sumRes);
       setQueueCases(queueRes.cases || []);
       setBusinesses(bizRes.businesses || []);
     } catch (err: any) {
-      setGlobalError(err?.message || "Failed to load admin control room data.");
+      setError(err?.message || "Failed to load admin compliance control room.");
     } finally {
-      setGlobalLoading(false);
+      setLoading(false);
     }
   }
 
-  const loadScrutinyData = useCallback(async (bId: string, aId?: string | null) => {
-    setScrutinyLoading(true);
-    setScrutinyError(null);
-    try {
-      const data = await api.businesses.getAdminBusinessOverview(bId, aId || undefined);
-      setScrutinyData(data);
-    } catch (err: any) {
-      setScrutinyError(
-        err?.message || "Failed to retrieve compliance scrutiny data for this business."
-      );
-    } finally {
-      setScrutinyLoading(false);
-    }
-  }, []);
-
-  function handleTabChange(newTab: string) {
-    const params = new URLSearchParams(searchParams?.toString() || "");
-    params.set("tab", newTab);
-    router.push(`/admin?${params.toString()}`);
-  }
-
-  function handleSelectBusiness(bId: string | null) {
-    if (bId) {
-      router.push(`/admin?business_id=${bId}&tab=overview`);
-    } else {
-      router.push("/admin");
-    }
-  }
-
-  function handleSelectAssessment(aId: string | null) {
-    if (!businessId) return;
-    const params = new URLSearchParams(searchParams?.toString() || "");
-    if (aId) {
-      params.set("assessment_id", aId);
-    } else {
-      params.delete("assessment_id");
-    }
-    router.push(`/admin?${params.toString()}`);
+  function copyBusinessId(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   }
 
   async function openQuickReviewModal(caseId: string) {
@@ -172,370 +93,602 @@ function AdminControlRoomContent() {
       setReviewAction("APPROVE");
       setReviewComments("");
     } catch (err: any) {
-      alert(err?.message || "Could not retrieve case details.");
+      setError(err?.message || "Could not retrieve case details.");
     } finally {
       setModalLoading(false);
     }
   }
 
-  async function handleExecuteGlobalReview(e: React.FormEvent) {
+  async function handleExecuteReview(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedCase) return;
+
+    const sub = selectedCase.document_requirements.find((d) => d.latest_submission)?.latest_submission;
+    if (!sub && reviewAction === "APPROVE") {
+      alert("No document submission found to approve on this case.");
+      return;
+    }
 
     setSubmittingReview(true);
     try {
       if (reviewAction === "APPROVE") {
-        await api.cases.adminApprove(selectedCase.id, reviewComments);
+        await api.cases.adminApprove(selectedCase.id, reviewComments, sub?.id);
       } else if (reviewAction === "QUERY") {
-        await api.cases.adminQuery(
-          selectedCase.id,
-          reviewComments || "Discrepancy identified in statutory filing.",
-          "Please re-upload compliant documentation."
-        );
+        await api.cases.adminQuery(selectedCase.id, reviewComments, "Please upload corrected document.", sub?.id);
       } else {
-        await api.cases.adminReject(selectedCase.id, reviewComments || "Filing rejected.");
+        await api.cases.adminReject(selectedCase.id, reviewComments, sub?.id);
       }
-      setSelectedCase(null);
-      loadGlobalData();
+
+      setActionSuccessMsg(`Review successfully executed: ${reviewAction}.`);
+      await loadControlRoomData();
+      setTimeout(() => {
+        setSelectedCase(null);
+        setActionSuccessMsg(null);
+      }, 1200);
     } catch (err: any) {
-      alert(err?.message || "Failed to commit review action.");
+      setError(err?.message || "Failed to execute review action.");
     } finally {
       setSubmittingReview(false);
     }
   }
 
-  // Filtered enterprises for global directory
-  const filteredBusinesses = businesses.filter((b) => {
-    const q = businessSearchQuery.toLowerCase();
-    return (
-      !businessSearchQuery ||
-      b.name.toLowerCase().includes(q) ||
-      (b.state && b.state.toLowerCase().includes(q)) ||
-      (b.owner_email && b.owner_email.toLowerCase().includes(q))
-    );
+  const filteredQueue = queueCases.filter((c) => {
+    // Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch =
+        c.requirement_name.toLowerCase().includes(q) ||
+        c.case_number.toLowerCase().includes(q) ||
+        (c.business_name && c.business_name.toLowerCase().includes(q)) ||
+        c.authority.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+    }
+
+    // Status filter
+    if (statusFilter !== "ALL" && c.status_code !== statusFilter) {
+      return false;
+    }
+
+    // Priority filter
+    if (priorityFilter !== "ALL" && c.priority !== priorityFilter) {
+      return false;
+    }
+
+    return true;
   });
 
   return (
-    <AdminShell
-      activeBusinessId={businessId}
-      activeAssessmentId={assessmentId}
-      currentBusinessName={scrutinyData?.business.name}
-      assessments={scrutinyData?.assessments || []}
-      onSelectBusiness={handleSelectBusiness}
-      onSelectAssessment={handleSelectAssessment}
-    >
-      {/* ------------------------------------------------------------- */}
-      {/* MODE A: NO BUSINESS SELECTED -> GLOBAL CONTROL ROOM HOME      */}
-      {/* ------------------------------------------------------------- */}
-      {!businessId ? (
-        <div className="space-y-6">
-          {/* Welcome & Global Banner */}
-          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <ShieldCheck className="w-3 h-3 mr-1" />
-                    System Operational
-                  </span>
-                  <span className="text-xs text-slate-500 font-mono">
-                    Deterministic Compliance Intelligence
-                  </span>
-                </div>
-                <h1 className="text-2xl font-bold text-[#0F172A]">
-                  Admin Scrutiny &amp; Governance Control Room
-                </h1>
-                <p className="text-sm text-slate-600 mt-1 max-w-3xl">
-                  Select a business from the directory below or use the search bar above to launch
-                  the 360° Compliance Scrutiny Cockpit, verify cryptographic Engine 2 CIRs, and
-                  record statutory dispositions.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={loadGlobalData}
-                  disabled={globalLoading}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${globalLoading ? "animate-spin" : ""}`} />
-                  <span>Refresh Queue</span>
-                </button>
-              </div>
+    <AdminShell activeTab="dashboard">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Control Room Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)]/70 dark:text-[var(--ui-sage)]">
+                Compliance Officer Portal
+              </span>
+              <span className="text-xs text-muted-foreground font-mono">Control Room &bull; Live Operations</span>
             </div>
-
-            {/* Global Metric Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mt-6 pt-5 border-t border-slate-100">
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                  Total Enterprises
-                </div>
-                <div className="text-2xl font-bold text-[#0F172A] mt-1">{businesses.length}</div>
-                <div className="text-xs text-slate-500 mt-0.5">Enrolled businesses</div>
-              </div>
-
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                <div className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider">
-                  Pending Scrutiny
-                </div>
-                <div className="text-2xl font-bold text-amber-700 mt-1">
-                  {summary?.pending_review_count ?? queueCases.length}
-                </div>
-                <div className="text-xs text-amber-700/80 mt-0.5">Awaiting officer review</div>
-              </div>
-
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                <div className="text-[11px] font-semibold text-blue-700 uppercase tracking-wider">
-                  Total Workflow Cases
-                </div>
-                <div className="text-2xl font-bold text-blue-700 mt-1">
-                  {summary?.total_cases ?? 0}
-                </div>
-                <div className="text-xs text-blue-700/80 mt-0.5">Across all tenants</div>
-              </div>
-
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-                <div className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">
-                  Completed / Approved
-                </div>
-                <div className="text-2xl font-bold text-emerald-700 mt-1">
-                  {summary?.approved_count ?? 0}
-                </div>
-                <div className="text-xs text-emerald-700/80 mt-0.5">Statutory approvals</div>
-              </div>
-            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground mt-1">
+              Compliance review
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
+              Platform-wide regulatory oversight. Monitor user declarations, inspect profile versions, scrutinize uploaded statutory evidence, and issue official determinations.
+            </p>
           </div>
 
-          {globalLoading ? (
-            <LoadingSkeleton count={3} />
-          ) : globalError ? (
-            <ErrorState title="Control Room Error" message={globalError} onRetry={loadGlobalData} />
-          ) : (
-            <>
-              {/* Enterprise Directory Section */}
-              <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm p-6 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-lg font-bold text-[#0F172A]">
-                      Select an Enterprise for Scrutiny
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Choose an enterprise to examine Engine 2 AST traces, statutory evidence, and
-                      filing dossiers.
-                    </p>
-                  </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={loadControlRoomData}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-background hover:bg-muted text-xs font-semibold transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
 
-                  <div className="relative w-full sm:w-80">
-                    <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search enterprise name, state, owner..."
-                      value={businessSearchQuery}
-                      onChange={(e) => setBusinessSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-[#18181B] rounded-xl text-xs transition-all focus:outline-none focus:ring-1 focus:ring-[#18181B]"
-                    />
-                  </div>
+            <Link
+              href="/admin/businesses"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] text-white text-xs font-semibold shadow-sm transition-colors"
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              Businesses & Profile Versions
+            </Link>
+          </div>
+        </div>
+
+        {/* Action Success Alert */}
+        {actionSuccessMsg && (
+          <div className="p-4 rounded-xl border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] dark:bg-[var(--ui-sage)]/40 text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)] flex items-center justify-between text-xs font-medium">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[var(--ui-sage)] shrink-0" />
+              <span>{actionSuccessMsg}</span>
+            </div>
+            <button onClick={() => setActionSuccessMsg(null)} className="text-[var(--ui-sage)] hover:text-[var(--ui-sage)]">
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* Global Loading / Error State */}
+        {loading && <LoadingSkeleton count={6} />}
+        {error && <ErrorState message={error} onRetry={loadControlRoomData} />}
+
+        {!loading && !error && (
+          <>
+            {/* KPI Executive Summary Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+              {/* Human Review Needed */}
+              <div className="p-5 rounded-2xl border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/50 dark:bg-[var(--ui-sage)]/20 shadow-sm relative overflow-hidden">
+                <div className="flex items-center justify-between text-[var(--ui-sage)] dark:text-[var(--ui-sage)]">
+                  <span className="text-xs font-bold uppercase tracking-wider">Scrutiny Required</span>
+                  <ShieldAlert className="w-5 h-5" />
                 </div>
+                <div className="text-3xl font-extrabold text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)] mt-2">
+                  {summary?.in_human_review ?? queueCases.length}
+                </div>
+                <p className="text-[11px] text-[var(--ui-sage)]/80 dark:text-[var(--ui-sage)] mt-1">
+                  Awaiting officer determination
+                </p>
+                {((summary?.in_human_review ?? queueCases.length) > 0) && (
+                  <span className="absolute top-2 right-2 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ui-sage-soft)] opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--ui-sage)]" />
+                  </span>
+                )}
+              </div>
 
-                {filteredBusinesses.length === 0 ? (
-                  <div className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200">
-                    <p className="text-xs text-slate-500 font-medium">
-                      No businesses found matching &quot;{businessSearchQuery}&quot;.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                    {filteredBusinesses.map((b) => (
+              {/* Total Active Cases */}
+              <div className="p-5 rounded-2xl border border-border bg-card shadow-sm">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-xs font-bold uppercase tracking-wider">Total Platform Cases</span>
+                  <Layers className="w-5 h-5 text-primary" />
+                </div>
+                <div className="text-3xl font-extrabold text-foreground mt-2">
+                  {summary?.total_cases ?? 0}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">Across all onboarded businesses</p>
+              </div>
+
+              {/* Queries Raised */}
+              <div className="p-5 rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/10 shadow-sm">
+                <div className="flex items-center justify-between text-amber-700 dark:text-amber-400">
+                  <span className="text-xs font-bold uppercase tracking-wider">Queries Out</span>
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div className="text-3xl font-extrabold text-amber-900 dark:text-amber-100 mt-2">
+                  {summary?.queries_awaiting ?? 0}
+                </div>
+                <p className="text-[11px] text-amber-700/80 dark:text-amber-400 mt-1">Pending user re-submission</p>
+              </div>
+
+              {/* Government Portal Scrutiny */}
+              <div className="p-5 rounded-2xl border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)]/60 bg-[var(--ui-info-soft)]/40 dark:bg-[var(--ui-text)]/10 shadow-sm">
+                <div className="flex items-center justify-between text-[var(--ui-info)] dark:text-[var(--ui-info)]">
+                  <span className="text-xs font-bold uppercase tracking-wider">Govt Processing</span>
+                  <ExternalLink className="w-5 h-5" />
+                </div>
+                <div className="text-3xl font-extrabold text-[var(--ui-info)] dark:text-[var(--ui-info-soft)] mt-2">
+                  {summary?.external_processing ?? 0}
+                </div>
+                <p className="text-[11px] text-[var(--ui-info)]/80 dark:text-[var(--ui-info)] mt-1">Active external portal status</p>
+              </div>
+
+              {/* Completed Cases */}
+              <div className="p-5 rounded-2xl border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)]/60 bg-[var(--ui-sage-faint)]/40 dark:bg-[var(--ui-sage)]/10 shadow-sm">
+                <div className="flex items-center justify-between text-[var(--ui-sage)] dark:text-[var(--ui-sage)]">
+                  <span className="text-xs font-bold uppercase tracking-wider">Completed</span>
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div className="text-3xl font-extrabold text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)] mt-2">
+                  {summary?.completed_cases ?? 0}
+                </div>
+                <p className="text-[11px] text-[var(--ui-sage)]/80 dark:text-[var(--ui-sage)] mt-1">Full statutory approval</p>
+              </div>
+            </div>
+
+            {/* Business-Wise Enterprises Organization Section */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-[var(--ui-sage)]" />
+                    Registered Enterprises &amp; Account Workspaces
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Organized business-wise across all user accounts. Inspect operational profile versions, mandatory compliances, and uploaded documents.
+                  </p>
+                </div>
+                <Link
+                  href="/admin/businesses"
+                  className="text-xs font-semibold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] hover:text-[var(--ui-sage)] dark:hover:text-[var(--ui-sage-soft)] flex items-center gap-1 group"
+                >
+                  <span>View All Enterprises ({businesses.length})</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              </div>
+
+              {businesses.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl border border-dashed border-border bg-card">
+                  <p className="text-xs text-muted-foreground">No registered businesses found in the platform.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {businesses.slice(0, 6).map((b) => {
+                    const ownerEmail = (b as any).owner_email;
+                    const ownerName = (b as any).owner_name;
+                    const casesCount = (b as any).cases_count ?? 0;
+                    const docsCount = (b as any).documents_count ?? 0;
+                    const pendingReviews = (b as any).pending_reviews_count ?? 0;
+
+                    return (
                       <div
                         key={b.id}
-                        onClick={() => handleSelectBusiness(b.id)}
-                        className="p-4 rounded-xl border border-slate-200 bg-white hover:border-[#18181B] hover:shadow-sm cursor-pointer transition-all flex flex-col justify-between group"
+                        className="rounded-2xl border border-border bg-card p-5 hover:border-[var(--ui-sage-soft)] dark:hover:border-[var(--ui-sage-soft)] transition-all shadow-sm flex flex-col justify-between space-y-4 group"
                       >
                         <div>
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <span className="font-mono text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                              {b.id.slice(0, 8)}...
-                            </span>
-                            {b.state && (
-                              <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                <MapPin className="w-2.5 h-2.5" />
-                                {b.state}
+                          {/* Business Header & Type */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                                {b.legal_structure?.replace(/_/g, " ") || b.business_type || "Enterprise"}
                               </span>
+                              <h3 className="font-bold text-foreground text-sm mt-1.5 line-clamp-1 group-hover:text-[var(--ui-sage)] dark:group-hover:text-[var(--ui-sage)] transition-colors">
+                                {b.name}
+                              </h3>
+                            </div>
+                            <span className="text-[10px] font-bold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] bg-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/60 px-2 py-0.5 rounded shrink-0">
+                              Profile v{b.current_profile_version || b.profile_version || 1}
+                            </span>
+                          </div>
+
+                          {/* Business ID Box */}
+                          <div className="mt-3 p-2 rounded-xl bg-muted/50 border border-border/60 flex items-center justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <span className="text-[9px] uppercase tracking-wider text-muted-foreground block font-bold">
+                                Business ID
+                              </span>
+                              <span className="font-mono text-xs font-semibold text-foreground truncate block select-all">
+                                {b.id}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => copyBusinessId(b.id, e)}
+                              className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                              title="Copy Business ID"
+                            >
+                              {copiedId === b.id ? (
+                                <Check className="w-3.5 h-3.5 text-[var(--ui-sage)]" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+
+                          {/* Account Owner & Location */}
+                          <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                            {ownerEmail && (
+                              <div className="flex items-center gap-1.5 truncate">
+                                <Mail className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                                <span className="truncate">{ownerEmail}</span>
+                                {ownerName && (
+                                  <span className="text-[11px] text-muted-foreground/80">({ownerName})</span>
+                                )}
+                              </div>
+                            )}
+                            {(b.district || b.state) && (
+                              <div className="flex items-center gap-1.5">
+                                <MapPin className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                                <span>{[b.district, b.state].filter(Boolean).join(", ")}</span>
+                              </div>
                             )}
                           </div>
 
-                          <h3 className="text-sm font-bold text-[#0F172A] group-hover:text-blue-600 transition-colors line-clamp-1">
-                            {b.name}
-                          </h3>
-
-                          <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                            <User className="w-3 h-3 text-slate-400" />
-                            <span className="truncate">{b.owner_email || "System Tenant"}</span>
+                          {/* Compliance & Document Stats */}
+                          <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] bg-muted/30 p-2 rounded-xl border border-border/50">
+                            <div>
+                              <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Cases</span>
+                              <span className="font-bold text-foreground">{casesCount}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Files</span>
+                              <span className="font-bold text-foreground">{docsCount}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Pending</span>
+                              <span className={`font-bold ${pendingReviews > 0 ? "text-[var(--ui-sage)] dark:text-[var(--ui-sage)]" : "text-foreground"}`}>
+                                {pendingReviews}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                          <span className="text-slate-400 font-mono text-[11px]">
-                            Profile v{b.active_profile_version_number || b.current_profile_version || 1}
+                        {/* Bottom Link to Dedicated Command Desk */}
+                        <div className="pt-3 border-t border-border flex items-center justify-between">
+                          <span className="text-[11px] text-muted-foreground">
+                            {casesCount > 0 ? "Mandates evaluated" : "Awaiting assessment"}
                           </span>
-                          <span className="font-semibold text-slate-800 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                            <span>Open Cockpit</span>
+                          <Link
+                            href={`/admin/businesses/${b.id}`}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] hover:text-[var(--ui-sage)] dark:hover:text-[var(--ui-sage-soft)] hover:underline"
+                          >
+                            <span>Open Desk</span>
                             <ArrowRight className="w-3.5 h-3.5" />
-                          </span>
+                          </Link>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Quick Filter & Search Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Filter by Business, Requirement, Case ID, or Authority..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
               </div>
 
-              {/* Review Queue Table */}
-              <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold text-[#0F172A]">
-                      High-Priority Officer Review Queue
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Filings requiring immediate human officer scrutiny or query response.
-                    </p>
-                  </div>
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                    {queueCases.length} In Queue
-                  </span>
-                </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="ALL">All Statuses</option>
+                  <option value="HUMAN_REVIEW">In Human Review</option>
+                  <option value="ACTION_REQUIRED">Action Required (Queried)</option>
+                  <option value="OPEN">Open</option>
+                  <option value="COMPLETED">Completed</option>
+                </select>
 
-                {queueCases.length === 0 ? (
-                  <div className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200">
-                    <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                    <h3 className="text-xs font-bold text-[#0F172A]">Review Queue Clear</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      No statutory filings are currently awaiting administrative scrutiny.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-slate-50/75 border-b border-[#E2E8F0] text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                          <th className="py-3 px-3">Case #</th>
-                          <th className="py-3 px-3">Business</th>
-                          <th className="py-3 px-3">Requirement</th>
-                          <th className="py-3 px-3">Status</th>
-                          <th className="py-3 px-3 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E2E8F0]">
-                        {queueCases.slice(0, 8).map((c) => (
-                          <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="py-3 px-3 font-mono font-semibold text-[#0F172A]">
-                              {c.case_number}
-                            </td>
-                            <td className="py-3 px-3 font-medium text-slate-800">
-                              {c.business_name || "Enterprise"}
-                            </td>
-                            <td className="py-3 px-3 max-w-xs truncate text-slate-600">
-                              {c.requirement_name}
-                            </td>
-                            <td className="py-3 px-3">
-                              <span className="inline-flex items-center text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                                <Clock className="w-3 h-3 mr-1" />
-                                {c.status_code}
+                <select
+                  value={priorityFilter}
+                  onChange={(e) => setPriorityFilter(e.target.value)}
+                  className="px-3 py-2 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="ALL">All Priorities</option>
+                  <option value="HIGH">High Priority</option>
+                  <option value="MEDIUM">Medium Priority</option>
+                  <option value="LOW">Low Priority</option>
+                </select>
+
+                <Link
+                  href="/admin/cases"
+                  className="px-3.5 py-2 rounded-xl border border-border bg-muted/40 hover:bg-muted text-xs font-semibold text-foreground transition-colors flex items-center gap-1.5"
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                  View All Cases
+                </Link>
+              </div>
+            </div>
+
+            {/* Action Queue Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                    <ShieldAlert className="w-5 h-5 text-[var(--ui-sage)]" />
+                    Action Required Review Queue
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Cases flagged for human officer scrutiny or awaiting statutory determination
+                  </p>
+                </div>
+                <span className="text-xs font-bold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+                  {filteredQueue.length} Cases in Queue
+                </span>
+              </div>
+
+              {filteredQueue.length === 0 ? (
+                <div className="p-12 text-center rounded-2xl border border-dashed border-border bg-card space-y-3">
+                  <CheckCircle2 className="w-10 h-10 text-[var(--ui-sage)] mx-auto" />
+                  <h3 className="text-base font-bold text-foreground">Review Queue Clear</h3>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                    All document submissions have been scrutinized or no pending human review cases match the active filter.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredQueue.map((c) => {
+                    const isHigh = c.priority === "HIGH";
+                    const isHumanReview = c.status_code === "HUMAN_REVIEW";
+                    const isActionReq = c.status_code === "ACTION_REQUIRED";
+
+                    return (
+                      <div
+                        key={c.id}
+                        className="rounded-2xl border border-border bg-card p-5 hover:border-[var(--ui-sage-soft)] dark:hover:border-[var(--ui-sage-soft)] transition-all shadow-sm flex flex-col justify-between space-y-4"
+                      >
+                        <div>
+                          {/* Card Header & Badges */}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-mono text-[11px] font-bold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] bg-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/60 px-2 py-0.5 rounded">
+                                {c.case_number}
                               </span>
-                            </td>
-                            <td className="py-3 px-3 text-right">
-                              <button
-                                onClick={() => openQuickReviewModal(c.id)}
-                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#18181B] text-white hover:bg-[#27272A] transition-colors"
-                              >
-                                Scrutinize
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                                {c.authority}
+                              </span>
+                              {isHigh && (
+                                <span className="text-[10px] font-bold text-rose-700 bg-rose-100 dark:text-rose-300 dark:bg-rose-950/60 px-2 py-0.5 rounded">
+                                  HIGH PRIORITY
+                                </span>
+                              )}
+                            </div>
+
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                isHumanReview
+                                  ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
+                                  : isActionReq
+                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {c.status_code.replace(/_/g, " ")}
+                            </span>
+                          </div>
+
+                          {/* Requirement & Business Name */}
+                          <h3 className="font-bold text-foreground text-sm mt-3 line-clamp-1">
+                            {c.requirement_name}
+                          </h3>
+                          <p className="text-xs font-semibold text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                            <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                            {c.business_name || "Enterprise Client"}
+                          </p>
+
+                          {/* Evaluated Operational Profile Context */}
+                          <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] bg-muted/40 p-2.5 rounded-xl border border-border/60">
+                            <div>
+                              <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">
+                                Evaluated Profile
+                              </span>
+                              <span className="font-bold text-foreground">
+                                Profile v{c.profile_version || 1}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">
+                                Current Step
+                              </span>
+                              <span className="font-semibold text-foreground line-clamp-1">
+                                {c.current_step_name || "Document Scrutiny"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card Bottom Controls */}
+                        <div className="pt-3 border-t border-border flex items-center justify-between gap-3">
+                          <button
+                            onClick={() => openQuickReviewModal(c.id)}
+                            className="text-xs font-semibold text-[var(--ui-sage)] dark:text-[var(--ui-sage)] hover:text-[var(--ui-sage)] hover:underline flex items-center gap-1"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            Quick Determination
+                          </button>
+
+                          <Link
+                            href={`/admin/cases/${c.id}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-foreground text-background hover:bg-foreground/90 text-xs font-semibold transition-colors"
+                          >
+                            <span>Open Desk</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Quick Review / Scrutiny Modal */}
+        {selectedCase && (
+          <Overlay open onClose={() => setSelectedCase(null)} title="Review case">
+            <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-5 h-5 text-[var(--ui-sage)]" />
+                  <h3 className="font-bold text-sm text-foreground">
+                    Direct Scrutiny Determination
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setSelectedCase(null)}
+                  className="p-1 text-muted-foreground hover:text-foreground rounded-lg"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
               </div>
-            </>
-          )}
 
-          {/* Quick Review Modal */}
-          {selectedCase && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="font-mono text-xs font-bold text-slate-500">
-                      {selectedCase.case_number}
-                    </span>
-                    <h3 className="text-base font-bold text-[#0F172A] mt-0.5">
-                      Statutory Review Scrutiny
-                    </h3>
-                  </div>
-                  <button
-                    onClick={() => setSelectedCase(null)}
-                    className="text-slate-400 hover:text-slate-600 text-sm font-semibold"
-                  >
-                    ✕
-                  </button>
+              {modalLoading ? (
+                <div className="py-8 text-center">
+                  <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[var(--ui-sage)]" />
+                  <p className="text-xs text-muted-foreground mt-2">Loading case details...</p>
                 </div>
-
-                <div className="p-3 bg-slate-50 rounded-xl text-xs space-y-1">
-                  <div className="font-semibold text-slate-800">
-                    {selectedCase.requirement_name}
-                  </div>
-                  <div className="text-slate-500">{selectedCase.authority}</div>
-                </div>
-
-                <form onSubmit={handleExecuteGlobalReview} className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setReviewAction("APPROVE")}
-                      className={`py-2 px-3 rounded-xl text-xs font-semibold border ${
-                        reviewAction === "APPROVE"
-                          ? "bg-emerald-600 text-white border-emerald-600"
-                          : "bg-white text-slate-700 border-slate-200"
-                      }`}
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setReviewAction("QUERY")}
-                      className={`py-2 px-3 rounded-xl text-xs font-semibold border ${
-                        reviewAction === "QUERY"
-                          ? "bg-amber-600 text-white border-amber-600"
-                          : "bg-white text-slate-700 border-slate-200"
-                      }`}
-                    >
-                      Query
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setReviewAction("REJECT")}
-                      className={`py-2 px-3 rounded-xl text-xs font-semibold border ${
-                        reviewAction === "REJECT"
-                          ? "bg-rose-600 text-white border-rose-600"
-                          : "bg-white text-slate-700 border-slate-200"
-                      }`}
-                    >
-                      Reject
-                    </button>
+              ) : (
+                <form onSubmit={handleExecuteReview} className="space-y-4">
+                  <div className="p-3 bg-muted/40 rounded-xl border border-border text-xs space-y-1">
+                    <p className="font-bold text-foreground">{selectedCase.requirement_name}</p>
+                    <p className="text-muted-foreground">
+                      Business: {selectedCase.business_name || "Enterprise Client"} &bull; Case: {selectedCase.case_number}
+                    </p>
+                    <p className="text-[11px] text-[var(--ui-sage)] dark:text-[var(--ui-sage)] font-semibold">
+                      Evaluated Profile: Version v{(selectedCase.business_context as any)?.profile_version || 1}
+                    </p>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Scrutiny Remarks
+                    <label className="text-xs font-semibold text-foreground block mb-1">
+                      Determination Action
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setReviewAction("APPROVE")}
+                        className={`py-2 px-3 rounded-lg text-xs font-bold border transition-colors ${
+                          reviewAction === "APPROVE"
+                            ? "bg-[var(--ui-sage)] text-white border-[var(--ui-sage-soft)]"
+                            : "border-border text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReviewAction("QUERY")}
+                        className={`py-2 px-3 rounded-lg text-xs font-bold border transition-colors ${
+                          reviewAction === "QUERY"
+                            ? "bg-amber-600 text-white border-amber-600"
+                            : "border-border text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        Raise Query
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReviewAction("REJECT")}
+                        className={`py-2 px-3 rounded-lg text-xs font-bold border transition-colors ${
+                          reviewAction === "REJECT"
+                            ? "bg-rose-600 text-white border-rose-600"
+                            : "border-border text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-foreground block mb-1">
+                      Officer Remarks & Audit Notes
                     </label>
                     <textarea
                       rows={3}
                       value={reviewComments}
                       onChange={(e) => setReviewComments(e.target.value)}
-                      placeholder="Record mandatory reason or approval notes..."
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#18181B]"
+                      placeholder={
+                        reviewAction === "APPROVE"
+                          ? "Verified statutory requirements and uploaded document certificates."
+                          : reviewAction === "QUERY"
+                          ? "Specify missing stamps, signature discrepancy, or expired validity date..."
+                          : "Specify why this application violates statutory regulatory rules..."
+                      }
+                      className="w-full p-2.5 bg-background border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[var(--ui-sage-soft)]/20"
+                      required={reviewAction !== "APPROVE"}
                     />
                   </div>
 
@@ -543,277 +696,24 @@ function AdminControlRoomContent() {
                     <button
                       type="button"
                       onClick={() => setSelectedCase(null)}
-                      className="px-3 py-2 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100"
+                      className="px-3.5 py-1.5 border border-border rounded-lg text-xs font-semibold text-muted-foreground hover:bg-muted"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={submittingReview}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#18181B] text-white hover:bg-[#27272A] disabled:opacity-50"
+                      className="px-4 py-1.5 bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] text-white text-xs font-semibold rounded-lg shadow-sm disabled:opacity-50"
                     >
-                      {submittingReview ? "Recording..." : `Confirm ${reviewAction}`}
+                      {submittingReview ? "Executing..." : "Confirm Determination"}
                     </button>
                   </div>
                 </form>
-              </div>
+              )}
             </div>
-          )}
-        </div>
-      ) : (
-        /* ------------------------------------------------------------- */
-        /* MODE B: BUSINESS SELECTED -> 360° SCRUTINY COCKPIT            */
-        /* ------------------------------------------------------------- */
-        <div className="space-y-6">
-          {scrutinyLoading && !scrutinyData ? (
-            <LoadingSkeleton count={4} />
-          ) : scrutinyError ? (
-            <ErrorState
-              title="Scrutiny Data Load Error"
-              message={scrutinyError}
-              onRetry={() => loadScrutinyData(businessId, assessmentId)}
-            />
-          ) : scrutinyData ? (
-            <>
-              {/* Business Cockpit Header */}
-              <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                      <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                        TENANT: {scrutinyData.business.id.slice(0, 8)}
-                      </span>
-                      {scrutinyData.business.primary_state && (
-                        <span className="inline-flex items-center text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full">
-                          <MapPin className="w-3 h-3 mr-1 text-slate-400" />
-                          {scrutinyData.business.primary_state}
-                        </span>
-                      )}
-                      {scrutinyData.business.incorporation_type && (
-                        <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
-                          {scrutinyData.business.incorporation_type}
-                        </span>
-                      )}
-                      {scrutinyData.cir_is_valid && (
-                        <span className="inline-flex items-center text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                          <ShieldCheck className="w-3 h-3 mr-1" />
-                          HMAC CIR Verified
-                        </span>
-                      )}
-                    </div>
-
-                    <h1 className="text-2xl font-bold text-[#0F172A]">
-                      {scrutinyData.business.name}
-                    </h1>
-
-                    <p className="text-xs text-slate-500 mt-1 flex items-center gap-3">
-                      <span>Owner: {scrutinyData.business.owner_email || "System User"}</span>
-                      <span>•</span>
-                      <span>
-                        Profile Snapshot v{scrutinyData.profile.version_number} (
-                        {scrutinyData.profile.change_note})
-                      </span>
-                      {scrutinyData.decision_run && (
-                        <>
-                          <span>•</span>
-                          <span className="font-mono">
-                            Decision Run: {scrutinyData.decision_run.id.slice(0, 8)}
-                          </span>
-                        </>
-                      )}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={`/dashboard?business_id=${scrutinyData.business.id}`}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>User Dashboard</span>
-                    </Link>
-                    <button
-                      onClick={() => loadScrutinyData(businessId, assessmentId)}
-                      disabled={scrutinyLoading}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                    >
-                      <RefreshCw
-                        className={`w-3.5 h-3.5 ${scrutinyLoading ? "animate-spin" : ""}`}
-                      />
-                      <span>Refresh</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Tab Navigation Pill Bar */}
-                <div className="flex items-center gap-1.5 mt-6 pt-5 border-t border-slate-100 overflow-x-auto">
-                  <button
-                    onClick={() => handleTabChange("overview")}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 ${
-                      currentTab === "overview"
-                        ? "bg-[#18181B] text-white shadow-sm"
-                        : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                    }`}
-                  >
-                    <Shield className="w-3.5 h-3.5" />
-                    <span>Control Room Overview</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleTabChange("compliance")}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 ${
-                      currentTab === "compliance"
-                        ? "bg-[#18181B] text-white shadow-sm"
-                        : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>Engine 2 Scrutiny</span>
-                    <span className="font-mono text-[10px] ml-1 px-1.5 py-0.2 rounded bg-indigo-500/20">
-                      {scrutinyData.engine2_results.length}
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => handleTabChange("schemes")}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 ${
-                      currentTab === "schemes"
-                        ? "bg-[#18181B] text-white shadow-sm"
-                        : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                    }`}
-                  >
-                    <Gift className="w-3.5 h-3.5" />
-                    <span>Subsidies &amp; Schemes</span>
-                    <span className="font-mono text-[10px] ml-1 px-1.5 py-0.2 rounded bg-slate-200 text-slate-700">
-                      {scrutinyData.schemes.length}
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => handleTabChange("standards")}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 ${
-                      currentTab === "standards"
-                        ? "bg-[#18181B] text-white shadow-sm"
-                        : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                    }`}
-                  >
-                    <Award className="w-3.5 h-3.5" />
-                    <span>Standards &amp; QCOs</span>
-                    <span className="font-mono text-[10px] ml-1 px-1.5 py-0.2 rounded bg-slate-200 text-slate-700">
-                      {scrutinyData.standards.length}
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => handleTabChange("documents")}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 ${
-                      currentTab === "documents"
-                        ? "bg-[#18181B] text-white shadow-sm"
-                        : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                    }`}
-                  >
-                    <FileCheck className="w-3.5 h-3.5" />
-                    <span>Document Verification</span>
-                    <span className="font-mono text-[10px] ml-1 px-1.5 py-0.2 rounded bg-slate-200 text-slate-700">
-                      {scrutinyData.uploaded_documents.length}
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => handleTabChange("workflows")}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 ${
-                      currentTab === "workflows"
-                        ? "bg-[#18181B] text-white shadow-sm"
-                        : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                    }`}
-                  >
-                    <GitPullRequest className="w-3.5 h-3.5" />
-                    <span>Cases &amp; Filings</span>
-                    <span className="font-mono text-[10px] ml-1 px-1.5 py-0.2 rounded bg-slate-200 text-slate-700">
-                      {scrutinyData.compliance_cases.length}
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => handleTabChange("calendar")}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 ${
-                      currentTab === "calendar"
-                        ? "bg-[#18181B] text-white shadow-sm"
-                        : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                    }`}
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>Statutory Calendar</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleTabChange("provenance")}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 ${
-                      currentTab === "provenance"
-                        ? "bg-[#18181B] text-white shadow-sm"
-                        : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                    }`}
-                  >
-                    <Database className="w-3.5 h-3.5" />
-                    <span>Fact Provenance</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Render Active Tab Content */}
-              {currentTab === "overview" && (
-                <AdminOverviewTab
-                  data={scrutinyData}
-                  onNavigateTab={handleTabChange}
-                  onRefresh={() => loadScrutinyData(businessId, assessmentId)}
-                />
-              )}
-
-              {currentTab === "compliance" && (
-                <AdminComplianceScrutinyTab
-                  data={scrutinyData}
-                  onRefresh={() => loadScrutinyData(businessId, assessmentId)}
-                />
-              )}
-
-              {currentTab === "schemes" && <AdminSchemesTab data={scrutinyData} />}
-
-              {currentTab === "standards" && <AdminStandardsTab data={scrutinyData} />}
-
-              {currentTab === "documents" && (
-                <AdminDocumentsTab
-                  data={scrutinyData}
-                  onRefresh={() => loadScrutinyData(businessId, assessmentId)}
-                />
-              )}
-
-              {currentTab === "workflows" && (
-                <AdminWorkflowsTab
-                  data={scrutinyData}
-                  onRefresh={() => loadScrutinyData(businessId, assessmentId)}
-                />
-              )}
-
-              {currentTab === "calendar" && (
-                <AdminCalendarTab
-                  data={scrutinyData}
-                  onRefresh={() => loadScrutinyData(businessId, assessmentId)}
-                />
-              )}
-
-              {currentTab === "provenance" && <AdminFactProvenanceTab data={scrutinyData} />}
-            </>
-          ) : null}
-        </div>
-      )}
+          </Overlay>
+        )}
+      </div>
     </AdminShell>
-  );
-}
-
-export default function AdminControlRoomPage() {
-  return (
-    <Suspense fallback={<LoadingSkeleton count={3} />}>
-      <AdminControlRoomContent />
-    </Suspense>
   );
 }

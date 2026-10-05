@@ -1,0 +1,1061 @@
+[04/Oct/2026 19:30:52] "POST /api/v1/auth/register HTTP/1.1" 201 362
+[04/Oct/2026 19:30:53] "OPTIONS /api/v1/auth/login HTTP/1.1" 200 0
+[04/Oct/2026 19:30:56] "POST /api/v1/auth/login HTTP/1.1" 200 362
+[04/Oct/2026 19:30:56] "OPTIONS /api/v1/user/workspace HTTP/1.1" 200 0
+[04/Oct/2026 19:30:56] "OPTIONS /api/v1/user/profile HTTP/1.1" 200 0
+[04/Oct/2026 19:30:57] "GET /api/v1/user/workspace HTTP/1.1" 200 460
+[04/Oct/2026 19:30:57] "GET /api/v1/user/profile HTTP/1.1" 200 387
+[04/Oct/2026 19:30:58] "OPTIONS /api/v1/auth/me HTTP/1.1" 200 0
+[04/Oct/2026 19:30:58] "OPTIONS /api/v1/profile/variables HTTP/1.1" 200 0
+[04/Oct/2026 19:30:58] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:30:58] "GET /api/v1/profile/variables HTTP/1.1" 200 15757
+[04/Oct/2026 19:30:58] "GET /api/v1/user/profile HTTP/1.1" 200 387
+[04/Oct/2026 19:31:00] "GET /api/v1/user/profile HTTP/1.1" 200 387
+[04/Oct/2026 19:31:00] "OPTIONS /api/v1/businesses HTTP/1.1" 200 0
+[04/Oct/2026 19:31:01] "POST /api/v1/businesses HTTP/1.1" 201 585
+[04/Oct/2026 19:31:01] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/profile HTTP/1.1" 200 0
+[04/Oct/2026 19:31:01] "POST /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/profile HTTP/1.1" 201 1595
+[04/Oct/2026 19:31:01] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments HTTP/1.1" 200 0
+[04/Oct/2026 19:31:01] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments HTTP/1.1" 200 30
+[04/Oct/2026 19:31:02] "POST /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments HTTP/1.1" 201 1825
+[04/Oct/2026 19:31:02] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 0
+[04/Oct/2026 19:31:02] "PATCH /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 2230
+[04/Oct/2026 19:31:03] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/onboarding/products-activities HTTP/1.1" 200 0
+[04/Oct/2026 19:31:04] "POST /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/onboarding/products-activities HTTP/1.1" 200 284
+[04/Oct/2026 19:31:04] "OPTIONS /api/v1/assessments/ HTTP/1.1" 200 0
+[04/Oct/2026 19:31:05] "POST /api/v1/assessments/ HTTP/1.1" 201 323
+[04/Oct/2026 19:31:05] "OPTIONS /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/understand/ HTTP/1.1" 200 0
+2026-10-04 19:31:08,969 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:765, cached:0, out:835, reason:0) cost=$0.001155 latency=3489.4ms provider=gemini slot=1 fallback=False failure=None
+[04/Oct/2026 19:31:09] "POST /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/understand/ HTTP/1.1" 200 2422
+[04/Oct/2026 19:31:09] "OPTIONS /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/questions/ HTTP/1.1" 200 0
+[04/Oct/2026 19:31:09] "PATCH /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 8615
+2026-10-04 19:31:15,129 INFO domain.providers.telemetry LLM Telemetry: workflow=smart_questions_planner model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1897, cached:0, out:1334, reason:0) cost=$0.001980 latency=5126.9ms provider=gemini slot=2 fallback=False failure=None
+2026-10-04 19:31:15,423 INFO domain.intelligence.questionnaire Persisted compact questions in metadata for assessment run 3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7
+[04/Oct/2026 19:31:15] "GET /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/questions/ HTTP/1.1" 200 3367
+[04/Oct/2026 19:31:16] "OPTIONS /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/answers/ HTTP/1.1" 200 0
+[04/Oct/2026 19:31:18] "POST /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/answers/ HTTP/1.1" 200 1020
+[04/Oct/2026 19:31:19] "POST /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/answers/ HTTP/1.1" 200 1006
+[04/Oct/2026 19:31:21] "POST /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/answers/ HTTP/1.1" 200 194
+[04/Oct/2026 19:31:21] "PATCH /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 14229
+[04/Oct/2026 19:31:21] "OPTIONS /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/regulatory-discovery/ HTTP/1.1" 200 0
+2026-10-04 19:31:24,192 INFO domain.intelligence.regulatory_retrieval ComplianceRAG retrieval EMPTY: 0 passages, 2014ms
+2026-10-04 19:31:31,511 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:31:31,513 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 19:31:31,513 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 19:31:32,311 INFO httpx HTTP Request: GET https://industry.karnataka.gov.in/uploads/media_to_upload1742205128.pdf "HTTP/1.1 200 OK"
+2026-10-04 19:31:33,541 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 19:31:33,545 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 19:31:33,546 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 19:31:33,550 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 2.03s \u2502
+\u2502 requests_finished_per_minute  \u2502 29    \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 2.03s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 2.04s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:31:35,757 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1299, cached:0, out:14, reason:0) cost=$0.000277 latency=1324.3ms provider=gemini slot=3 fallback=False failure=None
+2026-10-04 19:31:36,558 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:31:36,559 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 19:31:36,559 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 19:31:36,760 ERROR HttpCrawler Request to https://dpal.karnataka.gov.in/storage/pdf-files/27of2017(E)(36of2022).pdf failed and reached maximum retries
+ Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 156, in _connect
+    stream = await stream.start_tls(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 67, in start_tls
+    with map_exceptions(exc_map):
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 100, in __call__
+    result = await middleware_instance.action()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 40, in action
+    self.output_context = await self.generator.__anext__()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_abstract_http\_abstract_http_crawler.py", line 278, in _make_http_request
+    result = await self._http_client.crawl(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 167, in crawl
+    response = await client.send(http_request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 74, in handle_async_request
+    response = await super().handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)
+2026-10-04 19:31:36,763 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 19:31:36,763 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 19:31:36,764 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 19:31:36,766 INFO HttpCrawler Error analysis: total_errors=1 unique_errors=1
+2026-10-04 19:31:36,766 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0       \u2502
+\u2502 requests_failed               \u2502 1       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 200.9ms \u2502
+\u2502 request_avg_finished_duration \u2502 None    \u2502
+\u2502 requests_finished_per_minute  \u2502 0       \u2502
+\u2502 requests_failed_per_minute    \u2502 289     \u2502
+\u2502 request_total_duration        \u2502 200.9ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 207.2ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:31:37,514 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:31:37,520 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 19:31:37,520 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 19:31:37,901 INFO httpx HTTP Request: GET https://www.bis.gov.in/sro_tender_document_04072022/ "HTTP/1.1 302 Found"
+2026-10-04 19:31:37,909 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 19:31:37,909 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 19:31:37,910 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 19:31:37,916 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1       \u2502
+\u2502 requests_failed               \u2502 0       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 None    \u2502
+\u2502 request_avg_finished_duration \u2502 385.2ms \u2502
+\u2502 requests_finished_per_minute  \u2502 152     \u2502
+\u2502 requests_failed_per_minute    \u2502 0       \u2502
+\u2502 request_total_duration        \u2502 385.2ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 395.4ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:31:38,678 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:31:38,679 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 19:31:38,680 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 19:31:39,756 INFO httpx HTTP Request: GET https://www.bis.gov.in/sro_tender_document_04072022/?lang=hi "HTTP/1.1 301 Moved Permanently"
+2026-10-04 19:31:40,054 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 19:31:40,060 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 19:31:40,060 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 19:31:40,065 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 1.37s \u2502
+\u2502 requests_finished_per_minute  \u2502 43    \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 1.37s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 1.39s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:31:40,798 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:31:40,799 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 19:31:40,800 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 19:31:41,370 INFO httpx HTTP Request: GET https://www.bis.gov.in/wp-content/uploads/2022/07/SRO_Tender_Document_04072022.pdf "HTTP/1.1 200 OK"
+2026-10-04 19:31:41,781 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 19:31:41,785 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 19:31:41,786 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 19:31:41,789 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1       \u2502
+\u2502 requests_failed               \u2502 0       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 None    \u2502
+\u2502 request_avg_finished_duration \u2502 976.6ms \u2502
+\u2502 requests_finished_per_minute  \u2502 61      \u2502
+\u2502 requests_failed_per_minute    \u2502 0       \u2502
+\u2502 request_total_duration        \u2502 976.6ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 990.0ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:31:48,973 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1281, cached:0, out:14, reason:0) cost=$0.000273 latency=1269.6ms provider=gemini slot=1 fallback=False failure=None
+[04/Oct/2026 19:31:49] "POST /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/regulatory-discovery/ HTTP/1.1" 200 8190
+[04/Oct/2026 19:31:49] "OPTIONS /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/compliance-synthesis/ HTTP/1.1" 200 0
+2026-10-04 19:31:59,946 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=4976.5ms provider=gemini slot=2 fallback=False failure=malformed_response
+2026-10-04 19:32:04,946 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=4999.5ms provider=gemini slot=3 fallback=True failure=malformed_response
+2026-10-04 19:32:15,289 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=10342.0ms provider=gemini slot=1 fallback=True failure=malformed_response
+2026-10-04 19:32:27,812 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gpt-4o-mini status=SUCCESS tokens=(in:8015, cached:0, out:997, reason:0) cost=$0.001800 latency=12521.5ms provider=openai slot=None fallback=True failure=None
+[04/Oct/2026 19:32:28] "POST /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/compliance-synthesis/ HTTP/1.1" 200 121149
+[04/Oct/2026 19:32:28] "OPTIONS /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/schemes/ HTTP/1.1" 200 0
+[04/Oct/2026 19:32:28] "OPTIONS /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/standards/ HTTP/1.1" 200 0
+[04/Oct/2026 19:32:30] "GET /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/standards/ HTTP/1.1" 200 110
+[04/Oct/2026 19:32:31] "GET /api/v1/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7/schemes/ HTTP/1.1" 200 11146
+[04/Oct/2026 19:32:31] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/analysis/orchestrate HTTP/1.1" 200 0
+[04/Oct/2026 19:32:39] "POST /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/analysis/orchestrate HTTP/1.1" 200 81148
+[04/Oct/2026 19:32:39] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/compliance?assessment_id=3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 0
+[04/Oct/2026 19:32:41] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/compliance?assessment_id=3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 107191
+[04/Oct/2026 19:32:41] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/assessments/3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 295972
+[04/Oct/2026 19:32:43] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca HTTP/1.1" 200 0
+[04/Oct/2026 19:32:43] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/discovery/candidates HTTP/1.1" 200 0
+[04/Oct/2026 19:32:43] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:32:43] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary HTTP/1.1" 200 0
+[04/Oct/2026 19:32:43] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/discovery/candidates HTTP/1.1" 200 21
+[04/Oct/2026 19:32:43] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca HTTP/1.1" 200 594
+[04/Oct/2026 19:32:44] "GET /api/v1/user/profile HTTP/1.1" 200 2660
+[04/Oct/2026 19:32:44] "OPTIONS /api/v1/admin/cases/case-1/requirements HTTP/1.1" 200 0
+[04/Oct/2026 19:32:44] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/compliance?assessment_id=3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 107191
+[04/Oct/2026 19:32:44] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary HTTP/1.1" 200 214
+Unauthorized: /api/v1/admin/cases/case-1/requirements
+2026-10-04 19:32:44,827 WARNING django.request Unauthorized: /api/v1/admin/cases/case-1/requirements
+[04/Oct/2026 19:32:44,830] - Broken pipe from ('127.0.0.1', 63168)
+[04/Oct/2026 19:32:45] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/documents?assessment_id=3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 0
+[04/Oct/2026 19:32:45,244] - Broken pipe from ('127.0.0.1', 63462)
+[04/Oct/2026 19:32:45] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:32:46] "GET /api/v1/user/profile HTTP/1.1" 200 2660
+[04/Oct/2026 19:32:46] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/documents?assessment_id=3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 9705
+[04/Oct/2026 19:32:46] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:32:47] "GET /api/v1/user/profile HTTP/1.1" 200 2660
+[04/Oct/2026 19:32:47] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/workflows?assessment_id=3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 0
+[04/Oct/2026 19:32:47] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:32:47,873] - Broken pipe from ('127.0.0.1', 63712)
+[04/Oct/2026 19:32:48] "GET /api/v1/user/profile HTTP/1.1" 200 2660
+[04/Oct/2026 19:32:48] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:32:48] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/schemes?assessment_id=3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 0
+[04/Oct/2026 19:32:49] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:32:49,715] - Broken pipe from ('127.0.0.1', 61597)
+[04/Oct/2026 19:32:50] "GET /api/v1/user/profile HTTP/1.1" 200 2660
+[04/Oct/2026 19:32:50] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:32:50] "OPTIONS /api/v1/standards/search?business_id=b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca&assessment_id=3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 0
+[04/Oct/2026 19:32:51,143] - Broken pipe from ('127.0.0.1', 61009)
+[04/Oct/2026 19:32:51] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:32:51,418] - Broken pipe from ('127.0.0.1', 55301)
+[04/Oct/2026 19:32:51,585] - Broken pipe from ('127.0.0.1', 62699)
+[04/Oct/2026 19:32:51,730] - Broken pipe from ('127.0.0.1', 52023)
+[04/Oct/2026 19:32:51] "GET /api/v1/user/profile HTTP/1.1" 200 2660
+[04/Oct/2026 19:32:51] "GET /api/v1/standards/search?business_id=b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca&assessment_id=3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 497
+[04/Oct/2026 19:32:51,881] - Broken pipe from ('127.0.0.1', 49193)
+[04/Oct/2026 19:32:52] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:32:53,031] - Broken pipe from ('127.0.0.1', 59628)
+[04/Oct/2026 19:32:53] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:32:53] "GET /api/v1/user/profile HTTP/1.1" 200 2660
+[04/Oct/2026 19:32:54] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:32:54] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar HTTP/1.1" 200 0
+[04/Oct/2026 19:32:54] "OPTIONS /api/v1/calendar/google/status HTTP/1.1" 200 0
+[04/Oct/2026 19:32:54,520] - Broken pipe from ('127.0.0.1', 56789)
+[04/Oct/2026 19:32:54] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:32:54] "GET /api/v1/calendar/google/status HTTP/1.1" 200 78
+[04/Oct/2026 19:32:55] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar HTTP/1.1" 200 541
+[04/Oct/2026 19:32:55] "GET /api/v1/user/profile HTTP/1.1" 200 2660
+[04/Oct/2026 19:32:55] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:32:56,279] - Broken pipe from ('127.0.0.1', 54329)
+[04/Oct/2026 19:32:56] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:32:56] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca HTTP/1.1" 200 594
+[04/Oct/2026 19:32:56] "GET /api/v1/user/profile HTTP/1.1" 200 2660
+[04/Oct/2026 19:32:57] "OPTIONS /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/preferences HTTP/1.1" 200 0
+[04/Oct/2026 19:32:57,617] - Broken pipe from ('127.0.0.1', 50260)
+[04/Oct/2026 19:32:57] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:32:58] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/preferences HTTP/1.1" 200 103
+[04/Oct/2026 19:32:58,101] - Broken pipe from ('127.0.0.1', 57677)
+[04/Oct/2026 19:32:58] "GET /api/v1/user/profile HTTP/1.1" 200 2660
+[04/Oct/2026 19:32:58] "GET /api/v1/businesses/b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:32:59,457] - Broken pipe from ('127.0.0.1', 50846)
+[04/Oct/2026 19:32:59] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:33:00] "GET /api/v1/user/profile HTTP/1.1" 200 2660
+[04/Oct/2026 19:33:00] "GET /api/v1/standards/search?business_id=b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca&assessment_id=3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 497
+[04/Oct/2026 19:33:00,672] - Broken pipe from ('127.0.0.1', 61128)
+[04/Oct/2026 19:33:00] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:33:01,332] - Broken pipe from ('127.0.0.1', 65130)
+[04/Oct/2026 19:33:01] "GET /api/v1/standards/search?business_id=b2ffdc36-5a5d-4754-8ac7-8a297b87c4ca&assessment_id=3487b9bb-c26a-4efe-8e3e-9c1ed508f0b7 HTTP/1.1" 200 497
+[04/Oct/2026 19:33:01] "GET /api/v1/user/profile HTTP/1.1" 200 2660
+[04/Oct/2026 19:33:01,718] - Broken pipe from ('127.0.0.1', 57878)
+[04/Oct/2026 19:33:02,191] - Broken pipe from ('127.0.0.1', 56343)
+[04/Oct/2026 19:39:23] "POST /api/v1/auth/register HTTP/1.1" 201 362
+[04/Oct/2026 19:39:24] "OPTIONS /api/v1/auth/login HTTP/1.1" 200 0
+[04/Oct/2026 19:39:28] "POST /api/v1/auth/login HTTP/1.1" 200 362
+[04/Oct/2026 19:39:28] "OPTIONS /api/v1/user/workspace HTTP/1.1" 200 0
+[04/Oct/2026 19:39:28] "OPTIONS /api/v1/user/profile HTTP/1.1" 200 0
+[04/Oct/2026 19:39:28] "GET /api/v1/user/workspace HTTP/1.1" 200 460
+[04/Oct/2026 19:39:28,890] - Broken pipe from ('127.0.0.1', 65181)
+[04/Oct/2026 19:39:28] "OPTIONS /api/v1/auth/me HTTP/1.1" 200 0
+[04/Oct/2026 19:39:29] "OPTIONS /api/v1/profile/variables HTTP/1.1" 200 0
+[04/Oct/2026 19:39:29] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:39:29] "GET /api/v1/profile/variables HTTP/1.1" 200 15757
+[04/Oct/2026 19:39:29] "GET /api/v1/user/profile HTTP/1.1" 200 387
+[04/Oct/2026 19:39:30] "OPTIONS /api/v1/businesses HTTP/1.1" 200 0
+[04/Oct/2026 19:39:31] "POST /api/v1/businesses HTTP/1.1" 201 585
+[04/Oct/2026 19:39:31] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile HTTP/1.1" 200 0
+[04/Oct/2026 19:39:31] "POST /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile HTTP/1.1" 201 1595
+[04/Oct/2026 19:39:31] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 200 0
+[04/Oct/2026 19:39:32] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 200 30
+[04/Oct/2026 19:39:32] "POST /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 201 1825
+[04/Oct/2026 19:39:32] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 0
+[04/Oct/2026 19:39:33] "PATCH /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 2230
+[04/Oct/2026 19:39:33] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/onboarding/products-activities HTTP/1.1" 200 0
+[04/Oct/2026 19:39:34] "POST /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/onboarding/products-activities HTTP/1.1" 200 284
+[04/Oct/2026 19:39:34] "OPTIONS /api/v1/assessments/ HTTP/1.1" 200 0
+[04/Oct/2026 19:39:35] "POST /api/v1/assessments/ HTTP/1.1" 201 323
+[04/Oct/2026 19:39:35] "OPTIONS /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/understand/ HTTP/1.1" 200 0
+2026-10-04 19:39:38,982 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:765, cached:0, out:786, reason:0) cost=$0.001096 latency=3178.5ms provider=gemini slot=3 fallback=False failure=None
+[04/Oct/2026 19:39:39] "POST /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/understand/ HTTP/1.1" 200 2314
+[04/Oct/2026 19:39:39] "OPTIONS /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/questions/ HTTP/1.1" 200 0
+[04/Oct/2026 19:39:39] "PATCH /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 8398
+2026-10-04 19:39:45,946 INFO domain.providers.telemetry LLM Telemetry: workflow=smart_questions_planner model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1897, cached:0, out:1451, reason:0) cost=$0.002121 latency=5595.8ms provider=gemini slot=1 fallback=False failure=None
+2026-10-04 19:39:46,255 INFO domain.intelligence.questionnaire Persisted compact questions in metadata for assessment run 7e642717-bf84-46c7-9af9-54df15dc4a32
+[04/Oct/2026 19:39:47] "GET /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/questions/ HTTP/1.1" 200 3316
+[04/Oct/2026 19:39:48] "OPTIONS /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/answers/ HTTP/1.1" 200 0
+[04/Oct/2026 19:39:49] "POST /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/answers/ HTTP/1.1" 200 1025
+[04/Oct/2026 19:39:51] "POST /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/answers/ HTTP/1.1" 200 1006
+[04/Oct/2026 19:39:53] "POST /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/answers/ HTTP/1.1" 200 194
+[04/Oct/2026 19:39:53] "PATCH /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 13966
+[04/Oct/2026 19:39:53] "OPTIONS /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/regulatory-discovery/ HTTP/1.1" 200 0
+2026-10-04 19:39:56,287 INFO domain.intelligence.regulatory_retrieval ComplianceRAG retrieval EMPTY: 0 passages, 2343ms
+2026-10-04 19:39:58,939 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:39:58,940 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 19:39:58,940 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 19:39:59,431 INFO httpx HTTP Request: GET https://industry.karnataka.gov.in/uploads/media_to_upload1742205128.pdf "HTTP/1.1 200 OK"
+2026-10-04 19:40:00,819 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 19:40:00,820 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 19:40:00,820 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 19:40:00,825 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 1.88s \u2502
+\u2502 requests_finished_per_minute  \u2502 32    \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 1.88s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 1.88s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:40:02,942 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1299, cached:0, out:14, reason:0) cost=$0.000277 latency=1334.4ms provider=gemini slot=2 fallback=False failure=None
+2026-10-04 19:40:03,662 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:40:03,667 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 19:40:03,668 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 19:40:03,889 INFO httpx HTTP Request: GET https://skillmission.karnataka.gov.in/app/address/20200205191901Shops_&_Est_Regn_Certi.pdf "HTTP/1.1 200 OK"
+2026-10-04 19:40:04,187 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 19:40:04,193 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 19:40:04,193 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 19:40:04,197 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1       \u2502
+\u2502 requests_failed               \u2502 0       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 None    \u2502
+\u2502 request_avg_finished_duration \u2502 518.9ms \u2502
+\u2502 requests_finished_per_minute  \u2502 114     \u2502
+\u2502 requests_failed_per_minute    \u2502 0       \u2502
+\u2502 request_total_duration        \u2502 518.9ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 527.6ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:40:06,153 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=1414.3ms provider=gemini slot=3 fallback=False failure=schema_failure
+2026-10-04 19:40:07,654 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=1499.8ms provider=gemini slot=1 fallback=True failure=schema_failure
+2026-10-04 19:40:09,534 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=1876.5ms provider=gemini slot=2 fallback=True failure=schema_failure
+2026-10-04 19:40:13,796 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gpt-4o-mini status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=4257.1ms provider=openai slot=None fallback=True failure=schema_failure
+2026-10-04 19:40:13,801 WARNING apps.ingestion.claim_extraction Claim extraction failed (ProviderError)
+2026-10-04 19:40:14,411 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:40:14,417 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 19:40:14,418 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 19:40:15,026 INFO httpx HTTP Request: GET https://gescom.karnataka.gov.in/cms1/public/page/CONSUMERS/Suggestions%20to%20Consu/Industrial+Consumers/kn "HTTP/1.1 200 OK"
+2026-10-04 19:40:15,029 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 19:40:15,029 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 19:40:15,030 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 19:40:15,032 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1       \u2502
+\u2502 requests_failed               \u2502 0       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 None    \u2502
+\u2502 request_avg_finished_duration \u2502 610.5ms \u2502
+\u2502 requests_finished_per_minute  \u2502 98      \u2502
+\u2502 requests_failed_per_minute    \u2502 0       \u2502
+\u2502 request_total_duration        \u2502 610.5ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 614.5ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:40:15,044 INFO crawlee.crawlers._playwright._playwright_crawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 19:40:15,045 INFO crawlee.crawlers._playwright._playwright_crawler Crawled 0/1 pages, 0 failed requests, desired concurrency 1.
+2026-10-04 19:40:17,496 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 1; cpu = 0.0; mem = 0.0; event_loop = 0.768; client_info = 0.0
+2026-10-04 19:40:23,909 INFO crawlee.crawlers._playwright._playwright_crawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 19:40:23,910 INFO crawlee.crawlers._playwright._playwright_crawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 19:40:23,910 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 19:40:24,224 INFO crawlee.crawlers._playwright._playwright_crawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 5.38s \u2502
+\u2502 requests_finished_per_minute  \u2502 7     \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 5.38s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 9.18s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+[04/Oct/2026 19:40:24] "POST /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/regulatory-discovery/ HTTP/1.1" 200 7062
+[04/Oct/2026 19:40:24] "OPTIONS /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/compliance-synthesis/ HTTP/1.1" 200 0
+2026-10-04 19:40:35,753 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=5482.6ms provider=gemini slot=1 fallback=False failure=malformed_response
+2026-10-04 19:40:42,426 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:9582, cached:0, out:1680, reason:0) cost=$0.003932 latency=6668.5ms provider=gemini slot=2 fallback=True failure=None
+[04/Oct/2026 19:40:43] "POST /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/compliance-synthesis/ HTTP/1.1" 200 125805
+[04/Oct/2026 19:40:43] "OPTIONS /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/standards/ HTTP/1.1" 200 0
+[04/Oct/2026 19:40:43] "OPTIONS /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/schemes/ HTTP/1.1" 200 0
+[04/Oct/2026 19:40:45] "GET /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/standards/ HTTP/1.1" 200 803
+[04/Oct/2026 19:40:46] "GET /api/v1/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32/schemes/ HTTP/1.1" 200 11146
+[04/Oct/2026 19:40:46] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/analysis/orchestrate HTTP/1.1" 200 0
+[04/Oct/2026 19:40:56] "POST /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/analysis/orchestrate HTTP/1.1" 200 81076
+[04/Oct/2026 19:40:56] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/compliance?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 0
+[04/Oct/2026 19:40:58] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/compliance?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 111847
+[04/Oct/2026 19:40:59] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 302767
+[04/Oct/2026 19:41:00] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 0
+[04/Oct/2026 19:41:00] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/discovery/candidates HTTP/1.1" 200 0
+[04/Oct/2026 19:41:00] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:41:00] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary HTTP/1.1" 200 0
+[04/Oct/2026 19:41:00] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/discovery/candidates HTTP/1.1" 200 21
+[04/Oct/2026 19:41:01] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 594
+[04/Oct/2026 19:41:01] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:41:02] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/compliance?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 111847
+[04/Oct/2026 19:41:02] "GET /api/v1/user/profile HTTP/1.1" 200 2664
+[04/Oct/2026 19:41:02] "GET /api/v1/user/workspace HTTP/1.1" 200 692
+[04/Oct/2026 19:41:03] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 200 302778
+[04/Oct/2026 19:41:03] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 0
+[04/Oct/2026 19:41:03] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile HTTP/1.1" 200 18193
+[04/Oct/2026 19:41:03] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 594
+[04/Oct/2026 19:41:04] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 302767
+[04/Oct/2026 19:41:11] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 11501
+[04/Oct/2026 19:41:12] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/documents?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 0
+[04/Oct/2026 19:41:12] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:41:13] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:41:13] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/documents?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 17970
+[04/Oct/2026 19:41:13] "GET /api/v1/user/profile HTTP/1.1" 200 2664
+[04/Oct/2026 19:41:14] "GET /api/v1/user/workspace HTTP/1.1" 200 692
+[04/Oct/2026 19:41:15] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 200 302778
+[04/Oct/2026 19:41:15] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile HTTP/1.1" 200 18193
+[04/Oct/2026 19:41:15] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 594
+[04/Oct/2026 19:41:15] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 302767
+[04/Oct/2026 19:41:16] "OPTIONS /api/v1/admin/cases/case-1/requirements HTTP/1.1" 200 0
+Unauthorized: /api/v1/admin/cases/case-1/requirements
+2026-10-04 19:41:16,472 WARNING django.request Unauthorized: /api/v1/admin/cases/case-1/requirements
+[04/Oct/2026 19:41:16,476] - Broken pipe from ('127.0.0.1', 63396)
+[04/Oct/2026 19:41:22] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 11501
+[04/Oct/2026 19:41:23] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/workflows?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 0
+[04/Oct/2026 19:41:23] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:41:24] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:41:24] "GET /api/v1/user/profile HTTP/1.1" 200 2664
+[04/Oct/2026 19:41:25] "GET /api/v1/user/workspace HTTP/1.1" 200 692
+[04/Oct/2026 19:41:26] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 200 302778
+[04/Oct/2026 19:41:26] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/workflows?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 33710
+[04/Oct/2026 19:41:26] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile HTTP/1.1" 200 18193
+[04/Oct/2026 19:41:26] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 594
+[04/Oct/2026 19:41:26] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 302767
+[04/Oct/2026 19:41:34] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 11501
+[04/Oct/2026 19:41:36] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/schemes?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 0
+[04/Oct/2026 19:41:36] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:41:37] "GET /api/v1/user/profile HTTP/1.1" 200 2664
+[04/Oct/2026 19:41:37] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:41:38] "GET /api/v1/user/profile HTTP/1.1" 200 2664
+[04/Oct/2026 19:41:39] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/schemes?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 27906
+[04/Oct/2026 19:41:40] "GET /api/v1/user/workspace HTTP/1.1" 200 692
+[04/Oct/2026 19:41:40] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 200 302778
+[04/Oct/2026 19:41:41] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile HTTP/1.1" 200 18193
+[04/Oct/2026 19:41:41] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 594
+[04/Oct/2026 19:41:41] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 302767
+[04/Oct/2026 19:41:49] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 11501
+[04/Oct/2026 19:41:52] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/schemes?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 27906
+[04/Oct/2026 19:41:53] "OPTIONS /api/v1/standards/search?business_id=d24971fc-1183-4970-a356-5d0f8929b587&assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 0
+[04/Oct/2026 19:41:53] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:41:54] "GET /api/v1/standards/search?business_id=d24971fc-1183-4970-a356-5d0f8929b587&assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 1615
+[04/Oct/2026 19:41:54] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:41:54] "GET /api/v1/user/profile HTTP/1.1" 200 2664
+[04/Oct/2026 19:41:55] "GET /api/v1/user/workspace HTTP/1.1" 200 692
+[04/Oct/2026 19:41:56] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 200 302778
+[04/Oct/2026 19:41:56] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile HTTP/1.1" 200 18193
+[04/Oct/2026 19:41:57] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 302767
+[04/Oct/2026 19:41:57] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 594
+[04/Oct/2026 19:42:06] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 11501
+[04/Oct/2026 19:42:07] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:42:08] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:42:08] "GET /api/v1/user/profile HTTP/1.1" 200 2664
+[04/Oct/2026 19:42:09] "GET /api/v1/user/workspace HTTP/1.1" 200 692
+[04/Oct/2026 19:42:10] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 200 302778
+[04/Oct/2026 19:42:10] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile HTTP/1.1" 200 18193
+[04/Oct/2026 19:42:10] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 302767
+[04/Oct/2026 19:42:10] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 594
+[04/Oct/2026 19:42:18] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 11501
+[04/Oct/2026 19:42:19] "OPTIONS /api/v1/calendar/google/status HTTP/1.1" 200 0
+[04/Oct/2026 19:42:19] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar HTTP/1.1" 200 0
+[04/Oct/2026 19:42:19] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:42:19] "GET /api/v1/calendar/google/status HTTP/1.1" 200 78
+[04/Oct/2026 19:42:20] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar HTTP/1.1" 200 541
+[04/Oct/2026 19:42:20] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:42:20] "GET /api/v1/user/profile HTTP/1.1" 200 2664
+[04/Oct/2026 19:42:21] "GET /api/v1/user/workspace HTTP/1.1" 200 692
+[04/Oct/2026 19:42:22] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 200 302778
+[04/Oct/2026 19:42:22] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile HTTP/1.1" 200 18193
+[04/Oct/2026 19:42:23] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 594
+[04/Oct/2026 19:42:23] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 302767
+[04/Oct/2026 19:42:29] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 11501
+[04/Oct/2026 19:42:31] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:42:31] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 594
+[04/Oct/2026 19:42:32] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:42:32] "GET /api/v1/user/profile HTTP/1.1" 200 2664
+[04/Oct/2026 19:42:33] "GET /api/v1/user/workspace HTTP/1.1" 200 692
+[04/Oct/2026 19:42:34] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 200 302778
+[04/Oct/2026 19:42:35] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile HTTP/1.1" 200 18193
+[04/Oct/2026 19:42:35] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 594
+[04/Oct/2026 19:42:35] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 302767
+[04/Oct/2026 19:42:43] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 11501
+[04/Oct/2026 19:42:43] "OPTIONS /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/preferences HTTP/1.1" 200 0
+[04/Oct/2026 19:42:44] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:42:44] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/preferences HTTP/1.1" 200 103
+[04/Oct/2026 19:42:45] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:42:47] "GET /api/v1/user/profile HTTP/1.1" 200 2664
+[04/Oct/2026 19:42:48] "GET /api/v1/user/workspace HTTP/1.1" 200 692
+[04/Oct/2026 19:42:48] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 200 302778
+[04/Oct/2026 19:42:49] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile HTTP/1.1" 200 18193
+[04/Oct/2026 19:42:49] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 594
+[04/Oct/2026 19:42:49] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 302767
+[04/Oct/2026 19:43:00] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 11501
+[04/Oct/2026 19:43:02] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:43:02] "GET /api/v1/standards/search?business_id=d24971fc-1183-4970-a356-5d0f8929b587&assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 1615
+[04/Oct/2026 19:43:03] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:43:03] "GET /api/v1/user/profile HTTP/1.1" 200 2664
+[04/Oct/2026 19:43:03] "GET /api/v1/user/workspace HTTP/1.1" 200 692
+[04/Oct/2026 19:43:04] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 200 302778
+[04/Oct/2026 19:43:04] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile HTTP/1.1" 200 18193
+[04/Oct/2026 19:43:05] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 594
+[04/Oct/2026 19:43:05] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 302767
+[04/Oct/2026 19:43:13] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 11501
+[04/Oct/2026 19:43:14] "GET /api/v1/auth/me HTTP/1.1" 200 302
+[04/Oct/2026 19:43:15] "GET /api/v1/standards/search?business_id=d24971fc-1183-4970-a356-5d0f8929b587&assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 1615
+[04/Oct/2026 19:43:15] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 19:43:15] "GET /api/v1/user/profile HTTP/1.1" 200 2664
+[04/Oct/2026 19:43:16] "GET /api/v1/user/workspace HTTP/1.1" 200 692
+[04/Oct/2026 19:43:16] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments HTTP/1.1" 200 302778
+[04/Oct/2026 19:43:17] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/profile HTTP/1.1" 200 18193
+[04/Oct/2026 19:43:17] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587 HTTP/1.1" 200 594
+[04/Oct/2026 19:43:17] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/assessments/7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 302767
+[04/Oct/2026 19:43:25] "GET /api/v1/businesses/d24971fc-1183-4970-a356-5d0f8929b587/dashboard?assessment_id=7e642717-bf84-46c7-9af9-54df15dc4a32 HTTP/1.1" 200 11501
+[04/Oct/2026 19:47:12] "OPTIONS /api/v1/admin/cases/case-1/requirements HTTP/1.1" 200 0
+Unauthorized: /api/v1/admin/cases/case-1/requirements
+2026-10-04 19:47:12,678 WARNING django.request Unauthorized: /api/v1/admin/cases/case-1/requirements
+[04/Oct/2026 19:47:12,681] - Broken pipe from ('127.0.0.1', 57660)
+[04/Oct/2026 19:51:58] "OPTIONS /api/v1/admin/cases/case-1/requirements HTTP/1.1" 200 0
+Unauthorized: /api/v1/admin/cases/case-1/requirements
+2026-10-04 19:51:59,346 WARNING django.request Unauthorized: /api/v1/admin/cases/case-1/requirements
+[04/Oct/2026 19:51:59,353] - Broken pipe from ('127.0.0.1', 58437)
+[04/Oct/2026 19:57:51] "GET /health/ready HTTP/1.1" 200 1425
+[04/Oct/2026 19:58:10] "OPTIONS /api/v1/admin/cases/case-1/requirements HTTP/1.1" 200 0
+Unauthorized: /api/v1/admin/cases/case-1/requirements
+2026-10-04 19:58:10,753 WARNING django.request Unauthorized: /api/v1/admin/cases/case-1/requirements
+[04/Oct/2026 19:58:10,761] - Broken pipe from ('127.0.0.1', 54222)
+[04/Oct/2026 20:01:32] "GET /health HTTP/1.1" 200 109
+[04/Oct/2026 22:38:07] "OPTIONS /api/v1/admin/cases/case-1/requirements HTTP/1.1" 200 0
+[04/Oct/2026 22:49:20] "OPTIONS /api/v1/auth/register HTTP/1.1" 200 0
+[04/Oct/2026 22:49:22] "POST /api/v1/auth/register HTTP/1.1" 201 329
+[04/Oct/2026 22:49:22] "OPTIONS /api/v1/user/profile HTTP/1.1" 200 0
+[04/Oct/2026 22:49:22] "OPTIONS /api/v1/profile/variables HTTP/1.1" 200 0
+[04/Oct/2026 22:49:22] "GET /api/v1/profile/variables HTTP/1.1" 200 15757
+[04/Oct/2026 22:49:23] "GET /api/v1/user/profile HTTP/1.1" 200 344
+[04/Oct/2026 22:49:47] "OPTIONS /api/v1/businesses HTTP/1.1" 200 0
+[04/Oct/2026 22:49:49] "POST /api/v1/businesses HTTP/1.1" 201 525
+[04/Oct/2026 22:49:49] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/profile HTTP/1.1" 200 0
+[04/Oct/2026 22:49:49] "POST /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/profile HTTP/1.1" 201 1564
+[04/Oct/2026 22:49:49] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/assessments HTTP/1.1" 200 0
+[04/Oct/2026 22:49:49] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/assessments HTTP/1.1" 200 30
+[04/Oct/2026 22:49:50] "POST /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/assessments HTTP/1.1" 201 1791
+[04/Oct/2026 22:49:50] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/assessments/2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 0
+[04/Oct/2026 22:49:50] "PATCH /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/assessments/2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 2164
+[04/Oct/2026 22:49:53] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/onboarding/products-activities HTTP/1.1" 200 0
+[04/Oct/2026 22:49:54] "POST /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/onboarding/products-activities HTTP/1.1" 200 225
+[04/Oct/2026 22:49:54] "OPTIONS /api/v1/assessments/ HTTP/1.1" 200 0
+[04/Oct/2026 22:49:55] "POST /api/v1/assessments/ HTTP/1.1" 201 323
+[04/Oct/2026 22:49:55] "OPTIONS /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/understand/ HTTP/1.1" 200 0
+2026-10-04 22:49:58,587 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:751, cached:0, out:757, reason:0) cost=$0.001059 latency=2996.4ms provider=gemini slot=2 fallback=False failure=None
+[04/Oct/2026 22:49:58] "POST /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/understand/ HTTP/1.1" 200 2300
+[04/Oct/2026 22:49:59] "PATCH /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/assessments/2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 8074
+[04/Oct/2026 22:50:03] "OPTIONS /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/questions/ HTTP/1.1" 200 0
+2026-10-04 22:50:08,048 INFO domain.providers.telemetry LLM Telemetry: workflow=smart_questions_planner model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1826, cached:0, out:701, reason:0) cost=$0.001206 latency=3343.2ms provider=gemini slot=3 fallback=False failure=None
+2026-10-04 22:50:08,294 INFO domain.intelligence.questionnaire Persisted compact questions in metadata for assessment run 2c950357-c342-4346-859e-8e76fa07ebb9
+[04/Oct/2026 22:50:08] "GET /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/questions/ HTTP/1.1" 200 1714
+[04/Oct/2026 22:50:16] "OPTIONS /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/answers/ HTTP/1.1" 200 0
+[04/Oct/2026 22:50:17] "POST /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/answers/ HTTP/1.1" 200 215
+[04/Oct/2026 22:50:17] "PATCH /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/assessments/2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 10159
+[04/Oct/2026 22:50:17] "OPTIONS /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/regulatory-discovery/ HTTP/1.1" 200 0
+2026-10-04 22:50:20,779 INFO domain.intelligence.regulatory_retrieval ComplianceRAG retrieval EMPTY: 0 passages, 2344ms
+2026-10-04 22:50:41,888 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 22:50:41,889 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 22:50:41,890 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 22:50:42,226 ERROR HttpCrawler Request to https://cewacor.nic.in/Docs/cwc_act_1962_270317.pdf failed and reached maximum retries
+ Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_async\connection.py", line 156, in _connect
+    stream = await stream.start_tls(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 67, in start_tls
+    with map_exceptions(exc_map):
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 100, in __call__
+    result = await middleware_instance.action()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_basic\_context_pipeline.py", line 40, in action
+    self.output_context = await self.generator.__anext__()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\crawlers\_abstract_http\_abstract_http_crawler.py", line 278, in _make_http_request
+    result = await self._http_client.crawl(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 167, in crawl
+    response = await client.send(http_request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\crawlee\http_clients\_httpx.py", line 74, in handle_async_request
+    response = await super().handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Somsubhra Dalui\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "O:\Project\branches\ComplyWise\backend\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)
+2026-10-04 22:50:42,226 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 22:50:42,227 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 22:50:42,227 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 22:50:42,229 INFO HttpCrawler Error analysis: total_errors=1 unique_errors=1
+2026-10-04 22:50:42,229 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0       \u2502
+\u2502 requests_failed               \u2502 1       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 334.9ms \u2502
+\u2502 request_avg_finished_duration \u2502 None    \u2502
+\u2502 requests_finished_per_minute  \u2502 0       \u2502
+\u2502 requests_failed_per_minute    \u2502 176     \u2502
+\u2502 request_total_duration        \u2502 334.9ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 340.2ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 22:50:42,998 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 22:50:42,999 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 22:50:42,999 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 22:50:43,525 INFO httpx HTTP Request: GET https://xgn.karnataka.gov.in/Login.aspx/xgn/Ind/xgn/CSHARP/ind/Circular/Ind/Temp_Industry_License.aspx "HTTP/1.1 200 OK"
+2026-10-04 22:50:43,822 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 22:50:43,822 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 22:50:43,823 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 22:50:43,824 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1       \u2502
+\u2502 requests_failed               \u2502 0       \u2502
+\u2502 retry_histogram               \u2502 [1]     \u2502
+\u2502 request_avg_failed_duration   \u2502 None    \u2502
+\u2502 request_avg_finished_duration \u2502 820.9ms \u2502
+\u2502 requests_finished_per_minute  \u2502 73      \u2502
+\u2502 requests_failed_per_minute    \u2502 0       \u2502
+\u2502 request_total_duration        \u2502 820.9ms \u2502
+\u2502 requests_total                \u2502 1       \u2502
+\u2502 crawler_runtime               \u2502 824.7ms \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 22:50:46,422 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:1330, cached:0, out:272, reason:0) cost=$0.000592 latency=2042.5ms provider=gemini slot=1 fallback=False failure=None
+2026-10-04 22:50:47,021 INFO HttpCrawler Current request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 0    \u2502
+\u2502 requests_failed               \u2502 0    \u2502
+\u2502 retry_histogram               \u2502 [0]  \u2502
+\u2502 request_avg_failed_duration   \u2502 None \u2502
+\u2502 request_avg_finished_duration \u2502 None \u2502
+\u2502 requests_finished_per_minute  \u2502 0    \u2502
+\u2502 requests_failed_per_minute    \u2502 0    \u2502
+\u2502 request_total_duration        \u2502 0s   \u2502
+\u2502 requests_total                \u2502 0    \u2502
+\u2502 crawler_runtime               \u2502 0s   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 22:50:47,022 INFO HttpCrawler Crawled 0/1 pages, 0 failed requests, desired concurrency 10.
+2026-10-04 22:50:47,022 INFO crawlee._autoscaling.autoscaled_pool current_concurrency = 0; desired_concurrency = 10; cpu = 0; mem = 0; event_loop = 0.0; client_info = 0.0
+2026-10-04 22:50:52,599 INFO httpx HTTP Request: GET https://ipgrs.karnataka.gov.in/CPGrams/tradelicensestatus "HTTP/1.1 200 OK"
+2026-10-04 22:50:52,602 INFO HttpCrawler Crawler.stop() was called with following reason: The crawler has reached its limit of 1 requests per crawl. .
+2026-10-04 22:50:52,602 INFO HttpCrawler The crawler will finish any remaining ongoing requests and shut down.
+2026-10-04 22:50:52,602 INFO crawlee._autoscaling.autoscaled_pool Waiting for remaining tasks to finish
+2026-10-04 22:50:52,605 INFO HttpCrawler Final request statistics:
+\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502 requests_finished             \u2502 1     \u2502
+\u2502 requests_failed               \u2502 0     \u2502
+\u2502 retry_histogram               \u2502 [1]   \u2502
+\u2502 request_avg_failed_duration   \u2502 None  \u2502
+\u2502 request_avg_finished_duration \u2502 5.58s \u2502
+\u2502 requests_finished_per_minute  \u2502 11    \u2502
+\u2502 requests_failed_per_minute    \u2502 0     \u2502
+\u2502 request_total_duration        \u2502 5.58s \u2502
+\u2502 requests_total                \u2502 1     \u2502
+\u2502 crawler_runtime               \u2502 5.58s \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+2026-10-04 22:50:54,807 INFO domain.providers.telemetry LLM Telemetry: workflow=claim_extraction model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:659, cached:0, out:14, reason:0) cost=$0.000149 latency=962.9ms provider=gemini slot=2 fallback=False failure=None
+[04/Oct/2026 22:50:55] "POST /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/regulatory-discovery/ HTTP/1.1" 200 6297
+[04/Oct/2026 22:50:55] "OPTIONS /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/compliance-synthesis/ HTTP/1.1" 200 0
+2026-10-04 22:51:08,450 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=6941.3ms provider=gemini slot=3 fallback=False failure=malformed_response
+2026-10-04 22:51:16,124 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=7673.5ms provider=gemini slot=1 fallback=True failure=schema_failure
+2026-10-04 22:51:24,625 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=8501.2ms provider=gemini slot=2 fallback=True failure=schema_failure
+2026-10-04 22:51:37,781 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gpt-4o-mini status=SUCCESS tokens=(in:7884, cached:0, out:1000, reason:0) cost=$0.001783 latency=13154.2ms provider=openai slot=None fallback=True failure=None
+[04/Oct/2026 22:51:38] "POST /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/compliance-synthesis/ HTTP/1.1" 200 118326
+[04/Oct/2026 22:51:38] "OPTIONS /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/schemes/ HTTP/1.1" 200 0
+[04/Oct/2026 22:51:38] "OPTIONS /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/standards/ HTTP/1.1" 200 0
+[04/Oct/2026 22:51:41] "GET /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/standards/ HTTP/1.1" 200 110
+[04/Oct/2026 22:51:44] "GET /api/v1/assessments/2c950357-c342-4346-859e-8e76fa07ebb9/schemes/ HTTP/1.1" 200 3902
+[04/Oct/2026 22:51:44] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/analysis/orchestrate HTTP/1.1" 200 0
+[04/Oct/2026 22:51:57] "POST /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/analysis/orchestrate HTTP/1.1" 200 80239
+[04/Oct/2026 22:51:57] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/compliance?assessment_id=2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 0
+[04/Oct/2026 22:52:02] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/compliance?assessment_id=2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 107191
+[04/Oct/2026 22:52:03] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/assessments/2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 267977
+[04/Oct/2026 22:52:29] "OPTIONS /api/v1/user/workspace HTTP/1.1" 200 0
+[04/Oct/2026 22:52:29] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/notifications/summary HTTP/1.1" 200 0
+[04/Oct/2026 22:52:30] "POST /api/v1/user/workspace HTTP/1.1" 200 627
+[04/Oct/2026 22:52:30] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 22:52:30] "GET /api/v1/user/profile HTTP/1.1" 200 2467
+[04/Oct/2026 22:52:31] "GET /api/v1/user/workspace HTTP/1.1" 200 627
+[04/Oct/2026 22:52:32] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/assessments HTTP/1.1" 200 267988
+[04/Oct/2026 22:52:32] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/dashboard?assessment_id=2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 0
+[04/Oct/2026 22:52:32] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5 HTTP/1.1" 200 0
+[04/Oct/2026 22:52:32] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/profile HTTP/1.1" 200 17827
+[04/Oct/2026 22:52:32] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/assessments/2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 267977
+[04/Oct/2026 22:52:32] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5 HTTP/1.1" 200 534
+[04/Oct/2026 22:52:41] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/dashboard?assessment_id=2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 9039
+[04/Oct/2026 22:52:48] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/discovery/candidates HTTP/1.1" 200 0
+[04/Oct/2026 22:52:49] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5 HTTP/1.1" 200 534
+[04/Oct/2026 22:52:49] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/discovery/candidates HTTP/1.1" 200 959
+[04/Oct/2026 22:52:49] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 22:52:50] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/compliance?assessment_id=2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 107191
+[04/Oct/2026 22:52:55] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/documents?assessment_id=2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 0
+[04/Oct/2026 22:52:56] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 22:52:56] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/documents?assessment_id=2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 9688
+[04/Oct/2026 22:52:59] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/workflows?assessment_id=2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 0
+[04/Oct/2026 22:53:00] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 22:53:02] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/workflows?assessment_id=2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 13142
+[04/Oct/2026 22:53:10] "OPTIONS /api/v1/calendar/google/status HTTP/1.1" 200 0
+[04/Oct/2026 22:53:10] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar HTTP/1.1" 200 0
+[04/Oct/2026 22:53:11] "GET /api/v1/calendar/google/status HTTP/1.1" 200 78
+[04/Oct/2026 22:53:11] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar HTTP/1.1" 200 524
+[04/Oct/2026 22:53:11] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 22:53:14] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/preferences HTTP/1.1" 200 0
+[04/Oct/2026 22:53:14] "OPTIONS /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/notifications HTTP/1.1" 200 0
+[04/Oct/2026 22:53:14] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/notifications HTTP/1.1" 200 49
+[04/Oct/2026 22:53:14] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/preferences HTTP/1.1" 200 103
+[04/Oct/2026 22:53:15] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 22:53:15] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 22:53:17] "OPTIONS /api/v1/standards/search?business_id=52d91a64-49d3-4271-8433-488b369d9fd5&assessment_id=2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 0
+[04/Oct/2026 22:53:18] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 22:53:18] "GET /api/v1/standards/search?business_id=52d91a64-49d3-4271-8433-488b369d9fd5&assessment_id=2c950357-c342-4346-859e-8e76fa07ebb9 HTTP/1.1" 200 497
+[04/Oct/2026 22:53:24] "GET /api/v1/profile/variables HTTP/1.1" 200 15757
+[04/Oct/2026 22:56:55] "POST /api/v1/businesses HTTP/1.1" 201 555
+[04/Oct/2026 22:56:55] "OPTIONS /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/profile HTTP/1.1" 200 0
+[04/Oct/2026 22:56:55] "POST /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/profile HTTP/1.1" 201 1109
+[04/Oct/2026 22:56:55] "OPTIONS /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/assessments HTTP/1.1" 200 0
+[04/Oct/2026 22:56:56] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/assessments HTTP/1.1" 200 30
+[04/Oct/2026 22:56:56] "POST /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/assessments HTTP/1.1" 201 1396
+[04/Oct/2026 22:56:56] "OPTIONS /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 0
+[04/Oct/2026 22:56:57] "PATCH /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 1725
+[04/Oct/2026 22:57:17] "POST /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/profile HTTP/1.1" 201 1564
+[04/Oct/2026 22:57:18] "PATCH /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 1735
+[04/Oct/2026 22:57:44] "OPTIONS /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/onboarding/products-activities HTTP/1.1" 200 0
+[04/Oct/2026 22:57:45] "POST /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/onboarding/products-activities HTTP/1.1" 200 821
+[04/Oct/2026 22:57:46] "POST /api/v1/assessments/ HTTP/1.1" 201 323
+[04/Oct/2026 22:57:46] "OPTIONS /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/understand/ HTTP/1.1" 200 0
+2026-10-04 22:58:09,802 INFO domain.providers.telemetry LLM Telemetry: workflow=business_understanding model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:830, cached:0, out:842, reason:0) cost=$0.001176 latency=23168.6ms provider=gemini slot=1 fallback=False failure=None
+[04/Oct/2026 22:58:09] "POST /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/understand/ HTTP/1.1" 200 2906
+[04/Oct/2026 22:58:10] "PATCH /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 11200
+[04/Oct/2026 22:58:14] "OPTIONS /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/questions/ HTTP/1.1" 200 0
+2026-10-04 22:58:26,487 INFO domain.providers.telemetry LLM Telemetry: workflow=smart_questions_planner model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:2127, cached:0, out:1564, reason:0) cost=$0.002302 latency=11160.9ms provider=gemini slot=2 fallback=False failure=None
+2026-10-04 22:58:27,505 INFO domain.intelligence.questionnaire Persisted compact questions in metadata for assessment run de452dfe-7414-4ee9-94ab-04feb779b6d8
+[04/Oct/2026 22:58:28] "GET /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/questions/ HTTP/1.1" 200 3276
+[04/Oct/2026 22:58:53] "OPTIONS /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/answers/ HTTP/1.1" 200 0
+[04/Oct/2026 22:58:54] "POST /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/answers/ HTTP/1.1" 200 886
+[04/Oct/2026 22:59:31] "POST /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/answers/ HTTP/1.1" 200 1272
+[04/Oct/2026 22:59:55] "POST /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/answers/ HTTP/1.1" 200 218
+[04/Oct/2026 22:59:56] "PATCH /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 17229
+[04/Oct/2026 22:59:56] "OPTIONS /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/regulatory-discovery/ HTTP/1.1" 200 0
+2026-10-04 23:00:00,349 INFO domain.intelligence.regulatory_retrieval ComplianceRAG retrieval EMPTY: 0 passages, 2360ms
+[04/Oct/2026 23:00:25] "POST /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/regulatory-discovery/ HTTP/1.1" 200 1503
+[04/Oct/2026 23:00:25] "OPTIONS /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/compliance-synthesis/ HTTP/1.1" 200 0
+2026-10-04 23:00:36,435 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=1093.1ms provider=gemini slot=3 fallback=False failure=provider_unavailable
+2026-10-04 23:00:52,549 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=ERROR tokens=(in:0, cached:0, out:0, reason:0) cost=$0.000000 latency=16107.6ms provider=gemini slot=1 fallback=True failure=malformed_response
+2026-10-04 23:01:11,736 INFO domain.providers.telemetry LLM Telemetry: workflow=workspace_guidance model=gemini-3.5-flash-lite status=SUCCESS tokens=(in:6876, cached:0, out:4075, reason:0) cost=$0.006265 latency=19182.1ms provider=gemini slot=2 fallback=True failure=None
+[04/Oct/2026 23:01:12] "POST /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/compliance-synthesis/ HTTP/1.1" 200 157080
+[04/Oct/2026 23:01:12] "OPTIONS /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/schemes/ HTTP/1.1" 200 0
+[04/Oct/2026 23:01:12] "OPTIONS /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/standards/ HTTP/1.1" 200 0
+[04/Oct/2026 23:01:14] "GET /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/standards/ HTTP/1.1" 200 2858
+[04/Oct/2026 23:01:16] "GET /api/v1/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8/schemes/ HTTP/1.1" 200 23494
+[04/Oct/2026 23:01:16] "OPTIONS /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/analysis/orchestrate HTTP/1.1" 200 0
+[04/Oct/2026 23:01:25] "POST /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/analysis/orchestrate HTTP/1.1" 200 121719
+[04/Oct/2026 23:01:25] "OPTIONS /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/compliance?assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 0
+[04/Oct/2026 23:01:26] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/compliance?assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 111053
+[04/Oct/2026 23:01:27] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 382158
+[04/Oct/2026 23:02:13] "OPTIONS /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/calendar/notifications/summary HTTP/1.1" 200 0
+[04/Oct/2026 23:02:14] "POST /api/v1/user/workspace HTTP/1.1" 200 687
+[04/Oct/2026 23:02:14] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 23:02:14] "GET /api/v1/businesses/52d91a64-49d3-4271-8433-488b369d9fd5/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 23:02:15] "GET /api/v1/user/profile HTTP/1.1" 200 5169
+[04/Oct/2026 23:02:16] "GET /api/v1/user/workspace HTTP/1.1" 200 687
+[04/Oct/2026 23:02:17] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/assessments HTTP/1.1" 200 382169
+[04/Oct/2026 23:02:17] "OPTIONS /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/dashboard?assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 0
+[04/Oct/2026 23:02:17] "OPTIONS /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104 HTTP/1.1" 200 0
+[04/Oct/2026 23:02:17] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/profile HTTP/1.1" 200 18613
+[04/Oct/2026 23:02:17] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104 HTTP/1.1" 200 561
+[04/Oct/2026 23:02:17] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/assessments/de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 382158
+[04/Oct/2026 23:02:25] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/dashboard?assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 14852
+[04/Oct/2026 23:02:29] "OPTIONS /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/discovery/candidates HTTP/1.1" 200 0
+[04/Oct/2026 23:02:30] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/discovery/candidates HTTP/1.1" 200 21
+[04/Oct/2026 23:02:30] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104 HTTP/1.1" 200 561
+[04/Oct/2026 23:02:30] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 23:02:31] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/compliance?assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 111053
+[04/Oct/2026 23:02:49] "OPTIONS /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/documents?assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 0
+[04/Oct/2026 23:02:50] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 23:02:50] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/documents?assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 43580
+[04/Oct/2026 23:03:07] "OPTIONS /api/v1/standards/search?business_id=c1addccd-4cd7-4daf-a48c-0c0425552104&assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 0
+[04/Oct/2026 23:03:08] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 23:03:08] "GET /api/v1/standards/search?business_id=c1addccd-4cd7-4daf-a48c-0c0425552104&assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 4297
+[04/Oct/2026 23:03:26] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 23:03:26] "GET /api/v1/standards/search?business_id=c1addccd-4cd7-4daf-a48c-0c0425552104&assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 4297
+[04/Oct/2026 23:03:32] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 23:03:32] "GET /api/v1/standards/search?business_id=c1addccd-4cd7-4daf-a48c-0c0425552104&assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 4297
+[04/Oct/2026 23:03:34] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/discovery/candidates HTTP/1.1" 200 21
+[04/Oct/2026 23:03:34] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104 HTTP/1.1" 200 561
+[04/Oct/2026 23:03:34] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 23:03:35] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/compliance?assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 111053
+[04/Oct/2026 23:03:42] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 23:03:43] "GET /api/v1/standards/search?business_id=c1addccd-4cd7-4daf-a48c-0c0425552104&assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 4297
+[04/Oct/2026 23:03:48] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 23:03:48] "GET /api/v1/standards/search?business_id=c1addccd-4cd7-4daf-a48c-0c0425552104&assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 4297
+[04/Oct/2026 23:03:59] "OPTIONS /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/schemes?assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 0
+[04/Oct/2026 23:04:00] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/calendar/notifications/summary HTTP/1.1" 200 214
+[04/Oct/2026 23:04:02] "GET /api/v1/businesses/c1addccd-4cd7-4daf-a48c-0c0425552104/schemes?assessment_id=de452dfe-7414-4ee9-94ab-04feb779b6d8 HTTP/1.1" 200 56893
+[05/Oct/2026 00:00:41] "OPTIONS /api/v1/admin/cases/case-1/requirements HTTP/1.1" 200 0
+[05/Oct/2026 08:36:34] "OPTIONS /api/v1/admin/cases/case-1/requirements HTTP/1.1" 200 0
+[05/Oct/2026 08:58:02] "OPTIONS /api/v1/admin/cases/case-1/requirements HTTP/1.1" 200 0
+Unauthorized: /api/v1/admin/cases/case-1/requirements
+2026-10-05 08:58:03,717 WARNING django.request Unauthorized: /api/v1/admin/cases/case-1/requirements
+[05/Oct/2026 08:58:03,729] - Broken pipe from ('127.0.0.1', 63514)
+[05/Oct/2026 09:08:02] "GET /health/ready HTTP/1.1" 200 1425
+[05/Oct/2026 15:59:19] "GET /api/v1/auth/google/callback HTTP/1.1" 302 0
+[05/Oct/2026 15:59:20] "OPTIONS /api/v1/auth/me HTTP/1.1" 200 0
+[05/Oct/2026 15:59:21] "GET /api/v1/auth/me HTTP/1.1" 200 269
+[05/Oct/2026 15:59:21] "OPTIONS /api/v1/user/profile HTTP/1.1" 200 0
+[05/Oct/2026 15:59:22] "GET /api/v1/user/profile HTTP/1.1" 200 2497
+[05/Oct/2026 15:59:22] "OPTIONS /api/v1/user/workspace HTTP/1.1" 200 0
+[05/Oct/2026 15:59:23,249] - Broken pipe from ('127.0.0.1', 56135)
+[05/Oct/2026 16:22:09] "GET /api/v1/auth/me HTTP/1.1" 200 269
+[05/Oct/2026 16:22:10] "GET /api/v1/user/profile HTTP/1.1" 200 2497
+[05/Oct/2026 16:22:12] "GET /api/v1/user/workspace HTTP/1.1" 200 639
+[05/Oct/2026 16:22:12] "OPTIONS /api/v1/businesses/09f5d702-f83a-4b1d-bd5e-2c7b31b7a2fa/assessments HTTP/1.1" 200 0
+[05/Oct/2026 16:22:13] "GET /api/v1/businesses/09f5d702-f83a-4b1d-bd5e-2c7b31b7a2fa/assessments HTTP/1.1" 200 290500
+[05/Oct/2026 16:22:13] "OPTIONS /api/v1/businesses/09f5d702-f83a-4b1d-bd5e-2c7b31b7a2fa/profile HTTP/1.1" 200 0
+[05/Oct/2026 16:22:13] "OPTIONS /api/v1/businesses/09f5d702-f83a-4b1d-bd5e-2c7b31b7a2fa/dashboard?assessment_id=8b0883ed-63f8-47a6-8e08-84874d71eae8 HTTP/1.1" 200 0
+[05/Oct/2026 16:22:13] "OPTIONS /api/v1/businesses/09f5d702-f83a-4b1d-bd5e-2c7b31b7a2fa HTTP/1.1" 200 0
+[05/Oct/2026 16:22:13] "OPTIONS /api/v1/businesses/09f5d702-f83a-4b1d-bd5e-2c7b31b7a2fa/assessments/8b0883ed-63f8-47a6-8e08-84874d71eae8 HTTP/1.1" 200 0
+[05/Oct/2026 16:22:13] "GET /api/v1/businesses/09f5d702-f83a-4b1d-bd5e-2c7b31b7a2fa/profile HTTP/1.1" 200 18472
+[05/Oct/2026 16:22:13] "GET /api/v1/auth/google/start?handoff_challenge=NJsgs8Tuj7S6T4mZAJ3AEoyBZ2MM3GGpfVkGr0KB56k HTTP/1.1" 302 0
+[05/Oct/2026 16:22:14] "GET /api/v1/businesses/09f5d702-f83a-4b1d-bd5e-2c7b31b7a2fa HTTP/1.1" 200 540
+[05/Oct/2026 16:22:14] "GET /api/v1/businesses/09f5d702-f83a-4b1d-bd5e-2c7b31b7a2fa/assessments/8b0883ed-63f8-47a6-8e08-84874d71eae8 HTTP/1.1" 200 290489
+[05/Oct/2026 16:22:14] "GET /api/v1/auth/me HTTP/1.1" 200 269
+[05/Oct/2026 16:22:15] "GET /api/v1/user/profile HTTP/1.1" 200 2497
+[05/Oct/2026 16:22:16] "GET /api/v1/user/workspace HTTP/1.1" 200 639
+[05/Oct/2026 16:22:17] "GET /api/v1/businesses/09f5d702-f83a-4b1d-bd5e-2c7b31b7a2fa/assessments HTTP/1.1" 200 290500
+[05/Oct/2026 16:22:18,583] - Broken pipe from ('127.0.0.1', 52031)
+[05/Oct/2026 16:22:18,819] - Broken pipe from ('127.0.0.1', 54994)
+[05/Oct/2026 16:22:18,965] - Broken pipe from ('127.0.0.1', 61521)
+[05/Oct/2026 16:22:24,168] - Broken pipe from ('127.0.0.1', 60172)
+[05/Oct/2026 16:26:15] "GET /health HTTP/1.1" 200 109

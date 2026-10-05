@@ -10,44 +10,7 @@ interface ComplianceStatusCardProps {
 }
 
 export function ComplianceStatusCard({
-  categoryBreakdown = {
-    Overall: {
-      category: "Overall",
-      healthPercentage: 82,
-      compliantCount: 140,
-      inProgressCount: 48,
-      overdueCount: 16,
-      inProgressPercentage: 10,
-      overduePercentage: 8,
-    },
-    "Electrical / Machinery": {
-      category: "Electrical / Machinery",
-      healthPercentage: 79,
-      compliantCount: 78,
-      inProgressCount: 24,
-      overdueCount: 9,
-      inProgressPercentage: 12,
-      overduePercentage: 9,
-    },
-    "Food Safety & FSSAI": {
-      category: "Food Safety & FSSAI",
-      healthPercentage: 91,
-      compliantCount: 48,
-      inProgressCount: 12,
-      overdueCount: 3,
-      inProgressPercentage: 6,
-      overduePercentage: 3,
-    },
-    "Environment & Pollution": {
-      category: "Environment & Pollution",
-      healthPercentage: 94,
-      compliantCount: 36,
-      inProgressCount: 8,
-      overdueCount: 2,
-      inProgressPercentage: 4,
-      overduePercentage: 2,
-    },
-  },
+  categoryBreakdown = {},
   onExpand,
 }: ComplianceStatusCardProps) {
   const defaultEmptyStats: ComplianceCategoryStats = {
@@ -78,18 +41,18 @@ export function ComplianceStatusCard({
     defaultEmptyStats;
 
   return (
-    <div className="bg-white rounded-[20px] p-5 sm:p-6 border border-[#E5E7EB] shadow-sm flex flex-col justify-between h-full min-h-[270px] relative select-none w-full">
+    <div className="bg-white rounded-[20px] p-5 sm:p-6 border border-[var(--ui-border)] shadow-sm flex flex-col justify-between h-full min-h-[270px] relative select-none w-full">
       {/* Header */}
       <div>
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-sm font-semibold text-[#111827] whitespace-nowrap">
-            Compliance Status
+          <h3 className="text-sm font-semibold text-[var(--ui-text)] whitespace-nowrap">
+            Tracked case status
           </h3>
           <button
             type="button"
             onClick={onExpand}
             aria-label="Expand compliance status"
-            className="h-6 w-6 rounded-[6px] bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#111827] transition-colors cursor-pointer"
+            className="h-6 w-6 rounded-[6px] bg-[var(--ui-bg)] hover:bg-[var(--ui-inset)] border border-[var(--ui-border)] flex items-center justify-center text-[var(--ui-secondary)] hover:text-[var(--ui-text)] transition-colors cursor-pointer"
           >
             <ArrowUpRight className="h-3 w-3" />
           </button>
@@ -100,15 +63,15 @@ export function ComplianceStatusCard({
           <button
             type="button"
             onClick={() => setIsDropdownOpen((prev) => !prev)}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-[#111827] text-xs font-medium transition-colors cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white hover:bg-[var(--ui-bg)] border border-[var(--ui-border)] text-[var(--ui-text)] text-xs font-medium transition-colors cursor-pointer shadow-2xs"
           >
             <span>{selectedCategory}</span>
-            <ChevronDown className="h-3 w-3 text-[#64748B]" />
+            <ChevronDown className="h-3 w-3 text-[var(--ui-secondary)]" />
           </button>
 
           {/* Interactive Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute left-0 top-8 z-30 w-52 bg-white rounded-[12px] shadow-2xl border border-[#E2E8F0] p-1.5 space-y-0.5 animate-in fade-in duration-100">
+            <div className="absolute left-0 top-8 z-30 w-52 bg-white rounded-[12px] shadow-2xl border border-[var(--ui-border)] p-1.5 space-y-0.5 animate-in fade-in duration-100">
               {categories.map((cat) => (
                 <button
                   key={cat}
@@ -119,12 +82,12 @@ export function ComplianceStatusCard({
                   }}
                   className={`w-full text-left px-3 py-1.5 rounded-[8px] text-xs font-medium flex items-center justify-between transition-colors ${
                     selectedCategory === cat
-                      ? "bg-[#F1F5F9] text-[#111827] font-semibold"
-                      : "hover:bg-[#F8FAFC] text-[#64748B] hover:text-[#111827]"
+                      ? "bg-[var(--ui-inset)] text-[var(--ui-text)] font-semibold"
+                      : "hover:bg-[var(--ui-bg)] text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
                   }`}
                 >
                   <span>{cat}</span>
-                  {selectedCategory === cat && <Check className="h-3.5 w-3.5 text-indigo-600" />}
+                  {selectedCategory === cat && <Check className="h-3.5 w-3.5 text-[var(--ui-sage)]" />}
                 </button>
               ))}
             </div>
@@ -138,10 +101,10 @@ export function ComplianceStatusCard({
           {/* Main Central Turquoise/Mint Bubble */}
           <div className="relative z-10 h-[88px] w-[88px] rounded-full bg-[#5EEAD4] flex flex-col items-center justify-center shadow-[0_4px_20px_rgba(94,234,212,0.35)] transition-all duration-500">
             <div className="flex items-baseline">
-              <span className="text-2xl font-bold text-[#0F172A] tracking-tight">
+              <span className="text-2xl font-bold text-[var(--ui-text)] tracking-tight">
                 {stats.healthPercentage}
               </span>
-              <span className="text-xs font-bold text-[#0F172A] ml-0.5">%</span>
+              <span className="text-xs font-bold text-[var(--ui-text)] ml-0.5">%</span>
             </div>
           </div>
 
@@ -153,8 +116,8 @@ export function ComplianceStatusCard({
           </div>
 
           {/* Bottom-Left Overlapping Bubble */}
-          <div className="absolute bottom-0 left-6 z-20 h-10 w-10 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center shadow-xs transition-all duration-500">
-            <span className="text-[10px] font-bold text-[#475569]">
+          <div className="absolute bottom-0 left-6 z-20 h-10 w-10 rounded-full bg-[var(--ui-inset)] border border-[var(--ui-border)] flex items-center justify-center shadow-xs transition-all duration-500">
+            <span className="text-[10px] font-bold text-[var(--ui-secondary)]">
               {stats.overduePercentage}%
             </span>
           </div>
@@ -162,21 +125,21 @@ export function ComplianceStatusCard({
       </div>
 
       {/* Bottom 3-Column Metrics */}
-      <div className="grid grid-cols-3 gap-2 pt-2 text-left border-t border-[#F0F2F5]">
+      <div className="grid grid-cols-3 gap-2 pt-2 text-left border-t border-[var(--ui-border)]">
         <div>
-          <div className="text-xl sm:text-2xl font-bold text-[#111827] tracking-tight">
+          <div className="text-xl sm:text-2xl font-bold text-[var(--ui-text)] tracking-tight">
             {stats.compliantCount}
           </div>
-          <div className="text-[11px] text-[#6B7280] mt-0.5">
-            Compliant
+          <div className="text-[11px] text-[var(--ui-secondary)] mt-0.5">
+            Completed
           </div>
         </div>
 
         <div>
-          <div className="text-xl sm:text-2xl font-bold text-[#111827] tracking-tight">
+          <div className="text-xl sm:text-2xl font-bold text-[var(--ui-text)] tracking-tight">
             {stats.inProgressCount}
           </div>
-          <div className="text-[11px] text-[#6B7280] mt-0.5">
+          <div className="text-[11px] text-[var(--ui-secondary)] mt-0.5">
             In Progress
           </div>
         </div>
@@ -185,7 +148,7 @@ export function ComplianceStatusCard({
           <div className="text-xl sm:text-2xl font-bold text-[#EF4444] tracking-tight">
             {stats.overdueCount}
           </div>
-          <div className="text-[11px] text-[#6B7280] mt-0.5">
+          <div className="text-[11px] text-[var(--ui-secondary)] mt-0.5">
             Overdue
           </div>
         </div>

@@ -1,0 +1,98 @@
+TAP version 13
+# (node:9384) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:9384) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///O:/Project/branches/ComplyWise/frontend/tests/normalizeRequirementDetail.test.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to O:\\Project\\branches\\ComplyWise\\frontend\\package.json.
+# Subtest: normalizeRequirementDetail handles null/undefined input without crashing
+ok 1 - normalizeRequirementDetail handles null/undefined input without crashing
+  ---
+  duration_ms: 2.0242
+  type: 'test'
+  ...
+# Subtest: missing decision, fee and procedure data never becomes a completed requirement
+ok 2 - missing decision, fee and procedure data never becomes a completed requirement
+  ---
+  duration_ms: 1.0387
+  type: 'test'
+  ...
+# Subtest: citation references retain unknown verification and never become source passages
+ok 3 - citation references retain unknown verification and never become source passages
+  ---
+  duration_ms: 0.4266
+  type: 'test'
+  ...
+# Subtest: normalizeRequirementDetail prevents crash when why_it_applies is undefined (Crash Reproduction Test)
+ok 4 - normalizeRequirementDetail prevents crash when why_it_applies is undefined (Crash Reproduction Test)
+  ---
+  duration_ms: 0.2677
+  type: 'test'
+  ...
+# Subtest: normalizeRequirementDetail parses full backend contract accurately
+ok 5 - normalizeRequirementDetail parses full backend contract accurately
+  ---
+  duration_ms: 0.4039
+  type: 'test'
+  ...
+# Subtest: normalizeRequirementDetail gracefully parses legacy format
+ok 6 - normalizeRequirementDetail gracefully parses legacy format
+  ---
+  duration_ms: 0.4458
+  type: 'test'
+  ...
+# (node:3480) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:3480) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///O:/Project/branches/ComplyWise/frontend/tests/orchestrationAndPresets.test.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to O:\\Project\\branches\\ComplyWise\\frontend\\package.json.
+# Subtest: CONTROLLED_DEMO_PROFILES contains exactly 5 verified profiles
+ok 7 - CONTROLLED_DEMO_PROFILES contains exactly 5 verified profiles
+  ---
+  duration_ms: 2.9195
+  type: 'test'
+  ...
+# Subtest: Each controlled demo preset has valid enterprise fields and state
+ok 8 - Each controlled demo preset has valid enterprise fields and state
+  ---
+  duration_ms: 0.3992
+  type: 'test'
+  ...
+# Subtest: Each controlled demo preset contains verified answers for all 15 questions (Q01-Q15)
+ok 9 - Each controlled demo preset contains verified answers for all 15 questions (Q01-Q15)
+  ---
+  duration_ms: 1.5486
+  type: 'test'
+  ...
+# Subtest: VoltPro preset answers match electrical manufacturing specifications
+ok 10 - VoltPro preset answers match electrical manufacturing specifications
+  ---
+  duration_ms: 0.2574
+  type: 'test'
+  ...
+# Subtest: Ambuja Cement preset answers match heavy red category specifications
+ok 11 - Ambuja Cement preset answers match heavy red category specifications
+  ---
+  duration_ms: 0.2147
+  type: 'test'
+  ...
+# Subtest: Sahyadri Agro preset answers match food processing specifications
+ok 12 - Sahyadri Agro preset answers match food processing specifications
+  ---
+  duration_ms: 0.1867
+  type: 'test'
+  ...
+# Subtest: WhyThisAppliesModal 4-part evidence trace structure mappings
+ok 13 - WhyThisAppliesModal 4-part evidence trace structure mappings
+  ---
+  duration_ms: 0.4337
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 300.3367

@@ -15,15 +15,15 @@ export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
 
 const variantStyles: Record<IconButtonVariant, string> = {
   default:
-    "bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 shadow-2xs hover:border-slate-300",
+    "bg-white hover:bg-[var(--ui-bg)] text-[var(--ui-secondary)] border border-[var(--ui-border)]/80 shadow-2xs hover:border-[var(--ui-border-strong)]",
   subtle:
-    "bg-slate-100/80 hover:bg-slate-200/80 text-slate-600 hover:text-slate-900 border-transparent",
+    "bg-[var(--ui-inset)]/80 hover:bg-[var(--ui-inset)]/80 text-[var(--ui-secondary)] hover:text-[var(--ui-text)] border-transparent",
   dark:
-    "bg-[#0f172a] hover:bg-slate-800 text-white shadow-xs border-transparent",
+    "bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-white shadow-xs border-transparent",
   ghost:
-    "bg-transparent hover:bg-black/5 text-slate-600 hover:text-slate-900 border-transparent",
+    "bg-transparent hover:bg-black/5 text-[var(--ui-secondary)] hover:text-[var(--ui-text)] border-transparent",
   sage:
-    "bg-white hover:bg-slate-50 text-slate-900 shadow-md border border-black/[0.04]",
+    "bg-white hover:bg-[var(--ui-bg)] text-[var(--ui-text)] shadow-md border border-black/[0.04]",
 };
 
 const sizeStyles: Record<IconButtonSize, string> = {

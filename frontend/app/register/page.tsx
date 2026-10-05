@@ -7,5 +7,5 @@ export default function RegisterPage() {
   useEffect(() => {
     router.replace("/auth/signin?mode=register");
   }, [router]);
-  return <div className="min-h-screen bg-[#F8FAFC]" />;
+  return <div className="min-h-screen bg-[var(--ui-bg)]" />;
 }

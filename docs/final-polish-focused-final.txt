@@ -1,0 +1,5 @@
+.....................................s.................................. [ 88%]
+.........                                                                [100%]
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_api_orchestration_step03.py:695: Live integration smoke test disabled by default. Set COMPLYWISE_LIVE_INTEGRATION=1 to run.
+80 passed, 1 skipped in 5.78s

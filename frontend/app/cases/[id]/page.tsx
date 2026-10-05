@@ -1,4 +1,5 @@
 "use client";
+import Overlay from "@/components/product/Overlay";
 
 import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
@@ -99,7 +100,7 @@ export default function CaseDetailPage({ params }: CasePageProps) {
       setPortalStatusForm((prev) => ({
         ...prev,
         portal_name: detailRes.authority || "Official Government Portal",
-        application_reference_number: `APP-${detailRes.case_number}`,
+        application_reference_number: "",
       }));
     } catch (err: any) {
       setError(err?.message || "Failed to load compliance case.");
@@ -233,7 +234,7 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                 {caseData.requirement_name}
               </h1>
               <p className="text-xs text-muted-foreground mt-1">
-                Centralized statutory regulatory filing & compliance clearance roadmap.
+                Keep the evidence, review decisions and authority updates for this requirement together.
               </p>
             </div>
 
@@ -250,7 +251,7 @@ export default function CaseDetailPage({ params }: CasePageProps) {
 
               <button
                 onClick={() => setPortalModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-purple-300 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-semibold hover:bg-purple-100 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] dark:bg-[var(--ui-sage)]/40 text-[var(--ui-sage)] dark:text-[var(--ui-sage)] text-xs font-semibold hover:bg-[var(--ui-sage-soft)] transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 Govt Portal Tracking
@@ -270,7 +271,7 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                     key={st.id}
                     className={`p-3 rounded-xl border text-xs transition-all ${
                       isCompleted
-                        ? "border-emerald-300 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300"
+                        ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/50 dark:border-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/20 text-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                         : isCurrent
                         ? "border-primary bg-primary/5 text-primary shadow-sm font-semibold"
                         : "border-border/60 bg-muted/20 text-muted-foreground opacity-60"
@@ -279,7 +280,7 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] font-bold">STEP {st.sequence}</span>
                       {isCompleted ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[var(--ui-sage)]" />
                       ) : isCurrent ? (
                         <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
                       ) : (
@@ -301,14 +302,14 @@ export default function CaseDetailPage({ params }: CasePageProps) {
             className={`p-5 rounded-2xl border shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${
               caseData.current_task.is_action_required
                 ? "border-amber-300 bg-amber-50/70 dark:bg-amber-950/30 dark:border-amber-900 text-amber-950 dark:text-amber-200"
-                : "border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900 text-blue-950 dark:text-blue-200"
+                : "border-[var(--ui-sage-soft)] bg-[var(--ui-info-soft)]/50 dark:bg-[var(--ui-text)]/20 dark:border-[var(--ui-sage-soft)] text-[var(--ui-info)] dark:text-[var(--ui-info-soft)]"
             }`}
           >
             <div className="flex items-start gap-3">
               {caseData.current_task.is_action_required ? (
                 <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               ) : (
-                <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-5 h-5 text-[var(--ui-info)] shrink-0 mt-0.5" />
               )}
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider block opacity-75">
@@ -378,24 +379,23 @@ export default function CaseDetailPage({ params }: CasePageProps) {
 
 
         {caseData.status_code === "HUMAN_REVIEW" && (
-          <div className="p-4 rounded-xl border border-blue-300 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 text-blue-900 dark:text-blue-200 shadow-sm flex items-start gap-3">
-            <UserCheck className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+          <div className="p-4 rounded-xl border border-[var(--ui-sage-soft)] bg-[var(--ui-info-soft)] dark:bg-[var(--ui-text)]/30 dark:border-[var(--ui-sage-soft)] text-[var(--ui-info)] dark:text-[var(--ui-info-soft)] shadow-sm flex items-start gap-3">
+            <UserCheck className="w-5 h-5 text-[var(--ui-info)] shrink-0 mt-0.5" />
             <div className="space-y-1">
               <h4 className="text-sm font-bold">In Human Review: Compliance Officer Verification</h4>
-              <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
-                Your submitted documents have passed automated AI pre-validation and are now under scrutiny by our certified
-                regulatory compliance officers. Once approved, the statutory filing form will unlock for final submission.
+              <p className="text-xs text-[var(--ui-info)] dark:text-[var(--ui-info)] leading-relaxed">
+                Your evidence is with a compliance reviewer. Decisions and requests for clarification will appear in this case. After approval, continue with the filing steps provided here.
               </p>
             </div>
           </div>
         )}
 
         {caseData.status_code === "EXTERNAL_PROCESSING" && (
-          <div className="p-4 rounded-xl border border-purple-300 bg-purple-50 dark:bg-purple-950/30 dark:border-purple-900 text-purple-900 dark:text-purple-200 shadow-sm flex items-start gap-3">
-            <Clock className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
+          <div className="p-4 rounded-xl border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] dark:bg-[var(--ui-sage)]/30 dark:border-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)] shadow-sm flex items-start gap-3">
+            <Clock className="w-5 h-5 text-[var(--ui-sage)] shrink-0 mt-0.5" />
             <div className="space-y-1">
               <h4 className="text-sm font-bold">Statutory Government Department Scrutiny</h4>
-              <p className="text-xs text-purple-800 dark:text-purple-300 leading-relaxed">
+              <p className="text-xs text-[var(--ui-sage)] dark:text-[var(--ui-sage)] leading-relaxed">
                 Application filed with <strong>{caseData.authority}</strong> official portal. The department is currently
                 processing the submission. Periodic status synchronizations will automatically reflect here.
               </p>
@@ -404,11 +404,11 @@ export default function CaseDetailPage({ params }: CasePageProps) {
         )}
 
         {caseData.status_code === "COMPLETED" && (
-          <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900 text-emerald-900 dark:text-emerald-200 shadow-sm flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+          <div className="p-4 rounded-xl border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] dark:bg-[var(--ui-sage)]/30 dark:border-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)] shadow-sm flex items-start gap-3">
+            <CheckCircle2 className="w-5 h-5 text-[var(--ui-sage)] shrink-0 mt-0.5" />
             <div className="space-y-1">
               <h4 className="text-sm font-bold">Statutory Clearance Granted & Active</h4>
-              <p className="text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed">
+              <p className="text-xs text-[var(--ui-sage)] dark:text-[var(--ui-sage)] leading-relaxed">
                 All statutory requirements completed. Official compliance registration is confirmed.
                 Statutory renewal cycles have been scheduled on your compliance calendar.
               </p>
@@ -417,18 +417,19 @@ export default function CaseDetailPage({ params }: CasePageProps) {
         )}
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-border gap-6">
+        <nav aria-label="Case sections" className="grid grid-cols-2 sm:flex border-b border-border gap-3 sm:gap-6">
           {[
-            { id: "documents", label: `Documents & Evidence (${caseData.document_requirements.length})`, icon: FileText },
-            { id: "form", label: "Statutory Form Filing", icon: FileCheck },
-            { id: "portal", label: `Government Portal Status (${caseData.external_statuses.length})`, icon: ExternalLink },
-            { id: "timeline", label: `Audit Event Timeline (${timeline.length})`, icon: History },
+            { id: "documents", label: `Evidence (${caseData.document_requirements.length})`, icon: FileText },
+            { id: "form", label: "Forms", icon: FileCheck },
+            { id: "portal", label: `Portal updates (${caseData.external_statuses.length})`, icon: ExternalLink },
+            { id: "timeline", label: `History (${timeline.length})`, icon: History },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
+                aria-pressed={isActive}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`pb-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-colors ${
                   isActive
@@ -441,12 +442,12 @@ export default function CaseDetailPage({ params }: CasePageProps) {
               </button>
             );
           })}
-        </div>
+        </nav>
 
         {/* Feedback Messages */}
         {uploadSuccessMsg && (
-          <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-lg text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="p-3 bg-[var(--ui-sage-faint)] border border-[var(--ui-sage-soft)] text-[var(--ui-sage)] rounded-lg text-xs flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-[var(--ui-sage)] shrink-0" />
             {uploadSuccessMsg}
           </div>
         )}
@@ -498,11 +499,11 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                         <span
                           className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                             isVerified
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                              ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                               : doc.status_code === "ISSUE"
                               ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                               : doc.status_code === "UPLOADED"
-                              ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                              ? "bg-[var(--ui-info-soft)] text-[var(--ui-info)] dark:bg-[var(--ui-text)] dark:text-[var(--ui-info)]"
                               : "bg-muted text-muted-foreground"
                           }`}
                         >
@@ -534,9 +535,9 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-muted/30 p-2.5 rounded-xl border border-border/60 text-xs">
                       {/* Step 1: Upload */}
                       <div className={`p-2.5 rounded-lg border flex items-center gap-2.5 transition-colors ${
-                        latestSub ? "border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200" : "border-border bg-background text-muted-foreground"
+                        latestSub ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/60 dark:bg-[var(--ui-sage)]/30 text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)]" : "border-border bg-background text-muted-foreground"
                       }`}>
-                        {latestSub ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <Upload className="w-4 h-4 text-muted-foreground shrink-0" />}
+                        {latestSub ? <CheckCircle2 className="w-4 h-4 text-[var(--ui-sage)] shrink-0" /> : <Upload className="w-4 h-4 text-muted-foreground shrink-0" />}
                         <div>
                           <span className="font-bold block text-[10px] uppercase tracking-wider">1. Upload</span>
                           <span className="text-[11px] font-medium opacity-90">{latestSub ? `v${latestSub.version_number} Uploaded` : "Upload Required"}</span>
@@ -547,9 +548,9 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                       <div className={`p-2.5 rounded-lg border flex items-center gap-2.5 transition-colors ${
                         !latestSub ? "border-border bg-background text-muted-foreground opacity-60" :
                         latestReview?.status === "INTERNAL_HUMAN_QUERY" ? "border-amber-300 bg-amber-50/60 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200" :
-                        "border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200"
+                        "border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/60 dark:bg-[var(--ui-sage)]/30 text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)]"
                       }`}>
-                        {latestSub ? <Sparkles className="w-4 h-4 text-purple-600 shrink-0" /> : <Clock className="w-4 h-4 text-muted-foreground shrink-0" />}
+                        {latestSub ? <Sparkles className="w-4 h-4 text-[var(--ui-sage)] shrink-0" /> : <Clock className="w-4 h-4 text-muted-foreground shrink-0" />}
                         <div>
                           <span className="font-bold block text-[10px] uppercase tracking-wider">2. AI Pre-Check</span>
                           <span className="text-[11px] font-medium opacity-90">{latestSub ? "Automated Check Passed" : "Pending Upload"}</span>
@@ -559,16 +560,16 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                       {/* Step 3: Human Officer Review */}
                       <div className={`p-2.5 rounded-lg border flex items-center gap-2.5 transition-colors ${
                         !latestSub ? "border-border bg-background text-muted-foreground opacity-60" :
-                        latestSub.status_code === "INTERNAL_HUMAN_APPROVED" ? "border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200" :
+                        latestSub.status_code === "INTERNAL_HUMAN_APPROVED" ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/60 dark:bg-[var(--ui-sage)]/30 text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)]" :
                         latestSub.status_code === "INTERNAL_HUMAN_QUERY" ? "border-amber-300 bg-amber-50/60 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200" :
-                        "border-blue-300 bg-blue-50/60 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200"
+                        "border-[var(--ui-sage-soft)] bg-[var(--ui-info-soft)]/60 dark:bg-[var(--ui-text)]/30 text-[var(--ui-info)] dark:text-[var(--ui-info-soft)]"
                       }`}>
                         {latestSub?.status_code === "INTERNAL_HUMAN_APPROVED" ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-[var(--ui-sage)] shrink-0" />
                         ) : latestSub?.status_code === "INTERNAL_HUMAN_QUERY" ? (
                           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                         ) : latestSub ? (
-                          <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+                          <Clock className="w-4 h-4 text-[var(--ui-info)] shrink-0" />
                         ) : (
                           <ShieldCheck className="w-4 h-4 text-muted-foreground shrink-0" />
                         )}
@@ -592,8 +593,8 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                       <div className="text-xs space-y-2">
                         {/* 1. Human Decision Status */}
                         {latestSub.status_code === "INTERNAL_HUMAN_APPROVED" ? (
-                          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-900 dark:text-emerald-200 flex items-center gap-2.5">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div className="p-3 rounded-xl bg-[var(--ui-sage-faint)] dark:bg-[var(--ui-sage)]/40 border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)] flex items-center gap-2.5">
+                            <CheckCircle2 className="w-4 h-4 text-[var(--ui-sage)] shrink-0" />
                             <div>
                               <span className="font-bold block">Document Verified & Approved</span>
                               <span className="text-[11px] opacity-90">Statutory evidence confirmed by Compliance Officer. Requirement complete.</span>
@@ -627,9 +628,9 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                           </div>
                         ) : latestSub.status_code === "PRECHECK_ERROR" || latestSub.status_code === "PRECHECK_RETRYING" ? (
                           /* 2. Technical AI Error (distinct from rejection) */
-                          <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-950 dark:text-blue-200 space-y-1">
-                            <div className="flex items-center gap-2 font-bold text-blue-900 dark:text-blue-200">
-                              <Info className="w-4 h-4 text-blue-600 shrink-0" />
+                          <div className="p-3 rounded-xl bg-[var(--ui-info-soft)] dark:bg-[var(--ui-text)]/40 border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)] text-[var(--ui-info)] dark:text-[var(--ui-info-soft)] space-y-1">
+                            <div className="flex items-center gap-2 font-bold text-[var(--ui-info)] dark:text-[var(--ui-info-soft)]">
+                              <Info className="w-4 h-4 text-[var(--ui-info)] shrink-0" />
                               <span>AI validation temporarily unavailable</span>
                             </div>
                             <p className="text-[11px] leading-relaxed">
@@ -638,9 +639,9 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                           </div>
                         ) : (
                           /* 3. Under Human Review */
-                          <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-blue-950 dark:text-blue-200 flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-blue-600 shrink-0" />
-                            <span>Your document passed automated pre-checks and is currently under official review by our Compliance Officers.</span>
+                          <div className="p-3 rounded-xl bg-[var(--ui-info-soft)]/60 dark:bg-[var(--ui-text)]/30 border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)] text-[var(--ui-info)] dark:text-[var(--ui-info-soft)] flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-[var(--ui-info)] shrink-0" />
+                            <span>Your document is with a compliance reviewer. Review any requests for clarification here.</span>
                           </div>
                         )}
 
@@ -649,7 +650,7 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                           <div className="p-3 rounded-xl bg-muted/30 border border-border/80 space-y-2">
                             <div className="flex items-center justify-between text-[11px]">
                               <span className="font-bold text-foreground flex items-center gap-1.5">
-                                <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                                <Sparkles className="w-3.5 h-3.5 text-[var(--ui-sage)]" />
                                 Automated Diagnostic Findings (Advisory):
                               </span>
                               <span className="text-[10px] text-muted-foreground">Compliance officer makes final decision</span>
@@ -664,10 +665,10 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-mono font-semibold ${
                                       isWarning
                                         ? "bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950 dark:text-amber-200"
-                                        : "bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950 dark:text-emerald-200"
+                                        : "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)]"
                                     }`}
                                   >
-                                    {isWarning ? <AlertTriangle className="w-3 h-3 text-amber-600" /> : <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
+                                    {isWarning ? <AlertTriangle className="w-3 h-3 text-amber-600" /> : <CheckCircle2 className="w-3 h-3 text-[var(--ui-sage)]" />}
                                     {code.replace(/_/g, " ")}
                                   </span>
                                 );
@@ -709,7 +710,7 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                                     <span
                                       className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                                         sub.latest_review.status === "INTERNAL_HUMAN_APPROVED"
-                                          ? "bg-emerald-100 text-emerald-800"
+                                          ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]"
                                           : sub.latest_review.status === "INTERNAL_HUMAN_QUERY"
                                           ? "bg-amber-100 text-amber-800"
                                           : "bg-rose-100 text-rose-800"
@@ -754,9 +755,9 @@ export default function CaseDetailPage({ params }: CasePageProps) {
             </div>
 
             {caseData.form_submissions && caseData.form_submissions.length > 0 && (
-              <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-300 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300 text-xs flex items-center justify-between">
+              <div className="p-4 rounded-xl bg-[var(--ui-sage-faint)]/50 border border-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/20 text-[var(--ui-sage)] dark:text-[var(--ui-sage)] text-xs flex items-center justify-between">
                 <span className="flex items-center gap-2 font-semibold">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <CheckCircle2 className="w-4 h-4 text-[var(--ui-sage)]" />
                   Statutory Application Form Submitted ({caseData.form_submissions[0].form_code})
                 </span>
                 <span className="text-[11px] text-muted-foreground font-mono">
@@ -878,7 +879,7 @@ export default function CaseDetailPage({ params }: CasePageProps) {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-foreground text-sm">{st.portal_name}</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]">
                           {st.status_code}
                         </span>
                       </div>
@@ -938,7 +939,7 @@ export default function CaseDetailPage({ params }: CasePageProps) {
 
       {/* Modal: Record Portal Status */}
       {portalModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <Overlay open onClose={() => setPortalModalOpen(false)} title="Record portal status">
           <div className="bg-card border border-border rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
             <h3 className="text-base font-bold text-foreground">Record Government Portal Status</h3>
             <form onSubmit={handleRecordPortalStatus} className="space-y-3 text-xs">
@@ -1006,7 +1007,7 @@ export default function CaseDetailPage({ params }: CasePageProps) {
               </div>
             </form>
           </div>
-        </div>
+        </Overlay>
       )}
     </AppShell>
   );

@@ -19,6 +19,7 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
+from django.db import transaction
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -31,6 +32,7 @@ from common.enums import (
     Priority,
     WorkflowStepType,
 )
+from common.permissions import IsComplianceReviewer
 from common.envelope import envelope, error_response
 from apps.businesses.models import Business
 from apps.workflows.engine import GenericWorkflowEngine, WorkflowEngineError
@@ -56,40 +58,7 @@ logger = logging.getLogger(__name__)
 
 
 def _resolve_business(request: Request, business_id: Any) -> Business | None:
-    if not request.user or not request.user.is_authenticated:
-        return None
-    if not business_id:
-        return None
     return Business.resolve_safely(business_id, request.user)
-
-
-def _resolve_case(request: Request, case_id: Any) -> ComplianceCase | None:
-    """Resolve a compliance case strictly respecting tenant isolation.
-
-    Returns None (leading to 404) if user is not authenticated, case doesn't exist,
-    or case belongs to a business the user has no authorization to access.
-    """
-    if not request.user or not request.user.is_authenticated:
-        return None
-    try:
-        case_uuid = uuid.UUID(str(case_id))
-    except (ValueError, TypeError, AttributeError):
-        return None
-
-    is_staff = getattr(request.user, "is_staff", False) or getattr(request.user, "is_superuser", False)
-    if is_staff:
-        try:
-            return ComplianceCase.objects.select_related("business").get(pk=case_uuid)
-        except ComplianceCase.DoesNotExist:
-            return None
-
-    try:
-        case = ComplianceCase.objects.select_related("business").get(pk=case_uuid)
-        if case.business_id and Business.resolve_safely(case.business_id, request.user):
-            return case
-        return None
-    except ComplianceCase.DoesNotExist:
-        return None
 
 
 class BusinessComplianceCasesView(APIView):
@@ -102,18 +71,24 @@ class BusinessComplianceCasesView(APIView):
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
+        assessment_id = request.query_params.get("assessment_id")
+        assessment = business.assessments.filter(pk=assessment_id).first() if assessment_id else business.latest_assessment
+        if assessment_id and assessment is None:
+            return error_response("NOT_FOUND", "Assessment not found for this business.", http_status=404)
         cases_qs = ComplianceCase.objects.filter(business=business).select_related(
             "requirement", "current_workflow_instance__current_step"
         ).prefetch_related("document_requirements")
+        if assessment_id:
+            cases_qs = cases_qs.filter(assessment=assessment, profile_version=assessment.profile_version)
 
         # Auto-instantiate cases if none exist yet for evaluated requirements
         if not cases_qs.exists():
-            assessment_id = request.query_params.get("assessment_id")
-            assessment = business.assessments.filter(pk=assessment_id).first() if assessment_id else business.latest_assessment
             generate_compliance_cases_for_business(business, assessment=assessment)
             cases_qs = ComplianceCase.objects.filter(business=business).select_related(
                 "requirement", "current_workflow_instance__current_step"
             ).prefetch_related("document_requirements")
+            if assessment_id:
+                cases_qs = cases_qs.filter(assessment=assessment, profile_version=assessment.profile_version)
 
         cases_data = ComplianceCaseListSerializer(cases_qs, many=True).data
 
@@ -154,6 +129,8 @@ class BusinessComplianceCasesView(APIView):
 
         assessment_id = request.data.get("assessment_id") or request.query_params.get("assessment_id")
         assessment = business.assessments.filter(pk=assessment_id).first() if assessment_id else business.latest_assessment
+        if assessment_id and assessment is None:
+            return error_response("NOT_FOUND", "Assessment not found for this business.", http_status=404)
         created_cases = generate_compliance_cases_for_business(business, assessment=assessment)
 
         cases_data = ComplianceCaseListSerializer(created_cases, many=True).data
@@ -173,7 +150,14 @@ class ComplianceCaseDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, case_id) -> Response:  # noqa: ANN001
-        case = _resolve_case(request, case_id)
+        case = ComplianceCase.objects.filter(pk=case_id, business__in=Business.accessible_to(request.user)).select_related(
+            "business", "requirement", "current_workflow_instance__current_step", "workflow_version"
+        ).prefetch_related(
+            "document_requirements__submissions__reviews",
+            "form_submissions",
+            "external_statuses",
+        ).first()
+
         if case is None:
             return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -187,7 +171,7 @@ class ComplianceCaseTransitionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, case_id) -> Response:  # noqa: ANN001
-        case = _resolve_case(request, case_id)
+        case = ComplianceCase.objects.filter(pk=case_id, business__in=Business.accessible_to(request.user)).first()
         if case is None:
             return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -234,9 +218,7 @@ class ComplianceCaseTimelineView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, case_id) -> Response:  # noqa: ANN001
-        case = _resolve_case(request, case_id)
-        if case is None:
-            return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
+        case = get_object_or_404(ComplianceCase, pk=case_id, business__in=Business.accessible_to(request.user))
         events = WorkflowEvent.objects.filter(compliance_case=case).select_related(
             "from_step", "to_step", "actor_user"
         ).order_by("-created_at")
@@ -251,9 +233,7 @@ class ComplianceCaseFormView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, case_id) -> Response:  # noqa: ANN001
-        case = _resolve_case(request, case_id)
-        if case is None:
-            return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
+        case = get_object_or_404(ComplianceCase, pk=case_id, business__in=Business.accessible_to(request.user))
         form = ApplicationForm.objects.filter(is_active=True).first()
         submissions = FormSubmission.objects.filter(compliance_case=case).order_by("-submitted_at")
 
@@ -267,9 +247,7 @@ class ComplianceCaseFormView(APIView):
         )
 
     def post(self, request: Request, case_id) -> Response:  # noqa: ANN001
-        case = _resolve_case(request, case_id)
-        if case is None:
-            return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
+        case = get_object_or_404(ComplianceCase, pk=case_id, business__in=Business.accessible_to(request.user))
         form = ApplicationForm.objects.filter(is_active=True).first()
         if not form:
             return error_response("CONFIG_ERROR", "No active application form found.", http_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -318,9 +296,7 @@ class ComplianceCaseExternalStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, case_id) -> Response:  # noqa: ANN001
-        case = _resolve_case(request, case_id)
-        if case is None:
-            return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
+        case = get_object_or_404(ComplianceCase, pk=case_id, business__in=Business.accessible_to(request.user))
 
         portal_name = request.data.get("portal_name") or case.metadata.get("authority") or "Statutory Portal"
         status_code = request.data.get("status_code") or ExternalApplicationStatusEnum.SUBMITTED
@@ -377,7 +353,7 @@ class AdminComplianceSummaryView(APIView):
     Answers: What needs human attention right now?
     """
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def get(self, request: Request) -> Response:
         total_cases = ComplianceCase.objects.count()
@@ -415,7 +391,7 @@ class AdminComplianceSummaryView(APIView):
 class AdminReviewQueueView(APIView):
     """Compliance Officer queue of cases requiring human verification (§7)."""
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def get(self, request: Request) -> Response:
         queue_qs = ComplianceCase.objects.filter(
@@ -447,7 +423,7 @@ class AdminReviewQueueView(APIView):
 class AdminCaseListView(APIView):
     """Full case list for Admin Control Room with multi-dimension filters (§5)."""
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def get(self, request: Request) -> Response:
         qs = ComplianceCase.objects.all().select_related(
@@ -484,14 +460,14 @@ class AdminCaseListView(APIView):
 class AdminCaseAssignView(APIView):
     """Assign, reassign, claim, release, or escalate review task (§13)."""
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request, case_id) -> Response:
         from apps.workflows.services.review_service import ReviewService
         from django.contrib.auth import get_user_model
         User = get_user_model()
 
-        case = get_object_or_404(ComplianceCase, pk=case_id)
+        case = get_object_or_404(ComplianceCase, pk=case_id, business__in=Business.accessible_to(request.user))
         admin_id = request.data.get("assigned_admin_id")
         priority = request.data.get("priority")
         action = request.data.get("action", "ASSIGN")
@@ -522,12 +498,12 @@ class AdminCaseAssignView(APIView):
 class AdminCaseApproveView(APIView):
     """Direct Compliance Officer approval action (§14)."""
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request, case_id) -> Response:
         from apps.workflows.services.review_service import ConcurrencyConflictError, ReviewService
 
-        case = get_object_or_404(ComplianceCase, pk=case_id)
+        case = get_object_or_404(ComplianceCase, pk=case_id, business__in=Business.accessible_to(request.user))
         remarks = request.data.get("remarks") or request.data.get("comments") or "Approved by Compliance Officer."
         submission_id = request.data.get("submission_id")
         expected_version = request.data.get("expectedWorkflowVersion") or request.data.get("expected_workflow_version")
@@ -563,12 +539,12 @@ class AdminCaseApproveView(APIView):
 class AdminCaseQueryView(APIView):
     """Direct Compliance Officer query action (§15)."""
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request, case_id) -> Response:
         from apps.workflows.services.review_service import ConcurrencyConflictError, ReviewService
 
-        case = get_object_or_404(ComplianceCase, pk=case_id)
+        case = get_object_or_404(ComplianceCase, pk=case_id, business__in=Business.accessible_to(request.user))
         reason = request.data.get("reason") or request.data.get("comments") or "Correction required."
         required_action = request.data.get("required_action") or "Please upload corrected document."
         submission_id = request.data.get("submission_id")
@@ -606,12 +582,12 @@ class AdminCaseQueryView(APIView):
 class AdminCaseRejectView(APIView):
     """Direct Compliance Officer reject action (§12, §45)."""
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request, case_id) -> Response:
         from apps.workflows.services.review_service import ConcurrencyConflictError, ReviewService
 
-        case = get_object_or_404(ComplianceCase, pk=case_id)
+        case = get_object_or_404(ComplianceCase, pk=case_id, business__in=Business.accessible_to(request.user))
         reason = request.data.get("reason") or "Application does not satisfy statutory regulatory criteria."
         submission_id = request.data.get("submission_id")
         expected_version = request.data.get("expectedWorkflowVersion") or request.data.get("expected_workflow_version")
@@ -650,9 +626,7 @@ class ComplianceCaseQueryRespondView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, case_id) -> Response:
-        case = _resolve_case(request, case_id)
-        if case is None:
-            return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
+        case = get_object_or_404(ComplianceCase, pk=case_id, business__in=Business.accessible_to(request.user))
         notes = request.data.get("notes") or request.data.get("response") or "User submitted query clarification."
 
         try:
@@ -698,6 +672,7 @@ class BusinessWorkflowsListView(APIView):
     def patch(self, request: Request, business_id=None, workflow_id=None) -> Response:  # noqa: ANN001
         return self._handle_step_update(request, business_id, workflow_id)
 
+    @transaction.atomic
     def _handle_step_update(self, request: Request, business_id=None, workflow_id=None) -> Response:  # noqa: ANN001
         business = _resolve_business(request, business_id)
         if business is None:
@@ -725,31 +700,30 @@ class BusinessWorkflowsListView(APIView):
                 http_status=status.HTTP_400_BAD_REQUEST,
             )
 
-        req_code = wf_id.replace("WF::", "")
-
-        # Find or create ComplianceCase for this workflow
-        case = ComplianceCase.objects.filter(business=business, requirement_id_code=req_code).first()
+        assessment_id = request.data.get("assessment_id") or request.query_params.get("assessment_id")
+        available = derive_business_workflows(business, assessment_id=assessment_id).get("workflows", [])
+        workflow = next((w for w in available if w["id"] == wf_id), None)
+        if not workflow:
+            return error_response("NOT_FOUND", "Workflow not found for this assessment.", http_status=404)
+        total_steps = len(workflow["steps"])
+        if not 1 <= step_num <= total_steps or status_val not in {"NOT_STARTED", "IN_PROGRESS", "COMPLETED"}:
+            return error_response("VALIDATION_ERROR", "Choose a valid workflow step and state.", http_status=400)
+        req_code = workflow["requirement_id"]
+        Business.objects.select_for_update().get(pk=business.pk)
+        assessment = (business.assessments.filter(pk=assessment_id).first() if assessment_id
+                      else business.assessments.order_by("-assessment_number").first())
+        profile = assessment.profile_version if assessment else business.current_profile
+        cases = ComplianceCase.objects.select_for_update().filter(business=business,
+            requirement_id_code=req_code, profile_version=profile)
+        if assessment_id:
+            cases = cases.filter(assessment=assessment)
+        case = cases.first()
         if not case:
-            case = ComplianceCase.objects.filter(business=business, case_number=req_code).first()
-        if not case:
-            try:
-                case = ComplianceCase.objects.filter(business=business, pk=req_code).first()
-            except Exception:
-                pass
-
-        if not case:
-            case_seq = ComplianceCase.objects.count() + 10001
-            case = ComplianceCase.objects.create(
-                business=business,
-                case_number=f"CASE-{case_seq}",
-                requirement_id_code=req_code,
-                status_code=CaseStatus.IN_PROGRESS if status_val == "COMPLETED" else CaseStatus.OPEN,
-                metadata={
-                    "requirement_name": request.data.get("title") or req_code,
-                    "authority": request.data.get("authority") or "Statutory Authority",
-                    "category": request.data.get("category") or "COMPLIANCE",
-                },
-            )
+            case = ComplianceCase.objects.create(business=business, assessment=assessment, case_number="CASE-" + uuid.uuid4().hex[:16].upper(),
+                requirement_id_code=req_code, profile_version=profile,
+                metadata={"requirement_name": workflow["title"], "authority": workflow["authority"],
+                    "category": workflow["category"], "result_origin": workflow.get("result_origin", "DETERMINISTIC_KB_RESULT"),
+                    "assessment_id": str(assessment.id) if assessment else None})
 
         wf_state = case.metadata.get("workflow_state", {})
         steps_dict = wf_state.get("steps", {})
@@ -768,7 +742,6 @@ class BusinessWorkflowsListView(APIView):
         steps_dict[str(step_num)] = step_data
         wf_state["steps"] = steps_dict
 
-        total_steps = int(request.data.get("total_steps") or 5)
         completed_steps = sum(1 for s in steps_dict.values() if s.get("status") == "COMPLETED")
         progress = int((completed_steps / max(total_steps, 1)) * 100)
         wf_state["progress_percent"] = progress
@@ -780,12 +753,20 @@ class BusinessWorkflowsListView(APIView):
         elif completed_steps > 0 or status_val == "IN_PROGRESS":
             wf_state["status"] = "IN_PROGRESS"
             case.status_code = CaseStatus.IN_PROGRESS
+        else:
+            wf_state["status"] = "NOT_STARTED"
+            case.status_code = CaseStatus.OPEN
 
         next_step = step_num + 1 if status_val == "COMPLETED" and step_num < total_steps else step_num
         wf_state["current_step"] = next_step
 
         case.metadata["workflow_state"] = wf_state
+        if wf_state.get("status") != "COMPLETED":
+            case.completed_at = None
         case.save(update_fields=["metadata", "status_code", "completed_at", "updated_at"])
+        from apps.workflows.models import WorkflowEvent
+        WorkflowEvent.objects.create(compliance_case=case, event_code="WORKFLOW_STEP_UPDATED", actor_user=request.user,
+            actor_type="USER", payload={"workflow_id": wf_id, "step_number": step_num, "status": status_val})
 
         return Response(
             envelope({
@@ -817,7 +798,7 @@ class AdminBusinessOverviewView(APIView):
     9. Operational workflow cases and human dispositions (strictly separate from Engine 2 legal status).
     """
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def get(self, request: Request, business_id) -> Response:  # noqa: ANN001
         from apps.businesses.models import Business
@@ -924,7 +905,7 @@ class AdminBusinessRequirementDispositionView(APIView):
 class AdminBusinessListView(APIView):
     """List all registered businesses across all user accounts for Admin Control Room."""
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def get(self, request: Request) -> Response:
         from apps.businesses.models import Business
@@ -963,7 +944,7 @@ class AdminBusinessListView(APIView):
 class AdminCaseRequirementsListView(APIView):
     """List all requirement dispositions and statutory catalog options for a case (§11-§16, §40)."""
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def get(self, request: Request, case_id) -> Response:
         from apps.knowledge.models import RequirementDefinition
@@ -971,7 +952,7 @@ class AdminCaseRequirementsListView(APIView):
         from apps.workflows.serializers import CaseRequirementDispositionSerializer
         from apps.workflows.services.disposition_service import CaseRequirementDispositionService
 
-        case = ComplianceCase.objects.filter(pk=case_id).first()
+        case = ComplianceCase.objects.filter(pk=case_id, business__in=Business.accessible_to(request.user)).first()
         if not case:
             return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -988,7 +969,7 @@ class AdminCaseRequirementsListView(APIView):
         # Available catalog requirements to add
         existing_codes = set(dispositions.values_list("requirement_id_code", flat=True))
         catalog_defs = RequirementDefinition.objects.exclude(requirement_id__in=existing_codes).values(
-            "requirement_id", "name", "authority", "category", "risk_level"
+            "requirement_id", "name", "authority", "category"
         )[:50]
 
         return Response(
@@ -1005,14 +986,14 @@ class AdminCaseRequirementsListView(APIView):
 class AdminConfirmRequirementView(APIView):
     """Admin confirms a requirement is mandatory for this case (§11, §14, §40)."""
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request, case_id, requirement_code) -> Response:
         from apps.workflows.models import ComplianceCase
         from apps.workflows.serializers import CaseRequirementDispositionSerializer
         from apps.workflows.services.disposition_service import CaseRequirementDispositionService
 
-        case = ComplianceCase.objects.filter(pk=case_id).first()
+        case = ComplianceCase.objects.filter(pk=case_id, business__in=Business.accessible_to(request.user)).first()
         if not case:
             return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -1039,7 +1020,7 @@ class AdminMarkNotRequiredView(APIView):
     CRITICAL INVARIANT: Original rule applicability is preserved intact.
     """
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request, case_id, requirement_code) -> Response:
         from apps.workflows.models import ComplianceCase
@@ -1049,7 +1030,7 @@ class AdminMarkNotRequiredView(APIView):
             DispositionValidationError,
         )
 
-        case = ComplianceCase.objects.filter(pk=case_id).first()
+        case = ComplianceCase.objects.filter(pk=case_id, business__in=Business.accessible_to(request.user)).first()
         if not case:
             return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -1083,14 +1064,14 @@ class AdminMarkNotRequiredView(APIView):
 class AdminAddRequirementView(APIView):
     """Admin manually attaches a regulatory requirement from catalog to this case (§15, §16)."""
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def post(self, request: Request, case_id) -> Response:
         from apps.workflows.models import ComplianceCase
         from apps.workflows.serializers import CaseRequirementDispositionSerializer
         from apps.workflows.services.disposition_service import CaseRequirementDispositionService
 
-        case = ComplianceCase.objects.filter(pk=case_id).first()
+        case = ComplianceCase.objects.filter(pk=case_id, business__in=Business.accessible_to(request.user)).first()
         if not case:
             return error_response("NOT_FOUND", "Compliance case not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -1133,7 +1114,7 @@ class AdminCaseReviewPacketView(APIView):
     7. Full immutable audit trail.
     """
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsComplianceReviewer]
 
     def get(self, request: Request, case_id) -> Response:
         from apps.calendar.serializers import DeadlineSerializer
@@ -1147,7 +1128,7 @@ class AdminCaseReviewPacketView(APIView):
         )
         from domain.profile.variables import PROFILE_VARIABLES
 
-        case = ComplianceCase.objects.filter(pk=case_id).select_related(
+        case = ComplianceCase.objects.filter(pk=case_id, business__in=Business.accessible_to(request.user)).select_related(
             "business", "requirement", "assigned_reviewer", "current_workflow_instance__current_step"
         ).prefetch_related(
             "document_requirements__submissions__reviews",

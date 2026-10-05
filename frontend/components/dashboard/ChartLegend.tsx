@@ -22,9 +22,9 @@ export function ChartLegend({ items, className = "" }: ChartLegendProps) {
             className="h-2.5 w-2.5 rounded-full shrink-0 shadow-2xs"
             style={{ backgroundColor: item.color }}
           />
-          <span className="text-slate-600 font-medium">{item.label}</span>
+          <span className="text-[var(--ui-secondary)] font-medium">{item.label}</span>
           {item.count !== undefined && (
-            <span className="text-slate-900 font-bold ml-0.5">({item.count})</span>
+            <span className="text-[var(--ui-text)] font-bold ml-0.5">({item.count})</span>
           )}
         </div>
       ))}

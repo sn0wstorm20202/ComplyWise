@@ -1,0 +1,5 @@
+Manufacturing: FAILED; 0.513s; safe report checkpointed.
+Restaurant: FAILED; 0.794s; safe report checkpointed.
+IT: FAILED; 0.498s; safe report checkpointed.
+Warehouse: FAILED; 1.085s; safe report checkpointed.
+Healthcare: FAILED; 1.307s; safe report checkpointed.

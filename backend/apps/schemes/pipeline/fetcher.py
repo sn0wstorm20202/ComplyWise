@@ -11,6 +11,7 @@ import hashlib
 import logging
 import urllib.error
 import urllib.request
+from urllib.parse import urlsplit
 from dataclasses import dataclass
 from typing import Optional
 
@@ -67,7 +68,7 @@ class SchemePortalFetcher:
         self.timeout = timeout
 
     def fetch(self, config: SchemeSourceConfig, simulate_changed_content: str | None = None) -> FetchResult:
-        """Fetches the source page, falling back gracefully to authoritative offline snapshot if unreachable."""
+        """Capture the configured page or explicitly record acquisition failure."""
         if simulate_changed_content is not None:
             content = simulate_changed_content
             content_hash = compute_sha256(content)
@@ -84,26 +85,37 @@ class SchemePortalFetcher:
         content = ""
         is_live = False
         error_msg = None
+        final_url = config.primary_url
 
         try:
             req = urllib.request.Request(config.primary_url, headers=HEADERS)
             with urllib.request.urlopen(req, timeout=self.timeout) as response:
                 if response.status == 200:
-                    raw_data = response.read()
+                    final_url = response.geturl()
+                    original_host = urlsplit(config.primary_url).hostname or ""
+                    final_host = urlsplit(final_url).hostname or ""
+                    if final_host != original_host:
+                        raise ValueError("Source redirected away from the registered portal.")
+                    from apps.evidence.presentation import exact_source_url
+                    if not exact_source_url(final_url):
+                        raise ValueError("Source redirected to a generic portal or login page.")
+                    raw_data = response.read(2_000_001)
+                    if len(raw_data) > 2_000_000:
+                        raise ValueError("Scheme source exceeded the capture size limit.")
                     content = raw_data.decode("utf-8", errors="replace")
                     is_live = True
         except Exception as exc:  # Network unreachable / sandbox blocked / 403 / 503
             error_msg = str(exc)
-            logger.info("Live crawl for %s failed (%s); using authoritative snapshot fallback.", config.key, exc)
+            logger.info("Live crawl for %s failed (%s); capturing an explicit source failure.", config.key, exc)
 
         if not content:
-            content = SNAPSHOT_FALLBACK_MAP.get(config.key, "")
+            content = ""
             is_live = False
 
         content_hash = compute_sha256(content)
         return FetchResult(
             source_key=config.key,
-            source_url=config.primary_url,
+            source_url=final_url,
             domain=config.domain,
             content=content,
             content_hash=content_hash,

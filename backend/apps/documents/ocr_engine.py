@@ -349,6 +349,12 @@ def extract_text_from_file_bytes(file_bytes: bytes, file_name: str) -> dict[str,
 
     # Case 2: Image Files (.png, .jpg, .jpeg, .tiff, .bmp, .webp, .jfif, .pjpeg)
     if ext in {".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".webp", ".jfif", ".pjpeg"}:
+        if not WINSDK_OCR_AVAILABLE and not PYTESSERACT_AVAILABLE:
+            return {
+                "extracted_text": "", "word_count": 0, "character_count": 0,
+                "source_type": "OCR_UNAVAILABLE", "has_readable_text": False,
+                "error": "No image OCR engine is installed. Human review is required.",
+            }
         with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
             tmp.write(file_bytes)
             tmp_path = tmp.name

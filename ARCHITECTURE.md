@@ -1,4 +1,9 @@
-# ComplyWise — System Architecture
+# ComplyWise — Historical System Architecture
+
+> Historical snapshot. This document is retained as investigation context.
+> Current module ownership is in [docs/codebase-structure.md](docs/codebase-structure.md)
+> and the active runtime diagram is [docs/backend-architecture.mmd](docs/backend-architecture.mmd).
+> Counts, provider defaults and deployment statements below are not current verification.
 
 Architecture Review Date: 2026-09-19  
 Repository: ComplyWise  
@@ -7,7 +12,7 @@ Git Short SHA: 75117d3
 Branch: main  
 Backend Version: 0.1.0  
 Frontend Version: 0.1.0  
-Document Status: Current Implemented Architecture  
+Document Status: Historical snapshot (2026-09-19)
 
 ---
 

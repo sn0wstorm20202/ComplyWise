@@ -45,16 +45,16 @@ export function FilterControl({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#f1f5f9] hover:bg-slate-200/80 text-slate-700 text-xs font-semibold transition-colors cursor-pointer border border-transparent hover:border-slate-300/60"
+        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--ui-inset)] hover:bg-[var(--ui-inset)]/80 text-[var(--ui-secondary)] text-xs font-semibold transition-colors cursor-pointer border border-transparent hover:border-[var(--ui-border-strong)]/60"
       >
         {icon}
-        {labelPrefix && <span className="text-slate-400 font-normal">{labelPrefix}:</span>}
+        {labelPrefix && <span className="text-[var(--ui-muted)] font-normal">{labelPrefix}:</span>}
         <span>{selectedOption?.label || value}</span>
-        <ChevronDown className={`h-3 w-3 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-3 w-3 text-[var(--ui-muted)] transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 z-40 min-w-[180px] bg-white rounded-2xl shadow-xl border border-slate-200 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute left-0 top-full mt-1.5 z-40 min-w-[180px] bg-white rounded-2xl shadow-xl border border-[var(--ui-border)] p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
           {options.map((opt) => {
             const isSelected = opt.value === value;
             return (
@@ -67,8 +67,8 @@ export function FilterControl({
                 }}
                 className={`w-full text-left px-3 py-1.5 rounded-xl text-xs font-medium flex items-center justify-between transition-colors cursor-pointer ${
                   isSelected
-                    ? "bg-slate-900 text-white font-bold"
-                    : "hover:bg-slate-50 text-slate-700 hover:text-slate-900"
+                    ? "bg-[var(--ui-text)] text-white font-bold"
+                    : "hover:bg-[var(--ui-bg)] text-[var(--ui-secondary)] hover:text-[var(--ui-text)]"
                 }`}
               >
                 <span>{opt.label}</span>

@@ -119,11 +119,13 @@ def test_verify_document_end_to_end_pass():
         "valid_until": future_date,
         "file_name": "structural_stability_dish.pdf",
         "file_size_bytes": 2100000,
+        "file_content_text": "FACTORIES ACT 1948: Approved Factory Building Plan & Structural Stability Certificate. Issued by DISH. License DISH-SSC-2026-991. Valid until " + future_date,
     }
     res = verify_document(data)
-    assert res["verified"] is True
+    assert res["precheck_passed"] is True
+    assert res["verified"] is False
     assert res["overall_status"] == "PASSED"
-    assert res["status"] == "VERIFIED"
+    assert res["status"] == "NEEDS_REVIEW"
     assert res["irrelevant_document_flag"] is False
     assert res["checks"]["file_type"]["passed"] is True
     assert res["checks"]["field_completeness"]["passed"] is True
@@ -199,7 +201,8 @@ def test_image_with_statutory_text_passes_ocr_and_ai_prevalidation():
 
     res = verify_document(data, file=buf)
 
-    assert res["verified"] is True
+    assert res["precheck_passed"] is True
+    assert res["verified"] is False
     assert res["overall_status"] == "PASSED"
     assert res["irrelevant_document_flag"] is False
     assert res["checks"]["ai_relevance"]["passed"] is True
@@ -245,7 +248,8 @@ def test_html_document_llm_scan_necessity_and_correctness():
 
     res = verify_document(data, file=buf)
 
-    assert res["verified"] is True
+    assert res["precheck_passed"] is True
+    assert res["verified"] is False
     assert res["overall_status"] == "PASSED"
     assert "llm_scan_analysis" in res
     llm = res["llm_scan_analysis"]
@@ -386,7 +390,8 @@ def test_factory_license_image_ocr_verification_passes():
         "file_content_bytes": img_bytes,
     })
 
-    assert result["verified"] is True
+    assert result["precheck_passed"] is True
+    assert result["verified"] is False
     assert result["overall_status"] == "PASSED"
     assert result["irrelevant_document_flag"] is False
     assert result["checks"]["file_type"]["passed"] is True
@@ -430,7 +435,8 @@ def test_factory_license_photo_with_photo_keyword_passes():
         "file_content_bytes": img_bytes,
     })
 
-    assert result["verified"] is True
+    assert result["precheck_passed"] is True
+    assert result["verified"] is False
     assert result["overall_status"] == "PASSED"
     assert result["irrelevant_document_flag"] is False
     assert result["checks"]["ai_relevance"]["passed"] is True
@@ -473,7 +479,8 @@ def test_factory_license_sideways_orientation_recovery():
         "file_content_bytes": img_bytes,
     })
 
-    assert result["verified"] is True
+    assert result["precheck_passed"] is True
+    assert result["verified"] is False
     assert result["overall_status"] == "PASSED"
     assert result["irrelevant_document_flag"] is False
     assert result["checks"]["ai_relevance"]["passed"] is True
@@ -507,8 +514,67 @@ def test_factory_license_auto_derives_reference_and_expiry_from_image():
         "file_content_bytes": img_bytes,
     })
 
-    assert result["verified"] is True
+    assert result["precheck_passed"] is True
+    assert result["verified"] is False
     assert result["overall_status"] == "PASSED"
     assert result["checks"]["field_completeness"]["passed"] is True
     assert result["checks"]["format_and_expiry"]["passed"] is True
     assert result["checks"]["ai_relevance"]["passed"] is True
+
+
+def test_metadata_without_file_cannot_pass_preliminary_document_checks():
+    result = verify_document({"name": "Factory License", "category": "Statutory Proof",
+        "authority": "DISH", "requirement_id": "Factories Act 1948",
+        "reference_number": "DISH-1234", "valid_until": "2028-12-31",
+        "file_name": "certificate.pdf", "file_size_bytes": 100})
+    assert not result["verified"] and not result["precheck_passed"]
+    assert result["ocr_analysis"]["source_type"] == "NO_BINARY"
+    assert not result["ocr_analysis"]["has_readable_text"]
+
+
+def test_scan_uses_configured_provider_and_validates_inside_fallback_boundary():
+    from unittest.mock import Mock, patch
+    from domain.providers.base import CompletionResult
+    provider = Mock()
+    provider.complete.return_value = CompletionResult(provider="gemini", model="synthetic-model",
+        text='{"is_necessary": true, "is_correct": true, "confidence_score": 80}')
+    with patch("apps.documents.verification.get_llm_provider", return_value=provider):
+        result = verify_document({"name": "Factory License", "category": "Statutory Proof",
+            "authority": "DISH", "requirement_id": "Factories Act 1948",
+            "reference_number": "DISH-1234", "valid_until": "2028-12-31",
+            "file_name": "certificate.pdf", "file_size_bytes": 100,
+            "file_content_text": "FACTORIES ACT 1948 Form 4 Factory License. DISH. License No DISH-1234. Valid Until 2028-12-31"})
+    validator = provider.complete.call_args.kwargs["response_validator"]
+    validator(provider.complete.return_value.text)
+    with pytest.raises(ValueError):
+        validator('{"is_necessary": "yes"}')
+    assert result["llm_scan_analysis"]["ai_engine"] == "gemini (synthetic-model)"
+    assert not result["verified"]
+
+
+def test_missing_ocr_engine_is_reported_without_fabricated_text(monkeypatch):
+    from apps.documents import ocr_engine
+    monkeypatch.setattr(ocr_engine, "WINSDK_OCR_AVAILABLE", False)
+    monkeypatch.setattr(ocr_engine, "PYTESSERACT_AVAILABLE", False)
+    result = ocr_engine.extract_text_from_file_bytes(b"synthetic bytes", "photo.png")
+    assert result["source_type"] == "OCR_UNAVAILABLE"
+    assert result["error"] and not result["extracted_text"]
+
+
+def test_vector_pdf_extracts_real_document_text_without_ocr():
+    import io
+    from pypdf import PdfWriter
+    from pypdf.generic import DictionaryObject, NameObject, DecodedStreamObject
+    from apps.documents.ocr_engine import extract_text_from_file_bytes
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=400,height=400)
+    font = DictionaryObject({NameObject("/Type"):NameObject("/Font"),NameObject("/Subtype"):NameObject("/Type1"),NameObject("/BaseFont"):NameObject("/Helvetica")})
+    page[NameObject("/Resources")] = DictionaryObject({NameObject("/Font"):DictionaryObject({NameObject("/F1"):writer._add_object(font)})})
+    stream = DecodedStreamObject()
+    stream.set_data(b"BT /F1 12 Tf 40 300 Td (Synthetic business evidence text) Tj ET")
+    page[NameObject("/Contents")] = writer._add_object(stream)
+    output = io.BytesIO()
+    writer.write(output)
+    result = extract_text_from_file_bytes(output.getvalue(),"business.pdf")
+    assert result["source_type"] == "PDF_TEXT" and result["has_readable_text"]
+    assert result["extracted_text"] == "Synthetic business evidence text"

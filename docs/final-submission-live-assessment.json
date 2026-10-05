@@ -1,0 +1,243 @@
+{
+  "test_kind": "REAL_PROVIDERS_API_WITH_ISOLATED_TEST_DATABASE",
+  "assessment_status": "COMPLETED",
+  "business_type": "Kerala leather repair/upcycling workshop",
+  "assessment_id": "e2e51011-abbf-4bae-a2d0-d36ffaac3d62",
+  "adaptive_question_count": 3,
+  "provider_attempts": [
+    {
+      "provider": "gemini",
+      "provider_slot": 1,
+      "model": "gemini-3.5-flash-lite",
+      "attempt": 1,
+      "status": "SUCCESS",
+      "failure_type": null,
+      "fallback": false,
+      "latency_ms": 8609.28,
+      "total_tokens": 1541,
+      "workflow": "business_understanding"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 2,
+      "model": "gemini-3.5-flash-lite",
+      "attempt": 1,
+      "status": "SUCCESS",
+      "failure_type": null,
+      "fallback": false,
+      "latency_ms": 8077.34,
+      "total_tokens": 3188,
+      "workflow": "smart_questions_planner"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 3,
+      "model": "gemini-3.5-flash-lite",
+      "attempt": 1,
+      "status": "SUCCESS",
+      "failure_type": null,
+      "fallback": false,
+      "latency_ms": 6548.46,
+      "total_tokens": 1055,
+      "workflow": "claim_extraction"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 1,
+      "model": "gemini-3.5-flash-lite",
+      "attempt": 1,
+      "status": "SUCCESS",
+      "failure_type": null,
+      "fallback": false,
+      "latency_ms": 8213.71,
+      "total_tokens": 1306,
+      "workflow": "claim_extraction"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 2,
+      "model": "gemini-3.5-flash-lite",
+      "attempt": 1,
+      "status": "SUCCESS",
+      "failure_type": null,
+      "fallback": false,
+      "latency_ms": 7478.04,
+      "total_tokens": 1116,
+      "workflow": "claim_extraction"
+    },
+    {
+      "provider": "gemini",
+      "provider_slot": 3,
+      "model": "gemini-3.5-flash-lite",
+      "attempt": 1,
+      "status": "SUCCESS",
+      "failure_type": null,
+      "fallback": false,
+      "latency_ms": 16326.1,
+      "total_tokens": 6238,
+      "workflow": "workspace_guidance"
+    }
+  ],
+  "search_provider": "serpapi",
+  "discovery_runs": [
+    {
+      "status": "COMPLETED",
+      "search_result_count": 20,
+      "official_source_count": 8,
+      "scraped_count": 3,
+      "acquisition_modes": [
+        "CRAWLEE_HTTP",
+        "CRAWLEE_BROWSER",
+        "CRAWLEE_HTTP"
+      ],
+      "summary": {
+        "queries_count": 6,
+        "search_provider": "serpapi",
+        "search_latency_ms": [
+          1159.5,
+          1159.5,
+          1159.5,
+          1159.5,
+          1159.5,
+          1062.96,
+          1062.96,
+          1062.96,
+          1062.96,
+          1062.96,
+          1105.66,
+          1105.66,
+          434.51,
+          434.51,
+          434.51,
+          434.51,
+          434.51,
+          185.93,
+          185.93,
+          185.93,
+          185.93,
+          185.93,
+          439.07,
+          439.07,
+          439.07,
+          439.07,
+          439.07
+        ],
+        "candidates_found": 27,
+        "official_sources": 8,
+        "sources_scraped": 3,
+        "profile_version_id": "aa10cfcf-f418-405f-b579-2e014e5668d7",
+        "claims_extracted": 0
+      },
+      "error": ""
+    }
+  ],
+  "retrieved_document_count": 3,
+  "deterministic_decision_count": 0,
+  "workspace_counts": {
+    "compliance_items": 5,
+    "documents": 5,
+    "workflows": 5,
+    "schemes": 1,
+    "standards": 1
+  },
+  "workspace_titles": {
+    "compliance_items": [
+      "Kerala Shops and Commercial Establishments Registration",
+      "Municipal Trade License",
+      "Udyam Registration for Micro Enterprises",
+      "Consumer Rights and Service Transparency Guidelines",
+      "Goods and Services Tax (GST) Registration Review"
+    ],
+    "documents": [
+      "Establishment and Worker Details Checklist",
+      "Municipal Trade License Application Checklist",
+      "MSME Udyam Registration Reference Document",
+      "Standard Repair Estimate and Terms Template",
+      "Turnover and Revenue Tracking Sheet"
+    ],
+    "workflows": [
+      "Kerala Shops and Commercial Establishments Preparation Workflow",
+      "Municipal Trade License Preparation Workflow",
+      "MSME Registration Preparation Workflow",
+      "Consumer Repair Transparency Workflow",
+      "Turnover Monitoring Workflow"
+    ],
+    "schemes": [
+      "MSME Support and Skill Development Schemes"
+    ],
+    "standards": [
+      "General Workshop Safety and Ergonomics Guidance"
+    ]
+  },
+  "sections": {
+    "schemes": {
+      "keys": [
+        "schemes",
+        "total_schemes"
+      ],
+      "count": 1
+    },
+    "standards": {
+      "keys": [
+        "standards",
+        "total_standards"
+      ],
+      "count": 1
+    },
+    "calendar": {
+      "keys": [
+        "business_id",
+        "business_name",
+        "evaluated",
+        "events",
+        "count",
+        "covers",
+        "not_covered",
+        "not_covered_reason",
+        "disclaimer"
+      ],
+      "count": 0
+    },
+    "dashboard": {
+      "keys": [
+        "business_id",
+        "business_name",
+        "assessment_id",
+        "assessment_number",
+        "assessment_title",
+        "assessment_status",
+        "has_evaluation",
+        "widgets",
+        "latest_run_id",
+        "evaluation_date",
+        "profile_version",
+        "compliance_readiness",
+        "readiness_label",
+        "readiness_basis",
+        "metrics",
+        "total_documents_needed",
+        "total_workflows_count",
+        "schemes_preview",
+        "total_schemes_count",
+        "standards_preview",
+        "total_standards_count",
+        "priority_actions",
+        "upcoming_deadlines",
+        "category_breakdown",
+        "jurisdiction_breakdown",
+        "recent_updates",
+        "recent_updates_available",
+        "coverage"
+      ],
+      "count": 0
+    }
+  },
+  "stage_seconds": {
+    "understand": 8.623,
+    "questions/generate": 8.139,
+    "discovery": 47.077,
+    "synthesis": 16.369
+  },
+  "total_seconds": 81.143,
+  "limitation": "No published rules seeded; verifies arbitrary-business contextual path, not covered production KB or actual browser login."
+}

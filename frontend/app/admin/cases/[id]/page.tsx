@@ -1,4 +1,5 @@
 "use client";
+import Overlay from "@/components/product/Overlay";
 
 import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
@@ -71,6 +72,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
 
   // Scrutiny Action Modals
   const [actionType, setActionType] = useState<"APPROVE" | "QUERY" | "REJECT" | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [actionReason, setActionReason] = useState("");
   const [actionRequiredNote, setActionRequiredNote] = useState("");
   const [submittingAction, setSubmittingAction] = useState(false);
@@ -154,7 +156,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
       setGovStatusForm({
         portal_name: packet.case.authority || "Official Regulatory Portal",
         status_code: "APPROVED",
-        application_reference_number: `STAT-${packet.case.case_number}`,
+        application_reference_number: "",
         portal_remarks: "",
       });
     } catch (err: any) {
@@ -169,6 +171,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
     if (!caseData || !actionType) return;
 
     setSubmittingAction(true);
+    setActionError(null);
     setActionSuccessMsg(null);
     setError(null);
 
@@ -215,7 +218,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
       setActionRequiredNote("");
       await loadCase();
     } catch (err: any) {
-      setError(err?.message || "Failed to execute scrutiny decision.");
+      setActionError(err?.message || "Your decision wasn't saved. Please try again.");
     } finally {
       setSubmittingAction(false);
     }
@@ -342,17 +345,15 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
 
   const currentStepSeq = caseData.workflow_instance?.current_step?.sequence ?? 1;
   const stepsList = caseData.workflow_steps || [];
-  const bContext = caseData.business_context || {
+  const bContext: NonNullable<ComplianceCaseDetail["business_context"]> = caseData.business_context || {
     business_name: caseData.business_name || "Enterprise",
-    state: "Maharashtra",
-    district: "Mumbai",
-    business_type: "Industrial",
-    product: "Compliance Operations",
-    workers: 50,
-    power_load: "50 kW",
-    investment: "50 Lakhs",
-    uses_hazardous_substances: false,
-    generates_hazardous_waste: false,
+    state: "Not provided",
+    district: "Not provided",
+    business_type: "Not provided",
+    product: "Not provided",
+    workers: "Not provided",
+    power_load: "Not provided",
+    investment: "Not provided",
   };
 
   return (
@@ -377,12 +378,12 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
 
         {/* Action Success Toast */}
         {actionSuccessMsg && (
-          <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 rounded-xl text-xs flex items-center justify-between shadow-sm">
+          <div className="p-3.5 bg-[var(--ui-sage-faint)] dark:bg-[var(--ui-sage)]/40 border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:text-[var(--ui-sage-soft)] rounded-xl text-xs flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2 font-medium">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[var(--ui-sage)] shrink-0" />
               {actionSuccessMsg}
             </div>
-            <button onClick={() => setActionSuccessMsg(null)} className="text-emerald-700 hover:text-emerald-900 text-xs font-bold">
+            <button onClick={() => setActionSuccessMsg(null)} className="text-[var(--ui-sage)] hover:text-[var(--ui-sage)] text-xs font-bold">
               ✕
             </button>
           </div>
@@ -390,12 +391,12 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
 
         {/* Alert Success Toast */}
         {alertSuccessMsg && (
-          <div className="p-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800 text-blue-900 dark:text-blue-200 rounded-xl text-xs flex items-center justify-between shadow-sm">
+          <div className="p-3.5 bg-[var(--ui-info-soft)] dark:bg-[var(--ui-text)]/40 border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)] text-[var(--ui-info)] dark:text-[var(--ui-info-soft)] rounded-xl text-xs flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2 font-medium">
-              <Bell className="w-4 h-4 text-blue-600 shrink-0" />
+              <Bell className="w-4 h-4 text-[var(--ui-info)] shrink-0" />
               {alertSuccessMsg}
             </div>
-            <button onClick={() => setAlertSuccessMsg(null)} className="text-blue-700 hover:text-blue-900 text-xs font-bold">
+            <button onClick={() => setAlertSuccessMsg(null)} className="text-[var(--ui-info)] hover:text-[var(--ui-info)] text-xs font-bold">
               ✕
             </button>
           </div>
@@ -453,7 +454,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
 
               <button
                 onClick={() => setGovModalOpen(true)}
-                className="px-3 py-2 rounded-lg border border-purple-300 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                className="px-3 py-2 rounded-lg border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] dark:bg-[var(--ui-sage)]/40 text-[var(--ui-sage)] dark:text-[var(--ui-sage)] hover:bg-[var(--ui-sage-soft)] text-xs font-semibold flex items-center gap-1.5 transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 Government Status
@@ -476,7 +477,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                     key={st.id}
                     className={`p-3 rounded-xl border text-xs transition-all ${
                       isCompleted
-                        ? "border-emerald-300 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300"
+                        ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/50 dark:border-[var(--ui-sage-soft)] dark:bg-[var(--ui-sage)]/20 text-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                         : isCurrent
                         ? "border-primary bg-primary/5 text-primary shadow-sm font-semibold"
                         : "border-border/60 bg-muted/20 text-muted-foreground opacity-60"
@@ -485,7 +486,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] font-bold">STEP {st.sequence}</span>
                       {isCompleted ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[var(--ui-sage)]" />
                       ) : isCurrent ? (
                         <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
                       ) : (
@@ -509,7 +510,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/60 pb-3">
                 <div className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  <Building2 className="w-5 h-5 text-[var(--ui-sage)] dark:text-[var(--ui-sage)]" />
                   <div>
                     <h3 className="text-sm font-bold text-foreground">
                       Business Profile Version & Mandate Basis
@@ -521,14 +522,14 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-purple-100 text-purple-900 dark:bg-purple-950/70 dark:text-purple-300">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)]/70 dark:text-[var(--ui-sage)]">
                     <Layers className="w-3.5 h-3.5" />
                     Version v{bContext.profile_version || 1}
                   </span>
                   {(caseData.business || caseData.business_id) && (
                     <Link
                       href={`/admin/businesses?id=${caseData.business || caseData.business_id}`}
-                      className="text-xs font-semibold text-purple-600 hover:text-purple-700 dark:text-purple-400 hover:underline flex items-center gap-1"
+                      className="text-xs font-semibold text-[var(--ui-sage)] hover:text-[var(--ui-sage)] dark:text-[var(--ui-sage)] hover:underline flex items-center gap-1"
                     >
                       All Profiles &rarr;
                     </Link>
@@ -555,12 +556,12 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                 <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
                   <span className="text-muted-foreground block text-[10px] font-medium uppercase tracking-wider">Hazard Declarations</span>
                   <span className="font-bold text-foreground mt-0.5 block">
-                    {bContext.uses_hazardous_substances || bContext.generates_hazardous_waste ? (
+                    {bContext.uses_hazardous_substances == null && bContext.generates_hazardous_waste == null ? "Not provided" : bContext.uses_hazardous_substances || bContext.generates_hazardous_waste ? (
                       <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" /> Hazardous
                       </span>
                     ) : (
-                      <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <span className="text-[var(--ui-sage)] dark:text-[var(--ui-sage)] flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" /> Non-Hazardous
                       </span>
                     )}
@@ -573,12 +574,12 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
 
               {/* Statutory Applicability Reason */}
               {caseData.why_applicable && (
-                <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 text-xs">
-                  <div className="flex items-center gap-2 text-blue-900 dark:text-blue-300 font-bold mb-1">
+                <div className="p-3.5 rounded-xl bg-[var(--ui-info-soft)]/60 dark:bg-[var(--ui-text)]/30 border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)]/60 text-xs">
+                  <div className="flex items-center gap-2 text-[var(--ui-info)] dark:text-[var(--ui-info)] font-bold mb-1">
                     <Shield className="w-3.5 h-3.5" />
                     <span>Statutory Mandate Trigger:</span>
                   </div>
-                  <p className="text-blue-950 dark:text-blue-200 leading-relaxed font-medium">
+                  <p className="text-[var(--ui-info)] dark:text-[var(--ui-info-soft)] leading-relaxed font-medium">
                     {caseData.why_applicable}
                   </p>
                 </div>
@@ -593,9 +594,9 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                     className="w-full px-4 py-2.5 bg-muted/30 hover:bg-muted/50 flex items-center justify-between text-xs font-semibold text-foreground transition-colors"
                   >
                     <span className="flex items-center gap-2">
-                      <FileCheck className="w-3.5 h-3.5 text-purple-600" />
+                      <FileCheck className="w-3.5 h-3.5 text-[var(--ui-sage)]" />
                       Detailed Questionnaire Intake for Profile v{bContext.profile_version || 1}
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]">
                         {bContext.answered_variables.length} declarations
                       </span>
                     </span>
@@ -655,8 +656,8 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                 {/* Quick indicator if any uploaded documents need officer action */}
                 <div className="flex items-center gap-2">
                   {authoritativeDocReqs.filter((d) => (d.submissions && d.submissions.length > 0) || d.latest_submission).length > 0 ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60">
-                      <Clock className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--ui-info-soft)] text-[var(--ui-info)] dark:bg-[var(--ui-text)]/60 dark:text-[var(--ui-info)] border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)]/60">
+                      <Clock className="w-3.5 h-3.5 text-[var(--ui-info)]" />
                       Evidence Uploaded
                     </span>
                   ) : (
@@ -692,13 +693,13 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                         }`}
                       >
                         {isApproved ? (
-                          <CheckCircle2 className={`w-3.5 h-3.5 ${isSelected ? "text-emerald-300" : "text-emerald-500"}`} />
+                          <CheckCircle2 className={`w-3.5 h-3.5 ${isSelected ? "text-[var(--ui-sage)]" : "text-[var(--ui-sage)]"}`} />
                         ) : isQuery ? (
                           <AlertTriangle className={`w-3.5 h-3.5 ${isSelected ? "text-amber-300" : "text-amber-500"}`} />
                         ) : isRejected ? (
                           <XCircle className={`w-3.5 h-3.5 ${isSelected ? "text-rose-300" : "text-rose-500"}`} />
                         ) : hasSub ? (
-                          <Clock className={`w-3.5 h-3.5 ${isSelected ? "text-blue-200" : "text-blue-500"}`} />
+                          <Clock className={`w-3.5 h-3.5 ${isSelected ? "text-[var(--ui-info-soft)]" : "text-[var(--ui-info)]"}`} />
                         ) : (
                           <span className={`w-2 h-2 rounded-full ${isSelected ? "bg-primary-foreground/50" : "bg-muted-foreground/40"}`} />
                         )}
@@ -717,9 +718,9 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
 
                 {/* Helpful Switcher notice if user selected a requirement without upload, but other requirements HAVE uploads */}
                 {!activeSubmission && authoritativeDocReqs.some((d) => !!d.latest_submission || (d.submissions && d.submissions.length > 0)) && (
-                  <div className="p-2.5 rounded-lg bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-300 flex items-center justify-between gap-3">
+                  <div className="p-2.5 rounded-lg bg-[var(--ui-info-soft)]/70 dark:bg-[var(--ui-text)]/30 border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)]/40 text-xs text-[var(--ui-info)] dark:text-[var(--ui-info)] flex items-center justify-between gap-3">
                     <span className="flex items-center gap-2">
-                      <Info className="w-4 h-4 shrink-0 text-blue-600" />
+                      <Info className="w-4 h-4 shrink-0 text-[var(--ui-info)]" />
                       &quot;{selectedDocReq?.name}&quot; has not been uploaded yet. Other requirements have uploaded files ready for review:
                     </span>
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -732,7 +733,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                               setSelectedDocReqId(d.id);
                               setSelectedSubmissionVersion(null);
                             }}
-                            className="px-2 py-0.5 rounded bg-blue-600 text-white hover:bg-blue-700 text-[11px] font-bold shadow-xs"
+                            className="px-2 py-0.5 rounded bg-[var(--ui-text)] text-white hover:bg-[var(--ui-text)] text-[11px] font-bold shadow-xs"
                           >
                             View {d.name.split(" ")[0]} &rarr;
                           </button>
@@ -762,12 +763,12 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                               activeSubmission.status_code === "INTERNAL_HUMAN_APPROVED"
-                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                                 : activeSubmission.status_code === "INTERNAL_HUMAN_QUERY"
                                 ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                                 : activeSubmission.status_code === "INTERNAL_HUMAN_REJECTED"
                                 ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-                                : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                                : "bg-[var(--ui-info-soft)] text-[var(--ui-info)] dark:bg-[var(--ui-text)] dark:text-[var(--ui-info)]"
                             }`}
                           >
                             {activeSubmission.status_code?.replace(/_/g, " ") || "PENDING REVIEW"}
@@ -788,7 +789,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                           setActionReason("Statutory evidence verified and compliant with regulatory requirements.");
                         }}
                         disabled={submittingAction}
-                        className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+                        className="px-3.5 py-2 rounded-xl bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] active:bg-[var(--ui-sage)] text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
                         title="Approve this document submission"
                       >
                         <CheckCircle2 className="w-4 h-4" />
@@ -924,9 +925,9 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                           <span
                             className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
                               isConfirmed
-                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                                 : isNotReq
-                                ? "bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
+                                ? "bg-[var(--ui-inset)] text-[var(--ui-text)] dark:bg-[var(--ui-text)] dark:text-[var(--ui-muted)]"
                                 : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                             }`}
                           >
@@ -1015,7 +1016,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                   </button>
                 </div>
 
-                <div className="p-2.5 rounded-lg bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 text-[11px] text-blue-900 dark:text-blue-300">
+                <div className="p-2.5 rounded-lg bg-[var(--ui-info-soft)]/60 dark:bg-[var(--ui-text)]/30 border border-[var(--ui-sage-soft)] dark:border-[var(--ui-sage-soft)]/40 text-[11px] text-[var(--ui-info)] dark:text-[var(--ui-info)]">
                   <p className="leading-relaxed">
                     <strong>Direct Adjudication:</strong> Approve, query, or reject documents directly from the <strong>Statutory Document Scrutiny Desk</strong> on the left.
                   </p>
@@ -1066,7 +1067,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                               <Clock className="w-3 h-3" />
                               Due: {new Date(dl.due_at).toLocaleDateString()}
                               {dl.days_remaining !== undefined && (
-                                <strong className={isOverdue ? "text-rose-600 ml-1" : "text-emerald-600 ml-1"}>
+                                <strong className={isOverdue ? "text-rose-600 ml-1" : "text-[var(--ui-sage)] ml-1"}>
                                   ({isOverdue ? `${Math.abs(dl.days_remaining)}d overdue` : `${dl.days_remaining}d left`})
                                 </strong>
                               )}
@@ -1077,7 +1078,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                             className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                               isOverdue
                                 ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-                                : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                                : "bg-[var(--ui-info-soft)] text-[var(--ui-info)] dark:bg-[var(--ui-text)] dark:text-[var(--ui-info)]"
                             }`}
                           >
                             {dl.priority}
@@ -1146,11 +1147,11 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
 
         {/* SCRUTINY ACTION MODAL */}
         {actionType && (
-          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Overlay open onClose={() => setActionType(null)} title="Record reviewer decision">
             <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-5">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                  {actionType === "APPROVE" && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
+                  {actionType === "APPROVE" && <CheckCircle2 className="w-5 h-5 text-[var(--ui-sage)]" />}
                   {actionType === "QUERY" && <AlertTriangle className="w-5 h-5 text-amber-600" />}
                   {actionType === "REJECT" && <XCircle className="w-5 h-5 text-destructive" />}
                   Confirm Document Determination: {actionType}
@@ -1181,6 +1182,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
               </div>
 
               <form onSubmit={handleExecuteScrutiny} className="space-y-4">
+                {actionError && <p role="alert" className="text-sm text-[var(--ui-danger)]">{actionError}</p>}
                 <div>
                   <label className="text-xs font-semibold text-foreground block mb-1">
                     {actionType === "QUERY" ? "Discrepancy / Query Reason *" : "Official Remarks *"}
@@ -1230,7 +1232,7 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                     disabled={submittingAction}
                     className={`px-5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition-colors ${
                       actionType === "APPROVE"
-                        ? "bg-emerald-600 hover:bg-emerald-700"
+                        ? "bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)]"
                         : actionType === "QUERY"
                         ? "bg-amber-600 hover:bg-amber-700"
                         : "bg-destructive hover:bg-destructive/90"
@@ -1241,12 +1243,12 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                 </div>
               </form>
             </div>
-          </div>
+          </Overlay>
         )}
 
         {/* REQUIREMENT DISPOSITION MODAL (§11-§16, §40) */}
         {dispositionModalOpen && (
-          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Overlay open onClose={() => setDispositionModalOpen(false)} title="Review requirement">
             <div className="bg-card border border-border rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-primary" />
@@ -1321,12 +1323,12 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                 </div>
               </form>
             </div>
-          </div>
+          </Overlay>
         )}
 
         {/* CREATE DEADLINE MODAL */}
         {deadlineModalOpen && (
-          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Overlay open onClose={() => setDeadlineModalOpen(false)} title="Create deadline">
             <div className="bg-card border border-border rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-primary" />
@@ -1400,12 +1402,12 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                 </div>
               </form>
             </div>
-          </div>
+          </Overlay>
         )}
 
         {/* ASSIGNMENT MODAL (§13) */}
         {assignModalOpen && (
-          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Overlay open onClose={() => setAssignModalOpen(false)} title="Assign case">
             <div className="bg-card border border-border rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-primary" />
@@ -1443,15 +1445,15 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                 </div>
               </form>
             </div>
-          </div>
+          </Overlay>
         )}
 
         {/* GOVERNMENT STATUS MODAL */}
         {govModalOpen && (
-          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Overlay open onClose={() => setGovModalOpen(false)} title="Record authority status">
             <div className="bg-card border border-border rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <ExternalLink className="w-5 h-5 text-purple-600" />
+                <ExternalLink className="w-5 h-5 text-[var(--ui-sage)]" />
                 Record External Portal Status
               </h3>
 
@@ -1509,14 +1511,14 @@ export default function AdminCaseDetailPage({ params }: AdminCasePageProps) {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl font-bold bg-purple-600 text-white hover:bg-purple-700"
+                    className="px-5 py-2 rounded-xl font-bold bg-[var(--ui-sage)] text-white hover:bg-[var(--ui-sage)]"
                   >
                     Record Status
                   </button>
                 </div>
               </form>
             </div>
-          </div>
+          </Overlay>
         )}
       </div>
     </AdminShell>

@@ -26,7 +26,7 @@ export function ApplicableRequirementsCard({
     >
       {/* Top Header: Floating Arrow on Left, BIS Logo on Right */}
       <div className="flex justify-between items-center relative z-10">
-        <div className="h-7 w-7 rounded-full bg-white shadow-2xs flex items-center justify-center text-[#111827] group-hover:scale-105 transition-transform">
+        <div className="h-7 w-7 rounded-full bg-white shadow-2xs flex items-center justify-center text-[var(--ui-text)] group-hover:scale-105 transition-transform">
           <ArrowUpRight className="h-3.5 w-3.5" />
         </div>
         <BISLogo className="h-5 w-5" />
@@ -37,7 +37,7 @@ export function ApplicableRequirementsCard({
         <div className="text-xs font-medium text-[#374151] max-w-[140px] leading-snug">
           Applicable Requirements
         </div>
-        <div className="text-5xl sm:text-6xl font-bold text-[#111827] tracking-tight mt-1.5 font-sans">
+        <div className="text-5xl sm:text-6xl font-bold text-[var(--ui-text)] tracking-tight mt-1.5 font-sans">
           {requirementsData.applicableCount}
         </div>
       </div>
@@ -47,7 +47,7 @@ export function ApplicableRequirementsCard({
         <span className="text-xs font-medium text-[#4B5563]">
           IS Standards
         </span>
-        <span className="px-3 py-0.5 rounded-full bg-white text-[#111827] font-semibold text-xs shadow-2xs">
+        <span className="px-3 py-0.5 rounded-full bg-white text-[var(--ui-text)] font-semibold text-xs shadow-2xs">
           {requirementsData.isStandardsRatio}
         </span>
       </div>

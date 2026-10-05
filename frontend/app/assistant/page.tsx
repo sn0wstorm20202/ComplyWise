@@ -34,7 +34,7 @@ function renderMessageContent(content: string) {
     return parts.map((part, i) => {
       if (part.startsWith("**") && part.endsWith("**")) {
         return (
-          <strong key={i} className="font-semibold text-[#0F172A]">
+          <strong key={i} className="font-semibold text-[var(--ui-text)]">
             {part.slice(2, -2)}
           </strong>
         );
@@ -64,7 +64,7 @@ function renderMessageContent(content: string) {
       elements.push(
         <div
           key={`h-${idx}`}
-          className="font-bold text-xs sm:text-sm text-[#0F172A] mt-2 mb-1 border-b border-slate-200/80 pb-0.5 flex items-center gap-1.5"
+          className="font-bold text-xs sm:text-sm text-[var(--ui-text)] mt-2 mb-1 border-b border-[var(--ui-border)]/80 pb-0.5 flex items-center gap-1.5"
         >
           {trimmed.replace(/^###\s*/, "")}
         </div>
@@ -74,7 +74,7 @@ function renderMessageContent(content: string) {
 
     if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
       elements.push(
-        <div key={`b-${idx}`} className="flex items-start gap-2 pl-1.5 text-xs sm:text-sm text-[#334155] leading-relaxed">
+        <div key={`b-${idx}`} className="flex items-start gap-2 pl-1.5 text-xs sm:text-sm text-[var(--ui-secondary)] leading-relaxed">
           <span className="text-amber-600 font-bold shrink-0 mt-0.5">•</span>
           <span className="flex-1">{parseInline(trimmed.slice(2))}</span>
         </div>
@@ -85,7 +85,7 @@ function renderMessageContent(content: string) {
     const numMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
     if (numMatch) {
       elements.push(
-        <div key={`n-${idx}`} className="flex items-start gap-2 pl-1.5 text-xs sm:text-sm text-[#334155] leading-relaxed">
+        <div key={`n-${idx}`} className="flex items-start gap-2 pl-1.5 text-xs sm:text-sm text-[var(--ui-secondary)] leading-relaxed">
           <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold shrink-0 mt-0.5 border border-amber-200">
             {numMatch[1]}
           </span>
@@ -96,7 +96,7 @@ function renderMessageContent(content: string) {
     }
 
     elements.push(
-      <p key={`p-${idx}`} className="text-xs sm:text-sm text-[#334155] leading-relaxed">
+      <p key={`p-${idx}`} className="text-xs sm:text-sm text-[var(--ui-secondary)] leading-relaxed">
         {parseInline(trimmed)}
       </p>
     );
@@ -206,38 +206,8 @@ function AssistantContent() {
       };
       setMessages((prev) => [...prev, botMsg]);
     } catch {
-      // Deterministic structured fallback if backend network is temporarily unreachable
-      const bizName = business?.name || "your enterprise";
-      const botMsg: Message = {
-        id: `c-${Date.now()}`,
-        sender: "copilot",
-        content: `### 📋 Executive Summary\nStatutory compliance roadmap established for ${bizName} under national and state industrial regulations.\n\n### 🏛️ Applicable Statutory Authorities & Clearances\n- **Bureau of Indian Standards (BIS)**: Mandatory Conformity Scheme under BIS Act 2016 [1].\n- **State Pollution Control Board (SPCB)**: Consent to Establish (CTE) and Consent to Operate (CTO) [2].\n- **Directorate of Industrial Safety & Health (DISH)**: Factory Plan approval under the Factories Act 1948.\n\n### 📑 Mandatory Filings & Prerequisites\n- **Factory Layout & Stability**: Civil engineer stability certification and machinery placement drawing.\n- **Pollution Control Dossier**: Stack emission and trade effluent treatment schemes.\n- **Statutory Registrations**: Udyam MSME, GSTIN, and EPFO/ESIC code allotments.\n\n### ⚡ Action Roadmap\n1. File combined single-window application for SPCB Consent and Factory Inspectorate approval.\n2. Schedule NABL testing and submit product sample dossiers for standard licensing.`,
-        citations: [
-          {
-            index: 1,
-            evidence_id: "EVD-BIS-2016",
-            authority: "Bureau of Indian Standards",
-            source_title: "Bureau of Indian Standards Act, 2016",
-            locator: "Section 16 & Section 29",
-            excerpt: "Statutory licensing requirements and penal provisions for non-conformance.",
-            verification_status: "VERIFIED",
-            canonical_url: "https://www.bis.gov.in",
-          },
-          {
-            index: 2,
-            evidence_id: "EVD-QCO-2024",
-            authority: "DPIIT / Ministry of Commerce",
-            source_title: "DPIIT Mandatory Quality Control Order",
-            locator: "Schedule I",
-            excerpt: "Compulsory standard mark under Scheme-I for notified industrial products.",
-            verification_status: "VERIFIED",
-            canonical_url: "https://dpiit.gov.in",
-          },
-        ],
-        groundingLevel: "STATUTORY_DETERMINISTIC",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      };
-      setMessages((prev) => [...prev, botMsg]);
+      setError("We couldn't reach BIS Copilot. Your question is preserved below; try again when the service is available.");
+      setInputPrompt(text);
     } finally {
       setLoading(false);
     }
@@ -247,33 +217,31 @@ function AssistantContent() {
     <AppShell activeView="assistant">
       <div className="flex flex-col space-y-6 max-w-5xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-[10px] border border-[#E2E8F0] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs relative overflow-hidden">
+        <div className="bg-white rounded-[10px] border border-[var(--ui-border)] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs relative overflow-hidden">
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-2">
               <span className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-amber-200 bg-amber-50 text-amber-800 text-[11px] font-semibold tracking-wider uppercase">
                 {t("assistant.title")}
               </span>
-              <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-mono text-slate-600 border border-slate-200">
-                {t("common.verified")}
-              </span>
+              <span className="ui-eyebrow">Source-linked answers</span>
               {business && (
-                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-mono text-emerald-700 border border-emerald-200 font-medium">
+                <span className="inline-flex items-center rounded-full bg-[var(--ui-sage-faint)] px-2.5 py-0.5 text-[11px] font-mono text-[var(--ui-sage)] border border-[var(--ui-sage-soft)] font-medium">
                   {business.name} · {t("common.active")}
                 </span>
               )}
             </div>
-            <h1 className="font-sans font-bold text-2xl sm:text-3xl text-[#0F172A] tracking-tight">
+            <h1 className="font-sans font-bold text-2xl sm:text-3xl text-[var(--ui-text)] tracking-tight">
               {t("assistant.title")}
             </h1>
-            <p className="text-xs text-[#64748B] mt-1.5 max-w-2xl leading-relaxed">
-              {t("assistant.subtitle")}
+            <p className="text-xs text-[var(--ui-secondary)] mt-1.5 max-w-2xl leading-relaxed">
+              Ask about standards, clauses and next steps. Inspect the sources behind each answer.
             </p>
           </div>
 
           <div className="flex items-center gap-3 relative z-10 shrink-0">
             <Link
               href={businessId ? `/dashboard?business_id=${businessId}` : "/dashboard"}
-              className="rounded-full border border-[#E2E8F0] bg-white px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-slate-50 transition-colors shadow-2xs"
+              className="rounded-full border border-[var(--ui-border)] bg-white px-4 py-2 text-xs font-semibold text-[var(--ui-text)] hover:bg-[var(--ui-bg)] transition-colors shadow-2xs"
             >
               ← {t("navigation.dashboard")}
             </Link>
@@ -282,14 +250,14 @@ function AssistantContent() {
 
         {error && (
           <ErrorState
-            title="Assistant Service Notice"
+            title={error}
             message={error}
             onRetry={() => setError(null)}
           />
         )}
 
         {/* Chat History Box */}
-        <div className="flex-1 bg-white rounded-[10px] border border-[#E2E8F0] p-6 shadow-2xs space-y-6 min-h-[450px] overflow-y-auto">
+        <div role="log" aria-label="BIS Copilot conversation" aria-live="polite" className="flex-1 bg-white rounded-[10px] border border-[var(--ui-border)] p-6 shadow-2xs space-y-6 min-h-[450px] overflow-y-auto">
           {messages.map((m) => (
             <div
               key={m.id}
@@ -300,8 +268,8 @@ function AssistantContent() {
               <div
                 className={`max-w-2xl rounded-2xl p-5 text-xs sm:text-sm leading-relaxed ${
                   m.sender === "user"
-                    ? "bg-[#0F172A] text-white border border-slate-800 shadow-2xs"
-                    : "bg-[#F8FAFC] border border-[#E2E8F0] text-[#1E293B] space-y-3"
+                    ? "bg-[var(--ui-text)] text-white border border-[var(--ui-border-strong)] shadow-2xs"
+                    : "bg-[var(--ui-bg)] border border-[var(--ui-border)] text-[var(--ui-text)] space-y-3"
                 }`}
               >
                 {m.sender === "user" ? (
@@ -312,9 +280,9 @@ function AssistantContent() {
 
                 {/* Grounding & Citations */}
                 {m.sender === "copilot" && m.citations && m.citations.length > 0 && (
-                  <div className="pt-3 border-t border-[#E2E8F0] space-y-2 text-xs">
-                    <div className="flex items-center justify-between font-semibold text-[#0F172A]">
-                      <span className="text-[11px] uppercase tracking-wider text-[#64748B]">{t("assistant.statutorySources")} ({m.citations.length}):</span>
+                  <div className="pt-3 border-t border-[var(--ui-border)] space-y-2 text-xs">
+                    <div className="flex items-center justify-between font-semibold text-[var(--ui-text)]">
+                      <span className="text-[11px] uppercase tracking-wider text-[var(--ui-secondary)]">{t("assistant.statutorySources")} ({m.citations.length}):</span>
                       {m.groundingLevel && (
                         <span className="text-[10px] uppercase font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                           {m.groundingLevel}
@@ -325,13 +293,13 @@ function AssistantContent() {
                       {m.citations.map((c, i) => (
                         <div
                           key={i}
-                          className="bg-white p-3.5 rounded-xl border border-[#E2E8F0] shadow-2xs text-[#475569] space-y-1.5"
+                          className="bg-white p-3.5 rounded-xl border border-[var(--ui-border)] shadow-2xs text-[var(--ui-secondary)] space-y-1.5"
                         >
                           <div className="flex items-center justify-between text-[11px]">
-                            <span className="font-semibold text-[#0F172A]">{c.source_title}</span>
+                            <span className="font-semibold text-[var(--ui-text)]">{c.source_title}</span>
                             <span className="font-mono text-amber-700 font-semibold">{c.locator}</span>
                           </div>
-                          <p className="text-[11px] italic text-[#64748B] leading-relaxed">
+                          <p className="text-[11px] italic text-[var(--ui-secondary)] leading-relaxed">
                             &ldquo;{c.excerpt}&rdquo;
                           </p>
                           {c.canonical_url && (
@@ -351,20 +319,19 @@ function AssistantContent() {
                   </div>
                 )}
               </div>
-              <span className="text-[10px] font-mono text-[#94A3B8] mt-1.5 px-1">{m.timestamp}</span>
+              <span className="text-[10px] font-mono text-[var(--ui-muted)] mt-1.5 px-1">{m.timestamp}</span>
             </div>
           ))}
           {loading && (
-            <div className="flex items-center gap-3 text-xs text-[#64748B] p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-              <span className="animate-spin text-amber-600">⚙️</span>
-              <span>{t("assistant.thinking")}</span>
+            <div className="flex items-center gap-3 text-xs text-[var(--ui-secondary)] p-3.5 rounded-xl bg-[var(--ui-bg)] border border-[var(--ui-border)]">
+              <span role="status">Finding an answer and its sources…</span>
             </div>
           )}
         </div>
 
         {/* Suggested Prompt Chips */}
         <div className="space-y-2">
-          <span className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+          <span className="text-[11px] font-semibold text-[var(--ui-secondary)] uppercase tracking-wider">
             {t("assistant.suggestedQueries")}
           </span>
           <div className="flex flex-wrap gap-2">
@@ -374,7 +341,7 @@ function AssistantContent() {
                 type="button"
                 onClick={() => handleSend(p)}
                 disabled={loading}
-                className="text-xs bg-white border border-[#E2E8F0] hover:border-amber-500 hover:text-[#0F172A] rounded-full px-4 py-2 text-[#64748B] transition-all text-left disabled:opacity-50 cursor-pointer shadow-2xs"
+                className="text-xs bg-white border border-[var(--ui-border)] hover:border-amber-500 hover:text-[var(--ui-text)] rounded-full px-4 py-2 text-[var(--ui-secondary)] transition-all text-left disabled:opacity-50 cursor-pointer shadow-2xs"
               >
                 {p}
               </button>
@@ -388,20 +355,21 @@ function AssistantContent() {
             e.preventDefault();
             handleSend(inputPrompt);
           }}
-          className="bg-white rounded-full border border-[#E2E8F0] p-1.5 shadow-xs flex items-center gap-2 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/10 transition-colors"
+          className="bg-white rounded-full border border-[var(--ui-border)] p-1.5 shadow-xs flex items-center gap-2 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/10 transition-colors"
         >
           <input
+            aria-label="Ask BIS Copilot"
             type="text"
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
             placeholder={t("assistant.promptPlaceholder")}
             disabled={loading}
-            className="flex-1 px-5 py-2 text-xs sm:text-sm text-[#0F172A] placeholder-[#94A3B8] focus:outline-none bg-transparent"
+            className="flex-1 px-5 py-2 text-xs sm:text-sm text-[var(--ui-text)] placeholder-[var(--ui-muted)] focus:outline-none bg-transparent"
           />
           <button
             type="submit"
             disabled={loading || !inputPrompt.trim()}
-            className="rounded-full bg-[#0F172A] px-6 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-40 transition-all shadow-xs shrink-0 cursor-pointer"
+            className="rounded-full bg-[var(--ui-text)] px-6 py-2 text-xs font-semibold text-white hover:bg-[var(--ui-text)] disabled:opacity-40 transition-all shadow-xs shrink-0 cursor-pointer"
           >
             {t("assistant.send")}
           </button>
@@ -416,7 +384,7 @@ export default function AssistantPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center text-xs text-[#64748B]">
+        <div className="min-h-screen bg-[var(--ui-bg)] flex items-center justify-center text-xs text-[var(--ui-secondary)]">
           {t("common.loading")}
         </div>
       }

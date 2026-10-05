@@ -19,6 +19,27 @@ User = get_user_model()
 TEST_PASSWORD = "test-Passphrase-2026"
 
 
+@pytest.fixture(autouse=True)
+def isolate_external_credentials(request, settings):
+    """Unit tests never spend real provider credentials loaded from the local env.
+
+    Tests configure synthetic keys or mocked providers explicitly. The separately
+    opt-in live integration test retains the developer's runtime configuration.
+    """
+    if "test_live_integration" in request.node.name:
+        return
+    # Authentication behavior is unchanged; avoid expensive production hashing
+    # for hundreds of synthetic test accounts. Runtime settings are untouched.
+    settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+    for key in ("OPENAI_API_KEY", "GEMINI_API_KEY", "GROK_API_KEY", "FIRECRAWL_API_KEY"):
+        setattr(settings, key, "")
+    settings.GEMINI_API_KEYS = []
+    settings.SERPAPI_API_KEY = ""
+    from domain.providers.gemini_provider import reset_pool_state
+    reset_pool_state()
+    settings.COMPLIANCERAG_URL = ""
+
+
 @pytest.fixture
 def api_client() -> APIClient:
     return APIClient()

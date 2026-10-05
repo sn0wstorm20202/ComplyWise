@@ -1,0 +1,8 @@
+
+Running 1 test using 1 worker
+
+(node:5364) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e\product-workspace.spec.ts:198:5 › contextual document checklist keeps its assessment and never becomes statutory evidence (2.0s)
+
+  1 passed (4.0s)

@@ -1,0 +1,55 @@
+{
+  "kind": "READ_ONLY_RUNTIME_PROVENANCE_SECURITY",
+  "database": {
+    "engine": "postgresql",
+    "query_ok": true,
+    "pgvector_installed": true
+  },
+  "published_knowledge": {
+    "requirements": 93,
+    "rules": 34
+  },
+  "environment": {
+    "GEMINI_API_KEY": "configured",
+    "OPENAI_API_KEY": "configured",
+    "SERPAPI_API_KEY": "configured",
+    "COMPLIANCERAG_URL": "configured",
+    "GOOGLE_AUTH_CLIENT_ID": "missing",
+    "GOOGLE_AUTH_CLIENT_SECRET": "missing",
+    "GOOGLE_CALENDAR_REFRESH_TOKEN": "missing",
+    "AZURE_STORAGE_CONNECTION_STRING": "missing",
+    "LLM_PROVIDER": "gemini",
+    "gemini_slot_count": 3
+  },
+  "precision_workshop": {
+    "business_id": "09f5d702-f83a-4b1d-bd5e-2c7b31b7a2fa",
+    "assessment_id": "8b0883ed-63f8-47a6-8e08-84874d71eae8",
+    "http_status": 200,
+    "count": 1,
+    "scope_status": "PARTIAL_SCOPE",
+    "scope_note": "No reviewed standards matched this assessment within the currently supported knowledge scope. Additional product or quality review may be needed.",
+    "reviewed_match_count": 0,
+    "standards": [
+      {
+        "title": "General Workshop Safety and Occupational Health Standards",
+        "standard_code": "6c44a86a-092c-4dd5-a94d-c382c1bf90d4",
+        "authority": "Bureau of Indian Standards / Ministry of Labour and Employment",
+        "nature": "QUALITY_PLANNING",
+        "result_origin": "LLM_FALLBACK_RESULT",
+        "source_reference": "National Building Code & Factory Safety Guidelines",
+        "source_url": null,
+        "is_mandatory": null,
+        "why_it_matters": "Precision Workshop undertakes welding and fabrication operations using powered machinery with 18 workers, making workplace safety protocols essential.",
+        "citations": [],
+        "rule_version_id": null
+      }
+    ]
+  },
+  "secret_scan": {
+    "configured_sensitive_values_checked": 11,
+    "repository_text_files": 775,
+    "frontend_js_files": 60,
+    "matches": [],
+    "diff_matching_variable_names": []
+  }
+}

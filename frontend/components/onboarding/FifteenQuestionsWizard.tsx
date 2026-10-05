@@ -1,6 +1,7 @@
 "use client";
+import { ProductMotion } from "@/components/product/ProductMotion";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { OrchestrationQuestion } from "@/lib/api/orchestration";
 import {
   Check,
@@ -23,7 +24,7 @@ interface FifteenQuestionsWizardProps {
   onPrefillAllAnswers?: () => Promise<void>;
   hasPresetAnswers?: boolean;
   presetName?: string;
-  onCompleteQuestions: () => void;
+  onCompleteQuestions: () => void | Promise<void>;
   onBackToProducts: () => void;
   loading?: boolean;
 }
@@ -42,7 +43,7 @@ export default function FifteenQuestionsWizard({
 }: FifteenQuestionsWizardProps) {
   const currentQ = questions[activeQuestionIndex];
   const [currentValue, setCurrentValue] = useState<any>(() => {
-    const raw = currentQ?.current_value;
+    const raw = currentQ?.current_value ?? currentQ?.suggested_answer;
     if (raw && typeof raw === "object" && "value" in raw) {
       return raw.value;
     }
@@ -56,12 +57,13 @@ export default function FifteenQuestionsWizard({
     return "";
   });
   const [saving, setSaving] = useState<boolean>(false);
+  const submissionInFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
   // Sync current value and explanation whenever active question changes
   useEffect(() => {
     if (currentQ) {
-      const raw = currentQ.current_value;
+      const raw = currentQ.current_value ?? currentQ.suggested_answer;
       if (raw && typeof raw === "object" && "value" in raw) {
         setCurrentValue(raw.value !== undefined && raw.value !== null ? raw.value : "");
         setCurrentExplanation(raw.explanation || "");
@@ -75,8 +77,8 @@ export default function FifteenQuestionsWizard({
 
   if (!currentQ || questions.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-[#E2E8F0] p-8 text-center space-y-4">
-        <p className="text-sm font-semibold text-[#64748B]">
+      <div className="bg-white rounded-2xl border border-[var(--ui-border)] p-8 text-center space-y-4">
+        <p className="text-sm font-semibold text-[var(--ui-secondary)]">
           Loading compliance questions...
         </p>
       </div>
@@ -85,14 +87,11 @@ export default function FifteenQuestionsWizard({
 
   const answeredCount = questions.filter((q) => q.is_answered).length;
   const isLastQuestion = activeQuestionIndex === questions.length - 1;
-  const progressPercent = Math.round(((activeQuestionIndex + 1) / questions.length) * 100);
+  const progressPercent = Math.round((answeredCount / questions.length) * 100);
 
   async function handleSaveCurrentAndGo(targetIdx?: number) {
+    if (submissionInFlight.current) return;
     setError(null);
-    if (answeredCount === questions.length && (isLastQuestion || targetIdx === undefined)) {
-      onCompleteQuestions();
-      return;
-    }
     const finalExplanation = currentExplanation.trim();
     let effectiveValue = currentValue;
 
@@ -116,6 +115,7 @@ export default function FifteenQuestionsWizard({
       ? { value: effectiveValue, explanation: finalExplanation, custom_text: finalExplanation }
       : effectiveValue;
 
+    submissionInFlight.current = true;
     setSaving(true);
     try {
       await onAnswerSubmitted(currentQ.question_id, submissionPayload);
@@ -124,48 +124,49 @@ export default function FifteenQuestionsWizard({
       } else if (!isLastQuestion) {
         onSelectQuestionIndex(activeQuestionIndex + 1);
       } else {
-        onCompleteQuestions();
+        await onCompleteQuestions();
       }
     } catch (err: any) {
       setError(err?.message || "Failed to save answer. Please try again.");
     } finally {
+      submissionInFlight.current = false;
       setSaving(false);
     }
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 shadow-2xs space-y-6">
+    <ProductMotion stateKey={activeQuestionIndex} className="bg-white rounded-2xl border border-[var(--ui-border)] p-6 sm:p-8 shadow-2xs space-y-6">
       {/* Top Header with Progress and Step Navigator */}
-      <div className="border-b border-[#E2E8F0] pb-5 space-y-4">
+      <div className="border-b border-[var(--ui-border)] pb-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-indigo-100 text-indigo-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-[var(--ui-sage-soft)] text-[var(--ui-sage)]">
                 {currentQ.category || "General Compliance"}
               </span>
-              <span className="text-xs font-semibold text-[#64748B]">
+              <span className="text-xs font-semibold text-[var(--ui-secondary)]">
                 Question {activeQuestionIndex + 1} of {questions.length}
               </span>
             </div>
-            <h2 className="text-base sm:text-lg font-bold text-[#0F172A]">
-              Statutory Compliance Questions
+            <h2 className="text-base sm:text-lg font-bold text-[var(--ui-text)]">
+              Only answer what changes the answer.
             </h2>
-            <p className="text-xs text-[#64748B] mt-0.5">
-              Targeted Statutory Assessment tailored to your operational profile
+            <p className="text-xs text-[var(--ui-secondary)] mt-0.5">
+              We're filling in the details that matter for your business.
             </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[var(--ui-inset)] text-[var(--ui-text)] border border-[var(--ui-border)]">
               {answeredCount} / {questions.length} Answered ({Math.round((answeredCount / questions.length) * 100)}%)
             </span>
           </div>
         </div>
 
         {/* Linear Progress Bar */}
-        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+        <div role="progressbar" aria-label="Building your business context" aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100} className="w-full bg-[var(--ui-inset)] h-2 rounded-full overflow-hidden">
           <div
-            className="bg-indigo-600 h-full rounded-full transition-all duration-300"
+            className="bg-[var(--ui-sage)] h-full rounded-full transition-all duration-300"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -183,10 +184,10 @@ export default function FifteenQuestionsWizard({
                 title={`Question ${idx + 1}: ${q.question}`}
                 className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full text-xs font-bold flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                   isActive
-                    ? "bg-indigo-600 text-white ring-3 ring-indigo-200"
+                    ? "bg-[var(--ui-sage)] text-white ring-3 ring-[var(--ui-sage-soft)]"
                     : isDone
-                    ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    ? "bg-[var(--ui-sage)] text-white hover:bg-[var(--ui-sage)]"
+                    : "bg-[var(--ui-inset)] text-[var(--ui-secondary)] hover:bg-[var(--ui-inset)]"
                 }`}
               >
                 {isDone && !isActive ? (
@@ -201,23 +202,21 @@ export default function FifteenQuestionsWizard({
       </div>
 
       {/* Main Question Body */}
-      <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 space-y-5">
+      <div className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-bg)]/50 p-6 space-y-5">
         {/* Question Text */}
         <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold text-slate-400">
-            <span>#{currentQ.question_id}</span>
-            <span>•</span>
-            <span className="uppercase">{currentQ.answer_type}</span>
-          </div>
-          <h3 className="text-lg sm:text-xl font-bold text-[#0F172A] leading-snug">
+          <h3 className="text-lg sm:text-xl font-bold text-[var(--ui-text)] leading-snug">
             {currentQ.question}
           </h3>
         </div>
+        {!currentQ.is_answered && currentQ.suggested_answer_origin === "STARTER_PROFILE" && currentQ.suggested_answer !== null && currentQ.suggested_answer !== undefined && (
+          <p className="text-xs text-[var(--ui-sage)]" role="status">Suggested from your starting profile — change it if needed, then save to confirm.</p>
+        )}
 
         {/* "Why We Ask This" Contextual Explanation */}
         {(currentQ.help_text || currentQ.reason) && (
-          <div className="flex items-start gap-2.5 p-3.5 rounded-xl border border-indigo-100 bg-indigo-50/60 text-xs text-indigo-950">
-            <HelpCircle className="h-4 w-4 text-indigo-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2.5 p-3.5 rounded-xl border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/60 text-xs text-[var(--ui-sage)]">
+            <HelpCircle className="h-4 w-4 text-[var(--ui-sage)] shrink-0 mt-0.5" />
             <div className="leading-relaxed">
               <span className="font-bold">Why We Ask This: </span>
               <span>{currentQ.help_text || currentQ.reason}</span>
@@ -235,20 +234,20 @@ export default function FifteenQuestionsWizard({
                 onClick={() => setCurrentValue(true)}
                 className={`p-4 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${
                   currentValue === true
-                    ? "border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20 shadow-xs"
-                    : "border-slate-200 bg-white hover:border-emerald-300 text-slate-700"
+                    ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] ring-2 ring-[var(--ui-sage-soft)]/20 shadow-xs"
+                    : "border-[var(--ui-border)] bg-white hover:border-[var(--ui-sage-soft)] text-[var(--ui-secondary)]"
                 }`}
               >
                 <div className="flex items-center gap-2.5 font-bold text-sm">
                   <CheckCircle2
                     className={`h-5 w-5 ${
-                      currentValue === true ? "text-emerald-600" : "text-slate-400"
+                      currentValue === true ? "text-[var(--ui-sage)]" : "text-[var(--ui-muted)]"
                     }`}
                   />
-                  <span>Yes, Applicable / Active</span>
+                  <span>Yes</span>
                 </div>
                 {currentValue === true && (
-                  <span className="h-2 w-2 rounded-full bg-emerald-600" />
+                  <span className="h-2 w-2 rounded-full bg-[var(--ui-sage)]" />
                 )}
               </button>
 
@@ -257,17 +256,17 @@ export default function FifteenQuestionsWizard({
                 onClick={() => setCurrentValue(false)}
                 className={`p-4 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${
                   currentValue === false
-                    ? "border-slate-800 bg-slate-900 text-white shadow-xs"
-                    : "border-slate-200 bg-white hover:border-slate-400 text-slate-700"
+                    ? "border-[var(--ui-border-strong)] bg-[var(--ui-text)] text-white shadow-xs"
+                    : "border-[var(--ui-border)] bg-white hover:border-[var(--ui-border-strong)] text-[var(--ui-secondary)]"
                 }`}
               >
                 <div className="flex items-center gap-2.5 font-bold text-sm">
                   <XCircle
                     className={`h-5 w-5 ${
-                      currentValue === false ? "text-white" : "text-slate-400"
+                      currentValue === false ? "text-white" : "text-[var(--ui-muted)]"
                     }`}
                   />
-                  <span>No, Not Applicable</span>
+                  <span>No</span>
                 </div>
                 {currentValue === false && (
                   <span className="h-2 w-2 rounded-full bg-white" />
@@ -279,7 +278,7 @@ export default function FifteenQuestionsWizard({
           {/* TYPE: NUMBER */}
           {currentQ.answer_type === "NUMBER" && (
             <div className="max-w-xs space-y-1.5">
-              <div className="relative rounded-xl border border-slate-300 bg-white shadow-2xs focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+              <div className="relative rounded-xl border border-[var(--ui-border-strong)] bg-white shadow-2xs focus-within:border-[var(--ui-sage-soft)] focus-within:ring-1 focus-within:ring-[var(--ui-sage-soft)]">
                 <input
                   type="number"
                   min="0"
@@ -288,10 +287,10 @@ export default function FifteenQuestionsWizard({
                     setCurrentValue(e.target.value === "" ? "" : Number(e.target.value))
                   }
                   placeholder="Enter numeric quantity"
-                  className="w-full px-3.5 py-2.5 text-base font-semibold text-[#0F172A] rounded-xl outline-none"
+                  className="w-full px-3.5 py-2.5 text-base font-semibold text-[var(--ui-text)] rounded-xl outline-none"
                 />
                 {currentQ.unit && (
-                  <span className="absolute right-3 top-2.5 text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                  <span className="absolute right-3 top-2.5 text-xs font-semibold text-[var(--ui-secondary)] bg-[var(--ui-inset)] px-2 py-0.5 rounded">
                     {currentQ.unit}
                   </span>
                 )}
@@ -316,16 +315,16 @@ export default function FifteenQuestionsWizard({
                     onClick={() => setCurrentValue(opt.value)}
                     className={`w-full p-3.5 rounded-xl border flex items-center justify-between text-left transition-all cursor-pointer ${
                       isSelected
-                        ? "border-indigo-600 bg-indigo-50/70 text-indigo-950 font-bold ring-2 ring-indigo-500/20 shadow-xs"
-                        : "border-slate-200 bg-white hover:border-indigo-300 text-slate-700"
+                        ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/70 text-[var(--ui-sage)] font-bold ring-2 ring-[var(--ui-sage-soft)]/20 shadow-xs"
+                        : "border-[var(--ui-border)] bg-white hover:border-[var(--ui-sage-soft)] text-[var(--ui-secondary)]"
                     }`}
                   >
                     <span className="text-sm">{opt.label}</span>
                     <span
                       className={`h-4 w-4 rounded-full border flex items-center justify-center ${
                         isSelected
-                          ? "border-indigo-600 bg-indigo-600 text-white"
-                          : "border-slate-300"
+                          ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage)] text-white"
+                          : "border-[var(--ui-border-strong)]"
                       }`}
                     >
                       {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
@@ -360,16 +359,16 @@ export default function FifteenQuestionsWizard({
                     }}
                     className={`w-full p-3.5 rounded-xl border flex items-center justify-between text-left transition-all cursor-pointer ${
                       isSelected
-                        ? "border-indigo-600 bg-indigo-50/70 text-indigo-950 font-bold ring-2 ring-indigo-500/20 shadow-xs"
-                        : "border-slate-200 bg-white hover:border-indigo-300 text-slate-700"
+                        ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/70 text-[var(--ui-sage)] font-bold ring-2 ring-[var(--ui-sage-soft)]/20 shadow-xs"
+                        : "border-[var(--ui-border)] bg-white hover:border-[var(--ui-sage-soft)] text-[var(--ui-secondary)]"
                     }`}
                   >
                     <span className="text-sm">{opt.label}</span>
                     <span
                       className={`h-4 w-4 rounded-md border flex items-center justify-center ${
                         isSelected
-                          ? "border-indigo-600 bg-indigo-600 text-white"
-                          : "border-slate-300"
+                          ? "border-[var(--ui-sage-soft)] bg-[var(--ui-sage)] text-white"
+                          : "border-[var(--ui-border-strong)]"
                       }`}
                     >
                       {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
@@ -382,8 +381,8 @@ export default function FifteenQuestionsWizard({
 
           {/* TYPE: CURRENCY */}
           {currentQ.answer_type === "CURRENCY" && (
-            <div className="max-w-xs relative rounded-xl border border-slate-300 bg-white shadow-2xs focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
-              <span className="absolute left-3.5 top-2.5 text-slate-500 font-bold">
+            <div className="max-w-xs relative rounded-xl border border-[var(--ui-border-strong)] bg-white shadow-2xs focus-within:border-[var(--ui-sage-soft)] focus-within:ring-1 focus-within:ring-[var(--ui-sage-soft)]">
+              <span className="absolute left-3.5 top-2.5 text-[var(--ui-secondary)] font-bold">
                 <IndianRupee className="h-4 w-4 inline" />
               </span>
               <input
@@ -394,14 +393,14 @@ export default function FifteenQuestionsWizard({
                   setCurrentValue(e.target.value === "" ? "" : Number(e.target.value))
                 }
                 placeholder="Amount in INR"
-                className="w-full pl-9 pr-3.5 py-2.5 text-base font-semibold text-[#0F172A] rounded-xl outline-none"
+                className="w-full pl-9 pr-3.5 py-2.5 text-base font-semibold text-[var(--ui-text)] rounded-xl outline-none"
               />
             </div>
           )}
 
           {/* TYPE: PERCENTAGE */}
           {currentQ.answer_type === "PERCENTAGE" && (
-            <div className="max-w-xs relative rounded-xl border border-slate-300 bg-white shadow-2xs focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+            <div className="max-w-xs relative rounded-xl border border-[var(--ui-border-strong)] bg-white shadow-2xs focus-within:border-[var(--ui-sage-soft)] focus-within:ring-1 focus-within:ring-[var(--ui-sage-soft)]">
               <input
                 type="number"
                 min="0"
@@ -411,9 +410,9 @@ export default function FifteenQuestionsWizard({
                   setCurrentValue(e.target.value === "" ? "" : Number(e.target.value))
                 }
                 placeholder="Percentage"
-                className="w-full px-3.5 py-2.5 text-base font-semibold text-[#0F172A] rounded-xl outline-none"
+                className="w-full px-3.5 py-2.5 text-base font-semibold text-[var(--ui-text)] rounded-xl outline-none"
               />
-              <span className="absolute right-3.5 top-2.5 text-slate-500 font-bold">
+              <span className="absolute right-3.5 top-2.5 text-[var(--ui-secondary)] font-bold">
                 <Percent className="h-4 w-4 inline" />
               </span>
             </div>
@@ -421,12 +420,12 @@ export default function FifteenQuestionsWizard({
 
           {/* TYPE: DATE */}
           {currentQ.answer_type === "DATE" && (
-            <div className="max-w-xs relative rounded-xl border border-slate-300 bg-white shadow-2xs focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+            <div className="max-w-xs relative rounded-xl border border-[var(--ui-border-strong)] bg-white shadow-2xs focus-within:border-[var(--ui-sage-soft)] focus-within:ring-1 focus-within:ring-[var(--ui-sage-soft)]">
               <input
                 type="date"
                 value={String(currentValue ?? "")}
                 onChange={(e) => setCurrentValue(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-sm font-semibold text-[#0F172A] rounded-xl outline-none"
+                className="w-full px-3.5 py-2.5 text-sm font-semibold text-[var(--ui-text)] rounded-xl outline-none"
               />
             </div>
           )}
@@ -439,7 +438,7 @@ export default function FifteenQuestionsWizard({
                 value={String(currentValue ?? "")}
                 onChange={(e) => setCurrentValue(e.target.value)}
                 placeholder="Provide details..."
-                className="w-full p-3.5 rounded-xl border border-slate-300 bg-white text-sm text-[#0F172A] placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+                className="w-full p-3.5 rounded-xl border border-[var(--ui-border-strong)] bg-white text-sm text-[var(--ui-text)] placeholder-slate-400 outline-none focus:border-[var(--ui-sage-soft)] focus:ring-1 focus:ring-[var(--ui-sage-soft)] shadow-2xs"
               />
             </div>
           )}
@@ -447,16 +446,16 @@ export default function FifteenQuestionsWizard({
 
         {/* Optional Context/Description Input */}
         {currentQ.answer_type !== "TEXT" && (
-          <div className="pt-3 border-t border-slate-200/80 space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-600">
+          <div className="pt-3 border-t border-[var(--ui-border)]/80 space-y-1.5">
+            <label className="block text-xs font-semibold text-[var(--ui-secondary)]">
               Have specific context or details? Explain in your own words (optional):
             </label>
             <textarea
               rows={2}
               value={currentExplanation}
               onChange={(e) => setCurrentExplanation(e.target.value)}
-              placeholder="e.g. We deliver software to international clients over cloud, remote team of 15..."
-              className="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-xs text-[#0F172A] placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+              placeholder="Add a detail that helps explain your answer."
+              className="w-full p-2.5 rounded-xl border border-[var(--ui-border)] bg-white text-xs text-[var(--ui-text)] placeholder-slate-400 outline-none focus:border-[var(--ui-sage-soft)] focus:ring-1 focus:ring-[var(--ui-sage-soft)] shadow-2xs"
             />
           </div>
         )}
@@ -491,12 +490,12 @@ export default function FifteenQuestionsWizard({
       )}
 
       {/* Navigation Footer */}
-      <div className="pt-4 border-t border-[#E2E8F0] flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="pt-4 border-t border-[var(--ui-border)] flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             type="button"
             onClick={onBackToProducts}
-            className="rounded-full border border-[#E2E8F0] bg-white px-4 py-2 text-xs font-semibold text-[#475569] hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+            className="rounded-full border border-[var(--ui-border)] bg-white px-4 py-2 text-xs font-semibold text-[var(--ui-secondary)] hover:bg-[var(--ui-bg)] transition-colors cursor-pointer shadow-2xs"
           >
             ← Products
           </button>
@@ -504,7 +503,7 @@ export default function FifteenQuestionsWizard({
             <button
               type="button"
               onClick={() => onSelectQuestionIndex(activeQuestionIndex - 1)}
-              className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1 rounded-full border border-[var(--ui-border-strong)] bg-white px-4 py-2 text-xs font-semibold text-[var(--ui-secondary)] hover:bg-[var(--ui-bg)] transition-colors cursor-pointer shadow-2xs"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>Previous</span>
@@ -516,7 +515,7 @@ export default function FifteenQuestionsWizard({
           type="button"
           disabled={saving || loading}
           onClick={() => handleSaveCurrentAndGo()}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0F172A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer w-full sm:w-auto"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--ui-text)] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[var(--ui-text)] disabled:opacity-50 transition-colors shadow-2xs cursor-pointer w-full sm:w-auto"
         >
           <span>
             {saving
@@ -528,6 +527,6 @@ export default function FifteenQuestionsWizard({
           {!isLastQuestion && answeredCount < questions.length && <ArrowRight className="h-4 w-4" />}
         </button>
       </div>
-    </div>
+    </ProductMotion>
   );
 }

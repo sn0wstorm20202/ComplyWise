@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import Overlay from "./product/Overlay";
+import { getApiBaseUrl } from "@/lib/api/client";
 import {
   Download,
   ExternalLink,
@@ -69,11 +71,8 @@ export function AdminPdfViewer({
 
   // Determine authorized view URL with inline Content-Disposition & HMAC
   let viewUrl = submission.view_url || `/api/v1/documents/${submission.id}/view`;
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("complywise_token");
-    if (token && !viewUrl.includes("token=")) {
-      viewUrl += (viewUrl.includes("?") ? "&" : "?") + `token=${encodeURIComponent(token)}`;
-    }
+  if (viewUrl.startsWith("/api/v1/")) {
+    viewUrl = getApiBaseUrl().replace(/\/api\/v1$/, "") + viewUrl;
   }
   const isPdf = submission.mime_type === "application/pdf" || submission.file_name.toLowerCase().endsWith(".pdf");
 
@@ -92,10 +91,10 @@ export function AdminPdfViewer({
     };
   });
 
-  return (
+  const viewer = (
     <div
       className={`flex flex-col rounded-2xl border border-border bg-card shadow-sm transition-all overflow-hidden ${
-        isFullscreen ? "fixed inset-4 z-50 bg-background shadow-2xl" : "h-[680px]"
+        isFullscreen ? "h-[75svh]" : "h-[680px]"
       }`}
     >
       {/* Top Header & Version Bar */}
@@ -151,7 +150,7 @@ export function AdminPdfViewer({
                   title={`Version ${v.version_number}: ${v.status_code}`}
                 >
                   v{v.version_number}
-                  {isApproved && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
+                  {isApproved && <CheckCircle2 className="w-3 h-3 text-[var(--ui-sage)]" />}
                   {isQueried && <AlertTriangle className="w-3 h-3 text-amber-400" />}
                 </button>
               );
@@ -183,10 +182,10 @@ export function AdminPdfViewer({
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Zap className="w-3.5 h-3.5 text-blue-500" />
+            <Zap className="w-3.5 h-3.5 text-[var(--ui-info)]" />
             AI Findings
             {findings.length > 0 && (
-              <span className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-600 text-[10px] flex items-center justify-center font-bold">
+              <span className="w-4 h-4 rounded-full bg-[var(--ui-text)]/20 text-[var(--ui-info)] text-[10px] flex items-center justify-center font-bold">
                 {findings.length}
               </span>
             )}
@@ -212,7 +211,7 @@ export function AdminPdfViewer({
                 type="button"
                 onClick={onApprove}
                 disabled={isActionLoading}
-                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs flex items-center gap-1 shadow-xs transition-colors disabled:opacity-50"
+                className="px-2.5 py-1 rounded-lg bg-[var(--ui-sage)] hover:bg-[var(--ui-sage)] active:bg-[var(--ui-sage)] text-white font-semibold text-xs flex items-center gap-1 shadow-xs transition-colors disabled:opacity-50"
                 title="Approve this document"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
@@ -294,7 +293,7 @@ export function AdminPdfViewer({
             </a>
 
             <a
-              href={`${viewUrl}?download=1`}
+              href={`${viewUrl}${viewUrl.includes("?") ? "&" : "?"}download=1`}
               download={submission.file_name}
               className="p-1.5 rounded-lg border border-border/60 hover:bg-muted text-muted-foreground transition-colors"
               title="Download file"
@@ -350,7 +349,7 @@ export function AdminPdfViewer({
                     Open in New Tab
                   </a>
                   <a
-                    href={`${viewUrl}?download=1`}
+                    href={`${viewUrl}${viewUrl.includes("?") ? "&" : "?"}download=1`}
                     download={submission.file_name}
                     className="text-primary hover:underline flex items-center gap-1"
                   >
@@ -380,7 +379,7 @@ export function AdminPdfViewer({
                   Open in New Tab
                 </a>
                 <a
-                  href={`${viewUrl}?download=1`}
+                  href={`${viewUrl}${viewUrl.includes("?") ? "&" : "?"}download=1`}
                   download={submission.file_name}
                   className="px-4 py-2 rounded-xl border border-border bg-card text-foreground text-xs font-semibold hover:bg-muted transition-colors flex items-center gap-2"
                 >
@@ -395,7 +394,7 @@ export function AdminPdfViewer({
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
                 <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-blue-600" />
+                  <Zap className="w-4 h-4 text-[var(--ui-info)]" />
                   Automated OCR & AI Pre-Validation Findings
                 </h4>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -405,7 +404,7 @@ export function AdminPdfViewer({
               <span
                 className={`px-3 py-1 rounded-full text-xs font-mono font-bold ${
                   submission.status_code === "PRECHECK_PASSED"
-                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                    ? "bg-[var(--ui-sage-soft)] text-[var(--ui-sage)] dark:bg-[var(--ui-sage)] dark:text-[var(--ui-sage)]"
                     : submission.status_code === "PRECHECK_FAILED"
                     ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
                     : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
@@ -429,7 +428,7 @@ export function AdminPdfViewer({
                           ? "border-rose-200 bg-rose-50/50 dark:border-rose-900/60 dark:bg-rose-950/20"
                           : isWarning
                           ? "border-amber-200 bg-amber-50/50 dark:border-amber-900/60 dark:bg-amber-950/20"
-                          : "border-blue-200 bg-blue-50/50 dark:border-blue-900/60 dark:bg-blue-950/20"
+                          : "border-[var(--ui-sage-soft)] bg-[var(--ui-info-soft)]/50 dark:border-[var(--ui-sage-soft)]/60 dark:bg-[var(--ui-text)]/20"
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -439,7 +438,7 @@ export function AdminPdfViewer({
                               ? "bg-rose-200 text-rose-900 dark:bg-rose-900 dark:text-rose-100"
                               : isWarning
                               ? "bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-100"
-                              : "bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-100"
+                              : "bg-[var(--ui-info-soft)] text-[var(--ui-info)] dark:bg-[var(--ui-text)] dark:text-[var(--ui-info-soft)]"
                           }`}
                         >
                           {f.finding_code}
@@ -475,7 +474,7 @@ export function AdminPdfViewer({
               </div>
             ) : (
               <div className="p-8 text-center border border-dashed border-border rounded-xl space-y-2">
-                <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+                <CheckCircle2 className="w-8 h-8 text-[var(--ui-sage)] mx-auto" />
                 <p className="text-sm font-bold text-foreground">Clean Optical Inspection</p>
                 <p className="text-xs text-muted-foreground max-w-md mx-auto">
                   Document satisfies clarity, orientation, statutory entity name matching, and required regulatory metadata.
@@ -520,6 +519,7 @@ export function AdminPdfViewer({
       </div>
     </div>
   );
+  return isFullscreen ? <Overlay open wide title="Document evidence" onClose={() => setIsFullscreen(false)}>{viewer}</Overlay> : viewer;
 }
 
 export default AdminPdfViewer;

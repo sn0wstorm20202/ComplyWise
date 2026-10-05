@@ -53,7 +53,7 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F8FAFC]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[var(--ui-bg)]" />}>
       <DashboardContent />
     </Suspense>
   );

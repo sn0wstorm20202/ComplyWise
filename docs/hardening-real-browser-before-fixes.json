@@ -1,0 +1,210 @@
+{
+  "kind": "REAL_BROWSER_NATIVE_BACKEND_NO_API_MOCKS",
+  "stages": [
+    "actual registration",
+    "manual browser login"
+  ],
+  "errors": [],
+  "external_browser_calls": [],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/profile/variables"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/user/profile"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/72830b24-74a8-42a6-bb58-bbdb69152b11/profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/72830b24-74a8-42a6-bb58-bbdb69152b11/assessments"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/72830b24-74a8-42a6-bb58-bbdb69152b11/assessments"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/72830b24-74a8-42a6-bb58-bbdb69152b11/assessments/4781bda2-861e-4d3c-b632-0b90723a0c08"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/72830b24-74a8-42a6-bb58-bbdb69152b11/onboarding/products-activities"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/4781bda2-861e-4d3c-b632-0b90723a0c08/understand/"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/72830b24-74a8-42a6-bb58-bbdb69152b11/assessments/4781bda2-861e-4d3c-b632-0b90723a0c08"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/assessments/4781bda2-861e-4d3c-b632-0b90723a0c08/questions/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/4781bda2-861e-4d3c-b632-0b90723a0c08/answers/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/4781bda2-861e-4d3c-b632-0b90723a0c08/answers/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/4781bda2-861e-4d3c-b632-0b90723a0c08/answers/"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/businesses/72830b24-74a8-42a6-bb58-bbdb69152b11/assessments/4781bda2-861e-4d3c-b632-0b90723a0c08"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/4781bda2-861e-4d3c-b632-0b90723a0c08/regulatory-discovery/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/assessments/4781bda2-861e-4d3c-b632-0b90723a0c08/compliance-synthesis/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/businesses/72830b24-74a8-42a6-bb58-bbdb69152b11/analysis/orchestrate"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/businesses/72830b24-74a8-42a6-bb58-bbdb69152b11/assessments/4781bda2-861e-4d3c-b632-0b90723a0c08"
+    }
+  ],
+  "questions": [
+    {
+      "question_id": "Q_1",
+      "variable_key": "connected_power_load",
+      "affected_rules": [],
+      "question": "What is the total connected power load (in Kilowatts or HP) of all machinery installed at your workshop?",
+      "category": "FACTORY_OPERATIONS",
+      "answer_type": "NUMBER",
+      "required": true,
+      "options": [],
+      "unit": null,
+      "help_text": "Needed to verify factory definition thresholds and electrical inspection requirements in Karnataka.",
+      "reason": "Needed to verify factory definition thresholds and electrical inspection requirements in Karnataka.",
+      "order": 1,
+      "is_answered": false,
+      "current_value": null,
+      "fact_key": "connected_power_load",
+      "reason_code": "SOURCE_DISCOVERY_GAP",
+      "source_decision_refs": [],
+      "already_known": false,
+      "suggested_answer": null,
+      "suggested_answer_origin": "NONE"
+    },
+    {
+      "question_id": "Q_2",
+      "variable_key": "effluent_emission_generation",
+      "affected_rules": [],
+      "question": "Do your metal cutting and turning processes generate any industrial effluent, wastewater, or air emissions (excluding domestic sewage)?",
+      "category": "ENVIRONMENTAL_COMPLIANCE",
+      "answer_type": "BOOLEAN",
+      "required": true,
+      "options": [
+        {
+          "label": "True",
+          "value": "True"
+        },
+        {
+          "label": "False",
+          "value": "False"
+        }
+      ],
+      "unit": null,
+      "help_text": "Essential for determining State Pollution Control Board (KSPCB) consent categorization.",
+      "reason": "Essential for determining State Pollution Control Board (KSPCB) consent categorization.",
+      "order": 2,
+      "is_answered": false,
+      "current_value": null,
+      "fact_key": "effluent_emission_generation",
+      "reason_code": "SOURCE_DISCOVERY_GAP",
+      "source_decision_refs": [],
+      "already_known": false,
+      "suggested_answer": null,
+      "suggested_answer_origin": "NONE"
+    },
+    {
+      "question_id": "Q_3",
+      "variable_key": "hazardous_waste_generation",
+      "affected_rules": [],
+      "question": "Do your operations generate any hazardous wastes, such as used cutting oils, spent coolants, or oil-soaked rags?",
+      "category": "HAZARDOUS_WASTE",
+      "answer_type": "BOOLEAN",
+      "required": true,
+      "options": [
+        {
+          "label": "True",
+          "value": "True"
+        },
+        {
+          "label": "False",
+          "value": "False"
+        }
+      ],
+      "unit": null,
+      "help_text": "Required to check applicability of Hazardous Waste Management Rules and SPCB authorization mandates.",
+      "reason": "Required to check applicability of Hazardous Waste Management Rules and SPCB authorization mandates.",
+      "order": 3,
+      "is_answered": false,
+      "current_value": null,
+      "fact_key": "hazardous_waste_generation",
+      "reason_code": "SOURCE_DISCOVERY_GAP",
+      "source_decision_refs": [],
+      "already_known": false,
+      "suggested_answer": null,
+      "suggested_answer_origin": "NONE"
+    }
+  ],
+  "screenshots": [
+    "docs\\hardening-screenshots\\01-login.png",
+    "docs\\hardening-screenshots\\02-starters.png",
+    "docs\\hardening-screenshots\\03-editable-autofill.png",
+    "docs\\hardening-screenshots\\04-dynamic-questions.png",
+    "docs\\hardening-screenshots\\05-analysis.png",
+    "docs\\hardening-screenshots\\failure.png"
+  ],
+  "status": "FAILED",
+  "failure_class": "Error",
+  "failure_message": "expect(locator).toBeVisible() failed",
+  "seconds": 205.955,
+  "temporary_identity_removed": false
+}

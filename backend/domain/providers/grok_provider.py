@@ -12,6 +12,8 @@ would be a stub that fails at runtime. `EMBEDDING_PROVIDER` accepts openai and g
 
 from __future__ import annotations
 
+from typing import Any
+
 from django.conf import settings
 
 from .base import (
@@ -43,6 +45,7 @@ class GrokProvider(LLMProvider):
         *,
         temperature: float = 0.0,
         max_output_tokens: int | None = None,
+        **kwargs: Any,
     ) -> CompletionResult:
         key = getattr(settings, "GROK_API_KEY", "") or ""
         if not key:

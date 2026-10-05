@@ -18,7 +18,7 @@ from django.utils import timezone
 
 from apps.schemes.models import Scheme, SchemeRollbackLog, SchemeSourceSnapshot, SchemeVersion
 from .diff import compute_scheme_content_hash, compute_scheme_diff
-from .fetcher import SNAPSHOT_FALLBACK_MAP, SchemePortalFetcher
+from .fetcher import SchemePortalFetcher
 from .parser import SchemeDOMParser
 from .registry import OFFICIAL_SCHEME_SOURCES, SchemeSourceConfig
 
@@ -62,6 +62,18 @@ class SchemePipelineService:
             simulated_content = (simulate_payloads or {}).get(config.key)
             fetch_res = self.fetcher.fetch(config, simulate_changed_content=simulated_content)
 
+            if fetch_res.status != "SUCCESS" or not fetch_res.content:
+                snapshot = SchemeSourceSnapshot.objects.create(
+                    source_key=config.key, source_url=fetch_res.source_url,
+                    source_domain=fetch_res.domain, content_hash=fetch_res.content_hash,
+                    status="FAILED", scheme_count=0, raw_content="",
+                    error_message=fetch_res.error or "No useful source content was captured.")
+                run_summary["sources_details"][config.key] = {
+                    "status": "FAILED", "scheme_count": 0, "snapshot_id": str(snapshot.id),
+                    "message": "Source acquisition failed; no scheme version was published."}
+                run_summary["snapshots"].append(str(snapshot.id))
+                continue
+
             latest_snapshot = (
                 SchemeSourceSnapshot.objects.filter(source_key=config.key, status="SUCCESS")
                 .order_by("-fetched_at")
@@ -87,10 +99,7 @@ class SchemePipelineService:
                 }
                 continue
 
-            candidates = self.parser.parse(fetch_res.content, config)
-            if not candidates and config.key in SNAPSHOT_FALLBACK_MAP:
-                fallback_content = SNAPSHOT_FALLBACK_MAP[config.key]
-                candidates = self.parser.parse(fallback_content, config)
+            candidates = self.parser.parse(fetch_res.content, config, source_url=fetch_res.source_url)
 
             new_count = 0
             updated_count = 0
@@ -136,7 +145,7 @@ class SchemePipelineService:
                         effective_from=cand.effective_from,
                         effective_to=cand.effective_to,
                         published_date=cand.published_date,
-                        verification_status="VERIFIED",
+                        verification_status="PENDING_REVIEW",
                         is_active=True,
                         diff_summary={"status": "INITIAL_VERSION", "published_date": timezone.now().isoformat()},
                     )
@@ -175,7 +184,7 @@ class SchemePipelineService:
                                 effective_from=cand.effective_from,
                                 effective_to=cand.effective_to,
                                 published_date=cand.published_date,
-                                verification_status="VERIFIED",
+                                verification_status="PENDING_REVIEW",
                                 is_active=True,
                                 diff_summary=diff,
                             )

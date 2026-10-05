@@ -5,10 +5,14 @@ from __future__ import annotations
 from django.urls import path
 
 from . import views
+from .google_auth import GoogleStartView, GoogleCallbackView, GoogleExchangeView
 
 app_name = "accounts"
 
 urlpatterns = [
+    path("google/start", GoogleStartView.as_view(), name="google-start"),
+    path("google/callback", GoogleCallbackView.as_view(), name="google-callback"),
+    path("google/exchange", GoogleExchangeView.as_view(), name="google-exchange"),
     path("register", views.RegisterView.as_view(), name="register"),
     path("register/", views.RegisterView.as_view(), name="register-slash"),
     path("login", views.LoginView.as_view(), name="login"),

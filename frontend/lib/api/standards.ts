@@ -17,6 +17,8 @@ export interface StandardsSearchResponse {
   standards: StandardItem[];
   catalogue_available: boolean;
   catalogue_note: string;
+  scope_status?: string;
+  scope_note?: string;
 }
 
 export const standardsApi = {

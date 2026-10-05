@@ -40,7 +40,7 @@ from django.test import override_settings
 @pytest.mark.django_db
 @override_settings(OPENAI_API_KEY="")
 def test_auto_ingest_when_no_rules_exist(make_business, user):
-    """When a business has 0 applicable rules, auto_ingest dynamically generates statutory requirements."""
+    """No coverage must never synthesize fake published rules."""
     biz = make_business(owner=user, name="Aarohan Agro Processing Ltd")
     prof = _create_profile(
         biz,
@@ -62,25 +62,18 @@ def test_auto_ingest_when_no_rules_exist(make_business, user):
 
     # Trigger autonomous ingestion
     ingested = auto_ingest_regulatory_knowledge(biz, force=True)
-    assert len(ingested) >= 4
-
-    # Re-evaluate with deterministic engine
+    # Missing coverage cannot manufacture published legal rules or evidence.
+    assert ingested == []
+    assert not RequirementDefinition.objects.exists()
+    assert not RuleVersion.objects.exists()
     post_run = engine.evaluate_business_profile(business=biz, profile_version=prof, save_run=True)
-    results_by_id = {r.requirement_id: r.status for r in post_run.results.all()}
-
-    # Check that mandatory statutory obligations were evaluated as APPLICABLE
-    assert results_by_id.get("REQ-FSSAI-CENTRAL-LICENCE") == ApplicabilityStatus.APPLICABLE
-    assert results_by_id.get("REQ-LEGAL-METROLOGY-PACKER") == ApplicabilityStatus.APPLICABLE
-    assert results_by_id.get("REQ-CPCB-EPR-PLASTIC") == ApplicabilityStatus.APPLICABLE
-    assert results_by_id.get("REQ-APEDA-NPOP-ORGANIC") == ApplicabilityStatus.APPLICABLE
-    assert results_by_id.get("REQ-WEST_BENGAL-FACTORY-LICENSE") == ApplicabilityStatus.APPLICABLE
-    assert results_by_id.get("REQ-WEST_BENGALPCB-CTE") == ApplicabilityStatus.APPLICABLE
+    assert not post_run.results.exists()
 
 
 @pytest.mark.django_db
 @override_settings(OPENAI_API_KEY="", ENABLE_USER_PATH_AUTO_INGEST=True)
 def test_orchestration_triggers_auto_ingest_seamlessly(make_business, user):
-    """Full orchestration pipeline automatically ingests requirements if coverage is initially 0."""
+    """An uncovered profile continues through structured workspace guidance without publication."""
     biz = make_business(owner=user, name="Sundarban BioHarvest Pvt Ltd")
     _create_profile(
         biz,
@@ -95,7 +88,15 @@ def test_orchestration_triggers_auto_ingest_seamlessly(make_business, user):
         effluent_emission_generation=True,
     )
 
-    with patch("domain.intelligence.orchestration.run_discovery") as mock_disc:
+    from apps.businesses.models import Assessment
+    from tests.test_workspace_guidance import interpretation
+    from domain.providers.base import CompletionResult
+    from unittest.mock import Mock
+    import json
+    assessment = Assessment.objects.create(business=biz, profile_version=biz.current_profile)
+    provider = Mock()
+    provider.complete.return_value = CompletionResult(json.dumps(interpretation()), "synthetic-fixture", "fixture")
+    with patch("domain.intelligence.workspace_guidance.get_llm_provider", return_value=provider), patch("domain.intelligence.orchestration.run_discovery") as mock_disc:
         mock_disc.return_value = {
             "ran": True,
             "run_id": None,
@@ -106,7 +107,8 @@ def test_orchestration_triggers_auto_ingest_seamlessly(make_business, user):
 
     assert res["status"] == "COMPLETED"
     summary = res["executive_summary"]
-    assert summary["requirements_identified"] >= 4
+    assert summary["suggested_count"] >= 1
+    assert not RequirementDefinition.objects.exists() and not RuleVersion.objects.exists()
     assert summary["documents_count"] > 0
     assert summary["workflows_count"] > 0
     assert summary["schemes_count"] > 0

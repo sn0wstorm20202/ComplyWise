@@ -1,0 +1,105 @@
+
+Running 11 tests using 1 worker
+
+(node:5756) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › e2e\compliance-workflows-sync.spec.ts:5:6 › Assessment-scoped compliance/workflow synchronization › Compliance renders the persisted result without adding industrial requirements (1.4s)
+  ✓   2 [chromium] › e2e\compliance-workflows-sync.spec.ts:12:6 › Assessment-scoped compliance/workflow synchronization › Workflow stays linked to its requirement and empty schemes never become fabricated incentives (1.6s)
+  ✓   3 [chromium] › e2e\demo-profiles.spec.ts:6:6 › Starter and arbitrary business regression � explicit browser fixtures › Five business starters remain editable and do not auto-submit (1.8s)
+  ✘   4 [chromium] › e2e\demo-profiles.spec.ts:16:6 › Starter and arbitrary business regression � explicit browser fixtures › Heavy manufacturing context never acquires unrelated seeded results (13.9s)
+(node:13368) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘   5 [chromium] › e2e\demo-profiles.spec.ts:22:6 › Starter and arbitrary business regression � explicit browser fixtures › Own business completes the real frontend state machine with a compact editable interview (11.8s)
+(node:5916) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   6 [chromium] › e2e\primary-journey.spec.ts:3:5 › Manual auth to starter, compact questions, saved workspace, evidence and all sections (6.3s)
+  ✓   7 [chromium] › e2e\ux-security-resilience.spec.ts:7:7 › UX Quality, Security, Resilience & Policy Invariants › Public UI Leaks Zero Internal Implementation Details or Model Secrets (6.8s)
+  ✓   8 [chromium] › e2e\ux-security-resilience.spec.ts:33:7 › UX Quality, Security, Resilience & Policy Invariants › Browser Network Traffic Never Makes Direct Calls to External Providers (3.2s)
+  ✓   9 [chromium] › e2e\ux-security-resilience.spec.ts:65:7 › UX Quality, Security, Resilience & Policy Invariants › Questionnaire Progress Survives Browser Refresh (2.4s)
+  ✓  10 [chromium] › e2e\ux-security-resilience.spec.ts:78:7 › UX Quality, Security, Resilience & Policy Invariants › Responsive Viewport Tests: Desktop, Tablet, and Mobile Render Without Horizontal Overflow (4.4s)
+  ✓  11 [chromium] › e2e\ux-security-resilience.spec.ts:98:7 › UX Quality, Security, Resilience & Policy Invariants › Main Navigation Preserves Business Context Across All Destinations (6.5s)
+
+
+  1) [chromium] › e2e\demo-profiles.spec.ts:16:6 › Starter and arbitrary business regression � explicit browser fixtures › Heavy manufacturing context never acquires unrelated seeded results 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('main')
+    Expected substring: "Planning"
+    Received string:    "ComplyWise · Precision Workshop1 Action RequiredStatutory Requirements & ClearancesApplicable Bureau of Indian Standards (BIS) mandates, licenses, and statutory registrations.← Dashboard+ Re-evaluateAction Required1Under Review0All RequirementsFilter:AllFOODENVIRONMENTLABOURREGISTRATIONSTANDARDSynthetic test authorityIllustrative business records checklistSynthetic browser fixture; not legal advice.Information NeededWhy it applies · evidence & next stepsSynthetic browser fixture; not legal advice.Inspect assessment trace →JurisdictionCENTRALCategoryPLANNINGRequirementsynthetic-planning-recordRequired documentsOpen workflowReview missing information"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toContainText" locator('main') with timeout 10000ms
+      - waiting for locator('main')
+        23 × locator resolved to <main tabindex="-1" class="ui-canvas" id="workspace-content">…</main>
+           - unexpected value "ComplyWise · Precision Workshop1 Action RequiredStatutory Requirements & ClearancesApplicable Bureau of Indian Standards (BIS) mandates, licenses, and statutory registrations.← Dashboard+ Re-evaluateAction Required1Under Review0All RequirementsFilter:AllFOODENVIRONMENTLABOURREGISTRATIONSTANDARDSynthetic test authorityIllustrative business records checklistSynthetic browser fixture; not legal advice.Information NeededWhy it applies · evidence & next stepsSynthetic browser fixture; not legal advice.Inspect assessment trace →JurisdictionCENTRALCategoryPLANNINGRequirementsynthetic-planning-recordRequired documentsOpen workflowReview missing information"
+
+
+      18 |   await expect(page.getByRole('heading',{name:'Illustrative business records checklist',exact:true})).toBeVisible();
+      19 |   for(const irrelevant of ['Dairy Processing & Milk Safety','Packaged Drinking Water Standard','Restaurant & Eating House License','Textile Wet Processing Effluent Standard']) await expect(page.locator('main')).not.toContainText(irrelevant);
+    > 20 |   await expect(page.locator('main')).toContainText('Planning');
+         |                                      ^
+      21 |  });
+      22 |  test('Own business completes the real frontend state machine with a compact editable interview',async({page})=>{
+      23 |   await completeFixtureJourney(page,true);await expect(page.getByRole('heading',{name:/Compliance Profile for Arbitrary synthetic business/})).toBeVisible();
+        at O:\Project\branches\ComplyWise\frontend\e2e\demo-profiles.spec.ts:20:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\demo-profiles-Starter-and--41bc9-es-unrelated-seeded-results-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\demo-profiles-Starter-and--41bc9-es-unrelated-seeded-results-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\demo-profiles-Starter-and--41bc9-es-unrelated-seeded-results-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\demo-profiles-Starter-and--41bc9-es-unrelated-seeded-results-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › e2e\demo-profiles.spec.ts:22:6 › Starter and arbitrary business regression � explicit browser fixtures › Own business completes the real frontend state machine with a compact editable interview 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Products & Activities', exact: true })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: 'Products & Activities', exact: true }) with timeout 10000ms
+      - waiting for getByRole('heading', { name: 'Products & Activities', exact: true })
+
+
+       at support\functionalFixture.ts:65
+
+      63 |  else await page.getByRole('button',{name:/Manufacturing Unit Precision Workshop/}).click();
+      64 |  await page.getByRole('button',{name:/Continue to Products/}).click();
+    > 65 |  await expect(page.getByRole('heading',{name:'Products & Activities',exact:true})).toBeVisible();
+         |                                                                                    ^
+      66 |  if(own) await page.locator('textarea').first().fill('A synthetic repair and upcycling workshop providing domestic services.');
+      67 |  await page.getByRole('button',{name:/Generate Smart Questions/}).click();
+      68 |  await page.getByRole('button',{name:'Continue to focused questions'}).click();
+        at completeFixtureJourney (O:\Project\branches\ComplyWise\frontend\e2e\support\functionalFixture.ts:65:84)
+        at O:\Project\branches\ComplyWise\frontend\e2e\demo-profiles.spec.ts:23:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\demo-profiles-Starter-and--c6c95--compact-editable-interview-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\demo-profiles-Starter-and--c6c95--compact-editable-interview-chromium\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\demo-profiles-Starter-and--c6c95--compact-editable-interview-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\demo-profiles-Starter-and--c6c95--compact-editable-interview-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chromium] › e2e\demo-profiles.spec.ts:16:6 › Starter and arbitrary business regression � explicit browser fixtures › Heavy manufacturing context never acquires unrelated seeded results 
+    [chromium] › e2e\demo-profiles.spec.ts:22:6 › Starter and arbitrary business regression � explicit browser fixtures › Own business completes the real frontend state machine with a compact editable interview 
+  9 passed (1.1m)

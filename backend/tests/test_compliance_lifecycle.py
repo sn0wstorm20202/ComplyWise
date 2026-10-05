@@ -181,12 +181,13 @@ class ComplianceLifecycleTestCase(TestCase):
         # 4. Unauthorized intruder rejected
         self.client.force_authenticate(user=self.intruder)
         intruder_res = self.client.get(f"/api/v1/documents/{sub.id}/view")
-        self.assertEqual(intruder_res.status_code, status.HTTP_403_FORBIDDEN)
+        # Tenant-scoped lookup hides the existence of another business's file.
+        self.assertEqual(intruder_res.status_code, status.HTTP_404_NOT_FOUND)
 
         # 5. Tampered / invalid HMAC signature rejected
         unauth_client = APIClient()
         invalid_res = unauth_client.get(f"/api/v1/documents/{sub.id}/view?sig=tampered_signature&exp=9999999999")
-        self.assertEqual(invalid_res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(invalid_res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # ==================================================================
     # FIX #2: AI DOCUMENT PRE-VALIDATION & TECHNICAL ERROR DECOUPLING

@@ -1,0 +1,1896 @@
+{
+  "date": "2026-10-05",
+  "base_sha": "b09dbf43438d032078bc9ab93bcaa60c5c14f65f",
+  "status": "PARTIALLY_VERIFIED",
+  "kind": "REAL_PROVIDER_RUNTIME_POSTGRESQL_API",
+  "temporary_identities_removed": true,
+  "tests": {
+    "backend": {
+      "passed": 863,
+      "skipped": 3,
+      "seconds": 55.78
+    },
+    "browser": {
+      "passed": 53,
+      "minutes": 3.2,
+      "base_url": "http://localhost:3004",
+      "fixtures": true
+    },
+    "frontend_unit": {
+      "passed": 16
+    },
+    "typescript": "passed",
+    "production_build": "passed",
+    "eslint": {
+      "errors": 0,
+      "warnings": 382
+    },
+    "scoped_ruff": "passed",
+    "migration_drift": "none"
+  },
+  "providers": {
+    "kind": "REAL_INDEPENDENT_STRUCTURED_APPLICATION_PROVIDER_PROBES",
+    "configured_gemini_slots": 3,
+    "calls": [
+      {
+        "provider": "gemini",
+        "slot": 1,
+        "model": "gemini-3.5-flash-lite",
+        "configured": true,
+        "task": "BusinessUnderstandingEngine.analyze_business",
+        "validated_success": true,
+        "schema_validated": true,
+        "seconds": 2.191,
+        "attempts": [
+          {
+            "provider": "gemini",
+            "provider_slot": 1,
+            "status": "SUCCESS",
+            "failure_type": null,
+            "model": "gemini-3.5-flash-lite",
+            "latency_ms": 2190.53
+          }
+        ]
+      },
+      {
+        "provider": "gemini",
+        "slot": 2,
+        "model": "gemini-3.5-flash-lite",
+        "configured": true,
+        "task": "BusinessUnderstandingEngine.analyze_business",
+        "validated_success": true,
+        "schema_validated": true,
+        "seconds": 2.734,
+        "attempts": [
+          {
+            "provider": "gemini",
+            "provider_slot": 1,
+            "status": "SUCCESS",
+            "failure_type": null,
+            "model": "gemini-3.5-flash-lite",
+            "latency_ms": 2733.7
+          }
+        ]
+      },
+      {
+        "provider": "gemini",
+        "slot": 3,
+        "model": "gemini-3.5-flash-lite",
+        "configured": true,
+        "task": "BusinessUnderstandingEngine.analyze_business",
+        "validated_success": true,
+        "schema_validated": true,
+        "seconds": 2.51,
+        "attempts": [
+          {
+            "provider": "gemini",
+            "provider_slot": 1,
+            "status": "SUCCESS",
+            "failure_type": null,
+            "model": "gemini-3.5-flash-lite",
+            "latency_ms": 2509.33
+          }
+        ]
+      },
+      {
+        "provider": "openai",
+        "slot": null,
+        "model": "gpt-4o-mini",
+        "configured": true,
+        "task": "BusinessUnderstandingEngine.analyze_business",
+        "validated_success": true,
+        "schema_validated": true,
+        "seconds": 5.831,
+        "attempts": [
+          {
+            "provider": "openai",
+            "provider_slot": null,
+            "status": "SUCCESS",
+            "failure_type": null,
+            "model": "gpt-4o-mini",
+            "latency_ms": 5831.19
+          }
+        ]
+      }
+    ],
+    "limitations": [
+      "Temporary synthetic business context; no legal accuracy benchmark. Isolated slots disable vendor fallback so success cannot be attributed to a different provider."
+    ]
+  },
+  "cases": [
+    {
+      "business": "Precision Workshop QA",
+      "type": "Manufacturing",
+      "assessment_id": "444f497e-1027-4cfd-954c-c52cbf3d1d31",
+      "status": "COMPLETED",
+      "seconds": 48.425,
+      "questions": [
+        {
+          "question_id": "Q_1",
+          "question": "What primary types of metals or alloys do you machine in your workshop?",
+          "category": "INDUSTRIAL_SAFETY",
+          "answer_type": "MULTI_SELECT",
+          "required": true,
+          "options": [
+            {
+              "value": "Ferrous metals (Steel, Iron)",
+              "label": "Ferrous metals (Steel, Iron)"
+            },
+            {
+              "value": "Non-ferrous metals (Aluminum, Brass, Copper)",
+              "label": "Non-ferrous metals (Aluminum, Brass, Copper)"
+            },
+            {
+              "value": "Mixed ferrous and non-ferrous",
+              "label": "Mixed ferrous and non-ferrous"
+            },
+            {
+              "value": "Specialty alloys",
+              "label": "Specialty alloys"
+            }
+          ],
+          "unit": "",
+          "help_text": "Clarifies the material handling context for mechanical operations",
+          "reason": "Clarifies the material handling context for mechanical operations",
+          "order": 1,
+          "variable_key": "dynamic_raw_material_types",
+          "affected_rules": [],
+          "fact_key": "dynamic_raw_material_types",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        },
+        {
+          "question_id": "Q_2",
+          "question": "Do you operate any backup power generators (DG sets) on the premises?",
+          "category": "FACTORY_OPERATIONS",
+          "answer_type": "BOOLEAN",
+          "required": true,
+          "options": [
+            {
+              "value": "True",
+              "label": "True"
+            },
+            {
+              "value": "False",
+              "label": "False"
+            }
+          ],
+          "unit": "",
+          "help_text": "Identifies secondary power generation infrastructure",
+          "reason": "Identifies secondary power generation infrastructure",
+          "order": 2,
+          "variable_key": "dynamic_backup_power_generator",
+          "affected_rules": [],
+          "fact_key": "dynamic_backup_power_generator",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        }
+      ],
+      "repeated_known_facts": [],
+      "suggested_answers": [],
+      "guidance": {
+        "compliance_items": 0,
+        "documents": 0,
+        "workflows": 0,
+        "schemes": 0,
+        "standards": 0
+      },
+      "decisions": {
+        "APPLICABLE": 2,
+        "NOT_APPLICABLE": 61,
+        "NEEDS_INFORMATION": 0,
+        "UNVERIFIED": 30
+      },
+      "discovery": [
+        {
+          "provider": "serpapi",
+          "status": "FAILED",
+          "queries": [
+            "Karnataka factory establishment rules for small manufacturing units official portal",
+            "Karnataka industrial power connection and safety regulations official portal",
+            "Karnataka state labor and employment registers for micro enterprises official portal",
+            "Karnataka pollution control board consent to establish metal component manufacturing workshop using powered official",
+            "Karnataka factories directorate factory licence registration eligibility",
+            "BIS mandatory certification Quality Control Order metal component manufacturing workshop using powered India"
+          ],
+          "candidate_count": 0,
+          "official_count": 0,
+          "captures": 0,
+          "modes": [],
+          "error": "Query 'Karnataka factory establishmen...' failed: SerpApi returned HTTP 429.; Query 'Karnataka industrial power con...' failed: SerpApi returned HTTP 429.; Query 'Karnataka state labor and empl...' failed: SerpApi returned HTTP 429."
+        }
+      ],
+      "retrieval": {
+        "status": "EMPTY",
+        "rejected_count": 3,
+        "accepted_passages": 0
+      },
+      "workspace": {
+        "compliance": {
+          "counts": {
+            "requirements": 93
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "documents": {
+          "counts": {
+            "documents": 6,
+            "requirements_summary": 2,
+            "requirements_without_checklist": 0
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "workflows": {
+          "counts": {
+            "workflows": 2
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "schemes": {
+          "counts": {
+            "schemes": 0
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "calendar": {
+          "counts": {
+            "events": 0,
+            "covers": 2,
+            "not_covered": 2
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "dashboard": {
+          "counts": {
+            "schemes_preview": 0,
+            "standards_preview": 0,
+            "priority_actions": 2,
+            "upcoming_deadlines": 0,
+            "recent_updates": 0
+          },
+          "available": null,
+          "has_evaluation": true
+        }
+      },
+      "workspace_get_provider_calls": 0,
+      "completion_extra_provider_calls": 0,
+      "isolation_checks": 0,
+      "failures": [],
+      "providers": [
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "business_understanding",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 3127.5
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "smart_questions_planner",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 4300.46
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 3496.02
+        }
+      ]
+    },
+    {
+      "business": "Neighbourhood Kitchen QA",
+      "type": "Restaurant",
+      "assessment_id": "1ef63590-8688-4a7e-97b8-cd9411d40a73",
+      "status": "COMPLETED",
+      "seconds": 49.889,
+      "questions": [
+        {
+          "question_id": "Q_3",
+          "question": "Do you generate used cooking oil or other specific waste streams from daily frying and food preparation?",
+          "category": "WASTE_MANAGEMENT",
+          "answer_type": "BOOLEAN",
+          "required": true,
+          "options": [
+            {
+              "value": "Yes",
+              "label": "Yes"
+            },
+            {
+              "value": "No",
+              "label": "No"
+            }
+          ],
+          "unit": "",
+          "help_text": "Determines applicability of specialized waste collection and disposal protocols.",
+          "reason": "Determines applicability of specialized waste collection and disposal protocols.",
+          "order": 1,
+          "variable_key": "dynamic_waste_handling",
+          "affected_rules": [],
+          "fact_key": "dynamic_waste_handling",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        },
+        {
+          "question_id": "Q_1",
+          "question": "What is the total connected power load at this business, in HP?",
+          "category": "UTILITY_AND_INFRASTRUCTURE",
+          "answer_type": "SINGLE_SELECT",
+          "required": true,
+          "options": [
+            {
+              "value": "Less than 10 kW",
+              "label": "Less than 10 kW"
+            },
+            {
+              "value": "10 kW to 50 kW",
+              "label": "10 kW to 50 kW"
+            },
+            {
+              "value": "Greater than 50 kW",
+              "label": "Greater than 50 kW"
+            }
+          ],
+          "unit": "HP",
+          "help_text": "Helps determine utility categorization and local establishment guidelines.",
+          "reason": "Helps determine utility categorization and local establishment guidelines.",
+          "order": 2,
+          "variable_key": "connected_power_load",
+          "affected_rules": [],
+          "fact_key": "connected_power_load",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        },
+        {
+          "question_id": "Q_2",
+          "question": "Does your kitchen operations generate commercial wastewater, grease trap output, or kitchen exhaust emissions?",
+          "category": "ENVIRONMENTAL_COMPLIANCE",
+          "answer_type": "BOOLEAN",
+          "required": true,
+          "options": [
+            {
+              "value": "Yes",
+              "label": "Yes"
+            },
+            {
+              "value": "No",
+              "label": "No"
+            }
+          ],
+          "unit": "",
+          "help_text": "Required to check if state environmental guidelines or pollution control board advisories apply to kitchen emissions.",
+          "reason": "Required to check if state environmental guidelines or pollution control board advisories apply to kitchen emissions.",
+          "order": 3,
+          "variable_key": "effluent_emission_generation",
+          "affected_rules": [],
+          "fact_key": "effluent_emission_generation",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        }
+      ],
+      "repeated_known_facts": [],
+      "suggested_answers": [],
+      "guidance": {
+        "compliance_items": 3,
+        "documents": 3,
+        "workflows": 3,
+        "schemes": 1,
+        "standards": 1
+      },
+      "decisions": {
+        "APPLICABLE": 0,
+        "NOT_APPLICABLE": 63,
+        "NEEDS_INFORMATION": 0,
+        "UNVERIFIED": 30
+      },
+      "discovery": [
+        {
+          "provider": "serpapi",
+          "status": "FAILED",
+          "queries": [
+            "Karnataka food safety registration portal official portal",
+            "Karnataka Municipal restaurant trade license Bengaluru official portal",
+            "Commercial kitchen waste handling rules Karnataka official portal",
+            "Karnataka establishment registration neighbourhood restaurant preparing meals on-site dine-in official requirements",
+            "Karnataka worker and premises requirements neighbourhood restaurant preparing meals on-site dine-in official",
+            "Karnataka industrial policy micro enterprise incentives neighbourhood restaurant preparing meals on-site dine-in"
+          ],
+          "candidate_count": 0,
+          "official_count": 0,
+          "captures": 0,
+          "modes": [],
+          "error": "Query 'Karnataka food safety registra...' failed: Search provider cooling down.; Query 'Karnataka Municipal restaurant...' failed: Search provider cooling down.; Query 'Commercial kitchen waste handl...' failed: Search provider cooling down."
+        }
+      ],
+      "retrieval": {
+        "status": "EMPTY",
+        "rejected_count": 3,
+        "accepted_passages": 0
+      },
+      "workspace": {
+        "compliance": {
+          "counts": {
+            "requirements": 96
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "documents": {
+          "counts": {
+            "documents": 3,
+            "requirements_summary": 0,
+            "requirements_without_checklist": 0
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "workflows": {
+          "counts": {
+            "workflows": 3
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "schemes": {
+          "counts": {
+            "schemes": 1
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "calendar": {
+          "counts": {
+            "events": 0,
+            "covers": 2,
+            "not_covered": 2
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "dashboard": {
+          "counts": {
+            "schemes_preview": 1,
+            "standards_preview": 1,
+            "priority_actions": 3,
+            "upcoming_deadlines": 0,
+            "recent_updates": 0
+          },
+          "available": null,
+          "has_evaluation": true
+        }
+      },
+      "workspace_get_provider_calls": 0,
+      "completion_extra_provider_calls": 0,
+      "isolation_checks": 1,
+      "failures": [],
+      "providers": [
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "business_understanding",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 2989.31
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "smart_questions_planner",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 5173.41
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 4998.75
+        }
+      ]
+    },
+    {
+      "business": "Clearpath Digital QA",
+      "type": "IT",
+      "assessment_id": "776e161f-a471-432f-ba45-4c6428fe1906",
+      "status": "COMPLETED",
+      "seconds": 73.031,
+      "questions": [
+        {
+          "question_id": "Q_1",
+          "question": "Does your software consultancy process, store, or handle personal or sensitive digital records of end-users for your clients?",
+          "category": "DIGITAL_DATA",
+          "answer_type": "BOOLEAN",
+          "required": true,
+          "options": [
+            {
+              "value": "True",
+              "label": "True"
+            },
+            {
+              "value": "False",
+              "label": "False"
+            }
+          ],
+          "unit": "",
+          "help_text": "Clarifies whether digital data handling regulations apply to your application development workflows.",
+          "reason": "Clarifies whether digital data handling regulations apply to your application development workflows.",
+          "order": 1,
+          "variable_key": "processes_personal_data",
+          "affected_rules": [],
+          "fact_key": "processes_personal_data",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        }
+      ],
+      "repeated_known_facts": [],
+      "suggested_answers": [],
+      "guidance": {
+        "compliance_items": 2,
+        "documents": 2,
+        "workflows": 2,
+        "schemes": 1,
+        "standards": 1
+      },
+      "decisions": {
+        "APPLICABLE": 2,
+        "NOT_APPLICABLE": 61,
+        "NEEDS_INFORMATION": 0,
+        "UNVERIFIED": 30
+      },
+      "discovery": [
+        {
+          "provider": "serpapi",
+          "status": "FAILED",
+          "queries": [
+            "Karnataka Shops and Commercial Establishments rules for software offices official portal",
+            "Professional tax registration for commercial establishments in Karnataka official portal",
+            "Labor welfare fund contributions for IT and software consulting offices in Karnataka official portal",
+            "Karnataka establishment registration office-based software consultancy building applications Indian official requirements",
+            "Karnataka worker and premises requirements office-based software consultancy building applications Indian official",
+            "Karnataka industrial policy micro enterprise incentives office-based software consultancy building applications Indian"
+          ],
+          "candidate_count": 0,
+          "official_count": 0,
+          "captures": 0,
+          "modes": [],
+          "error": "Query 'Karnataka Shops and Commercial...' failed: SerpApi returned HTTP 429.; Query 'Professional tax registration ...' failed: SerpApi returned HTTP 429.; Query 'Labor welfare fund contributio...' failed: SerpApi returned HTTP 429."
+        }
+      ],
+      "retrieval": {
+        "status": "EMPTY",
+        "rejected_count": 3,
+        "accepted_passages": 0
+      },
+      "workspace": {
+        "compliance": {
+          "counts": {
+            "requirements": 95
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "documents": {
+          "counts": {
+            "documents": 8,
+            "requirements_summary": 2,
+            "requirements_without_checklist": 0
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "workflows": {
+          "counts": {
+            "workflows": 4
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "schemes": {
+          "counts": {
+            "schemes": 1
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "calendar": {
+          "counts": {
+            "events": 0,
+            "covers": 2,
+            "not_covered": 2
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "dashboard": {
+          "counts": {
+            "schemes_preview": 1,
+            "standards_preview": 1,
+            "priority_actions": 4,
+            "upcoming_deadlines": 0,
+            "recent_updates": 0
+          },
+          "available": null,
+          "has_evaluation": true
+        }
+      },
+      "workspace_get_provider_calls": 0,
+      "completion_extra_provider_calls": 0,
+      "isolation_checks": 2,
+      "failures": [],
+      "providers": [
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "business_understanding",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 2552.7
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "smart_questions_planner",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 3489.25
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "ERROR",
+          "failure_type": "schema_failure",
+          "fallback": false,
+          "latency_ms": 5135.08
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "ERROR",
+          "failure_type": "schema_failure",
+          "fallback": true,
+          "latency_ms": 4083.45
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": true,
+          "latency_ms": 4588.28
+        }
+      ]
+    },
+    {
+      "business": "City Storage QA",
+      "type": "Warehouse",
+      "assessment_id": "5182a592-cdef-4f07-9007-fada92248e41",
+      "status": "COMPLETED",
+      "seconds": 55.626,
+      "questions": [
+        {
+          "question_id": "Q_2",
+          "question": "What is the approximate total built-up area of the warehouse facility in square meters?",
+          "category": "COMMERCIAL_ESTABLISHMENT",
+          "answer_type": "NUMBER",
+          "required": true,
+          "options": [],
+          "unit": "",
+          "help_text": "Physical facility dimensions dictate local municipal trade and storage compliance categories.",
+          "reason": "Physical facility dimensions dictate local municipal trade and storage compliance categories.",
+          "order": 1,
+          "variable_key": "dynamic_warehouse_built_up_area_sqm",
+          "affected_rules": [],
+          "fact_key": "dynamic_warehouse_built_up_area_sqm",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        },
+        {
+          "question_id": "Q_FOOD_CONTACT_PACKAGING",
+          "question": "Do you manufacture, pack, or store materials that come into direct contact with food products?",
+          "category": "STATUTORY_COMPLIANCE",
+          "answer_type": "BOOLEAN",
+          "required": true,
+          "options": [],
+          "unit": "",
+          "help_text": "Evaluated by 2 unresolved statutory compliance rule(s).",
+          "reason": "Evaluated by 2 unresolved statutory compliance rule(s).",
+          "order": 2,
+          "variable_key": "food_contact_packaging",
+          "affected_rules": [
+            "RULE-CPCB-EPR-PLASTIC-01",
+            "RULE-LEGAL-METROLOGY-01"
+          ],
+          "fact_key": "food_contact_packaging",
+          "reason_code": "MISSING_RULE_FACT",
+          "source_decision_refs": [
+            "RULE-CPCB-EPR-PLASTIC-01",
+            "RULE-LEGAL-METROLOGY-01"
+          ],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        }
+      ],
+      "repeated_known_facts": [],
+      "suggested_answers": [],
+      "guidance": {
+        "compliance_items": 0,
+        "documents": 0,
+        "workflows": 0,
+        "schemes": 1,
+        "standards": 1
+      },
+      "decisions": {
+        "APPLICABLE": 2,
+        "NOT_APPLICABLE": 61,
+        "NEEDS_INFORMATION": 0,
+        "UNVERIFIED": 30
+      },
+      "discovery": [
+        {
+          "provider": "serpapi",
+          "status": "FAILED",
+          "queries": [
+            "Karnataka Shops and Commercial Establishments rules official portal",
+            "Warehouse storage registration Karnataka official portal",
+            "Karnataka Commercial storage facility local guidelines Bengaluru official portal",
+            "Karnataka establishment registration warehouse storing non-hazardous packaged household goods official requirements",
+            "Karnataka worker and premises requirements warehouse storing non-hazardous packaged household goods official",
+            "Karnataka industrial policy micro enterprise incentives warehouse storing non-hazardous packaged household goods"
+          ],
+          "candidate_count": 0,
+          "official_count": 0,
+          "captures": 0,
+          "modes": [],
+          "error": "Query 'Karnataka Shops and Commercial...' failed: SerpApi returned HTTP 429.; Query 'Warehouse storage registration...' failed: SerpApi returned HTTP 429.; Query 'Karnataka Commercial storage f...' failed: SerpApi returned HTTP 429."
+        }
+      ],
+      "retrieval": {
+        "status": "EMPTY",
+        "rejected_count": 3,
+        "accepted_passages": 0
+      },
+      "workspace": {
+        "compliance": {
+          "counts": {
+            "requirements": 93
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "documents": {
+          "counts": {
+            "documents": 6,
+            "requirements_summary": 2,
+            "requirements_without_checklist": 0
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "workflows": {
+          "counts": {
+            "workflows": 2
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "schemes": {
+          "counts": {
+            "schemes": 1
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "calendar": {
+          "counts": {
+            "events": 0,
+            "covers": 2,
+            "not_covered": 2
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "dashboard": {
+          "counts": {
+            "schemes_preview": 1,
+            "standards_preview": 1,
+            "priority_actions": 2,
+            "upcoming_deadlines": 0,
+            "recent_updates": 0
+          },
+          "available": null,
+          "has_evaluation": true
+        }
+      },
+      "workspace_get_provider_calls": 0,
+      "completion_extra_provider_calls": 0,
+      "isolation_checks": 3,
+      "failures": [],
+      "providers": [
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "business_understanding",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 3191.2
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "smart_questions_planner",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 5137.13
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 4927.57
+        }
+      ]
+    },
+    {
+      "business": "Community Clinic QA",
+      "type": "Healthcare",
+      "assessment_id": "f5247b7e-338c-435c-909b-39ad934e3aa8",
+      "status": "COMPLETED",
+      "seconds": 58.191,
+      "questions": [
+        {
+          "question_id": "Q_1",
+          "question": "Does your clinic generate biomedical waste, syringes, bandages, or infectious clinical refuse from patient consultations and minor procedures?",
+          "category": "ENVIRONMENTAL_WASTE",
+          "answer_type": "BOOLEAN",
+          "required": true,
+          "options": [
+            {
+              "value": "True",
+              "label": "True"
+            },
+            {
+              "value": "False",
+              "label": "False"
+            }
+          ],
+          "unit": "",
+          "help_text": "Crucial for identifying applicable waste handling and collection protocols.",
+          "reason": "Crucial for identifying applicable waste handling and collection protocols.",
+          "order": 1,
+          "variable_key": "hazardous_waste_generation",
+          "affected_rules": [],
+          "fact_key": "hazardous_waste_generation",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        },
+        {
+          "question_id": "Q_2",
+          "question": "What is the total connected power load at this business, in HP?",
+          "category": "MUNICIPAL_INFRASTRUCTURE",
+          "answer_type": "NUMBER",
+          "required": true,
+          "options": [],
+          "unit": "HP",
+          "help_text": "Determines commercial power category and local utility safety requirements.",
+          "reason": "Determines commercial power category and local utility safety requirements.",
+          "order": 2,
+          "variable_key": "connected_power_load",
+          "affected_rules": [],
+          "fact_key": "connected_power_load",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        }
+      ],
+      "repeated_known_facts": [],
+      "suggested_answers": [],
+      "guidance": {
+        "compliance_items": 3,
+        "documents": 3,
+        "workflows": 3,
+        "schemes": 1,
+        "standards": 1
+      },
+      "decisions": {
+        "APPLICABLE": 0,
+        "NOT_APPLICABLE": 63,
+        "NEEDS_INFORMATION": 0,
+        "UNVERIFIED": 30
+      },
+      "discovery": [
+        {
+          "provider": "serpapi",
+          "status": "FAILED",
+          "queries": [
+            "Karnataka clinical establishments rules official portal",
+            "Biomedical waste management rules healthcare facilities Karnataka official portal",
+            "Karnataka municipal trade license health establishment official portal",
+            "Karnataka establishment registration outpatient clinic providing consultations minor procedures official requirements",
+            "Karnataka worker and premises requirements outpatient clinic providing consultations minor procedures official",
+            "Karnataka industrial policy micro enterprise incentives outpatient clinic providing consultations minor procedures"
+          ],
+          "candidate_count": 0,
+          "official_count": 0,
+          "captures": 0,
+          "modes": [],
+          "error": "Query 'Karnataka clinical establishme...' failed: Search provider cooling down.; Query 'Biomedical waste management ru...' failed: Search provider cooling down.; Query 'Karnataka municipal trade lice...' failed: Search provider cooling down."
+        }
+      ],
+      "retrieval": {
+        "status": "EMPTY",
+        "rejected_count": 3,
+        "accepted_passages": 0
+      },
+      "workspace": {
+        "compliance": {
+          "counts": {
+            "requirements": 96
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "documents": {
+          "counts": {
+            "documents": 3,
+            "requirements_summary": 0,
+            "requirements_without_checklist": 0
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "workflows": {
+          "counts": {
+            "workflows": 3
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "schemes": {
+          "counts": {
+            "schemes": 1
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "calendar": {
+          "counts": {
+            "events": 0,
+            "covers": 2,
+            "not_covered": 2
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "dashboard": {
+          "counts": {
+            "schemes_preview": 1,
+            "standards_preview": 1,
+            "priority_actions": 3,
+            "upcoming_deadlines": 0,
+            "recent_updates": 0
+          },
+          "available": null,
+          "has_evaluation": true
+        }
+      },
+      "workspace_get_provider_calls": 0,
+      "completion_extra_provider_calls": 0,
+      "isolation_checks": 4,
+      "failures": [],
+      "providers": [
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "business_understanding",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 3037.89
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "smart_questions_planner",
+          "status": "ERROR",
+          "failure_type": "malformed_response",
+          "fallback": false,
+          "latency_ms": 4863.55
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "smart_questions_planner",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": true,
+          "latency_ms": 3891.13
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 6417.7
+        }
+      ]
+    },
+    {
+      "business": "Traction Pack QA",
+      "type": "EV battery",
+      "assessment_id": "6e1fd720-1673-4a63-9550-cdf02449698b",
+      "status": "COMPLETED",
+      "seconds": 54.721,
+      "questions": [
+        {
+          "question_id": "Q_1",
+          "question": "What type of hazardous waste is primarily generated from your battery assembly and testing processes?",
+          "category": "ENVIRONMENTAL_COMPLIANCE",
+          "answer_type": "SINGLE_SELECT",
+          "required": true,
+          "options": [
+            {
+              "value": "Spent or rejected lithium-ion cells and batteries",
+              "label": "Spent or rejected lithium-ion cells and batteries"
+            },
+            {
+              "value": "Chemical residue and electrolyte scrap",
+              "label": "Chemical residue and electrolyte scrap"
+            },
+            {
+              "value": "Soldering and electronic waste residue",
+              "label": "Soldering and electronic waste residue"
+            },
+            {
+              "value": "Mixed industrial hazardous waste",
+              "label": "Mixed industrial hazardous waste"
+            }
+          ],
+          "unit": "",
+          "help_text": "Crucial for identifying specific waste management authorization requirements.",
+          "reason": "Crucial for identifying specific waste management authorization requirements.",
+          "order": 1,
+          "variable_key": "dynamic_hazardous_waste_category",
+          "affected_rules": [],
+          "fact_key": "dynamic_hazardous_waste_category",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        },
+        {
+          "question_id": "Q_2",
+          "question": "What is the primary chemical composition of the lithium-ion cells you import for pack assembly?",
+          "category": "PRODUCT_STANDARDS",
+          "answer_type": "SINGLE_SELECT",
+          "required": true,
+          "options": [
+            {
+              "value": "Lithium Iron Phosphate (LFP)",
+              "label": "Lithium Iron Phosphate (LFP)"
+            },
+            {
+              "value": "Nickel Manganese Cobalt (NMC)",
+              "label": "Nickel Manganese Cobalt (NMC)"
+            },
+            {
+              "value": "Multiple chemistries",
+              "label": "Multiple chemistries"
+            },
+            {
+              "value": "Other / Not specified",
+              "label": "Other / Not specified"
+            }
+          ],
+          "unit": "",
+          "help_text": "Different cell chemistries impact safety storage guidelines and extended producer responsibility tracking.",
+          "reason": "Different cell chemistries impact safety storage guidelines and extended producer responsibility tracking.",
+          "order": 2,
+          "variable_key": "dynamic_cell_chemistry_type",
+          "affected_rules": [],
+          "fact_key": "dynamic_cell_chemistry_type",
+          "reason_code": "SOURCE_DISCOVERY_GAP",
+          "source_decision_refs": [],
+          "already_known": false,
+          "suggested_answer": null,
+          "suggested_answer_origin": "NONE"
+        }
+      ],
+      "repeated_known_facts": [],
+      "suggested_answers": [],
+      "guidance": {
+        "compliance_items": 1,
+        "documents": 1,
+        "workflows": 1,
+        "schemes": 1,
+        "standards": 1
+      },
+      "decisions": {
+        "APPLICABLE": 6,
+        "NOT_APPLICABLE": 52,
+        "NEEDS_INFORMATION": 0,
+        "UNVERIFIED": 35
+      },
+      "discovery": [
+        {
+          "provider": "serpapi",
+          "status": "FAILED",
+          "queries": [
+            "Maharashtra Lithium ion battery pack assembly waste management rules India official portal",
+            "Maharashtra Battery waste management EPR portal registration India official portal",
+            "Maharashtra Pollution Control Board hazardous waste authorization battery assembly official portal",
+            "Maharashtra Central Excise and Customs import rules lithium ion cells India official portal",
+            "Maharashtra pollution control board consent to establish Assembly lithium-ion traction battery packs electric official",
+            "Maharashtra factories directorate factory licence registration eligibility"
+          ],
+          "candidate_count": 0,
+          "official_count": 0,
+          "captures": 0,
+          "modes": [],
+          "error": "Query 'Maharashtra Lithium ion batter...' failed: SerpApi returned HTTP 429.; Query 'Maharashtra Battery waste mana...' failed: SerpApi returned HTTP 429.; Query 'Maharashtra Pollution Control ...' failed: SerpApi returned HTTP 429."
+        }
+      ],
+      "retrieval": {
+        "status": "EMPTY",
+        "rejected_count": 3,
+        "accepted_passages": 0
+      },
+      "workspace": {
+        "compliance": {
+          "counts": {
+            "requirements": 94
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "documents": {
+          "counts": {
+            "documents": 25,
+            "requirements_summary": 6,
+            "requirements_without_checklist": 0
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "workflows": {
+          "counts": {
+            "workflows": 7
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "schemes": {
+          "counts": {
+            "schemes": 1
+          },
+          "available": true,
+          "has_evaluation": null
+        },
+        "calendar": {
+          "counts": {
+            "events": 0,
+            "covers": 2,
+            "not_covered": 2
+          },
+          "available": null,
+          "has_evaluation": null
+        },
+        "dashboard": {
+          "counts": {
+            "schemes_preview": 1,
+            "standards_preview": 1,
+            "priority_actions": 6,
+            "upcoming_deadlines": 0,
+            "recent_updates": 0
+          },
+          "available": null,
+          "has_evaluation": true
+        }
+      },
+      "workspace_get_provider_calls": 0,
+      "completion_extra_provider_calls": 0,
+      "isolation_checks": 5,
+      "failures": [],
+      "providers": [
+        {
+          "provider": "gemini",
+          "provider_slot": 1,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "business_understanding",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 4343.88
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 2,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "smart_questions_planner",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 4478.36
+        },
+        {
+          "provider": "gemini",
+          "provider_slot": 3,
+          "model": "gemini-3.5-flash-lite",
+          "workflow": "workspace_guidance",
+          "status": "SUCCESS",
+          "failure_type": null,
+          "fallback": false,
+          "latency_ms": 4467.6
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Temporary synthetic business facts/answers; actual runtime published knowledge and real external providers. Not an expert legal benchmark.",
+    "SerpApi HTTP429/cooldown prevented final live acquisition; no sources/captures accepted.",
+    "External assessment retrieval empty; no deployed RAG internals claim.",
+    "No reviewed standard match; contextual quality planning is separate from mandatory status.",
+    "Temporary assessment IDs were deleted by diagnostic cleanup; they are audit identifiers, not reusable records."
+  ],
+  "security_scan": {
+    "configured_sensitive_values_checked": 11,
+    "repository_text_files": 835,
+    "frontend_js_files": 60,
+    "matches": [],
+    "bundle_matches": [],
+    "diff_matching_variable_names": []
+  },
+  "resumed_verification": {
+    "date": "2026-10-05",
+    "status": "PARTIALLY_VERIFIED",
+    "changes": [
+      "Separate real analysis phase timings, additive safe status/completion metadata, cache/hash preservation.",
+      "Reject empty document-reference and search-query source URLs."
+    ],
+    "tests": {
+      "backend": {
+        "passed": 876,
+        "skipped": 3,
+        "seconds": 38.14
+      },
+      "focused": {
+        "passed": 111,
+        "seconds": 6.55
+      },
+      "scoped_ruff": "passed",
+      "django_check": "passed (16 existing silences)",
+      "migration_drift": "none",
+      "diff_check": "passed",
+      "frontend": "Unchanged product code; prior frontend/build/browser checkpoints retained."
+    },
+    "search_probe": {
+      "status": "FAILED",
+      "failure_type": "rate_limit",
+      "http_status": 429,
+      "seconds": 0.569
+    },
+    "live_journeys": [
+      {
+        "business": "Clearpath Digital QA",
+        "type": "IT",
+        "assessment_id": "71371d87-2f68-40ed-a740-c8dec3d1ad10",
+        "status": "COMPLETED",
+        "seconds": 79.38,
+        "stages": [
+          {
+            "stage": "businesses",
+            "status": 201,
+            "seconds": 0.731
+          },
+          {
+            "stage": "profile",
+            "status": 201,
+            "seconds": 0.308
+          },
+          {
+            "stage": "",
+            "status": 201,
+            "seconds": 0.944
+          },
+          {
+            "stage": "understand",
+            "status": 200,
+            "seconds": 3.167
+          },
+          {
+            "stage": "generate",
+            "status": 200,
+            "seconds": 3.935
+          },
+          {
+            "stage": "regulatory-discovery",
+            "status": 200,
+            "seconds": 4.091
+          },
+          {
+            "stage": "compliance-synthesis",
+            "status": 200,
+            "seconds": 12.724
+          },
+          {
+            "stage": "orchestrate",
+            "status": 200,
+            "seconds": 10.914
+          },
+          {
+            "stage": "compliance",
+            "status": 200,
+            "seconds": 2.318
+          },
+          {
+            "stage": "documents",
+            "status": 200,
+            "seconds": 2.133
+          },
+          {
+            "stage": "workflows",
+            "status": 200,
+            "seconds": 7.185
+          },
+          {
+            "stage": "schemes",
+            "status": 200,
+            "seconds": 4.312
+          },
+          {
+            "stage": "calendar",
+            "status": 200,
+            "seconds": 1.507
+          },
+          {
+            "stage": "dashboard",
+            "status": 200,
+            "seconds": 22.497
+          },
+          {
+            "stage": "search",
+            "status": 200,
+            "seconds": 1.914
+          }
+        ],
+        "analysis_timings_ms": {
+          "BUSINESS_CONTEXT": 736.4,
+          "SMART_QUESTIONS": 0.02,
+          "REGULATORY_DISCOVERY": 48.07,
+          "SOURCE_REVIEW": 47.89,
+          "COMPLIANCE_EVALUATION": 536.38,
+          "WORKSPACE_GUIDANCE": 221.17,
+          "DOCUMENT_PLANNING": 765.55,
+          "WORKFLOW_PLANNING": 3488.76,
+          "SCHEME_DISCOVERY": 2697.89,
+          "STANDARDS_DISCOVERY": 780.54,
+          "COMPLETED": 332.39
+        },
+        "analysis_phase_timings_ms": {},
+        "workspace_get_provider_calls": 0,
+        "completion_extra_provider_calls": 0,
+        "retrieval": {
+          "status": "EMPTY",
+          "rejected_count": 3,
+          "accepted_passages": 0
+        },
+        "failures": [],
+        "providers": [
+          {
+            "provider": "gemini",
+            "provider_slot": 1,
+            "model": "gemini-3.5-flash-lite",
+            "workflow": "business_understanding",
+            "status": "SUCCESS",
+            "failure_type": null,
+            "fallback": false,
+            "latency_ms": 2755.64
+          },
+          {
+            "provider": "gemini",
+            "provider_slot": 2,
+            "model": "gemini-3.5-flash-lite",
+            "workflow": "smart_questions_planner",
+            "status": "SUCCESS",
+            "failure_type": null,
+            "fallback": false,
+            "latency_ms": 2464.99
+          },
+          {
+            "provider": "gemini",
+            "provider_slot": 3,
+            "model": "gemini-3.5-flash-lite",
+            "workflow": "workspace_guidance",
+            "status": "SUCCESS",
+            "failure_type": null,
+            "fallback": false,
+            "latency_ms": 4137.23
+          }
+        ],
+        "standards": {
+          "business_id": "3de1fceb-7634-4423-8fc1-f694c4f6e9e9",
+          "query": "",
+          "count": 1,
+          "standards": [
+            {
+              "id": "d0e91ad0-dd4f-47b8-8f02-2cadbd945f3d",
+              "title": "Quality Management Systems",
+              "citations": [],
+              "source_url": null,
+              "description": "General guidelines for structuring software development and quality assurance processes.",
+              "is_mandatory": null,
+              "result_origin": "LLM_FALLBACK_RESULT",
+              "requirement_id": "d0e91ad0-dd4f-47b8-8f02-2cadbd945f3d",
+              "source_reference": "",
+              "why_it_may_apply": "Supported by your business activity as an office-based software consultancy building web applications.",
+              "recommended_next_step": "Evaluate internal quality assurance workflows against standard benchmarks.",
+              "authority_or_regulator": "",
+              "standard_code": "d0e91ad0-dd4f-47b8-8f02-2cadbd945f3d",
+              "authority": "",
+              "jurisdiction": "",
+              "domain": "QUALITY",
+              "nature": "QUALITY_PLANNING",
+              "why_it_matters": "Supported by your business activity as an office-based software consultancy building web applications.",
+              "decision_result_id": null,
+              "rule_version_id": null,
+              "status": "CONTEXTUAL",
+              "source": null,
+              "evidence": [],
+              "matched_facts": [],
+              "category": "QUALITY_PLANNING",
+              "citation_count": 0
+            }
+          ],
+          "catalogue_available": false,
+          "scope_status": "PARTIAL_SCOPE",
+          "scope_note": "No reviewed standards matched this assessment within the currently supported knowledge scope. Additional product or quality review may be needed.",
+          "assessment_id": "71371d87-2f68-40ed-a740-c8dec3d1ad10",
+          "reviewed_match_count": 0,
+          "catalogue_note": "Matched requirements and quality areas to explore for your business."
+        },
+        "schemes": {
+          "business_id": "3de1fceb-7634-4423-8fc1-f694c4f6e9e9",
+          "business_name": "Clearpath Digital QA",
+          "assessment_id": "71371d87-2f68-40ed-a740-c8dec3d1ad10",
+          "excluded_unreviewed_count": 36,
+          "scope_status": "SOURCE_REVIEW_REQUIRED",
+          "scope_note": "Historical authored scheme records have no established source evidence and are excluded from recommendations. Reviewed scheme sources must be acquired before eligibility can be established.",
+          "available": true,
+          "state": "KARNATAKA",
+          "state_code": "KARNATAKA",
+          "raw_state": "KARNATAKA",
+          "state_name": "Karnataka",
+          "msme_scale": "MICRO",
+          "product_description": "An office-based software consultancy building web applications for Indian businesses, with12workers. No physical manufacturing or overseas clients.",
+          "count": 1,
+          "total_schemes_found": 1,
+          "universal_schemes_count": 0,
+          "sector_specific_schemes_count": 0,
+          "maharashtra_schemes_count": 0,
+          "central_schemes_count": 0,
+          "schemes": [
+            {
+              "id": "b43c45d4-0c75-401c-9f13-d038e540887d",
+              "title": "Micro and Small Enterprise Support Areas",
+              "citations": [],
+              "source_url": null,
+              "description": "General advisory support areas for operational micro enterprises.",
+              "is_mandatory": null,
+              "result_origin": "LLM_FALLBACK_RESULT",
+              "requirement_id": null,
+              "source_reference": "",
+              "why_it_may_apply": "Supported by your reported plant and machinery investment and turnover figures.",
+              "recommended_next_step": "Review available advisory resources for digital and consultancy enterprises.",
+              "authority_or_regulator": "",
+              "scheme_code": "b43c45d4-0c75-401c-9f13-d038e540887d",
+              "authority": "",
+              "scheme_name": "Micro and Small Enterprise Support Areas",
+              "ministry": "",
+              "relevance_rationale": "Supported by your reported plant and machinery investment and turnover figures.",
+              "benefit_summary": "General advisory support areas for operational micro enterprises.",
+              "status": "TO_EXPLORE",
+              "is_universal": false,
+              "sector_category": "SUPPORT_PLANNING",
+              "is_state_specific": false,
+              "portal_url": null,
+              "action_url": null,
+              "eligibility_status": "CONTEXTUAL",
+              "source": null,
+              "evidence": [],
+              "matched_facts": []
+            }
+          ],
+          "discovery_mode": "CENTRAL_AND_MAHARASHTRA_INGESTION_PIPELINE",
+          "data_freshness": "RECORDED_VERSIONS",
+          "disclaimer": "Scheme relevance is derived from your business activity, jurisdiction, and MSME classification. Candidate relevance is not eligibility; reviewed predicates and exact source evidence are required to support eligibility."
+        },
+        "discovery": [
+          {
+            "provider": "serpapi",
+            "status": "FAILED",
+            "queries": [
+              "Karnataka Shops and Commercial Establishments registration official portal",
+              "Karnataka Professional Tax enrolment for IT establishments official portal",
+              "Karnataka establishment registration office-based software consultancy building applications Indian official requirements",
+              "Karnataka worker and premises requirements office-based software consultancy building applications Indian official",
+              "Karnataka industrial policy micro enterprise incentives office-based software consultancy building applications Indian"
+            ],
+            "candidate_count": 0,
+            "official_count": 0,
+            "captures": 0,
+            "modes": [],
+            "error": "Query 'Karnataka Shops and Commercial...' failed: SerpApi returned HTTP 429.; Query 'Karnataka Professional Tax enr...' failed: SerpApi returned HTTP 429.; Query 'Karnataka establishment regist...' failed: SerpApi returned HTTP 429."
+          }
+        ]
+      },
+      {
+        "business": "Precision Workshop QA",
+        "type": "Manufacturing",
+        "assessment_id": "4814bcdd-86d2-474a-93b1-3cb52428006f",
+        "status": "COMPLETED",
+        "seconds": 75.835,
+        "stages": [
+          {
+            "stage": "businesses",
+            "status": 201,
+            "seconds": 0.742
+          },
+          {
+            "stage": "profile",
+            "status": 201,
+            "seconds": 0.338
+          },
+          {
+            "stage": "",
+            "status": 201,
+            "seconds": 1.329
+          },
+          {
+            "stage": "understand",
+            "status": 200,
+            "seconds": 3.159
+          },
+          {
+            "stage": "generate",
+            "status": 200,
+            "seconds": 5.581
+          },
+          {
+            "stage": "answers",
+            "status": 200,
+            "seconds": 2.273,
+            "timings_ms": {
+              "answer_submission": 2217.9
+            }
+          },
+          {
+            "stage": "regulatory-discovery",
+            "status": 200,
+            "seconds": 2.672,
+            "phase_timings_ms": {
+              "regulatory_retrieval": 945.55,
+              "source_discovery": 419.38
+            }
+          },
+          {
+            "stage": "compliance-synthesis",
+            "status": 200,
+            "seconds": 15.88,
+            "phase_timings_ms": {
+              "deterministic_evaluation": 864.46,
+              "local_retrieval": 136.81,
+              "synthesis_llm": 7626.17,
+              "workspace_persistence": 536.41
+            }
+          },
+          {
+            "stage": "orchestrate",
+            "status": 200,
+            "seconds": 12.273
+          },
+          {
+            "stage": "compliance",
+            "status": 200,
+            "seconds": 1.337
+          },
+          {
+            "stage": "documents",
+            "status": 200,
+            "seconds": 1.301
+          },
+          {
+            "stage": "workflows",
+            "status": 200,
+            "seconds": 4.572
+          },
+          {
+            "stage": "schemes",
+            "status": 200,
+            "seconds": 3.695
+          },
+          {
+            "stage": "calendar",
+            "status": 200,
+            "seconds": 0.619
+          },
+          {
+            "stage": "dashboard",
+            "status": 200,
+            "seconds": 16.833
+          },
+          {
+            "stage": "search",
+            "status": 200,
+            "seconds": 2.538
+          }
+        ],
+        "analysis_timings_ms": {
+          "BUSINESS_CONTEXT": 492.8,
+          "SMART_QUESTIONS": 0.02,
+          "REGULATORY_DISCOVERY": 52.38,
+          "SOURCE_REVIEW": 53.11,
+          "COMPLIANCE_EVALUATION": 621.59,
+          "WORKSPACE_GUIDANCE": 271.59,
+          "DOCUMENT_PLANNING": 907.2,
+          "WORKFLOW_PLANNING": 4185.26,
+          "SCHEME_DISCOVERY": 3312.6,
+          "STANDARDS_DISCOVERY": 762.75,
+          "COMPLETED": 328.98
+        },
+        "analysis_phase_timings_ms": {
+          "source_discovery": 419.38,
+          "regulatory_retrieval": 945.55,
+          "synthesis_llm": 7626.17,
+          "local_retrieval": 136.81,
+          "workspace_persistence": 536.41,
+          "deterministic_evaluation": 864.46
+        },
+        "workspace_get_provider_calls": 0,
+        "completion_extra_provider_calls": 0,
+        "retrieval": {
+          "status": "EMPTY",
+          "rejected_count": 3,
+          "accepted_passages": 0
+        },
+        "failures": [],
+        "providers": [
+          {
+            "provider": "gemini",
+            "provider_slot": 1,
+            "model": "gemini-3.5-flash-lite",
+            "workflow": "business_understanding",
+            "status": "SUCCESS",
+            "failure_type": null,
+            "fallback": false,
+            "latency_ms": 2742.23
+          },
+          {
+            "provider": "gemini",
+            "provider_slot": 2,
+            "model": "gemini-3.5-flash-lite",
+            "workflow": "smart_questions_planner",
+            "status": "SUCCESS",
+            "failure_type": null,
+            "fallback": false,
+            "latency_ms": 4070.26
+          },
+          {
+            "provider": "gemini",
+            "provider_slot": 3,
+            "model": "gemini-3.5-flash-lite",
+            "workflow": "workspace_guidance",
+            "status": "ERROR",
+            "failure_type": "schema_failure",
+            "fallback": false,
+            "latency_ms": 4015.75
+          },
+          {
+            "provider": "gemini",
+            "provider_slot": 1,
+            "model": "gemini-3.5-flash-lite",
+            "workflow": "workspace_guidance",
+            "status": "SUCCESS",
+            "failure_type": null,
+            "fallback": true,
+            "latency_ms": 3610.01
+          }
+        ],
+        "standards": {
+          "business_id": "8fbbdc72-4063-44f2-bc28-3ea7b405ee39",
+          "query": "",
+          "count": 1,
+          "standards": [
+            {
+              "id": "a420ad0a-2c37-447c-a840-eb4c167134b7",
+              "title": "Quality Management Systems Assessment",
+              "citations": [],
+              "source_url": null,
+              "description": "General framework for maintaining consistent metal component manufacturing quality and workshop output.",
+              "is_mandatory": null,
+              "result_origin": "LLM_FALLBACK_RESULT",
+              "requirement_id": "a420ad0a-2c37-447c-a840-eb4c167134b7",
+              "source_reference": "",
+              "why_it_may_apply": "The business operates a metal component manufacturing workshop using powered cutting and turning machines.",
+              "recommended_next_step": "Review workshop inspection processes and document quality checks.",
+              "authority_or_regulator": "",
+              "standard_code": "a420ad0a-2c37-447c-a840-eb4c167134b7",
+              "authority": "",
+              "jurisdiction": "",
+              "domain": "QUALITY",
+              "nature": "QUALITY_PLANNING",
+              "why_it_matters": "The business operates a metal component manufacturing workshop using powered cutting and turning machines.",
+              "decision_result_id": null,
+              "rule_version_id": null,
+              "status": "CONTEXTUAL",
+              "source": null,
+              "evidence": [],
+              "matched_facts": [],
+              "category": "QUALITY_PLANNING",
+              "citation_count": 0
+            }
+          ],
+          "catalogue_available": false,
+          "scope_status": "PARTIAL_SCOPE",
+          "scope_note": "No reviewed standards matched this assessment within the currently supported knowledge scope. Additional product or quality review may be needed.",
+          "assessment_id": "4814bcdd-86d2-474a-93b1-3cb52428006f",
+          "reviewed_match_count": 0,
+          "catalogue_note": "Matched requirements and quality areas to explore for your business."
+        },
+        "schemes": {
+          "business_id": "8fbbdc72-4063-44f2-bc28-3ea7b405ee39",
+          "business_name": "Precision Workshop QA",
+          "assessment_id": "4814bcdd-86d2-474a-93b1-3cb52428006f",
+          "excluded_unreviewed_count": 36,
+          "scope_status": "SOURCE_REVIEW_REQUIRED",
+          "scope_note": "Historical authored scheme records have no established source evidence and are excluded from recommendations. Reviewed scheme sources must be acquired before eligibility can be established.",
+          "available": true,
+          "state": "KARNATAKA",
+          "state_code": "KARNATAKA",
+          "raw_state": "KARNATAKA",
+          "state_name": "Karnataka",
+          "msme_scale": "MICRO",
+          "product_description": "A metal component manufacturing workshop using powered cutting and turning machines, with18workers. Components sold domestically; no imports or exports. No plating or chemical coating.",
+          "count": 0,
+          "total_schemes_found": 0,
+          "universal_schemes_count": 0,
+          "sector_specific_schemes_count": 0,
+          "maharashtra_schemes_count": 0,
+          "central_schemes_count": 0,
+          "schemes": [],
+          "discovery_mode": "CENTRAL_AND_MAHARASHTRA_INGESTION_PIPELINE",
+          "data_freshness": "RECORDED_VERSIONS",
+          "disclaimer": "Scheme relevance is derived from your business activity, jurisdiction, and MSME classification. Candidate relevance is not eligibility; reviewed predicates and exact source evidence are required to support eligibility."
+        },
+        "discovery": [
+          {
+            "provider": "serpapi",
+            "status": "FAILED",
+            "queries": [
+              "Karnataka factory establishment and licensing portals official portal",
+              "Karnataka industrial power connection and safety regulations official portal",
+              "Micro enterprise workshop compliance Karnataka official portal",
+              "Karnataka pollution control board consent to establish metal component manufacturing workshop using powered official",
+              "Karnataka factories directorate factory licence registration eligibility",
+              "BIS mandatory certification Quality Control Order metal component manufacturing workshop using powered India"
+            ],
+            "candidate_count": 0,
+            "official_count": 0,
+            "captures": 0,
+            "modes": [],
+            "error": "Query 'Karnataka factory establishmen...' failed: SerpApi returned HTTP 429.; Query 'Karnataka industrial power con...' failed: SerpApi returned HTTP 429.; Query 'Micro enterprise workshop comp...' failed: SerpApi returned HTTP 429."
+          }
+        ]
+      }
+    ],
+    "temporary_identities_removed": true,
+    "security_scan": {
+      "configured_sensitive_values_checked": 11,
+      "repository_text_files": 820,
+      "frontend_js_files": 60,
+      "matches": [],
+      "diff_matching_variable_names": []
+    },
+    "next_unfinished_task": "Restore configured SerpApi capacity, then bounded fresh acquisition/retrieval and authoritative standards/scheme ingestion and review.",
+    "limitations": [
+      "No successful fresh acquisition/capture or accepted remote retrieval in resumed runs.",
+      "Reviewed sector-specific standards/schemes and battery/EPR knowledge coverage remain incomplete.",
+      "IT live run preceded the final completion timing projection; final manufacturing response validates that projection.",
+      "No frontend/browser rebuild or rerun was necessary for these backend-only changes; prior evidence is separate."
+    ]
+  }
+}

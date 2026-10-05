@@ -40,6 +40,7 @@ export const discoveryApi = {
   orchestrate(businessId: string, assessmentId?: string, forceLiveDiscovery: boolean = true): Promise<any> {
     return request<any>(`/businesses/${businessId}/analysis/orchestrate`, {
       method: "POST",
+      timeoutMs: 180000,
       body: JSON.stringify({
         assessment_id: assessmentId,
         force_live_discovery: forceLiveDiscovery,

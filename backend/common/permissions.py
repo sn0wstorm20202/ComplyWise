@@ -36,3 +36,10 @@ class IsBusinessMember(permissions.BasePermission):
         if business is None:
             return False
         return business.is_accessible_by(user)
+
+
+class IsComplianceReviewer(permissions.BasePermission):
+    message = "Compliance reviewer access is required."
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_compliance_officer)

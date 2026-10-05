@@ -182,14 +182,14 @@ class ReviewService:
         # 4. Resolve DocumentSubmission if targeted
         sub = None
         if submission_id:
-            sub = DocumentSubmission.objects.filter(pk=submission_id).select_related("document_requirement").first()
+            sub = DocumentSubmission.objects.filter(pk=submission_id, document_requirement__case=case).select_related("document_requirement").first()
         elif case.document_requirements.exists():
             # If no submission specified, find the latest submission on first active doc requirement
             first_req = case.document_requirements.first()
             if first_req:
                 sub = first_req.latest_submission
 
-        if sub:
+        if sub and decision != "ESCALATE":
             review_status = DocumentReviewStatus.INTERNAL_HUMAN_APPROVED
             if decision == "QUERY":
                 review_status = DocumentReviewStatus.INTERNAL_HUMAN_QUERY

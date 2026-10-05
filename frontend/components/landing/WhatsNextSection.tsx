@@ -1,91 +1,85 @@
 "use client";
 
 import React from "react";
-import { GitFork, Scale, BookOpen, CheckCircle2, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 export function WhatsNextSection() {
   const capabilities = [
     {
       id: "workflows",
       title: "Connected Compliance Workflows",
-      status: "In development",
-      statusColor: "bg-slate-100 text-[#0F172A] border-[#E2E8F0]",
+      status: "Building",
       description:
         "Automating multi-step clearance procedures across state pollution control boards, factory safety inspectorates, and the central BIS Manakonline portal.",
-      milestone: "Phase 2 Delivery",
+      milestone: "Phase 2",
     },
     {
       id: "intelligence",
       title: "Deeper Regulatory Intelligence",
       status: "Expanding",
-      statusColor: "bg-blue-50 text-blue-900 border-blue-200",
       description:
         "Automated Gazette of India monitoring with clause-level text diffs to immediately detect when new Quality Control Orders affect approved manufacturing lines.",
-      milestone: "Continuous Integration",
+      milestone: "Continuous",
     },
     {
       id: "standards",
       title: "Expanded BIS Standards Coverage",
-      status: "Being built",
-      statusColor: "bg-slate-100 text-[#0F172A] border-[#E2E8F0]",
+      status: "Building",
       description:
         "Extending verified knowledge packs beyond electrical equipment into industrial machinery, chemicals, polymers, steel products, and medical devices.",
-      milestone: "Knowledge Pack V2.4",
+      milestone: "V2.4",
     },
     {
       id: "evidence",
       title: "Evidence & Requirement Tracking",
-      status: "In development",
-      statusColor: "bg-slate-100 text-[#0F172A] border-[#E2E8F0]",
+      status: "Building",
       description:
         "Traceable NABL test report verification, automated instrument calibration expiry warnings, and one-click surveillance audit dossier generation.",
-      milestone: "Audit Automation",
+      milestone: "Automation",
     },
   ];
 
   return (
-    <section className="py-20 md:py-28 bg-[#F8FAFC] border-b border-[#E2E8F0]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        {/* Section Heading */}
-        <div className="max-w-2xl space-y-2">
-          <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-widest font-mono">
-            Platform Roadmap
+    <section id="roadmap" className="py-24 md:py-36 bg-white border-b border-slate-200/80">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+        {/* Section Header */}
+        <div className="max-w-3xl space-y-4">
+          <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-mono uppercase tracking-[0.2em] font-medium bg-slate-900/[0.04] border border-slate-900/[0.08] text-slate-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Platform Trajectory</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#0F172A] font-sans">
-            What’s being built next.
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#0F172A] leading-[1.1] font-sans">
+            Evolving the compliance graph. Continuously.
           </h2>
-          <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed font-sans">
-            ComplyWise is systematically expanding its regulatory knowledge graph, automation pipelines, and operational integrations.
+          <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal font-sans">
+            ComplyWise is systematically expanding its regulatory knowledge graph, automation pipelines, and operational integrations across Indian industrial compliance.
           </p>
         </div>
 
-        {/* Open Editorial List */}
-        <div className="divide-y divide-[#E2E8F0] border-t border-b border-[#E2E8F0]">
+        {/* Editorial Capability List with hover physics */}
+        <div className="space-y-0 border-t border-slate-200/80">
           {capabilities.map((cap) => (
             <div
               key={cap.id}
-              className="py-6 sm:py-8 grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 items-baseline group hover:bg-white transition-colors px-3 -mx-3 rounded-xl"
+              className="group py-8 sm:py-10 border-b border-slate-200/80 grid grid-cols-1 md:grid-cols-12 gap-5 items-baseline hover:bg-slate-50/50 transition-all duration-500 px-4 -mx-4 rounded-2xl"
             >
-              <div className="md:col-span-4 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-[#0F172A] group-hover:text-blue-900 transition-colors font-sans">
-                    {cap.title}
-                  </h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold border ${cap.statusColor}`}
-                  >
+              <div className="md:col-span-4 space-y-2.5">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-slate-950 transition-colors duration-300 font-sans flex items-center gap-2">
+                  <span>{cap.title}</span>
+                  <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" strokeWidth={1.5} />
+                </h3>
+                <div className="flex items-center gap-2.5">
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-mono font-medium text-slate-700 bg-slate-100 border border-slate-200/80">
                     {cap.status}
                   </span>
-                  <span className="font-mono text-[10px] text-[#94A3B8]">
+                  <span className="font-mono text-[10px] text-slate-400">
                     {cap.milestone}
                   </span>
                 </div>
               </div>
 
               <div className="md:col-span-8">
-                <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed max-w-3xl font-sans">
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-3xl font-sans">
                   {cap.description}
                 </p>
               </div>
@@ -93,10 +87,10 @@ export function WhatsNextSection() {
           ))}
         </div>
 
-        {/* Subtle Bottom Note */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#64748B] pt-2 font-mono">
+        {/* Subtle bottom signal */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 font-mono">
           <span>Active development cycle · Modular monolith architecture</span>
-          <span className="text-[#0F172A] font-semibold">Updated weekly</span>
+          <span className="text-slate-800 font-medium">Updated weekly</span>
         </div>
       </div>
     </section>

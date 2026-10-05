@@ -1,0 +1,9 @@
+
+Running 2 tests using 1 worker
+
+(node:10508) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e\product-workspace.spec.ts:386:5 › resumed assessment restores questions once and preserves answers on acquisition failure (4.9s)
+  ✓  2 [chromium] › e2e\product-workspace.spec.ts:408:5 › login screenshot contains loaded global styles (2.0s)
+
+  2 passed (9.3s)

@@ -1,0 +1,193 @@
+....................F.................s................................. [ 10%]
+...........................................F............................ [ 21%]
+........................................................................ [ 32%]
+......................................ss................................ [ 43%]
+F....................................................................... [ 54%]
+........................................................................ [ 64%]
+........................................................................ [ 75%]
+........................................................................ [ 86%]
+........................................................................ [ 97%]
+.................                                                        [100%]
+================================== FAILURES ===================================
+______________________ test_answer_recording_without_llm ______________________
+
+test_business = <Business: VoltPro Power Systems>
+auth_user = <User: owner_s2@complywise.in>
+
+    @pytest.mark.django_db
+    def test_answer_recording_without_llm(test_business, auth_user):
+        """Recording an answer updates run state and DB with zero LLM calls."""
+        run = assessment_orchestrator.create_run(
+            business=test_business,
+            user=auth_user,
+            strategy=AssessmentStrategyType.LLM_FIRST,
+        )
+        context = OrchestrationContext.from_business(test_business)
+        engine = QuestionnaireEngine()
+        generated = engine.generate_questionnaire(context, run)
+        question = next(q for q in generated if q.answer_type == "BOOLEAN")
+        qid = question.question_id
+        interpreter = AnswerInterpreter()
+        res = interpreter.record_answer(run, qid, True)
+    
+        assert res["question_id"] == qid
+        assert res["saved_value"] is True
+        assert res["answered_count"] == 1
+        assert res["is_complete"] is False
+    
+        # Check run stage metadata
+        assert run.stage_metadata["answers"][qid] is True
+    
+        # Check SmartQuestionInstance
+        inst = SmartQuestionInstance.objects.filter(plan__assessment=run.assessment, question_id=qid).first()
+>       assert inst is not None
+E       assert None is not None
+
+tests\test_api_orchestration_step02.py:373: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2026-10-04 18:42:26,321 INFO domain.intelligence.orchestration Created new AssessmentRun 42e900d4-22ec-4fb7-99d6-8dfaddfa92c4 for business 5e71d082-6df0-4713-a353-607d7f10fae1 (strategy LLM_FIRST, correlation be99dbba-4c5e-4784-aa04-d18b9c710b11)
+2026-10-04 18:42:26,336 INFO domain.intelligence.questionnaire Persisted compact questions in metadata for assessment run 42e900d4-22ec-4fb7-99d6-8dfaddfa92c4
+------------------------------ Captured log call ------------------------------
+INFO     domain.intelligence.orchestration:orchestration.py:1193 Created new AssessmentRun 42e900d4-22ec-4fb7-99d6-8dfaddfa92c4 for business 5e71d082-6df0-4713-a353-607d7f10fae1 (strategy LLM_FIRST, correlation be99dbba-4c5e-4784-aa04-d18b9c710b11)
+INFO     domain.intelligence.questionnaire:questionnaire.py:2793 Persisted compact questions in metadata for assessment run 42e900d4-22ec-4fb7-99d6-8dfaddfa92c4
+__________________ test_business_isolation_and_no_stale_data __________________
+
+loaded_packs = {'sources': 24, 'evidence': 26, 'requirements': 26, 'rules': 26, ...}
+owner_user = <User: audit.officer@example.com>
+api_client = <rest_framework.test.APIClient object at 0x0000027F8658C830>
+
+    @pytest.mark.django_db
+    def test_business_isolation_and_no_stale_data(loaded_packs, owner_user, api_client):
+        """Prove strict isolation between Shree Ganesh Foods and Eastern GridCell Energy."""
+        engine = ApplicabilityEngine()
+    
+        # ------------------------------------------------------------------
+        # 1. Create Business A: Shree Ganesh Foods Pvt Ltd (Gujarat Food)
+        # ------------------------------------------------------------------
+        biz_a = Business.objects.create(name="Shree Ganesh Foods Pvt Ltd", owner=owner_user)
+        BusinessMembership.objects.create(business=biz_a, user=owner_user, role=BusinessMembership.Role.OWNER)
+    
+        vars_a = {
+            "state": {"value": "GUJARAT", "origin": "USER_PROVIDED"},
+            "legal_constitution": {"value": "PRIVATE_LIMITED", "origin": "USER_PROVIDED"},
+            "district": {"value": "Ahmedabad", "origin": "USER_PROVIDED"},
+            "industrial_zone_status": {"value": "INSIDE_NOTIFIED_INDUSTRIAL_AREA", "origin": "USER_PROVIDED"},
+            "lifecycle_stage": {"value": "OPERATIONAL", "origin": "USER_PROVIDED"},
+            "plant_machinery_investment": {"value": "12000000", "origin": "USER_PROVIDED"},
+            "annual_turnover": {"value": "45000000", "origin": "USER_PROVIDED"},
+            "total_worker_count": {"value": 25, "origin": "USER_PROVIDED"},
+            "connected_power_load": {"value": "35.0", "origin": "USER_PROVIDED"},
+            "effluent_emission_generation": {"value": True, "origin": "USER_PROVIDED"},
+            "product_description": {"value": "Manufacture of bakery biscuits, snacks and processed food", "origin": "USER_PROVIDED"},
+            "import_export_intent": {"value": "IMPORT_AND_EXPORT", "origin": "USER_PROVIDED"},
+        }
+        prof_a = BusinessProfileVersion.objects.create(
+            business=biz_a, version=1, variables=vars_a, change_note="Initial profile A"
+        )
+    
+        run_a = engine.evaluate_business_profile(business=biz_a, profile_version=prof_a, save_run=True)
+        results_a = {r.requirement_id: r.status for r in run_a.results.all()}
+    
+        # Verify A results
+        assert results_a["REQ-FSSAI-STATE-LICENCE"] == ApplicabilityStatus.APPLICABLE
+        assert results_a["REQ-GPCB-CTE"] == ApplicabilityStatus.APPLICABLE
+        assert results_a["REQ-GUJ-FACTORY-LICENSE"] == ApplicabilityStatus.APPLICABLE
+    
+        # Dashboard A verification
+        dash_a = get_dashboard_summary(biz_a)
+        assert dash_a["business_id"] == str(biz_a.id)
+        assert dash_a["business_name"] == "Shree Ganesh Foods Pvt Ltd"
+        assert dash_a["metrics"]["applicable_count"] >= 3
+        initial_a_applicable = dash_a["metrics"]["applicable_count"]
+    
+        # ------------------------------------------------------------------
+        # 2. Create Business B: Eastern GridCell Energy Pvt. Ltd. (West Bengal Battery)
+        # ------------------------------------------------------------------
+        biz_b = Business.objects.create(name="Eastern GridCell Energy Pvt. Ltd.", owner=owner_user)
+        BusinessMembership.objects.create(business=biz_b, user=owner_user, role=BusinessMembership.Role.OWNER)
+    
+        vars_b = {
+            "state": {"value": "WEST_BENGAL", "origin": "USER_PROVIDED"},
+            "legal_constitution": {"value": "PRIVATE_LIMITED", "origin": "USER_PROVIDED"},
+            "district": {"value": "Kolkata", "origin": "USER_PROVIDED"},
+            "industrial_zone_status": {"value": "INSIDE_NOTIFIED_INDUSTRIAL_AREA", "origin": "USER_PROVIDED"},
+            "lifecycle_stage": {"value": "OPERATIONAL", "origin": "USER_PROVIDED"},
+            "plant_machinery_investment": {"value": "80000000", "origin": "USER_PROVIDED"},
+            "annual_turnover": {"value": "140000000", "origin": "USER_PROVIDED"},
+            "total_worker_count": {"value": 85, "origin": "USER_PROVIDED"},
+            "product_description": {
+                "value": (
+                    "Manufacturing and assembly of lithium-ion battery packs used in commercial and "
+                    "industrial battery energy-storage systems, including battery modules, battery "
+                    "management systems, protection circuits, enclosures, and associated electrical components."
+                ),
+                "origin": "USER_PROVIDED",
+            },
+            "import_export_intent": {"value": "IMPORT_AND_EXPORT", "origin": "USER_PROVIDED"},
+        }
+        prof_b = BusinessProfileVersion.objects.create(
+            business=biz_b, version=1, variables=vars_b, change_note="Initial profile B"
+        )
+    
+        # ------------------------------------------------------------------
+        # 3. Smart Questions for Business B must use B's profile
+        # ------------------------------------------------------------------
+        questions_b_data = get_dynamic_smart_questions(biz_b)
+        assert questions_b_data["business_id"] == str(biz_b.id)
+        assert questions_b_data["business_name"] == "Eastern GridCell Energy Pvt. Ltd."
+        assert questions_b_data["total_missing"] >= 0
+>       assert questions_b_data["known_variables_count"] == 10
+E       assert 13 == 10
+
+tests\test_business_isolation_regression.py:135: AssertionError
+___________________ test_dynamic_smart_questions_generation ___________________
+
+test_user = <User: onboarding.founder@example.com>
+test_business = <Business: Shree Krishna Foods LLP>
+test_knowledge = <RequirementDefinition: REQ-FSSAI-STATE: FSSAI State Licence (FSSAI)>
+
+    @pytest.mark.django_db
+    def test_dynamic_smart_questions_generation(test_user, test_business, test_knowledge):
+        """Smart questions must be data-driven based on missing variables in candidate rules."""
+        client = APIClient()
+        client.force_authenticate(user=test_user)
+    
+        # Initial profile with only state
+        BusinessProfileVersion.objects.create(
+            business=test_business,
+            version=1,
+            variables={"state": {"value": "Gujarat", "origin": "USER_PROVIDED"}},
+        )
+    
+        url = f"/api/v1/businesses/{test_business.id}/onboarding/questions"
+        res = client.get(url)
+        assert res.status_code == status.HTTP_200_OK
+        assert "data" in res.data
+        data = res.data["data"]
+    
+        questions = data["questions"]
+        question_keys = [q["key"] for q in questions]
+    
+        # Rule references 'annual_turnover' and 'total_worker_count', which are missing
+        assert "annual_turnover" in question_keys
+        assert "total_worker_count" in question_keys
+    
+        # Each question has explanation of why it matters
+        turnover_q = next(q for q in questions if q["key"] == "annual_turnover")
+        assert turnover_q["why_it_matters"] != ""
+>       assert turnover_q["data_type"] == "CURRENCY_INR"
+E       AssertionError: assert 'CURRENCY' == 'CURRENCY_INR'
+E         
+E         - CURRENCY_INR
+E         ?         ----
+E         + CURRENCY
+
+tests\test_onboarding.py:132: AssertionError
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_api_orchestration_step03.py:695: Live integration smoke test disabled by default. Set COMPLYWISE_LIVE_INTEGRATION=1 to run.
+SKIPPED [1] tests\test_live_prototype_smoke.py:17: Real-provider smoke is opt-in.
+SKIPPED [1] tests\test_live_smoke_step05.py:73: Live integration smoke tests disabled by default. Set COMPLYWISE_LIVE_INTEGRATION=1 to run.
+FAILED tests/test_api_orchestration_step02.py::test_answer_recording_without_llm
+FAILED tests/test_business_isolation_regression.py::test_business_isolation_and_no_stale_data
+FAILED tests/test_onboarding.py::test_dynamic_smart_questions_generation - As...
+3 failed, 659 passed, 3 skipped in 45.35s

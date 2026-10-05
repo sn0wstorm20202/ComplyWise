@@ -25,6 +25,7 @@ from typing import Any
 import uuid
 
 from django.conf import settings
+from django.db import transaction
 from common.enums import ApplicabilityStatus, AssessmentStatus
 from apps.applicability.engine import ApplicabilityEngine
 from apps.applicability.models import DecisionRun
@@ -251,8 +252,15 @@ class OrchestrationContext:
         assessment: Assessment | None = None,
         correlation_id: str | None = None,
     ) -> OrchestrationContext:
-        derived = build_business_context(business)
-        pv = assessment.profile_version if assessment and assessment.profile_version else business.current_profile
+        if assessment and assessment.business_id != business.id:
+            raise StageInputInvalid("The selected assessment belongs to another business.")
+        if assessment and not assessment.profile_version_id:
+            # An empty assessment can be initialized before profile intake. It
+            # must stay empty instead of inheriting a later mutable profile.
+            return cls(business_id=str(business.id), business_name=business.name,
+                       correlation_id=correlation_id or str(uuid.uuid4()))
+        pv = assessment.profile_version if assessment else business.current_profile
+        derived = build_business_context(business, profile_version=pv)
         cid = correlation_id or str(uuid.uuid4())
 
         return cls(
@@ -391,6 +399,21 @@ class AssessmentRun:
 
     def to_safe_dict(self) -> dict[str, Any]:
         """Return safe user-facing state without leaking internal strategy or provider names."""
+        timings = {}
+        phase_timings = {}
+        for stage in STAGE_ORDER:
+            record = self.stage_metadata.get(stage.value, {})
+            if not isinstance(record, dict):
+                continue
+            duration = (record.get("metadata") or {}).get("duration_ms")
+            if isinstance(duration, (int, float)) and not isinstance(duration, bool) and duration >= 0:
+                timings[stage.value] = duration
+            details = (record.get("data") or {}).get("metadata") or {}
+            for phase, value in (details.get("timings_ms") or {}).items():
+                if isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0:
+                    phase_timings[phase] = round(phase_timings.get(phase, 0.0) + value, 2)
+        # Recorded execution time excludes the user's time answering questions.
+        # Missing historical measurements stay absent, rather than becoming zero.
         completed_stages = [
             k for k, v in self.stage_metadata.items()
             if isinstance(v, dict) and v.get("status") == StageStatus.COMPLETED
@@ -417,6 +440,9 @@ class AssessmentRun:
                 "percent": percent,
             },
             "safe_message": safe_msg,
+            "timings_ms": timings,
+            "phase_timings_ms": phase_timings,
+            "measured_stage_total_ms": round(sum(timings.values()), 2),
             "safe_error": self.error_message_safe if self.error_code else None,
             "error": {
                 "code": self.error_code,
@@ -447,16 +473,19 @@ class SchemeResult:
 
 class SchemeProvider(abc.ABC):
     @abc.abstractmethod
-    def discover_schemes(self, context: OrchestrationContext) -> list[SchemeResult]:
+    def discover_schemes(self, context: OrchestrationContext, assessment_id=None) -> list[SchemeResult]:
         pass
 
 
 class DefaultSchemeProvider(SchemeProvider):
-    def discover_schemes(self, context: OrchestrationContext) -> list[SchemeResult]:
+    def discover_schemes(self, context: OrchestrationContext, assessment_id=None) -> list[SchemeResult]:
         biz = Business.objects.filter(pk=context.business_id).first()
         if not biz:
             return []
-        derived_ctx = build_business_context(biz)
+        selected_assessment = biz.assessments.filter(pk=assessment_id).first() if assessment_id else None
+        if assessment_id and (not selected_assessment or not selected_assessment.profile_version_id):
+            raise StageInputInvalid("The selected assessment has no business profile snapshot.")
+        derived_ctx = build_business_context(biz, profile_version=selected_assessment.profile_version if selected_assessment else None)
         replacements: dict[str, Any] = {}
         desc = getattr(context, "raw_business_description", None) or getattr(context, "product", None)
         if desc and desc != derived_ctx.product_description:
@@ -467,7 +496,7 @@ class DefaultSchemeProvider(SchemeProvider):
         if replacements:
             import dataclasses
             derived_ctx = dataclasses.replace(derived_ctx, **replacements)
-        res = discover_business_schemes(biz, context=derived_ctx)
+        res = discover_business_schemes(biz, context=derived_ctx, assessment_id=assessment_id)
         results: list[SchemeResult] = []
         for item in res.get("schemes", []):
             results.append(
@@ -479,8 +508,8 @@ class DefaultSchemeProvider(SchemeProvider):
                     benefit_type=item.get("benefit_type", "INCENTIVE_SCHEME"),
                     benefit_summary=item.get("benefit_summary", ""),
                     eligibility_statement=item.get("eligibility_statement", ""),
-                    source_url=item.get("source_url", "") or item.get("portal_url", ""),
-                    is_applicable=item.get("is_applicable", True),
+                    source_url=item.get("source_url") or "",
+                    is_applicable=item.get("eligibility_status") == "EVIDENCE_SUPPORTED",
                     match_score=item.get("match_score", 1.0),
                     extra=item,
                 )
@@ -561,21 +590,24 @@ class StandardResult:
 
 class StandardsProvider(abc.ABC):
     @abc.abstractmethod
-    def discover_standards(self, context: OrchestrationContext) -> list[StandardResult]:
+    def discover_standards(self, context: OrchestrationContext, assessment_id=None) -> list[StandardResult]:
         pass
 
 
 class DefaultStandardsProvider(StandardsProvider):
-    def discover_standards(self, context: OrchestrationContext) -> list[StandardResult]:
+    def discover_standards(self, context: OrchestrationContext, assessment_id=None) -> list[StandardResult]:
         biz = Business.objects.filter(pk=context.business_id).first()
         if not biz:
             return []
-        derived_ctx = build_business_context(biz)
+        selected_assessment = biz.assessments.filter(pk=assessment_id).first() if assessment_id else None
+        if assessment_id and (not selected_assessment or not selected_assessment.profile_version_id):
+            raise StageInputInvalid("The selected assessment has no business profile snapshot.")
+        derived_ctx = build_business_context(biz, profile_version=selected_assessment.profile_version if selected_assessment else None)
         desc = getattr(context, "raw_business_description", None) or getattr(context, "product", None)
         if desc and desc != derived_ctx.product_description:
             import dataclasses
             derived_ctx = dataclasses.replace(derived_ctx, product_description=desc)
-        res = discover_business_standards(biz, context=derived_ctx)
+        res = discover_business_standards(biz, context=derived_ctx, assessment_id=assessment_id)
         results: list[StandardResult] = []
         for item in res.get("standards", []):
             results.append(
@@ -585,7 +617,7 @@ class DefaultStandardsProvider(StandardsProvider):
                     authority=item.get("authority", ""),
                     category=item.get("nature", "MANDATORY_STANDARD"),
                     description=item.get("why_it_matters", ""),
-                    is_mandatory=item.get("is_mandatory", True),
+                    is_mandatory=item.get("is_mandatory"),
                     source_url=item.get("source_url", ""),
                     extra=item,
                 )
@@ -674,7 +706,7 @@ class LLMFirstStrategy(AssessmentStrategy):
         run: AssessmentRun,
     ) -> StageResult:
         t0 = time.perf_counter()
-        provider_name = getattr(settings, "LLM_PROVIDER", "openai")
+        provider_name = getattr(settings, "LLM_PROVIDER", "gemini")
 
         if stage == AssessmentStage.INITIALIZE:
             latency_ms = (time.perf_counter() - t0) * 1000
@@ -694,6 +726,9 @@ class LLMFirstStrategy(AssessmentStrategy):
             )
 
         if stage == AssessmentStage.BUSINESS_UNDERSTANDING:
+            cached = run.stage_metadata.get("business_understanding")
+            if cached:
+                return StageResult(stage=stage, status=StageStatus.COMPLETED, data=cached, metadata={"cached": True})
             from domain.intelligence.business_understanding import BusinessUnderstandingEngine
             engine = BusinessUnderstandingEngine()
             result = engine.analyze_business(context, assessment_id=run.run_id)
@@ -720,6 +755,7 @@ class LLMFirstStrategy(AssessmentStrategy):
             # Guarantee question set is explicitly stored in run stage_metadata
             state = dict(run.stage_metadata)
             state["question_generation"] = {
+                "question_policy_version": 5,
                 "questions": [q.to_dict() for q in questions],
                 "count": len(questions),
                 "generated_at": time.time(),
@@ -746,8 +782,8 @@ class LLMFirstStrategy(AssessmentStrategy):
                 status=StageStatus.COMPLETED,
                 data={
                     "answered_count": len(answers),
-                    "total_questions": len(q_meta) or 6,
-                    "is_complete": len(answers) >= (len(q_meta) or 6),
+                    "total_questions": len(q_meta),
+                    "is_complete": len(answers) >= (len(q_meta)),
                     "next_question": next_q,
                 },
             )
@@ -809,8 +845,18 @@ class LLMFirstStrategy(AssessmentStrategy):
                 ctx_to_use = build_canonical_enriched_context(context, under_res, interpreted_facts)
 
             disc_provider = LiveRegulatoryDiscoveryProvider()
-            disc_res = disc_provider.discover(ctx_to_use)
+            disc_res = disc_provider.discover(ctx_to_use, assessment=run.assessment)
             clean_disc = disc_res.to_dict()
+            discovery_id = (clean_disc.get("metadata") or {}).get("discovery_run_id")
+            if discovery_id:
+                persisted = DiscoveryRun.objects.filter(pk=discovery_id, business=run.assessment.business).first()
+                if persisted and not persisted.assessment_id:
+                    persisted.assessment = run.assessment
+                    persisted.save(update_fields=["assessment"])
+                if persisted and persisted.assessment_id == run.assessment.id:
+                    run.assessment.discovery_run = persisted
+                    run.assessment.save(update_fields=["discovery_run", "updated_at"])
+
             state = dict(run.stage_metadata)
             state["regulatory_discovery"] = clean_disc
             run.stage_metadata = state
@@ -832,15 +878,6 @@ class LLMFirstStrategy(AssessmentStrategy):
             if "regulatory_discovery" not in run.stage_metadata:
                 self.execute_stage(AssessmentStage.REGULATORY_DISCOVERY, context, run)
 
-            cached = run.stage_metadata.get("compliance_synthesis")
-            if cached and isinstance(cached, dict) and cached.get("requirements"):
-                return StageResult(
-                    stage=stage,
-                    status=StageStatus.COMPLETED,
-                    data=cached,
-                    metadata={"cached": True},
-                )
-
             ctx_to_use = context
             if "context_synthesis" in run.stage_metadata:
                 from domain.intelligence.business_understanding import validate_business_understanding_schema
@@ -859,6 +896,7 @@ class LLMFirstStrategy(AssessmentStrategy):
                 discovered_material,
                 questions=q_meta,
                 answers=answers_map,
+                assessment_id=run.run_id,
             )
             clean_synth = synth_res.to_dict()
             state = dict(run.stage_metadata)
@@ -877,7 +915,7 @@ class LLMFirstStrategy(AssessmentStrategy):
 
         if stage == AssessmentStage.SCHEMES:
             cached = run.stage_metadata.get("schemes")
-            if cached and isinstance(cached, dict) and cached.get("schemes"):
+            if isinstance(cached, dict) and "schemes" in cached and cached.get("grounding_version") == 2:
                 return StageResult(
                     stage=stage,
                     status=StageStatus.COMPLETED,
@@ -886,7 +924,7 @@ class LLMFirstStrategy(AssessmentStrategy):
                 )
 
             scheme_prov = DefaultSchemeProvider()
-            raw_schemes = scheme_prov.discover_schemes(context)
+            raw_schemes = scheme_prov.discover_schemes(context, assessment_id=run.run_id)
             normalized_schemes = [
                 {
                     "scheme_id": s.scheme_code,
@@ -895,8 +933,16 @@ class LLMFirstStrategy(AssessmentStrategy):
                     "jurisdiction": s.jurisdiction,
                     "eligibility": s.eligibility_statement,
                     "benefit": s.benefit_summary,
-                    "status": "ACTIVE" if s.is_applicable else "UNKNOWN",
-                    "application_url": s.source_url or (s.extra.get("portal_url") if isinstance(s.extra, dict) else ""),
+                    "status": s.extra.get("status", "TO_EXPLORE" if s.extra.get("result_origin") == "LLM_FALLBACK_RESULT" else "CANDIDATE"),
+                    "eligibility_status": s.extra.get("eligibility_status", "CONTEXTUAL" if s.extra.get("result_origin") == "LLM_FALLBACK_RESULT" else "NEEDS_REVIEW"),
+                    "result_origin": s.extra.get("result_origin", "DETERMINISTIC_KB_RESULT"),
+                    "citations": s.extra.get("citations", []),
+                    "source_url": s.source_url,
+                    "source": s.extra.get("source"),
+                    "evidence": s.extra.get("evidence", []),
+                    "matched_facts": s.extra.get("matched_facts", []),
+                    "matched_fact_values": s.extra.get("matched_fact_values", {}),
+                    "application_url": s.extra.get("action_url") or s.extra.get("portal_url") or "",
                     "why_relevant": s.extra.get("relevance_rationale", s.eligibility_statement) if isinstance(s.extra, dict) else s.eligibility_statement,
                     "scheme_code": s.scheme_code,
                     "title": s.title,
@@ -905,6 +951,7 @@ class LLMFirstStrategy(AssessmentStrategy):
                 for s in raw_schemes
             ]
             clean_schemes = {
+                "grounding_version": 2,
                 "schemes": normalized_schemes,
                 "total_schemes": len(normalized_schemes),
             }
@@ -921,7 +968,7 @@ class LLMFirstStrategy(AssessmentStrategy):
 
         if stage == AssessmentStage.STANDARDS:
             cached = run.stage_metadata.get("standards")
-            if cached and isinstance(cached, dict) and cached.get("standards"):
+            if isinstance(cached, dict) and "standards" in cached and cached.get("grounding_version") == 2:
                 return StageResult(
                     stage=stage,
                     status=StageStatus.COMPLETED,
@@ -930,28 +977,37 @@ class LLMFirstStrategy(AssessmentStrategy):
                 )
 
             std_prov = DefaultStandardsProvider()
-            raw_stds = std_prov.discover_standards(context)
+            raw_stds = std_prov.discover_standards(context, assessment_id=run.run_id)
             normalized_stds = [
                 {
                     "standard_id": s.standard_code,
                     "name": s.title,
                     "authority": s.authority,
-                    "type": "STATUTORY" if s.is_mandatory else "VOLUNTARY",
+                    "type": "QUALITY_PLANNING" if s.extra.get("result_origin") == "LLM_FALLBACK_RESULT" else "STATUTORY" if s.is_mandatory is True else "VOLUNTARY" if s.is_mandatory is False else "STANDARD",
                     "reason": s.description,
-                    "evidence_ids": [f"STD-{s.standard_code}"],
+                    "evidence_ids": [ref["evidence_id"] for ref in s.extra.get("citations", []) if ref.get("evidence_id")],
                     "source_urls": [s.source_url] if s.source_url else [],
                     "standard_code": s.standard_code,
                     "title": s.title,
                     "is_mandatory": s.is_mandatory,
                     "nature": s.category,
-                    "mandatory_status": s.extra.get("mandatory_status", "MANDATORY" if s.is_mandatory else "VOLUNTARY"),
-                    "verification_status": s.extra.get("verification_status", "VERIFIED" if s.is_mandatory else "NEEDS_VERIFICATION"),
+                    "mandatory_status": s.extra.get("mandatory_status", "MANDATORY" if s.is_mandatory is True else "VOLUNTARY" if s.is_mandatory is False else "UNKNOWN"),
+                    "verification_status": "CONTEXTUAL_GUIDANCE" if s.extra.get("result_origin") == "LLM_FALLBACK_RESULT" else "VERIFIED" if (s.extra.get("source") or {}).get("reviewed") else "NEEDS_VERIFICATION",
+                    "status": s.extra.get("status", "NEEDS_REVIEW"),
+                    "source": s.extra.get("source"),
+                    "evidence": s.extra.get("evidence", []),
+                    "matched_facts": s.extra.get("matched_facts", []),
+                    "matched_fact_values": s.extra.get("matched_fact_values", {}),
+                    "result_origin": s.extra.get("result_origin", "DETERMINISTIC_KB_RESULT"),
+                    "rule_version_id": s.extra.get("rule_version_id"),
+                    "citations": s.extra.get("citations", []),
                     "testing_requirements": s.extra.get("testing_requirements", ""),
                     "next_step": s.extra.get("next_step", ""),
                 }
                 for s in raw_stds
             ]
             clean_stds = {
+                "grounding_version": 2,
                 "standards": normalized_stds,
                 "total_standards": len(normalized_stds),
             }
@@ -1078,6 +1134,7 @@ class AssessmentOrchestrator:
         self.standards_provider = standards_provider or DefaultStandardsProvider()
         self.synthesis_provider = synthesis_provider or DefaultComplianceSynthesisProvider()
 
+    @transaction.atomic
     def create_run(
         self,
         business: Business,
@@ -1095,6 +1152,9 @@ class AssessmentOrchestrator:
             )
 
         cid = correlation_id or idempotency_key or str(uuid.uuid4())
+        # Serialize creation per business so profile save + orchestration cannot
+        # create two active assessments or duplicate assessment numbers.
+        Business.objects.select_for_update().get(pk=business.pk)
         active_strategy = strategy or self.strategy.name
 
         # Validate strategy
@@ -1132,6 +1192,17 @@ class AssessmentOrchestrator:
                 raise OrchestrationConflict(
                     f"An assessment run ({existing_active.id}) is already active for this business."
                 )
+            # Profile/onboarding already created the active assessment. Adopt it
+            # rather than starting another run with a new correlation ID.
+            state.setdefault("strategy", active_strategy)
+            state.setdefault("current_stage", AssessmentStage.INITIALIZE)
+            state.setdefault("correlation_id", cid)
+            state.setdefault("stage_metadata", {})
+            if idempotency_key:
+                state.setdefault("idempotency_key", idempotency_key)
+            existing_active.step_state = state
+            existing_active.save(update_fields=["step_state", "updated_at"])
+            return AssessmentRun(existing_active, strategy=state["strategy"], correlation_id=state["correlation_id"])
 
         # Resolve profile version
         pv = profile_version or business.current_profile
@@ -1196,7 +1267,7 @@ class AssessmentOrchestrator:
         """Execute a single lifecycle stage on an active assessment run."""
         # Check budget limits
         allowed, reason = telemetry_tracker.check_guardrails(run.run_id)
-        if not allowed:
+        if not allowed and stage in {AssessmentStage.BUSINESS_UNDERSTANDING, AssessmentStage.QUESTION_GENERATION, AssessmentStage.COMPLIANCE_SYNTHESIS}:
             err = BudgetExceeded(reason or "Cost/Token budget exceeded.")
             res = StageResult(
                 stage=stage,
@@ -1213,7 +1284,9 @@ class AssessmentOrchestrator:
             correlation_id=run.correlation_id,
         )
 
+        stage_started = time.perf_counter()
         result = self.strategy.execute_stage(stage, ctx, run)
+        result.metadata["duration_ms"] = round((time.perf_counter() - stage_started) * 1000, 2)
         run.record_stage_result(result)
         return result
 
@@ -1240,25 +1313,34 @@ def orchestrate_compliance_analysis(
     start_time = datetime.now(timezone.utc)
     analysis_id = str(uuid.uuid4())
     stage_records: list[dict[str, Any]] = []
+    phase_started = time.perf_counter()
 
     # Resolve assessment if passed or latest
     assessment = None
     if assessment_id:
         assessment = business.assessments.filter(pk=assessment_id).first()
-    if assessment is None:
+    if assessment is None and not assessment_id:
         assessment = business.assessments.order_by("-assessment_number").first()
+    if assessment_id and assessment is None:
+        raise ValueError("Assessment does not belong to this business.")
+    if assessment and not assessment.profile_version_id:
+        raise StageInputInvalid("Save a business profile for this assessment before analysis.")
 
     def record_stage(stage_name: str, message: str, count: int = 0) -> None:
+        nonlocal phase_started
+        phase_finished = time.perf_counter()
         stage_records.append({
             "stage": stage_name,
             "status": "COMPLETED",
             "message": message,
             "count": count,
             "timestamp": datetime.now(timezone.utc).isoformat(),
+            "duration_ms": round((phase_finished - phase_started) * 1000, 2),
         })
+        phase_started = phase_finished
 
     # Stage 1: BUSINESS_CONTEXT
-    context = build_business_context(business)
+    context = build_business_context(business, profile_version=assessment.profile_version if assessment else None)
     record_stage(
         "BUSINESS_CONTEXT",
         f"Synthesized profile context for {business.name}. Enterprise scale: {context.msme_scale}.",
@@ -1278,11 +1360,15 @@ def orchestrate_compliance_analysis(
     if assessment and assessment.discovery_run:
         disc_run = assessment.discovery_run
     if disc_run is None:
-        disc_run = DiscoveryRun.objects.filter(business=business).order_by("-created_at").first()
+        discovery_runs = DiscoveryRun.objects.filter(business=business)
+        if assessment:
+            discovery_runs = discovery_runs.filter(summary__profile_version_id=str(assessment.profile_version_id))
+        disc_run = discovery_runs.order_by("-created_at").first()
 
     if disc_run is None or force_live_discovery:
         try:
-            disc_res = run_discovery(business, max_scrape=1)
+            disc_res = run_discovery(business, max_scrape=1, assessment=assessment,
+                profile_version=assessment.profile_version if assessment else None)
             disc_run_id = disc_res.get("run_id")
             disc_run = DiscoveryRun.objects.filter(pk=disc_run_id).first() if disc_run_id else None
         except Exception as exc:
@@ -1303,7 +1389,7 @@ def orchestrate_compliance_analysis(
     candidate_count = 0
     sources_count = 0
     if disc_run:
-        sources_count = getattr(disc_run, "candidate_count", 0) or len(getattr(disc_run, "candidate_urls", []))
+        sources_count = disc_run.scraped_count
         candidate_count = CandidateRequirement.objects.filter(discovery_run=disc_run).count()
 
     record_stage(
@@ -1319,19 +1405,18 @@ def orchestrate_compliance_analysis(
     except Exception:
         connection.close()
 
-    try:
-        profile_version = assessment.profile_version if assessment and assessment.profile_version else business.current_profile
-    except Exception:
-        connection.close()
-        profile_version = business.current_profile
+    profile_version = assessment.profile_version if assessment else business.current_profile
 
     existing_run = None
     if assessment and assessment.decision_run:
         existing_run = assessment.decision_run
     if existing_run is None:
-        existing_run = DecisionRun.objects.filter(business=business).order_by("-created_at").first()
+        existing_runs = DecisionRun.objects.filter(business=business)
+        if assessment:
+            existing_runs = existing_runs.filter(assessment=assessment)
+        existing_run = existing_runs.order_by("-created_at").first()
 
-    if existing_run and profile_version and existing_run.profile_version_id == profile_version.id and existing_run.results.exists():
+    if existing_run and profile_version and existing_run.profile_version_id == profile_version.id:
         decision_run = existing_run
     elif profile_version:
         engine = ApplicabilityEngine()
@@ -1340,7 +1425,7 @@ def orchestrate_compliance_analysis(
             profile_version=profile_version,
             save_run=True,
         )
-        decision_run = new_run if (new_run and new_run.results.exists()) else (existing_run or new_run)
+        decision_run = new_run
     else:
         decision_run = existing_run
 
@@ -1403,26 +1488,46 @@ def orchestrate_compliance_analysis(
         count=len(actionable_reqs),
     )
 
+    from domain.intelligence.workspace_guidance import ensure_workspace, get_workspace
+    workspace_timings = {}
+    if assessment and profile_version and decision_run:
+        recorded = [{"requirement_id": r.requirement_id, "title": r.requirement_name,
+                     "status": r.status, "rule_version_id": str(r.rule_version_id) if r.rule_version_id else None}
+                    for r in decision_run.results.all()]
+        from apps.ingestion.models import RetrievedDocument
+        capture_ids = [record.get("source_id") for record in (disc_run.scraped_urls or []) if isinstance(record, dict)] if disc_run else []
+        captures = RetrievedDocument.objects.filter(source__source_id__in=capture_ids).select_related("source")[:5]
+        captured_context = [{"retrieved_document_id": str(capture.id), "source_url": capture.source.canonical_url,
+            "source_title": capture.source.title, "excerpt": capture.normalized_content[:3000],
+            "verification_status": "UNVERIFIED"} for capture in captures]
+        guidance_payload = ensure_workspace(business, assessment, profile_version, recorded,
+                         {"queries": queries_run, "captured_sources": sources_count, "evidence_candidates": captured_context},
+                         timings=workspace_timings)
+        guidance_count = len(guidance_payload.get("compliance_items", []))
+        record_stage("WORKSPACE_GUIDANCE", "Prepared contextual planning from this assessment." if guidance_count
+                     else "Workspace uses recorded decisions; no contextual guidance was added.", count=guidance_count)
+        stage_records[-1]["timings_ms"] = workspace_timings
+
     # Stage 6: DOCUMENT_PLANNING
-    docs_payload = derive_business_documents(business, context=context)
+    docs_payload = derive_business_documents(business, context=context, assessment_id=str(assessment.id) if assessment else None)
     total_docs = docs_payload.get("total_documents_needed", 0)
     record_stage(
         "DOCUMENT_PLANNING",
-        f"Derived required document checklist containing {total_docs} statutory filings across applicable licenses.",
+        f"Prepared {total_docs} document and record suggestions from this assessment.",
         count=total_docs,
     )
 
     # Stage 7: WORKFLOW_PLANNING
-    wf_payload = derive_business_workflows(business, context=context)
+    wf_payload = derive_business_workflows(business, context=context, assessment_id=str(assessment.id) if assessment else None)
     total_wfs = wf_payload.get("total_workflows", 0)
     record_stage(
         "WORKFLOW_PLANNING",
-        f"Structured clearance execution workflows for {total_wfs} statutory approvals.",
+        f"Prepared {total_wfs} workflows and practical next steps.",
         count=total_wfs,
     )
 
     # Stage 8: SCHEME_DISCOVERY
-    schemes_payload = discover_business_schemes(business, context=context)
+    schemes_payload = discover_business_schemes(business, context=context, assessment_id=str(assessment.id) if assessment else None)
     total_schemes = schemes_payload.get("total_schemes_found", 0)
     record_stage(
         "SCHEME_DISCOVERY",
@@ -1431,16 +1536,16 @@ def orchestrate_compliance_analysis(
     )
 
     # Stage 9: STANDARDS_DISCOVERY
-    standards_payload = discover_business_standards(business, context=context)
+    standards_payload = discover_business_standards(business, context=context, assessment_id=str(assessment.id) if assessment else None)
     total_standards = standards_payload.get("total_standards_found", 0)
     record_stage(
         "STANDARDS_DISCOVERY",
-        f"Matched {total_standards} applicable Indian Standards, QCOs, and quality certifications.",
+        f"Found {total_standards} standards matches and contextual quality suggestions for review.",
         count=total_standards,
     )
 
     # Stage 10: CALENDAR_PLANNING
-    cal_payload = derive_business_calendar(business, context=context)
+    cal_payload = derive_business_calendar(business, context=context, assessment_id=str(assessment.id) if assessment else None)
     upcoming_deadlines = sum(1 for e in cal_payload.get("events", []) if e.get("days_remaining", 999) <= 30)
 
     # Stage 11: COMPLETED
@@ -1457,6 +1562,7 @@ def orchestrate_compliance_analysis(
     executive_summary = {
         "total_requirements_evaluated": len(decision_run.results.all()) if decision_run else 0,
         "requirements_identified": applicable_count,
+        "suggested_count": len(get_workspace(business, str(assessment.id) if assessment else None)["compliance_items"]),
         "requirements_action_needed": needs_info_count,
         "documents_to_prepare": total_docs,
         "documents_count": total_docs,
@@ -1471,12 +1577,23 @@ def orchestrate_compliance_analysis(
         "quarantined_claims": candidate_count,
     }
 
+    phase_timings = dict((disc_run.summary or {}).get("timings_ms", {})) if disc_run else {}
+    if assessment:
+        phase_timings.update(AssessmentRun(assessment).to_safe_dict()["phase_timings_ms"])
+    for phase, duration in workspace_timings.items():
+        phase_timings[phase] = round(phase_timings.get(phase, 0.0) + duration, 2)
+
     if assessment:
         assessment.status = AssessmentStatus.COMPLETED
         assessment.current_step = 5
         assessment.completed_at = end_time
         assessment.summary = executive_summary
-        assessment.save(update_fields=["status", "current_step", "completed_at", "summary"])
+        assessment.step_state = {**(assessment.step_state or {}), "analysis": {
+            "stages": stage_records, "timings_ms": {stage["stage"]: stage["duration_ms"] for stage in stage_records},
+            "phase_timings_ms": phase_timings,
+            "duration_seconds": (end_time - start_time).total_seconds(), "completed_at": end_time.isoformat(),
+        }}
+        assessment.save(update_fields=["status", "current_step", "completed_at", "summary", "step_state"])
 
         try:
             from apps.businesses.models import UserWorkspaceState
@@ -1555,6 +1672,8 @@ def orchestrate_compliance_analysis(
         "started_at": start_time.isoformat(),
         "completed_at": end_time.isoformat(),
         "duration_seconds": (end_time - start_time).total_seconds(),
+        "timings_ms": {stage["stage"]: stage["duration_ms"] for stage in stage_records},
+        "phase_timings_ms": phase_timings,
         "stages": stage_records,
         "decision_run": run_data,
         "executive_summary": executive_summary,

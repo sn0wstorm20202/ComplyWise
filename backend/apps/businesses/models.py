@@ -63,7 +63,7 @@ class Business(BaseModel):
         """Single place that answers "may this user see this business?"."""
         if not user or not user.is_authenticated:
             return False
-        if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
+        if getattr(user, "is_compliance_officer", False):
             return True
         if self.owner_id == user.id:
             return True
@@ -74,7 +74,7 @@ class Business(BaseModel):
         """Queryset scoped to a user. Staff and superusers have platform-wide access."""
         if not user or not user.is_authenticated:
             return cls.objects.none()
-        if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
+        if getattr(user, "is_compliance_officer", False):
             qs = cls.objects.all()
         else:
             qs = cls.objects.filter(
@@ -86,101 +86,44 @@ class Business(BaseModel):
 
     @classmethod
     def resolve_authorized(cls, identifier_or_user: Any, user_or_identifier: Any = None) -> Business:
-        """Resolve a business strictly respecting tenant isolation.
-
-        Authority: ADR-003, Phase 2 Engineering Constitution §1, §3.
-        Invariants:
-        1. IF user is None or not user.is_authenticated: AuthenticationFailed (HTTP 401).
-        2. IF business_id is missing: DRFValidationError (HTTP 400).
-        3. IF malformed UUID: DRFValidationError (HTTP 400).
-        4. IF authenticated regular user: resolve ONLY through authorized membership.
-           If not found: NotFound (HTTP 404 - never reveal business exists).
-        5. IF authenticated staff/superuser: explicit get/DoesNotExist path, audit logged.
-        """
-        # Flexible argument order: support both (business_id, user) and (user, business_id)
+        """Resolve an exact business ID after enforcing authentication and tenant access."""
         if hasattr(identifier_or_user, "is_authenticated"):
-            user = identifier_or_user
-            business_id = user_or_identifier
+            user, business_id = identifier_or_user, user_or_identifier
         else:
-            business_id = identifier_or_user
-            user = user_or_identifier
+            business_id, user = identifier_or_user, user_or_identifier
 
+        from rest_framework.exceptions import AuthenticationFailed, NotFound, ValidationError
         if user is None or not getattr(user, "is_authenticated", False):
-            from rest_framework.exceptions import AuthenticationFailed
             raise AuthenticationFailed("Authentication credentials were not provided.")
-
         if not business_id:
-            from rest_framework.exceptions import ValidationError as DRFValidationError
-            raise DRFValidationError("business_id is required.")
-
+            raise ValidationError("business_id is required.")
         try:
-            uuid_obj = uuid.UUID(str(business_id))
+            business_uuid = uuid.UUID(str(business_id))
         except (ValueError, TypeError, AttributeError):
-            from rest_framework.exceptions import ValidationError as DRFValidationError
-            raise DRFValidationError(f"Invalid business UUID: {business_id}")
+            raise ValidationError(f"Invalid business UUID: {business_id}")
 
-        is_staff = getattr(user, "is_staff", False) or getattr(user, "is_superuser", False)
-
-        if is_staff:
-            try:
-                biz = cls.objects.get(pk=uuid_obj)
-                import logging
-                logging.getLogger(__name__).info(
-                    "AUDIT: Staff user %s accessed business %s (%s)",
-                    getattr(user, "id", None),
-                    biz.id,
-                    biz.name,
-                )
-                return biz
-            except cls.DoesNotExist:
-                from rest_framework.exceptions import NotFound
-                raise NotFound("Business not found.")
-
-        # Regular user: resolve strictly through authorized membership
-        biz = cls.accessible_to(user).filter(pk=uuid_obj).first()
-        if not biz:
-            from rest_framework.exceptions import NotFound
+        business = cls.accessible_to(user).filter(pk=business_uuid).first()
+        if not business:
             raise NotFound("Business not found.")
-        return biz
+        if getattr(user, "is_compliance_officer", False):
+            import logging
+            logging.getLogger(__name__).info(
+                "AUDIT: Staff user %s accessed business %s (%s)", user.id, business.id, business.name
+            )
+        return business
 
     @classmethod
     def resolve_safely(cls, business_id: Any, user=None) -> Business | None:
-        """Safely resolve a business by ID scoped to the authenticated user.
-
-        Deprecated legacy adapter: returns None instead of raising exceptions.
-        Guarantees ZERO unauthenticated access, ZERO global fallback.
-        """
-        # Flexible argument order
+        """Return an exact business only when it is visible to the authenticated user."""
         if hasattr(business_id, "is_authenticated"):
             user, business_id = business_id, user
-
-        if user is None or not getattr(user, "is_authenticated", False):
+        if user is None or not getattr(user, "is_authenticated", False) or not business_id:
             return None
-
-        if not business_id:
-            return None
-
         try:
-            uuid_obj = uuid.UUID(str(business_id))
+            business_uuid = uuid.UUID(str(business_id))
         except (ValueError, TypeError, AttributeError):
             return None
-
-        is_staff = getattr(user, "is_staff", False) or getattr(user, "is_superuser", False)
-        if is_staff:
-            try:
-                biz = cls.objects.get(pk=uuid_obj)
-                import logging
-                logging.getLogger(__name__).info(
-                    "AUDIT: Staff user %s accessed business %s (%s) via resolve_safely",
-                    getattr(user, "id", None),
-                    biz.id,
-                    biz.name,
-                )
-                return biz
-            except cls.DoesNotExist:
-                return None
-
-        return cls.accessible_to(user).filter(pk=uuid_obj).first()
+        return cls.accessible_to(user).filter(pk=business_uuid).first()
 
     # -- profile -----------------------------------------------------------
     @property
@@ -369,6 +312,17 @@ class BusinessProfileVersion(AppendOnlyModel):
         return super().save(*args, **kwargs)
 
 
+class WorkspaceGuidance(BaseModel):
+    """Contextual interpretation, separate from authoritative rule decisions."""
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="workspace_guidance")
+    assessment = models.OneToOneField("Assessment", on_delete=models.CASCADE, related_name="guidance")
+    profile_version = models.ForeignKey(BusinessProfileVersion, on_delete=models.PROTECT)
+    payload = models.JSONField(default=dict)
+    generation_key = models.CharField(max_length=64)
+    provider_metadata = models.JSONField(default=dict)
+
+
 class Assessment(BaseModel):
     """An assessment session/version for a business.
 
@@ -541,9 +495,8 @@ class UserWorkspaceState(models.Model):
         if not user or not user.is_authenticated:
             raise PermissionError("User is not authenticated.")
 
-        ws = cls.objects.select_related("active_business", "active_assessment").filter(user=user).first()
-        if not ws:
-            ws = cls.objects.create(user=user)
+        # Concurrent login/profile restoration must share one workspace record.
+        ws, _ = cls.objects.select_related("active_business", "active_assessment").get_or_create(user=user)
 
         # 1. Validate currently stored active_assessment
         if ws.active_assessment:

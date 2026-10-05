@@ -34,103 +34,12 @@ class _BusinessScopedView(APIView):
         return Business.resolve_safely(business_id, request.user)
 
 
-#: Requirement metadata keys carrying procedural detail, when knowledge records it.
-DOCUMENTS_KEY = "required_documents"
-FEE_KEY = "statutory_fee"
-VALIDITY_KEY = "validity_period"
-STEPS_KEY = "application_steps"
-PORTAL_KEY = "portal"
+from apps.requirements.presentation import (
+    DOCUMENTS_KEY, FEE_KEY, VALIDITY_KEY, STEPS_KEY, PORTAL_KEY,
+    NOT_RECORDED, metadata_string_list, requirement_reason_summary, evidence_citations, primary_citation, decision_presentation,
+)
 
-#: Shown wherever published knowledge records nothing for a field. Stated rather
-#: than left blank so the screen distinguishes "nothing required" from "unknown".
-NOT_RECORDED = "Not recorded in published knowledge for this requirement."
-
-
-def _str_list(value: Any) -> list[str]:
-    """Coerce a metadata value to a list of non-empty strings, or an empty list."""
-    if not isinstance(value, list):
-        return []
-    return [str(item).strip() for item in value if str(item).strip()]
-
-
-#: Human-readable renderings of the engine's trace reasons. Keyed on the same
-#: constants the engine writes, so the sentence a user reads is derived from the
-#: recorded decision rather than re-asserted here.
-_REASON_SUMMARIES = {
-    "JURISDICTION_UNRESOLVED": (
-        "The business jurisdiction is missing or could not be recognised, so this "
-        "state-level requirement could not be decided."
-    ),
-    "JURISDICTION_NOT_MATCHED": (
-        "This requirement belongs to a jurisdiction other than the one recorded for "
-        "the business, so it was not evaluated against the profile."
-    ),
-    "NO_PUBLISHED_RULE": (
-        "No published applicability rule exists for this requirement, so applicability "
-        "could not be determined."
-    ),
-    "OUTSIDE_EFFECTIVE_WINDOW": (
-        "Every published rule for this requirement is outside its effective date "
-        "window on the evaluation date."
-    ),
-    "ZERO_EVIDENCE": (
-        "The matched rule carries no supporting evidence, so the requirement cannot be "
-        "reported as applicable."
-    ),
-    "DANGLING_EVIDENCE_REF": (
-        "The matched rule cites an evidence record that is not present in the "
-        "knowledge base."
-    ),
-    "FUTURE_EFFECTIVE_EVIDENCE": (
-        "The supporting evidence takes effect after the evaluation date."
-    ),
-    "EXPIRED_EVIDENCE": "The supporting evidence expired before the evaluation date.",
-    "CONFLICTING_EVIDENCE": (
-        "The supporting evidence is marked as conflicting and needs review."
-    ),
-    "UNVERIFIED_EVIDENCE": (
-        "The supporting evidence has not been verified, so applicability is reported "
-        "as unverified."
-    ),
-}
-
-
-def _why_summary(trace: dict[str, Any] | None, req_def: RequirementDefinition) -> str:
-    """Explain the recorded outcome, reading only what the engine wrote.
-
-    Never restates the decision in stronger terms than the trace supports: an
-    unevaluated requirement says so instead of implying a profile was assessed.
-    """
-    if not trace:
-        return (
-            "This requirement has not been evaluated for this business. Run a "
-            "regulatory analysis to produce a decision."
-        )
-
-    reason = trace.get("reason")
-    if reason in _REASON_SUMMARIES:
-        return _REASON_SUMMARIES[reason]
-
-    evidence_reason = trace.get("evidence_reason")
-    if evidence_reason in _REASON_SUMMARIES:
-        return _REASON_SUMMARIES[evidence_reason]
-
-    rule_id = trace.get("matched_rule_id")
-    outcome = trace.get("status", "")
-    if rule_id:
-        version = trace.get("matched_rule_version")
-        rule_ref = f"{rule_id} v{version}" if version else str(rule_id)
-        return (
-            f"Rule {rule_ref} ({trace.get('matched_rule_type', 'NORMAL')}) matched the "
-            f"recorded business profile and yields {outcome}. "
-            f"Authority: {req_def.authority}; jurisdiction: {req_def.jurisdiction}."
-        )
-    if outcome:
-        return (
-            f"No published rule condition matched the recorded business profile, so "
-            f"this requirement was evaluated as {outcome}."
-        )
-    return "The evaluation produced no recorded reason for this requirement."
+from apps.requirements.selectors import load_requirement_evidence
 
 
 class BusinessComplianceListView(_BusinessScopedView):
@@ -166,72 +75,14 @@ class BusinessComplianceListView(_BusinessScopedView):
 
         if latest_run:
             results = list(latest_run.results.all())
-            if status_filter:
-                results = [r for r in results if r.status == status_filter.upper()]
 
-            import re
-            desc_parts = [business.name]
-            if business.current_profile and business.current_profile.variables:
-                vars_dict = business.current_profile.variables
-                for k in ["product_description", "sector", "nature_of_business", "primary_business_activity"]:
-                    val = vars_dict.get(k)
-                    if isinstance(val, dict):
-                        desc_parts.append(str(val.get("value") or ""))
-                    elif val:
-                        desc_parts.append(str(val))
-            desc_lower = " ".join(desc_parts).lower()
-            is_infra_or_tech = bool(re.search(r"\b(data centre|datacenter|colocation|server|ev charging|charging station|electric vehicle|fintech|banking|microfinance)\b", desc_lower))
-            is_pure_software = bool(re.search(r"\b(software|saas|platform|app|web|digital|pre-visualization|film pre-visualization|consulting|it services|agency)\b", desc_lower)) and not is_infra_or_tech and not any(hw in desc_lower for hw in ["hardware manufacturing", "assembly plant", "fabrication plant", "physical manufacturing"])
-            is_physical_mfg = any(mfg_kw in desc_lower for mfg_kw in [
-                "mill", "textile", "weaving", "spinning", "dyeing", "fabric", "yarn", "foundry", "plant", "casting",
-                "manufacturing", "factory", "machinery", "engineering", "chemical", "metal", "assembly"
-            ]) and not is_pure_software and not is_infra_or_tech
-
-            seen_canonical = set()
-            cleaned_results = []
-            for r in results:
-                req_id_upper = r.requirement_id.upper()
-                req_name_upper = r.requirement_name.upper()
-                combined = f"{req_id_upper} {req_name_upper}"
-
-                if is_pure_software and any(term in combined for term in [
-                    "FACTORY", "FACTORIES", "CONSENT TO ESTABLISH", "CONSENT TO OPERATE", "CTE", "CTO",
-                    "POLLUTION", "SPCB", "MPCB", "WBPCB", "GPCB", "CPCB", "BOILER"
-                ]):
-                    continue
-
-                if is_physical_mfg and any(term in combined for term in [
-                    "CERT-IN", "CERTIN", "CYBERSECURITY", "INCIDENT-REPORTING", "DPDP", "DATA FIDUCIARY"
-                ]):
-                    continue
-
-                canon = req_id_upper.replace("-", "").replace("_", "")
-                if canon in seen_canonical:
-                    continue
-                seen_canonical.add(canon)
-                cleaned_results.append(r)
-
-            results = cleaned_results
-            req_ids = [r.requirement_id for r in results]
-            req_defs = {
-                rd.requirement_id: rd
-                for rd in RequirementDefinition.objects.filter(requirement_id__in=req_ids)
-            }
-
-            # Prefetch all referenced evidence records with sources
-            all_ev_ids = set()
-            for r in results:
-                for ref in (r.evidence_refs or []):
-                    ev_id = ref.get("evidence_id") if isinstance(ref, dict) else ref
-                    if ev_id:
-                        all_ev_ids.add(str(ev_id))
-            evidences_map = {
-                ev.evidence_id: ev
-                for ev in Evidence.objects.filter(evidence_id__in=all_ev_ids).select_related("source")
-            }
+            req_defs, evidences_map = load_requirement_evidence(results)
 
             for r in results:
                 req_def = req_defs.get(r.requirement_id)
+                display_status, display_trace = decision_presentation(r, req_def)
+                if status_filter and display_status != status_filter.upper():
+                    continue
                 auth = req_def.authority if req_def else "Authority"
                 cat = req_def.category if req_def else "GENERAL"
                 jur = req_def.jurisdiction if req_def else "CENTRAL"
@@ -254,45 +105,31 @@ class BusinessComplianceListView(_BusinessScopedView):
                 canonical_source_url = portal_info["url"]
                 portal_name = portal_info["name"]
 
-                citations = []
-                for ref in (r.evidence_refs or []):
-                    ev_id = ref.get("evidence_id") if isinstance(ref, dict) else ref
-                    ev_obj = evidences_map.get(str(ev_id))
-                    if ev_obj and ev_obj.source:
-                        cit = {
-                            "evidence_id": ev_obj.evidence_id,
-                            "source_title": ev_obj.source.title,
-                            "authority": ev_obj.source.authority,
-                            "locator": ev_obj.locator,
-                            "excerpt": ev_obj.excerpt,
-                            "verification_status": ev_obj.verification_status,
-                            "canonical_url": ev_obj.source.canonical_url,
-                        }
-                        citations.append(cit)
+                citations = evidence_citations(r.evidence_refs or [], evidences_map)
 
                 items.append(
                     {
                         "requirement_id": r.requirement_id,
+                        "result_origin": "DETERMINISTIC_KB_RESULT",
                         "name": r.requirement_name,
                         "authority": auth,
                         "category": cat,
                         "jurisdiction": jur,
                         "domain": req_def.domain if req_def else "GENERAL",
-                        "description": req_def.description if req_def else "",
-                        "status": r.status,
+                        "description": requirement_reason_summary(display_trace, req_def) if req_def else "",
+                        "status": display_status,
+                        "recorded_status": r.status,
                         "matched_rule_id": r.explanation_trace.get("matched_rule_id"),
                         "matched_rule_type": r.explanation_trace.get("matched_rule_type"),
                         "evidence_count": len(r.evidence_refs or []),
                         "explanation_reason": r.explanation_trace.get("reason"),
-                        "reason_summary": _why_summary(r.explanation_trace, req_def) if req_def else "",
+                        "reason_summary": requirement_reason_summary(display_trace, req_def) if req_def else "",
                         "notes": r.explanation_trace.get("note", ""),
                         "portal": canonical_source_url,
                         "portal_url": canonical_source_url,
                         "portal_name": portal_name,
-                        "portal_category": portal_info.get("category"),
-                        "action_destination": portal_info.get("category"),
-                        "source_url": canonical_source_url,
-                        "source_title": (citations[0]["source_title"] if citations else (req_def.name if req_def else auth)),
+                        "source_url": primary_citation(citations).get("canonical_url") or "",
+                        "source_title": primary_citation(citations).get("source_title", ""),
                         "statutory_act": statutory_act or (citations[0]["locator"] if citations else ""),
                         "citations": citations,
                         "citation_count": len(citations),
@@ -302,6 +139,32 @@ class BusinessComplianceListView(_BusinessScopedView):
                         "statutory_fee": str(metadata.get(FEE_KEY) or "").strip(),
                     }
                 )
+
+        from domain.intelligence.workspace_guidance import compliance_rows
+        for item in compliance_rows(business, assessment_id):
+            if status_filter and item["status"] != status_filter.upper():
+                continue
+            if authority_filter and item["authority"] != authority_filter:
+                continue
+            if category_filter and item["category"] != category_filter:
+                continue
+            items.append(item)
+
+        from apps.workflows.services.disposition_service import reviewed_requirement_treatment
+        treatments = reviewed_requirement_treatment(business, assessment_id,
+            latest_run.profile_version_id if latest_run else None)
+        from apps.workflows.services.disposition_service import reviewer_assigned_requirements
+        present = {item["requirement_id"] for item in items}
+        for assigned in reviewer_assigned_requirements(business, assessment_id,
+                latest_run.profile_version_id if latest_run else None):
+            if assigned["requirement_id"] in present:
+                item = next(item for item in items if item["requirement_id"] == assigned["requirement_id"])
+                item.update(system_applicability_status=item["status"], result_origin="HUMAN_REVIEW_RESULT")
+            elif not status_filter or status_filter.upper() == assigned["status"]:
+                if (not authority_filter or authority_filter.upper() == assigned["authority"].upper()) and (not category_filter or category_filter.upper() == assigned["category"].upper()):
+                    items.append(assigned)
+        for item in items:
+            item.update(treatments.get(item["requirement_id"], {}))
 
         return Response(
             envelope(
@@ -329,6 +192,24 @@ class BusinessRequirementDetailView(_BusinessScopedView):
         business = self.get_business(request, business_id)
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
+
+        from domain.intelligence.workspace_guidance import compliance_rows, get_workspace
+        assessment_id = request.query_params.get("assessment_id")
+        guidance = next((r for r in compliance_rows(business, assessment_id) if r["id"] == requirement_id), None)
+        if guidance:
+            from apps.workflows.services.disposition_service import reviewed_requirement_treatment
+            guidance.update(reviewed_requirement_treatment(business, assessment_id).get(requirement_id, {}))
+            workspace = get_workspace(business, assessment_id)
+            docs = [d["title"] for d in workspace["documents"] if d["requirement_id"] == requirement_id]
+            workflow = next((w for w in workspace["workflows"] if w["requirement_id"] == requirement_id), None)
+            return Response(envelope({**guidance, "business_id": str(business.id),
+                "requirement_name": guidance["title"], "why_it_applies": {"summary": guidance["why_it_may_apply"],
+                    "reason": guidance["why_it_may_apply"], "result_origin": guidance["result_origin"]},
+                "what_you_need": {"documents": docs, "documents_available": bool(docs),
+                    "statutory_fee_estimate": "Confirm with the relevant authority", "validity_period": "Confirm with the relevant authority"},
+                "what_to_do_next": {"steps": workflow["steps"] if workflow else [guidance["recommended_next_step"]],
+                    "steps_available": True, "official_portal": None, "portal_url": None, "portal_name": ""},
+                "statutory_evidence": [], "source_reference": guidance["source_reference"]}))
 
         req_def = RequirementDefinition.objects.filter(requirement_id=requirement_id).first()
         if req_def is None:
@@ -362,28 +243,21 @@ class BusinessRequirementDetailView(_BusinessScopedView):
             ev_id = ref.get("evidence_id") if isinstance(ref, dict) else ref
             ev_obj = Evidence.objects.filter(evidence_id=ev_id).select_related("source").first()
             if ev_obj:
-                evidence_items.append(
-                    {
-                        "evidence_id": ev_obj.evidence_id,
-                        "source_title": ev_obj.source.title,
-                        "authority": ev_obj.source.authority,
-                        "locator": ev_obj.locator,
-                        "excerpt": ev_obj.excerpt,
-                        "verification_status": ev_obj.verification_status,
-                        "canonical_url": ev_obj.source.canonical_url,
-                    }
-                )
+                from apps.evidence.presentation import evidence_projection
+                evidence_items.append(evidence_projection(ev_obj))
 
         eval_status = decision_result.status if decision_result else "UNVERIFIED"
         trace: dict[str, Any] = (decision_result.explanation_trace or {}) if decision_result else {}
+        if decision_result:
+            eval_status, trace = decision_presentation(decision_result, req_def)
         metadata: dict[str, Any] = req_def.metadata or {}
 
         # Procedural detail is regulatory content: it is served only where the
         # requirement's own metadata records it. `documents_available` lets the
         # frontend show "not recorded" instead of an empty checklist that reads
         # as "no documents needed".
-        documents = _str_list(metadata.get(DOCUMENTS_KEY))
-        steps = _str_list(metadata.get(STEPS_KEY))
+        documents = metadata_string_list(metadata.get(DOCUMENTS_KEY))
+        steps = metadata_string_list(metadata.get(STEPS_KEY))
         raw_portal = str(metadata.get(PORTAL_KEY) or "").strip()
 
         portal_info = resolve_statutory_portal(
@@ -400,19 +274,17 @@ class BusinessRequirementDetailView(_BusinessScopedView):
             "category": req_def.category,
             "jurisdiction": req_def.jurisdiction,
             "domain": req_def.domain,
-            "description": req_def.description,
+            "description": requirement_reason_summary(trace, req_def),
             "status": eval_status,
             "evaluated": decision_result is not None,
             "evaluation_date": str(latest_run.evaluation_date) if latest_run else None,
             "portal": portal_info["url"],
             "portal_url": portal_info["url"],
             "portal_name": portal_info["name"],
-            "portal_category": portal_info.get("category"),
-            "action_destination": portal_info.get("category"),
-            "source_url": portal_info["url"],
+            "source_url": primary_citation(evidence_items).get("canonical_url") or "",
             # Question 1: Why does this apply? — read from the recorded trace.
             "why_it_applies": {
-                "summary": _why_summary(trace, req_def),
+                "summary": requirement_reason_summary(trace, req_def),
                 "matched_rule_id": trace.get("matched_rule_id"),
                 "matched_rule_type": trace.get("matched_rule_type"),
                 "matched_rule_version": trace.get("matched_rule_version"),
@@ -462,4 +334,10 @@ class BusinessRequirementDetailView(_BusinessScopedView):
             "evidence_count": len(evidence_items),
         }
 
+        from apps.workflows.services.disposition_service import reviewed_requirement_treatment
+        detail_data.update(reviewed_requirement_treatment(business, assessment_id,
+            latest_run.profile_version_id if latest_run else None).get(requirement_id, {}))
+        if detail_data.get("treatment_source") == "ADMIN_ASSIGNED":
+            detail_data["result_origin"] = "HUMAN_REVIEW_RESULT"
+            detail_data["reviewer_assignment"] = True
         return Response(envelope(detail_data), status=status.HTTP_200_OK)

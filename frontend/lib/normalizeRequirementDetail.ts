@@ -1,5 +1,4 @@
 import type { RequirementDetail } from "@/types";
-import { resolveAuthorityPortalUrl } from "@/lib/authorityPortals";
 
 export function normalizeRequirementDetail(raw: any, requirementId: string): RequirementDetail {
   const data = raw && typeof raw === "object" ? raw : {};
@@ -8,17 +7,17 @@ export function normalizeRequirementDetail(raw: any, requirementId: string): Req
   const name = String(data.name || data.title || "Compliance Requirement");
   const authority = String(data.authority || "Regulatory Authority");
   const category = String(data.category || "GENERAL");
-  const jurisdiction = String(data.jurisdiction || "CENTRAL");
+  const jurisdiction = String(data.jurisdiction || "Not provided");
   const domain = String(data.domain || "STATUTORY");
   const description = String(
     data.description ||
     data.applicability_statement ||
     data.explanation_trace?.reason ||
     data.explanation ||
-    "Statutory compliance requirement evaluated under regulatory rules."
+    "No requirement description is recorded yet."
   );
-  const status = (data.status || "APPLICABLE") as any;
-  const evaluated = Boolean(data.evaluated ?? true);
+  const status = (data.status || "UNVERIFIED") as any;
+  const evaluated = Boolean(data.evaluated ?? Boolean(data.status));
   const evaluation_date = data.evaluation_date ? String(data.evaluation_date) : null;
 
 
@@ -28,7 +27,7 @@ export function normalizeRequirementDetail(raw: any, requirementId: string): Req
     data.applicability_statement ||
     data.explanation_trace?.reason ||
     data.explanation ||
-    ("Statutory mandate applicable to industrial operations under " + authority + " guidelines.")
+    "No applicability explanation is recorded yet."
   );
   const matchedRuleId = rawWhy.matched_rule_id ?? data.explanation_trace?.rule_id ?? null;
   const matchedRuleType = rawWhy.matched_rule_type ?? null;
@@ -59,10 +58,10 @@ export function normalizeRequirementDetail(raw: any, requirementId: string): Req
     : [];
   const documents_available = Boolean(rawNeed.documents_available ?? (documents.length > 0));
   const statutory_fee_estimate = String(
-    rawNeed.statutory_fee_estimate || data.penalty_notice || "Statutory fee as per Gazette notification"
+    rawNeed.statutory_fee_estimate || "Not recorded"
   );
   const validity_period = String(
-    rawNeed.validity_period || "Statutory validity defined by governing authority"
+    rawNeed.validity_period || "Not recorded"
   );
   const renewal_period_years =
     rawNeed.renewal_period_years !== undefined && rawNeed.renewal_period_years !== null
@@ -75,6 +74,7 @@ export function normalizeRequirementDetail(raw: any, requirementId: string): Req
       : "No document checklist, fee schedule or validity period has been ingested for this requirement.");
 
   const what_you_need = {
+    ...rawNeed,
     documents,
     documents_available,
     statutory_fee_estimate,
@@ -89,23 +89,16 @@ export function normalizeRequirementDetail(raw: any, requirementId: string): Req
     ? rawNext.steps.map((s: any) => String(s))
     : Array.isArray(data.application_steps)
     ? data.application_steps.map((s: any) => String(s))
-    : [
-        "Review applicable Gazette citations and verify applicability to registered operations.",
-        "Prepare evidentiary dossiers and mandatory corporate records.",
-        ("Submit formal application or declaration via " + authority + " designated portal."),
-      ];
+    : [];
   const steps_available = Boolean(rawNext.steps_available ?? (steps.length > 0));
-  const resolvedPortal = resolveAuthorityPortalUrl(
-    authority,
-    name,
-    rawNext.official_portal || data.official_portal
-  );
+  const resolvedPortal = rawNext.official_portal || rawNext.portal_url || data.official_portal || data.portal_url || "";
   const official_portal = String(resolvedPortal || "");
   const next_not_recorded_note =
     rawNext.not_recorded_note ??
     (steps.length > 0 ? null : "No filing procedure has been ingested for this requirement.");
 
   const what_to_do_next = {
+    ...rawNext,
     steps,
     steps_available,
     official_portal,
@@ -117,37 +110,38 @@ export function normalizeRequirementDetail(raw: any, requirementId: string): Req
   if (Array.isArray(data.statutory_evidence) && data.statutory_evidence.length > 0) {
     evidenceList = data.statutory_evidence.map((ev: any, idx: number) => ({
       evidence_id: String(ev.evidence_id || ("EVD-" + (idx + 1))),
-      source_title: String(ev.source_title || "Official Statutory Gazette"),
+      source_title: String(ev.source_title || "Source not recorded"),
       authority: String(ev.authority || authority),
       locator: String(ev.locator || "Section / Rule Notification"),
-      excerpt: String(ev.excerpt || "Statutory mandate published in official notification."),
-      verification_status: String(ev.verification_status || "VERIFIED"),
-      canonical_url: resolveAuthorityPortalUrl(ev.authority || authority, ev.source_title || name, ev.canonical_url),
+      excerpt: String(ev.excerpt || "Source passage not recorded."),
+      verification_status: String(ev.verification_status || "UNVERIFIED"),
+      canonical_url: String(ev.canonical_url || ""),
     }));
   } else if (Array.isArray(data.evidence_refs) && data.evidence_refs.length > 0) {
     evidenceList = data.evidence_refs.map((ev: any, idx: number) => ({
       evidence_id: String(ev.id || ev.evidence_id || ("EVD-" + (idx + 1))),
-      source_title: String(ev.source_title || (authority + " Gazette Reference")),
+      source_title: String(ev.source_title || "Source not recorded"),
       authority: String(ev.authority || authority),
       locator: String(ev.locator || ev.id || "Statutory Rule"),
-      excerpt: String(ev.excerpt || ("Statutory mandate under " + (ev.id || ev.locator))),
-      verification_status: String(ev.verification_status || "VERIFIED"),
-      canonical_url: resolveAuthorityPortalUrl(ev.authority || authority, ev.source_title || name, ev.canonical_url),
+      excerpt: String(ev.excerpt || "Source passage not recorded."),
+      verification_status: String(ev.verification_status || "UNVERIFIED"),
+      canonical_url: String(ev.canonical_url || ""),
     }));
   } else if (Array.isArray(data.statutoryCitations) && data.statutoryCitations.length > 0) {
     evidenceList = data.statutoryCitations.map((c: any) => ({
       evidence_id: String(c),
-      source_title: authority + " Notification Schedule",
+      source_title: "Source not recorded",
       authority: authority,
       locator: String(c),
-      excerpt: "Statutory mandate under " + c,
-      verification_status: "VERIFIED",
-      canonical_url: resolveAuthorityPortalUrl(authority, name),
+      excerpt: "Source passage not recorded.",
+      verification_status: "UNVERIFIED",
+      canonical_url: "",
     }));
   }
 
 
   return {
+    ...data,
     requirement_id: reqId,
     name,
     authority,

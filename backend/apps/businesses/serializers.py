@@ -75,14 +75,14 @@ class BusinessSerializer(serializers.ModelSerializer):
     def get_state(self, obj: Business) -> str:
         current = self._get_current_profile(obj)
         if current and current.variables:
-            return current.raw_value("state") or current.raw_value("operating_state") or getattr(obj, "state", "Maharashtra")
-        return getattr(obj, "state", "Maharashtra")
+            return current.raw_value("state") or current.raw_value("operating_state") or getattr(obj, "state", "")
+        return getattr(obj, "state", "")
 
     def get_district(self, obj: Business) -> str:
         current = self._get_current_profile(obj)
         if current and current.variables:
-            return current.raw_value("district") or getattr(obj, "district", "Pune")
-        return getattr(obj, "district", "Pune")
+            return current.raw_value("district") or getattr(obj, "district", "")
+        return getattr(obj, "district", "")
 
     def get_cases_count(self, obj: Business) -> int:
         if hasattr(obj, "_cached_cases_count"):
@@ -110,8 +110,8 @@ class BusinessSerializer(serializers.ModelSerializer):
     def get_legal_structure(self, obj: Business) -> str:
         current = self._get_current_profile(obj)
         if current and current.variables:
-            return current.raw_value("legal_structure") or current.raw_value("constitution") or "PRIVATE_LIMITED"
-        return "PRIVATE_LIMITED"
+            return current.raw_value("legal_structure") or current.raw_value("constitution") or ""
+        return ""
 
     def get_business_type(self, obj: Business) -> str:
         current = self._get_current_profile(obj)
@@ -156,10 +156,23 @@ class AssessmentSummarySerializer(serializers.ModelSerializer):
 
 
 class AssessmentSerializer(serializers.ModelSerializer):
+    def update(self, instance, validated_data):
+        if "step_state" in validated_data:
+            # Browser checkpoints can be stale. Server stage metadata must survive.
+            protected = {"strategy", "current_stage", "correlation_id", "idempotency_key", "stage_metadata", "started_at"}
+            state = dict(instance.step_state or {})
+            incoming = validated_data["step_state"]
+            if not isinstance(incoming, dict):
+                raise serializers.ValidationError({"step_state": "Expected an object."})
+            state.update({key: value for key, value in incoming.items() if key not in protected})
+            validated_data["step_state"] = state
+        return super().update(instance, validated_data)
+
     business_id = serializers.CharField(source="business.id", read_only=True)
     business_name = serializers.CharField(source="business.name", read_only=True)
     profile_version_id = serializers.SerializerMethodField()
     profile_version_number = serializers.SerializerMethodField()
+    profile_variables = serializers.SerializerMethodField()
     decision_run_id = serializers.SerializerMethodField()
     discovery_run_id = serializers.SerializerMethodField()
     question_plan_id = serializers.SerializerMethodField()
@@ -176,6 +189,7 @@ class AssessmentSerializer(serializers.ModelSerializer):
             "current_step",
             "profile_version_id",
             "profile_version_number",
+            "profile_variables",
             "decision_run_id",
             "discovery_run_id",
             "question_plan_id",
@@ -199,6 +213,9 @@ class AssessmentSerializer(serializers.ModelSerializer):
 
     def get_profile_version_number(self, obj: Assessment) -> int | None:
         return obj.profile_version.version if obj.profile_version else None
+
+    def get_profile_variables(self, obj: Assessment) -> dict:
+        return obj.profile_version.variables if obj.profile_version else {}
 
     def get_decision_run_id(self, obj: Assessment) -> str | None:
         return str(obj.decision_run_id) if obj.decision_run_id else None

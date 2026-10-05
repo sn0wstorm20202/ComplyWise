@@ -16,10 +16,11 @@ supported, under citations that did not relate to the text above them.
 from __future__ import annotations
 
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from apps.businesses.models import Business
 
 from common.envelope import envelope, error_response
 from domain.providers import UnknownProvider, get_llm_provider
@@ -50,33 +51,12 @@ class AssistantChatView(APIView):
             )
 
         business_id = request.data.get("business_id")
-        if not business_id:
-            return error_response(
-                "VALIDATION_ERROR",
-                "business_id is required.",
-                http_status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        from apps.businesses.models import Business
-        from rest_framework.exceptions import NotFound, ValidationError as DRFValidationError
-
-        try:
-            business = Business.resolve_authorized(request.user, business_id)
-        except NotFound:
-            return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
-        except DRFValidationError as err:
-            msg = err.detail[0] if isinstance(err.detail, list) and err.detail else str(err.detail)
-            return error_response("VALIDATION_ERROR", msg, http_status=status.HTTP_400_BAD_REQUEST)
-
+        business = Business.resolve_safely(business_id, request.user) if business_id else None
+        if business_id and business is None:
+            return error_response("NOT_FOUND", "Business not found.", http_status=404)
         assessment_id = request.data.get("assessment_id")
-        if assessment_id:
-            try:
-                ass_uuid = uuid.UUID(str(assessment_id))
-                assessment = business.assessments.filter(pk=ass_uuid).first()
-                if not assessment:
-                    return error_response("NOT_FOUND", "Assessment not found.", http_status=status.HTTP_404_NOT_FOUND)
-            except (ValueError, TypeError, AttributeError):
-                return error_response("VALIDATION_ERROR", f"Invalid assessment UUID: {assessment_id}", http_status=status.HTTP_400_BAD_REQUEST)
+        if assessment_id and (not business or not business.assessments.filter(pk=assessment_id).exists()):
+            return error_response("NOT_FOUND", "Assessment not found for this business.", http_status=404)
 
         language = str(request.data.get("language", "en") or "en").strip().lower()
         if language not in ("en", "hi", "bn"):

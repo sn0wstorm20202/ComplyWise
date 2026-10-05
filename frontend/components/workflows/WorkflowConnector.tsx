@@ -15,13 +15,13 @@ export function WorkflowConnector({
 }: WorkflowConnectorProps) {
   return (
     <div className={`flex-1 flex items-center justify-center px-1 relative -top-3.5 ${className}`}>
-      <div className="w-full h-1 relative overflow-hidden rounded-full bg-slate-200">
+      <div className="w-full h-1 relative overflow-hidden rounded-full bg-[var(--ui-inset)]">
         <div
           className={`h-full transition-all duration-700 ${
             isCompleted
-              ? "w-full bg-emerald-500"
+              ? "w-full bg-[var(--ui-sage)]"
               : isActive
-              ? "w-1/2 bg-indigo-600 animate-pulse"
+              ? "w-1/2 bg-[var(--ui-sage)] animate-pulse"
               : "w-0"
           }`}
         />

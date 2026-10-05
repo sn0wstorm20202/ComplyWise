@@ -218,14 +218,20 @@ class AnalysisOrchestrateView(_DiscoveryScopedView):
                 "NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND
             )
 
-        from domain.intelligence.orchestration import orchestrate_compliance_analysis
+        from domain.intelligence.orchestration import StageInputInvalid, orchestrate_compliance_analysis
         force = bool(request.data.get("force_live_discovery", True))
         assessment_id = request.data.get("assessment_id") or request.query_params.get("assessment_id")
-        payload = orchestrate_compliance_analysis(
-            business,
-            assessment_id=assessment_id,
-            force_live_discovery=force,
-        )
+        if assessment_id and not business.assessments.filter(pk=assessment_id).exists():
+            return error_response("NOT_FOUND", "Assessment not found.", http_status=404)
+        from domain.providers.base import ProviderError
+        try:
+            payload = orchestrate_compliance_analysis(
+                business, assessment_id=assessment_id, force_live_discovery=force,
+            )
+        except ProviderError:
+            return error_response("WORKSPACE_PREPARATION_FAILED", "Your details are saved. Please retry preparing your workspace.", http_status=503)
+        except StageInputInvalid:
+            return error_response("STAGE_INPUT_INVALID", "Save a profile for this assessment before analysis.", http_status=400)
         return Response(envelope(payload), status=status.HTTP_200_OK)
 
 
@@ -239,11 +245,19 @@ class AnalysisStatusView(_DiscoveryScopedView):
                 "NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND
             )
 
-        from domain.intelligence.orchestration import orchestrate_compliance_analysis
         assessment_id = request.query_params.get("assessment_id")
-        payload = orchestrate_compliance_analysis(
-            business,
-            assessment_id=assessment_id,
-            force_live_discovery=False,
-        )
+        if assessment_id and not business.assessments.filter(pk=assessment_id).exists():
+            return error_response("NOT_FOUND", "Assessment not found.", http_status=404)
+        assessment = business.assessments.filter(pk=assessment_id).first() if assessment_id else business.latest_assessment
+        if assessment is None:
+            return error_response("NOT_FOUND", "Assessment not found.", http_status=404)
+        recorded = (assessment.step_state or {}).get("analysis", {})
+        payload = {
+            "business_id": str(business.id), "assessment_id": str(assessment.id),
+            "status": assessment.status, "current_stage": (assessment.step_state or {}).get("current_stage"),
+            "stages": recorded.get("stages", []), "timings_ms": recorded.get("timings_ms", {}),
+            "phase_timings_ms": recorded.get("phase_timings_ms", {}),
+            "executive_summary": assessment.summary or {}, "completed_at": recorded.get("completed_at"),
+            "duration_seconds": recorded.get("duration_seconds"),
+        }
         return Response(envelope(payload), status=status.HTTP_200_OK)

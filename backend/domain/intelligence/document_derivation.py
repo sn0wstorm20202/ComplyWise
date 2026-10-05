@@ -18,7 +18,12 @@ from common.enums import ApplicabilityStatus
 from apps.applicability.models import DecisionRun
 from apps.businesses.models import Business
 from apps.knowledge.models import RequirementDefinition
-from apps.requirements.views import DOCUMENTS_KEY, _str_list
+from apps.requirements.presentation import (
+    DOCUMENTS_KEY,
+    decision_presentation,
+    metadata_string_list,
+    standard_mandatory_status,
+)
 from domain.context.business_context import DerivedBusinessContext, build_business_context
 
 # Domain-specific statutory document checklists keyed by authority or domain keyword
@@ -215,7 +220,7 @@ def derive_business_documents(
         elif assessment:
             latest_run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
 
-    if latest_run is None:
+    if latest_run is None and not assessment_id:
         latest_run = (
             DecisionRun.objects.filter(business=business)
             .prefetch_related("results")
@@ -233,6 +238,14 @@ def derive_business_documents(
             if r.status in {ApplicabilityStatus.APPLICABLE, ApplicabilityStatus.NEEDS_INFORMATION}
         ]
 
+        from types import SimpleNamespace
+        from apps.workflows.services.disposition_service import reviewer_assigned_requirements
+        present = {result.requirement_id for result in actionable_results}
+        for assigned in reviewer_assigned_requirements(business, assessment_id, latest_run.profile_version_id):
+            if assigned["user_action_required"] and assigned["requirement_id"] not in present:
+                actionable_results.append(SimpleNamespace(requirement_id=assigned["requirement_id"],
+                    requirement_name=assigned["name"], status="SUGGESTED", result_origin="HUMAN_REVIEW_RESULT"))
+
         req_defs = {
             rd.requirement_id: rd
             for rd in RequirementDefinition.objects.filter(
@@ -244,9 +257,19 @@ def derive_business_documents(
             req_def = req_defs.get(result.requirement_id)
             if req_def is None:
                 continue
+            if (hasattr(result, "explanation_trace") and
+                    decision_presentation(result, req_def)[0] not in {
+                        ApplicabilityStatus.APPLICABLE, ApplicabilityStatus.NEEDS_INFORMATION}):
+                # Historical narrative-only standard matches must not create a
+                # mandatory filing checklist after the read model downgrades them.
+                continue
+            mandate_confirmed = result.status == ApplicabilityStatus.APPLICABLE
+            if req_def.category.strip().upper() == "STANDARD":
+                mandate_confirmed = (hasattr(result, "explanation_trace") and
+                                     standard_mandatory_status(result, req_def) is True)
 
             # 1. Check if metadata explicitly carries required documents
-            explicit_names = _str_list((req_def.metadata or {}).get(DOCUMENTS_KEY))
+            explicit_names = metadata_string_list((req_def.metadata or {}).get(DOCUMENTS_KEY))
             req_docs: list[dict[str, Any]] = []
 
             if explicit_names:
@@ -255,12 +278,16 @@ def derive_business_documents(
                         "id": f"{result.requirement_id}::DOC-{idx}",
                         "name": doc_name,
                         "category": "STATUTORY_REQUIREMENT",
-                        "why_it_matters": f"Directly required by published regulatory specifications for {req_def.name}.",
+                        "why_it_matters": (
+                            f"Directly required by published regulatory specifications for {req_def.name}."
+                            if mandate_confirmed else
+                            f"Recorded preparation checklist for {req_def.name}; mandatory linkage is not established."
+                        ),
                     })
             else:
                 # 2. Derive from statutory template matching authority and domain
                 template_key = _match_template_category(req_def)
-                template_items = STATUTORY_DOCUMENT_TEMPLATES.get(template_key, STATUTORY_DOCUMENT_TEMPLATES["DEFAULT"])
+                template_items = []
                 for idx, t_item in enumerate(template_items, start=1):
                     req_docs.append({
                         "id": f"{result.requirement_id}::DOC-{idx}",
@@ -282,8 +309,12 @@ def derive_business_documents(
                     "portal_uploaded": False,
                     "prevalidation_status": "NEEDS_REVIEW",
                     "accepted_formats": "PDF, JPG, PNG (Max 10 MB)",
-                    "mandatory": True,
-                    "notes": f"Required for submission to {req_def.authority}.",
+                    "mandatory": (mandate_confirmed
+                                  and getattr(result, "result_origin", "DETERMINISTIC_KB_RESULT") != "HUMAN_REVIEW_RESULT"),
+                    "result_origin": getattr(result, "result_origin", "DETERMINISTIC_KB_RESULT"),
+                    "notes": (f"Required for submission to {req_def.authority}."
+                              if mandate_confirmed
+                              else "Preparation checklist; applicability still needs confirmation."),
                 })
 
             requirements_summary.append({
@@ -292,6 +323,39 @@ def derive_business_documents(
                 "authority": req_def.authority,
                 "document_count": len(req_docs),
             })
+
+    from domain.intelligence.workspace_guidance import get_workspace
+    guidance = get_workspace(business, assessment_id)
+    requirement_names = {r["id"]: r["title"] for r in guidance["compliance_items"]}
+    for d in guidance["documents"]:
+        documents.append({**d, "name": d["title"], "requirement_name": requirement_names.get(d["requirement_id"], ""),
+            "authority": "", "category": "PLANNING_CHECKLIST", "why_it_matters": d["description"],
+            "status": "NOT_UPLOADED", "mandatory": False, "portal_uploaded": False,
+            "prevalidation_status": "NOT_CHECKED", "notes": "Suggested preparation checklist; confirm the authority's filing requirements.",
+            "accepted_formats": "PDF, JPG, PNG (Max 10 MB)"})
+
+    from apps.documents.models import DocumentRequirement
+    recorded = DocumentRequirement.objects.filter(case__business=business).select_related("case")
+    if assessment_id:
+        recorded = recorded.filter(case__assessment_id=assessment_id)
+        if assessment and assessment.profile_version_id:
+            recorded = recorded.filter(case__profile_version_id=assessment.profile_version_id)
+    by_id = {(d.configuration or {}).get("checklist_id", d.document_type_code): d for d in recorded}
+    for record_id, record in by_id.items():
+        if (record.configuration or {}).get("business_record"):
+            documents.append({"id": record_id, "name": record.name, "requirement_id": "BUSINESS_RECORDS",
+                "requirement_name": "Business records", "authority": "", "category": "BUSINESS_RECORD",
+                "why_it_matters": "A document you added to your business workspace.", "mandatory": False,
+                "status": record.status_code, "portal_uploaded": False, "notes": "Business record", "result_origin": "USER_PROVIDED"})
+    for item in documents:
+        record = by_id.get(item["id"])
+        if record:
+            item["portal_uploaded"] = bool((record.configuration or {}).get("portal_uploaded", False))
+            submission = record.latest_submission
+            if submission:
+                item.update(status=record.status_code, submission_id=str(submission.id),
+                    file_name=submission.file_name, file_size_bytes=submission.file_size_bytes,
+                    prevalidation_status=submission.status_code, updated_at=submission.created_at.isoformat())
 
     # Group documents by requirement
     grouped_by_requirement: dict[str, list[dict[str, Any]]] = {}
@@ -314,5 +378,5 @@ def derive_business_documents(
         "checklist_source": "STATUTORY_REQUIREMENT_MAPPING",
         "upload_available": True,
         "prevalidation_available": False,
-        "disclaimer": "Statutory checklists are derived from regulatory filing requirements for your business's applicable obligations.",
+        "disclaimer": "Includes recorded requirements and suggested preparation checklists. Confirm filing documents with the relevant authority.",
     }

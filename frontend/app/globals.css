@@ -1,7 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  /* White Mode Color Palette matching reference DEmo.png */
+  /* ========================================================
+     ComplyWise Warm Editorial System (design.md)
+     Warm Ivory + Charcoal Typography + Muted Sage + Dusty Rose
+     ======================================================== */
+  --cw-bg: #F7F5EF;
+  --cw-surface: #EFEEE7;
+  --cw-surface-hover: #E7EEE9;
+  --cw-surface-warm: #F1EDE6;
+
+  --cw-text: #171714;
+  --cw-text-secondary: #6F6D66;
+  --cw-text-muted: #96938A;
+  --cw-text-faint: #B4B0A6;
+
+  --cw-border: rgba(23, 23, 20, 0.08);
+  --cw-border-strong: rgba(23, 23, 20, 0.16);
+  --cw-border-subtle: rgba(23, 23, 20, 0.04);
+
+  --cw-sage: #7FAF9A;
+  --cw-sage-dark: #557D6B;
+  --cw-sage-soft: #DCEAE2;
+  --cw-sage-faint: #EDF4F0;
+
+  --cw-blush: #D9AAA5;
+  --cw-blush-soft: #F1DFDC;
+  --cw-blush-faint: #F7EDEA;
+
+  --cw-white: #FFFFFF;
+  --cw-black: #171714;
+
+  --cw-radius-card: 28px;
+  --cw-radius-pill: 9999px;
+  --cw-radius-small: 14px;
+
+  /* Legacy Dashboard Fallbacks */
   --color-obsidian: #0f172a;
   --color-onyx: #1e293b;
   --color-carbon: #334155;
@@ -18,9 +52,6 @@
   --color-copper: #2563eb;
   --color-copper-soft: rgba(37, 99, 235, 0.1);
 
-  /* Gilded Gold Gradient for Charts and Visual Data Accents */
-  --color-gilded-gradient: linear-gradient(103deg, rgb(174, 147, 87), rgb(255, 240, 204) 40%, rgb(174, 147, 87) 70%, rgba(189, 157, 79, 0));
-
   /* Status Colors */
   --success: #10b981;
   --warning: #f59e0b;
@@ -28,77 +59,59 @@
   --info: #3b82f6;
 
   /* Surfaces */
-  --surface-void: #edeff2;
-  --surface-card: #ffffff;
+  --surface-void: #F7F5EF;
+  --surface-card: #EFEEE7;
   --surface-panel: #ffffff;
   --surface-floating: #ffffff;
 
   /* Semantic mappings */
-  --background: #edeff2;
-  --background-secondary: #f4f6f8;
+  --background: #F7F5EF;
+  --background-secondary: #EFEEE7;
   --surface: #ffffff;
   --surface-elevated: #ffffff;
-  --surface-hover: #f8fafc;
+  --surface-hover: #E7EEE9;
 
-  --border-subtle: #f1f5f9;
-  --border-default: #e2e8f0;
-  --border-strong: #cbd5e1;
+  --border-subtle: rgba(23, 23, 20, 0.04);
+  --border-default: rgba(23, 23, 20, 0.08);
+  --border-strong: rgba(23, 23, 20, 0.16);
 
-  --text-primary: #0f172a;
-  --text-body: #334155;
-  --text-secondary: #64748b;
-  --text-tertiary: #94a3b8;
+  --text-primary: #171714;
+  --text-body: #171714;
+  --text-secondary: #6F6D66;
+  --text-tertiary: #96938A;
 
-  --accent: #18181b;
-  --accent-soft: rgba(24, 24, 27, 0.06);
+  --accent: #557D6B;
+  --accent-soft: #DCEAE2;
 }
 
 @theme inline {
-  --color-obsidian: #0f172a;
-  --color-onyx: #1e293b;
-  --color-carbon: #334155;
-  --color-graphite: #475569;
-  --color-slate: #64748b;
-  --color-smoke: #94a3b8;
-  --color-ash: #cbd5e1;
-  --color-steel: #e2e8f0;
-  --color-fog: #f1f5f9;
-  --color-mist: #f8fafc;
-  --color-silver: #f4f6f8;
-  --color-bone: #ffffff;
-  --color-paper-white: #ffffff;
-  --color-copper: #2563eb;
-
-  --color-background: var(--background);
-  --color-background-secondary: var(--background-secondary);
-  --color-surface: var(--surface);
-  --color-surface-elevated: var(--surface-elevated);
-  --color-surface-hover: var(--surface-hover);
-
-  --color-border-subtle: var(--border-subtle);
-  --color-border-default: var(--border-default);
-  --color-border-strong: var(--border-strong);
-
-  --color-text-primary: var(--text-primary);
-  --color-text-body: var(--text-body);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-tertiary: var(--text-tertiary);
-
-  --color-accent: var(--accent);
-  --color-accent-soft: var(--accent-soft);
-
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-danger: var(--danger);
-  --color-info: var(--info);
+  --color-cw-bg: var(--cw-bg);
+  --color-cw-surface: var(--cw-surface);
+  --color-cw-surface-hover: var(--cw-surface-hover);
+  --color-cw-surface-warm: var(--cw-surface-warm);
+  --color-cw-text: var(--cw-text);
+  --color-cw-text-secondary: var(--cw-text-secondary);
+  --color-cw-text-muted: var(--cw-text-muted);
+  --color-cw-text-faint: var(--cw-text-faint);
+  --color-cw-border: var(--cw-border);
+  --color-cw-border-strong: var(--cw-border-strong);
+  --color-cw-border-subtle: var(--cw-border-subtle);
+  --color-cw-sage: var(--cw-sage);
+  --color-cw-sage-dark: var(--cw-sage-dark);
+  --color-cw-sage-soft: var(--cw-sage-soft);
+  --color-cw-sage-faint: var(--cw-sage-faint);
+  --color-cw-blush: var(--cw-blush);
+  --color-cw-blush-soft: var(--cw-blush-soft);
+  --color-cw-blush-faint: var(--cw-blush-faint);
 
   --font-sans: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
-  --font-serif: var(--font-display), "Ivy Presto", "Playfair Display", "DM Serif Display", serif;
+  --font-serif: var(--font-display), "Playfair Display", "Cormorant Garamond", Georgia, serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", monospace;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--text-body);
+  background-color: var(--cw-bg);
+  color: var(--cw-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -140,4 +153,112 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.25);
+}
+
+/* Taste & Agency-grade Motion & Hardware Aesthetics */
+.ease-spring {
+  transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.transition-fluid {
+  transition-property: all;
+  transition-duration: 700ms;
+  transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Double-Bezel (Doppelrand) Architecture */
+.bezel-shell {
+  padding: 0.375rem;
+  border-radius: 2rem;
+  background-color: rgba(15, 23, 42, 0.03);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06), 0 20px 40px -15px rgba(15, 23, 42, 0.05);
+}
+
+.bezel-core {
+  border-radius: calc(2rem - 0.375rem);
+  background-color: #ffffff;
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+}
+
+.bezel-shell-dark {
+  padding: 0.375rem;
+  border-radius: 2rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.bezel-core-dark {
+  border-radius: calc(2rem - 0.375rem);
+  background-color: #0b0f17;
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Ambient Warm Radial Fields (design.md) */
+.bg-ambient-sage {
+  background: radial-gradient(ellipse 65% 50% at 50% 0%, rgba(127, 175, 154, 0.16) 0%, rgba(220, 234, 226, 0.08) 50%, transparent 80%);
+}
+
+.bg-ambient-warm {
+  background: radial-gradient(circle 800px at 50% -100px, rgba(217, 170, 165, 0.08) 0%, rgba(127, 175, 154, 0.05) 50%, transparent 100%);
+}
+
+.bg-ambient-glow {
+  background: radial-gradient(circle at 50% 0%, rgba(127, 175, 154, 0.12) 0%, rgba(217, 170, 165, 0.04) 40%, transparent 70%);
+}
+
+.bg-ambient-radial {
+  background: radial-gradient(ellipse at 50% -20%, rgba(23, 23, 20, 0.04) 0%, transparent 70%);
+}
+
+/* Regulatory Grid */
+.bg-regulatory-grid {
+  background-image: radial-gradient(rgba(23, 23, 20, 0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Fine Paper / Studio Grain Texture */
+.bg-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.025'/%3E%3C/svg%3E");
+}
+
+/* Infinite Marquee */
+@keyframes cw-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-cw-marquee {
+  display: flex;
+  width: max-content;
+  animation: cw-marquee 45s linear infinite;
+  will-change: transform;
+}
+
+.animate-cw-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Lenis Smooth Scroll Configuration */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
 }

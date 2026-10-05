@@ -19,6 +19,7 @@ from typing import Any
 
 from rest_framework import status
 from rest_framework.permissions import AllowAny
+from common.envelope import error_response
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -26,6 +27,7 @@ from rest_framework.views import APIView
 from common.enums import KnowledgeStatus
 from common.envelope import envelope
 from apps.evidence.models import Evidence
+from apps.evidence.presentation import evidence_projection
 from apps.knowledge.models import RequirementDefinition
 
 from apps.businesses.models import Business
@@ -47,59 +49,24 @@ class StandardsSearchView(APIView):
         assessment_id = request.query_params.get("assessment_id", "").strip() or None
 
         if business_id:
-            business = Business.resolve_authorized(request.user, business_id)
-            disc_result = discover_business_standards(business, assessment_id=assessment_id)
-            items = disc_result.get("standards", [])
-            if query:
-                needle = query.lower()
-                items = [
-                    s
-                    for s in items
-                    if needle in s["title"].lower()
-                    or needle in s["standard_code"].lower()
-                    or needle in s["why_it_matters"].lower()
-                ]
-            formatted_items = []
-            for s in items:
-                citations = []
-                if s.get("source_url"):
-                    citations.append({
-                        "evidence_id": f"EVID::{s['standard_code']}",
-                        "authority": s["authority"],
-                        "locator": s["standard_code"],
-                        "verification_status": "VERIFIED",
-                        "excerpt": s["why_it_matters"],
-                        "source_title": f"BIS Official Standard: {s['standard_code']}",
-                        "canonical_url": s["source_url"],
-                    })
-                formatted_items.append({
-                    "requirement_id": s["standard_code"],
-                    "standard_code": s["standard_code"],
-                    "title": f"{s['standard_code']} — {s['title']}",
-                    "authority": s["authority"],
-                    "jurisdiction": "CENTRAL",
-                    "domain": "STANDARDS & QUALITY",
-                    "description": f"{s['why_it_matters']} Testing requirements: {s.get('testing_requirements', 'Standard laboratory compliance testing.')}",
-                    "category": s.get("nature", "MANDATORY_STANDARD"),
-                    "citations": citations,
-                    "citation_count": len(citations),
-                    "is_mandatory": s.get("is_mandatory", True),
-                    "next_step": s.get("next_step", ""),
-                })
-
-            return Response(
-                envelope(
-                    {
-                        "business_id": business_id,
-                        "query": query,
-                        "count": len(formatted_items),
-                        "standards": formatted_items,
-                        "catalogue_available": True,
-                        "catalogue_note": disc_result.get("disclaimer", ""),
-                    }
-                ),
-                status=status.HTTP_200_OK,
-            )
+            business = Business.resolve_safely(business_id, request.user)
+            if business is None:
+                return error_response("NOT_FOUND", "Business not found.", http_status=404)
+            if assessment_id and not business.assessments.filter(pk=assessment_id).exists():
+                return error_response("NOT_FOUND", "Assessment not found for this business.", http_status=404)
+            result = discover_business_standards(business, assessment_id=assessment_id)
+            items = result.get("standards", [])
+            formatted = []
+            for item in items:
+                if query and query.lower() not in (item["title"] + " " + item["standard_code"]).lower():
+                    continue
+                formatted.append({**item, "requirement_id": item["standard_code"],
+                    "category": item["nature"], "citation_count": len(item["citations"])})
+            return Response(envelope({"business_id": str(business.id), "query": query, "count": len(formatted),
+                "standards": formatted, "catalogue_available": False,
+                "scope_status": result["scope_status"], "scope_note": result["scope_note"],
+                "assessment_id": result["assessment_id"], "reviewed_match_count": result["reviewed_match_count"],
+                "catalogue_note": "Matched requirements and quality areas to explore for your business."}))
 
         qs = RequirementDefinition.objects.filter(
             category__iexact=STANDARD_CATEGORY,
@@ -139,17 +106,7 @@ class StandardsSearchView(APIView):
                 ev = evidence_by_id.get(ref)
                 if ev is None:
                     continue
-                citations.append(
-                    {
-                        "evidence_id": ev.evidence_id,
-                        "source_title": ev.source.title,
-                        "authority": ev.source.authority,
-                        "locator": ev.locator,
-                        "excerpt": ev.excerpt,
-                        "verification_status": ev.verification_status,
-                        "canonical_url": ev.source.canonical_url,
-                    }
-                )
+                citations.append(evidence_projection(ev))
 
             standards.append(
                 {
@@ -163,6 +120,10 @@ class StandardsSearchView(APIView):
                     # about whether the standard is mandatory for the searcher.
                     "category": req.category,
                     "citations": citations,
+                    "evidence": citations,
+                    "source": citations[0]["source"] if citations else None,
+                    "status": "CANDIDATE",
+                    "is_mandatory": None,
                     "citation_count": len(citations),
                 }
             )

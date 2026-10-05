@@ -14,7 +14,7 @@
 import type { BusinessProfile } from "./business-profile.ts";
 
 export interface DemoPresetDefinition extends BusinessProfile {
-  presetKey: "charger" | "cement" | "food" | "textile" | "importer";
+  presetKey: string;
   tagline: string;
   badge: string;
   presetAnswers: Record<string, any>;

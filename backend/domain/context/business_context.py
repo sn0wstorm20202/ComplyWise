@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from decimal import Decimal
+from datetime import date
 import re
 from typing import Any
 
@@ -29,32 +30,35 @@ from domain.profile.variables import (
 from apps.businesses.models import Business
 
 
-# MSME 2020 Composite Criteria thresholds (INR)
-MICRO_INVESTMENT = Decimal("10000000")       # <= 1 Cr
-MICRO_TURNOVER = Decimal("50000000")         # <= 5 Cr
-SMALL_INVESTMENT = Decimal("100000000")      # <= 10 Cr
-SMALL_TURNOVER = Decimal("500000000")        # <= 50 Cr
-MEDIUM_INVESTMENT = Decimal("500000000")     # <= 50 Cr
-MEDIUM_TURNOVER = Decimal("2500000000")      # <= 250 Cr
+# Classification aid, not proof of Udyam registration or scheme eligibility.
+# Source: Ministry of MSME Chennai revised definition; official link in submission report.
+# Revised criteria effective 2025-04-01; previous limits retained for dated use.
+MSME_CLASSIFICATION_REFERENCE = "Ministry of MSME, revised classification effective 2025-04-01; see docs/final-submission-report.md"
+MICRO_INVESTMENT = Decimal("25000000")
+MICRO_TURNOVER = Decimal("100000000")
+SMALL_INVESTMENT = Decimal("250000000")
+SMALL_TURNOVER = Decimal("1000000000")
+MEDIUM_INVESTMENT = Decimal("1250000000")
+MEDIUM_TURNOVER = Decimal("5000000000")
 
 
 def derive_msme_scale(
     investment: Decimal | None,
     turnover: Decimal | None,
+    *, as_of: date | None = None,
 ) -> str:
     """Classify MSME scale using MSMED Act composite investment & turnover criteria."""
-    if investment is None and turnover is None:
+    if investment is None or turnover is None or investment < 0 or turnover < 0:
         return "UNKNOWN"
 
-    inv = investment or Decimal("0")
-    trn = turnover or Decimal("0")
-
-    if inv <= MICRO_INVESTMENT and trn <= MICRO_TURNOVER:
-        return "MICRO"
-    if inv <= SMALL_INVESTMENT and trn <= SMALL_TURNOVER:
-        return "SMALL"
-    if inv <= MEDIUM_INVESTMENT and trn <= MEDIUM_TURNOVER:
-        return "MEDIUM"
+    limits = [(MICRO_INVESTMENT, MICRO_TURNOVER), (SMALL_INVESTMENT, SMALL_TURNOVER), (MEDIUM_INVESTMENT, MEDIUM_TURNOVER)]
+    if (as_of or date.today()) < date(2025, 4, 1):
+        limits = [(Decimal("10000000"), Decimal("50000000")),
+                  (Decimal("100000000"), Decimal("500000000")),
+                  (Decimal("500000000"), Decimal("2500000000"))]
+    for scale, (inv_limit, turnover_limit) in zip(("MICRO", "SMALL", "MEDIUM"), limits):
+        if investment <= inv_limit and turnover <= turnover_limit:
+            return scale
     return "LARGE"
 
 
@@ -91,6 +95,7 @@ class DerivedBusinessContext:
     def is_manufacturing(self) -> bool:
         """Heuristic indication of manufacturing operations."""
         desc = (self.product_description or "").lower()
+        desc = re.sub(r"\b(?:no|not|without|does\s+not|do\s+not)\s+[^.;\n]+", " ", desc)
         service_words = ["software", "saas", "platform", "app", "web application", "cloud", "digital", "consulting", "it services", "edtech", "fintech", "pre-visualization", "agency"]
         if any(sw in desc for sw in service_words) and not any(hw in desc for hw in ["hardware manufacturing", "assembly plant", "fabrication plant", "physical manufacturing"]):
             return False
@@ -197,14 +202,24 @@ def _to_bool(val: Any) -> bool | None:
     return None
 
 
-def build_business_context(business: Business) -> DerivedBusinessContext:
+def build_business_context(business: Business, *, profile_version=None) -> DerivedBusinessContext:
     """Build a DerivedBusinessContext snapshot for a business."""
-    profile = business.current_profile
+    profile = profile_version if profile_version is not None else business.current_profile
     raw_vars: dict[str, Any] = {}
     if profile and profile.variables:
         for k, entry in profile.variables.items():
             if isinstance(entry, dict) and entry.get("value") not in (None, ""):
                 raw_vars[k] = entry["value"]
+
+    saved_keys = set(raw_vars)
+    # These are the same factual aliases used by the applicability engine.
+    # Do not infer activity from the company name or turn unknown into zero.
+    if raw_vars.get("product_description") and not raw_vars.get("primary_activity"):
+        raw_vars["primary_activity"] = raw_vars["product_description"]
+    for target, source in (("total_workforce", "total_worker_count"), ("total_worker_count", "total_workforce"),
+                           ("jurisdiction_state", "state")):
+        if raw_vars.get(target) in (None, "") and raw_vars.get(source) not in (None, ""):
+            raw_vars[target] = raw_vars[source]
 
     # Jurisdiction resolution
     raw_state = raw_vars.get("state")
@@ -227,7 +242,7 @@ def build_business_context(business: Business) -> DerivedBusinessContext:
     desc = str(raw_vars.get("product_description") or "")
     detected_activities = detect_activity_keywords(desc) if desc.strip() else []
 
-    known_keys = [k for k in sorted(raw_vars.keys()) if raw_vars[k] is not None]
+    known_keys = [k for k in sorted(saved_keys) if raw_vars[k] is not None]
     all_canon_keys = [pv.key for pv in PROFILE_VARIABLES]
     missing_keys = [k for k in all_canon_keys if k not in known_keys]
 

@@ -8,6 +8,9 @@ import { request, setAuthToken } from "./client";
 import { AuthSession, User } from "@/types";
 
 export const authApi = {
+  googleExchange: (ticket: string, verifier: string) => request<AuthSession & {is_new_user: boolean}>("/auth/google/exchange", {
+    method: "POST", body: JSON.stringify({ticket, verifier}),
+  }),
   /** Get current authenticated user profile */
   me: () => request<User>("/auth/me"),
 

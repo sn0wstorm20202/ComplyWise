@@ -17,7 +17,7 @@ from typing import Any
 from django.utils import timezone
 
 from common.enums import ApplicabilityStatus, CaseStatus
-from apps.applicability.models import DecisionRun
+from apps.applicability.models import DecisionResult, DecisionRun
 from apps.businesses.models import Business
 from apps.knowledge.models import RequirementDefinition
 from apps.schemes.engine.matcher import match_business_schemes
@@ -624,7 +624,7 @@ def derive_business_workflows(
         elif assessment:
             latest_run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
 
-    if latest_run is None:
+    if latest_run is None and not assessment_id:
         latest_run = (
             DecisionRun.objects.filter(business=business)
             .prefetch_related("results")
@@ -632,10 +632,15 @@ def derive_business_workflows(
             .first()
         )
 
-    # Load existing ComplianceCases for this business
+    # A reused profile does not make progress interchangeable across assessments.
+    cases = ComplianceCase.objects.filter(business=business)
+    if assessment_id:
+        cases = cases.filter(assessment_id=assessment_id)
+        if assessment:
+            cases = cases.filter(profile_version_id=assessment.profile_version_id)
     cases_by_req: dict[str, ComplianceCase] = {
         c.requirement_id_code: c
-        for c in ComplianceCase.objects.filter(business=business).select_related(
+        for c in cases.select_related(
             "requirement", "current_workflow_instance"
         ).prefetch_related("document_requirements")
     }
@@ -649,6 +654,14 @@ def derive_business_workflows(
             for r in latest_run.results.all()
             if r.status in {ApplicabilityStatus.APPLICABLE, ApplicabilityStatus.NEEDS_INFORMATION}
         ]
+
+        from types import SimpleNamespace
+        from apps.workflows.services.disposition_service import reviewer_assigned_requirements
+        present = {result.requirement_id for result in raw_results}
+        for assigned in reviewer_assigned_requirements(business, assessment_id, latest_run.profile_version_id):
+            if assigned["user_action_required"] and assigned["requirement_id"] not in present:
+                raw_results.append(SimpleNamespace(requirement_id=assigned["requirement_id"],
+                    requirement_name=assigned["name"], status="SUGGESTED", result_origin="HUMAN_REVIEW_RESULT"))
 
         # Non-manufacturing / Software / SaaS guard:
         # Software companies never need factory licenses or pollution board consents
@@ -672,12 +685,8 @@ def derive_business_workflows(
             combined = f"{req_id_upper} {req_name_upper}"
 
             # Prune industrial manufacturing requirements for pure software/SaaS
-            if is_pure_software and any(term in combined for term in [
-                "FACTORY", "FACTORIES", "CONSENT TO ESTABLISH", "CONSENT TO OPERATE", "CTE", "CTO",
-                "POLLUTION", "SPCB", "MPCB", "WBPCB", "GPCB", "CPCB", "BOILER"
-            ]):
-                logger.info("Software Guard pruned workflow requirement %s (%s) for %s", r.requirement_name, r.requirement_id, business.name)
-                continue
+            # Published applicability decisions already evaluated these facts.
+            # A keyword guard must not override an authoritative saved result.
 
             # Canonical deduplication (e.g. REQ-CERT-IN-CYBERSECURITY-DIRECTIVES vs REQ-CERTIN-CYBERSECURITY-DIRECTIVES)
             canon = req_id_upper.replace("-", "").replace("_", "")
@@ -719,16 +728,39 @@ def derive_business_workflows(
             if req_def is None:
                 continue
 
-            template_key = _match_workflow_template(req_def)
-            tmpl = ENRICHED_WORKFLOW_TEMPLATES.get(template_key, ENRICHED_WORKFLOW_TEMPLATES["DEFAULT"])
+            # Historical standard decisions receive the same product-scope gate
+            # as the standards/compliance read APIs, without changing the record.
+            if (req_def.category.strip().upper() == "STANDARD"
+                    and isinstance(result, DecisionResult)):
+                from apps.requirements.presentation import decision_presentation
+                display_status, _ = decision_presentation(result, req_def)
+                if display_status not in {ApplicabilityStatus.APPLICABLE, ApplicabilityStatus.NEEDS_INFORMATION}:
+                    continue
 
-            raw_portal = (req_def.metadata or {}).get("portal") or (req_def.metadata or {}).get("portal_url") or tmpl.get("portal_url", "")
+            template_key = _match_workflow_template(req_def)
+            recorded_workflow = (req_def.metadata or {}).get("workflow") or {}
+            if isinstance(recorded_workflow, dict) and recorded_workflow.get("steps"):
+                tmpl = {"steps": recorded_workflow["steps"], "estimated_days": recorded_workflow.get("estimated_duration"),
+                        "required_documents": (req_def.metadata or {}).get("required_documents", [])}
+            else:
+                # Existing procedural templates contain unsupported fixed fees,
+                # form names and timelines. Preserve them for later review, but
+                # use a clearly practical plan unless knowledge records a procedure.
+                tmpl = {"estimated_days": None, "required_documents": [], "steps": [
+                    {"title": "Confirm the applicable route", "description": "Review the linked requirement with the relevant authority."},
+                    {"title": "Prepare business and premises information", "description": "Confirm the information requested for your situation."},
+                    {"title": "Complete the relevant process", "description": "Follow the authority's current instructions, where required."},
+                    {"title": "Record the outcome and follow-up", "description": "Save the outcome and any validity or renewal details actually supplied."}]}
+
+            raw_portal = (req_def.metadata or {}).get("portal") or (req_def.metadata or {}).get("portal_url")
             resolved_portal = resolve_statutory_portal(
                 authority=req_def.authority or "",
                 requirement_name=result.requirement_name,
                 requirement_id=result.requirement_id,
                 raw_portal=raw_portal,
             )
+            if not raw_portal:
+                resolved_portal = {"name": "", "url": None}
             portal_name = resolved_portal["name"]
             portal_url = resolved_portal["url"]
 
@@ -817,6 +849,7 @@ def derive_business_workflows(
                 "category": category_label,
                 "domain": req_def.domain or "GENERAL",
                 "title": result.requirement_name,
+                "result_origin": getattr(result, "result_origin", "DETERMINISTIC_KB_RESULT"),
                 "authority": req_def.authority or "Regulatory Authority",
                 "portal_name": portal_name,
                 "portal_url": portal_url,
@@ -840,14 +873,17 @@ def derive_business_workflows(
         logger.debug("Failed to discover schemes for workflows: %s", exc)
         matched_schemes = []
 
-    scheme_tmpl = ENRICHED_WORKFLOW_TEMPLATES["SCHEME"]
+    scheme_tmpl = {"estimated_days": None, "required_documents": [], "steps": [
+        {"title": "Review the support area", "description": "Check the current scheme information and business fit."},
+        {"title": "Confirm eligibility and requested information", "description": "Confirm criteria with the administering authority."},
+        {"title": "Prepare and track the next step", "description": "Record the application or enquiry outcome, where relevant."}]}
 
     for s in matched_schemes:
         scheme_code = s.get("scheme_code") or s.get("code") or f"SCHEME-{s.get('id', '')}"
         wf_id = f"WF::{scheme_code}"
         scheme_title = s.get("title") or s.get("name") or "Government Incentive Scheme"
         authority_name = s.get("authority") or "Ministry of MSME / Government of India"
-        raw_portal = s.get("portal_url") or s.get("action_url") or STATUTORY_PORTALS["CHAMPIONS"]
+        raw_portal = s.get("portal_url") or s.get("action_url")
         resolved_scheme_portal = resolve_statutory_portal(
             authority=authority_name,
             requirement_name=scheme_title,
@@ -855,6 +891,8 @@ def derive_business_workflows(
             raw_portal=raw_portal,
         )
         portal_url = resolved_scheme_portal["url"]
+        if not raw_portal:
+            portal_url = None
         portal_name = resolved_scheme_portal["name"]
 
         case = cases_by_req.get(scheme_code)
@@ -929,9 +967,33 @@ def derive_business_workflows(
             "status": overall_status,
             "documents_required": scheme_tmpl["required_documents"],
             "steps": formatted_steps,
-            "prerequisites": "Valid MSME Udyam Registration & active bank account",
+            "prerequisites": "Confirm the current eligibility criteria and requested information.",
             "updated_at": case.updated_at.isoformat() if case and case.updated_at else timezone.now().isoformat(),
         })
+
+    from domain.intelligence.workspace_guidance import get_workspace
+    for item in get_workspace(business, assessment_id)["workflows"]:
+        steps = [{"step_number": i, "title": title, "description": "", "status": "PENDING",
+                  "action_type": "PREPARATION", "portal_url": None, "required_documents": []}
+                 for i, title in enumerate(item["steps"], 1)]
+        cases = ComplianceCase.objects.filter(business=business, requirement_id_code=item["requirement_id"])
+        if assessment_id:
+            cases = cases.filter(assessment_id=assessment_id)
+            if assessment:
+                cases = cases.filter(profile_version_id=assessment.profile_version_id)
+        case = cases.order_by("-created_at").first()
+        saved = ((case.metadata or {}).get("workflow_state") or {}).get("steps", {}) if case else {}
+        for step in steps:
+            step.update(saved.get(str(step["step_number"]), {}))
+        complete = sum(step["status"] == "COMPLETED" for step in steps)
+        current_step = next((step["step_number"] for step in steps if step["status"] != "COMPLETED"), len(steps))
+        wf_status = "COMPLETED" if complete == len(steps) else "IN_PROGRESS" if complete or any(step["status"] == "IN_PROGRESS" for step in steps) else "NOT_STARTED"
+        workflows.append({**item, "steps": steps, "case_id": str(case.id) if case else None, "case_number": case.case_number if case else None,
+            "category": "COMPLIANCE", "domain": "PLANNING", "authority": item["authority_or_regulator"],
+            "portal_url": None, "portal_name": "", "estimated_duration": None,
+            "total_steps": len(steps), "current_step": current_step, "current_step_title": steps[current_step - 1]["title"],
+            "progress_percent": round(100 * complete / len(steps)), "status": wf_status, "documents_required": [],
+            "prerequisites": "Confirm the applicable route with the relevant authority.", "updated_at": None})
 
     # Summary metrics
     total_wf = len(workflows)
@@ -962,5 +1024,5 @@ def derive_business_workflows(
         },
         "workflows": workflows,
         "source": "STATUTORY_PROCEDURE_MAPPING",
-        "disclaimer": "Clearance workflows are structured from statutory filing guidelines established by regulatory authorities.",
+        "disclaimer": "Practical planning steps alongside recorded procedures. Confirm filing details with the relevant authority.",
     }

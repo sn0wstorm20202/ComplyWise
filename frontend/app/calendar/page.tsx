@@ -35,52 +35,7 @@ function CalendarContent() {
     time: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [events, setEvents] = useState<CalendarEvent[]>(() => [
-    {
-      requirement_id: "REQ-BIS-1293",
-      title: "NABL Type-Test Report 3-year Renewal (IS 1293:2019)",
-      authority: "Bureau of Indian Standards",
-      basis: "Clause 13.2 & 18 periodic re-test certificate interval",
-      period_unit: "DAYS",
-      period_value: 14,
-      statutory_citation: "IS 1293:2019 Table 4",
-      due_date: "14 May 2026",
-      status: "URGENT",
-    } as any,
-    {
-      requirement_id: "REQ-QCO-2024-EA",
-      title: "Factory Audit Evidence Dossier & Calibration Log Submission",
-      authority: "DPIIT / BIS",
-      basis: "Scheme I Schedule II annual surveillance review",
-      period_unit: "DAYS",
-      period_value: 28,
-      statutory_citation: "Gazette Order S.O. 1421(E) §3(1)",
-      due_date: "28 May 2026",
-      status: "UPCOMING",
-    } as any,
-    {
-      requirement_id: "REQ-BIS-FORM-VI",
-      title: "Form VI Annual Marking Reconciliation Statement",
-      authority: "Bureau of Indian Standards",
-      basis: "Annual production declaration & minimum marking fee audit",
-      period_unit: "DAYS",
-      period_value: 45,
-      statutory_citation: "BIS Rules 2018 Rule 11",
-      due_date: "30 Jun 2026",
-      status: "UPCOMING",
-    } as any,
-    {
-      requirement_id: "REQ-LABOUR-FAC-01",
-      title: "Factories Act License Annual Renewal & Form 2 Return",
-      authority: "State Directorate of Industrial Safety & Health",
-      basis: "State Factories Rules Section 6 & 7",
-      period_unit: "DAYS",
-      period_value: 60,
-      statutory_citation: "Factories Act 1948 §6",
-      due_date: "31 Dec 2026",
-      status: "SCHEDULED",
-    } as any,
-  ]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [coverage, setCoverage] = useState<Pick<
     CalendarListResponse,
     "not_covered" | "not_covered_reason"
@@ -138,7 +93,7 @@ function CalendarContent() {
       activeBusinessId ||
       (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
 
-    if (!bizId) return;
+    if (!bizId) { setLoading(false); return; }
     setBusinessId(bizId);
 
     if (!isDemoMode) {
@@ -227,15 +182,15 @@ function CalendarContent() {
     <AppShell activeView="calendar">
       <div className="space-y-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+        <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
           <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[#E2E8F0] bg-[#F1F5F9] text-[#0F172A] text-[11px] font-semibold tracking-wider uppercase mb-2">
-              Screen 12 · {t("navigation.calendar")}
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-inset)] text-[var(--ui-text)] text-[11px] font-semibold tracking-wider uppercase mb-2">
+              {t("navigation.calendar")}
             </div>
-            <h1 className="font-sans text-2xl sm:text-3xl text-[#0F172A] font-bold tracking-tight">
+            <h1 className="font-sans text-2xl sm:text-3xl text-[var(--ui-text)] font-bold tracking-tight">
               {t("calendar.title")}
             </h1>
-            <p className="text-xs text-[#64748B] mt-1.5 max-w-2xl leading-relaxed">
+            <p className="text-xs text-[var(--ui-secondary)] mt-1.5 max-w-2xl leading-relaxed">
               {t("calendar.subtitle")}
             </p>
           </div>
@@ -243,14 +198,14 @@ function CalendarContent() {
           <div className="flex items-center gap-3 shrink-0">
             <Link
               href="/notifications"
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-bg)] px-4 py-2 text-xs font-semibold text-[var(--ui-text)] hover:bg-[var(--ui-inset)] transition-colors"
             >
               <Bell className="h-3.5 w-3.5 text-amber-700" />
               Notification Audit Center
             </Link>
             <Link
               href={`/dashboard?business_id=${businessId}`}
-              className="rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
+              className="rounded-full border border-[var(--ui-border)] bg-[var(--ui-bg)] px-4 py-2 text-xs font-semibold text-[var(--ui-text)] hover:bg-[var(--ui-inset)] transition-colors"
             >
               ← {t("navigation.dashboard")}
             </Link>
@@ -258,35 +213,35 @@ function CalendarContent() {
         </div>
 
         {/* Live Notification & Calendar Sync Control Bar */}
-        <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
+              <span className="text-xs font-bold text-[var(--ui-text)] uppercase tracking-wider">
                 Automated Notification Engine
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-[10px]">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--ui-sage-faint)] border border-[var(--ui-sage-soft)] text-[var(--ui-sage)] font-semibold text-[10px]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--ui-sage)] animate-pulse" />
                 Active
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-[#64748B]">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--ui-secondary)]">
               <span className="inline-flex items-center gap-1">
-                <Mail className="h-3.5 w-3.5 text-emerald-600" /> Email (T-7 Advance + T-1 Urgent)
+                <Mail className="h-3.5 w-3.5 text-[var(--ui-sage)]" /> Email (T-7 Advance + T-1 Urgent)
               </span>
               <span>•</span>
               <span className="inline-flex items-center gap-1">
-                <CalendarIcon className="h-3.5 w-3.5 text-sky-600" /> Google Calendar (T-1 Only)
+                <CalendarIcon className="h-3.5 w-3.5 text-[var(--ui-info)]" /> Google Calendar (T-1 Only)
               </span>
               <span>•</span>
               <span className="inline-flex items-center gap-1">
-                <Bell className="h-3.5 w-3.5 text-purple-600" /> In-App Read Tracking
+                <Bell className="h-3.5 w-3.5 text-[var(--ui-sage)]" /> In-App Read Tracking
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             {syncFeedback && (
-              <span className="text-xs text-emerald-700 font-medium bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+              <span className="text-xs text-[var(--ui-sage)] font-medium bg-[var(--ui-sage-faint)] px-3 py-1.5 rounded-lg border border-[var(--ui-sage-soft)]">
                 Synced at {syncFeedback.time}: {syncFeedback.dispatched} dispatched, {syncFeedback.skipped} skipped
               </span>
             )}
@@ -294,7 +249,7 @@ function CalendarContent() {
               type="button"
               onClick={handleTriggerSync}
               disabled={isSyncing}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0F172A] hover:bg-slate-800 text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer disabled:opacity-60"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`} />
               {isSyncing ? "Evaluating Deadlines..." : "Sync Deadlines Now"}
@@ -306,24 +261,24 @@ function CalendarContent() {
 
         {/* Google Calendar Connection Card */}
         <div className={`bg-white rounded-[16px] border shadow-2xs p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-          googleConnected ? "border-sky-200 bg-sky-50/30" : "border-[#E2E8F0]"
+          googleConnected ? "border-[var(--ui-sage-soft)] bg-[var(--ui-info-soft)]/30" : "border-[var(--ui-border)]"
         }`}>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <CalendarIcon className={`h-4 w-4 ${googleConnected ? "text-sky-600" : "text-[#94A3B8]"}`} />
-              <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
+              <CalendarIcon className={`h-4 w-4 ${googleConnected ? "text-[var(--ui-info)]" : "text-[var(--ui-muted)]"}`} />
+              <span className="text-xs font-bold text-[var(--ui-text)] uppercase tracking-wider">
                 {googleConnected ? t("calendar.googleConnected") || "Google Calendar Connected" : t("calendar.connectGoogleCalendar") || "Connect Google Calendar"}
               </span>
               {googleConnected && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 border border-sky-200 text-sky-700 font-semibold text-[10px]">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--ui-info-soft)] border border-[var(--ui-sage-soft)] text-[var(--ui-info)] font-semibold text-[10px]">
                   <CheckCircle2 className="h-2.5 w-2.5" />
                   Authorized
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#64748B]">
+            <p className="text-xs text-[var(--ui-secondary)]">
               {googleConnected
-                ? <>{t("calendar.googleConnectedAs") || "Connected as"} <span className="font-semibold text-[#0F172A]">{googleEmail}</span> · T-1 deadlines will create Calendar events in your personal account.</>  
+                ? <>{t("calendar.googleConnectedAs") || "Connected as"} <span className="font-semibold text-[var(--ui-text)]">{googleEmail}</span> · T-1 deadlines will create Calendar events in your personal account.</>
                 : t("calendar.googleAuthPrompt") || "Connect your personal Google account to receive T-1 statutory deadline reminders directly in your calendar."}
             </p>
             {googleMessage && (
@@ -345,7 +300,7 @@ function CalendarContent() {
                 type="button"
                 onClick={handleConnectGoogle}
                 disabled={googleLoading}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0F172A] hover:bg-slate-800 text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer disabled:opacity-60"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--ui-text)] hover:bg-[var(--ui-text)] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer disabled:opacity-60"
               >
                 <CalendarIcon className="h-3.5 w-3.5" />
                 {googleLoading ? "Redirecting..." : t("calendar.connectGoogleCalendar") || "Connect Google Calendar"}
@@ -367,75 +322,76 @@ function CalendarContent() {
             <LoadingSkeleton count={4} className="h-24 w-full rounded-[16px]" />
           </div>
         ) : events.length === 0 ? (
-          <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-12 text-center shadow-2xs">
+          <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-12 text-center shadow-2xs">
             <div className="text-3xl mb-3">📅</div>
-            <h3 className="font-sans font-bold text-lg text-[#0F172A]">
+            <h3 className="font-sans font-bold text-lg text-[var(--ui-text)]">
               No renewal cycle is recorded for your requirements
             </h3>
-            <p className="text-xs text-[#64748B] mt-2 max-w-md mx-auto leading-relaxed">
+            <p className="text-xs text-[var(--ui-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
               A filing date appears here only where published knowledge states a specific renewal period for an active compliance mandate.
             </p>
           </div>
         ) : (
           <div className="space-y-4">
-            {events.map((evt: any, idx) => (
+            {[...events].sort((a: any,b: any) => new Date(a.date || a.due_date).getTime() - new Date(b.date || b.due_date).getTime()).map((evt: any, idx) => (
               <div
                 key={evt.id || idx}
-                className="bg-white rounded-[16px] border border-[#E2E8F0] p-5 sm:p-6 shadow-2xs hover:border-[#CBD5E1] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className="bg-white rounded-[16px] border border-[var(--ui-border)] p-5 sm:p-6 shadow-2xs hover:border-[var(--ui-border-strong)] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-[#0F172A] bg-[#F1F5F9] border border-[#E2E8F0] px-2.5 py-0.5 rounded-full">
+                    <span className="font-mono text-xs font-bold text-[var(--ui-text)] bg-[var(--ui-inset)] border border-[var(--ui-border)] px-2.5 py-0.5 rounded-full">
                       {evt.date || evt.due_date}
                     </span>
-                    <span className="text-xs font-semibold text-[#0F172A]">
+                    <span className="text-xs font-semibold text-[var(--ui-text)]">
                       {evt.authority}
                     </span>
-                    <span className="text-[#CBD5E1]">·</span>
-                    <span className="text-xs text-[#64748B]">
+                    <span className="text-[var(--ui-border-strong)]">·</span>
+                    <span className="text-xs text-[var(--ui-secondary)]">
                       Basis: {evt.type ? evt.type.replace(/_/g, " ") : "Statutory Schedule"}
                     </span>
                     {evt.statutory_citation && (
                       <>
-                        <span className="text-[#CBD5E1]">·</span>
-                        <span className="font-mono text-[11px] text-[#64748B]">{evt.statutory_citation}</span>
+                        <span className="text-[var(--ui-border-strong)]">·</span>
+                        <span className="font-mono text-[11px] text-[var(--ui-secondary)]">{evt.statutory_citation}</span>
                       </>
                     )}
                   </div>
 
-                  <h3 className="font-sans text-base text-[#0F172A] font-bold leading-snug">
+                  <h3 className="font-sans text-base text-[var(--ui-text)] font-bold leading-snug">
                     {evt.title}
                   </h3>
 
-                  <p className="text-xs text-[#475569] leading-relaxed">{evt.basis}</p>
+                  <p className="text-xs text-[var(--ui-secondary)] leading-relaxed">{evt.basis}</p>
 
                   <div className="flex flex-wrap items-center gap-2 pt-1.5">
-                    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60 font-medium">
+                    <span className="inline-flex items-center gap-1 text-[10px] text-[var(--ui-sage)] bg-[var(--ui-sage-faint)] px-2 py-0.5 rounded-md border border-[var(--ui-sage-soft)]/60 font-medium">
                       <Mail className="h-2.5 w-2.5" /> Email: T-7 + T-1
                     </span>
                     <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md border font-medium ${
                       googleConnected
-                        ? "text-sky-700 bg-sky-50 border-sky-200/60"
-                        : "text-[#94A3B8] bg-[#F8FAFC] border-[#E2E8F0]"
+                        ? "text-[var(--ui-info)] bg-[var(--ui-info-soft)] border-[var(--ui-sage-soft)]/60"
+                        : "text-[var(--ui-muted)] bg-[var(--ui-bg)] border-[var(--ui-border)]"
                     }`}>
                       <CalendarIcon className="h-2.5 w-2.5" /> Calendar: T-1 {!googleConnected && "(Not Connected)"}
                     </span>
-                    <span className="inline-flex items-center gap-1 text-[10px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200/60 font-medium">
+                    <span className="inline-flex items-center gap-1 text-[10px] text-[var(--ui-sage)] bg-[var(--ui-sage-faint)] px-2 py-0.5 rounded-md border border-[var(--ui-sage-soft)]/60 font-medium">
                       <Bell className="h-2.5 w-2.5" /> In-App Center
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-xs font-mono font-medium text-[#0F172A] bg-[#F8FAFC] px-3 py-1 rounded-full border border-[#E2E8F0]">
+                  <Link className="ui-button" href={`/workflows?business_id=${encodeURIComponent(businessId || "")}`}>Open action →</Link>
+                  <span className="text-xs font-mono font-medium text-[var(--ui-text)] bg-[var(--ui-bg)] px-3 py-1 rounded-full border border-[var(--ui-border)]">
                     {evt.days_remaining !== undefined
-                      ? `${evt.days_remaining} days remaining`
-                      : `${evt.period_value || 14} days left`}
+                      ? evt.days_remaining < 0 ? `${Math.abs(evt.days_remaining)} days overdue` : evt.days_remaining === 0 ? "Due today" : `${evt.days_remaining} days remaining`
+                      : "Date to be confirmed"}
                   </span>
                   <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
                     evt.status === "URGENT"
                       ? "bg-rose-50 text-rose-700 border-rose-200"
-                      : "bg-[#F1F5F9] text-[#0F172A] border-[#E2E8F0]"
+                      : "bg-[var(--ui-inset)] text-[var(--ui-text)] border-[var(--ui-border)]"
                   }`}>
                     {evt.status || "UPCOMING"}
                   </span>
@@ -447,16 +403,16 @@ function CalendarContent() {
 
         {/* What this calendar does not track */}
         {!loading && coverage && coverage.not_covered && coverage.not_covered.length > 0 && (
-          <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-6 shadow-2xs space-y-3">
-            <h2 className="text-xs font-semibold text-[#0F172A] uppercase tracking-wider">
+          <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-6 shadow-2xs space-y-3">
+            <h2 className="text-xs font-semibold text-[var(--ui-text)] uppercase tracking-wider">
               Statutory Scope Boundaries (Not Tracked)
             </h2>
-            <p className="text-xs text-[#64748B] leading-relaxed">{coverage.not_covered_reason}</p>
+            <p className="text-xs text-[var(--ui-secondary)] leading-relaxed">{coverage.not_covered_reason}</p>
             <div className="flex flex-wrap gap-2 pt-1">
               {coverage.not_covered.map((item, idx) => (
                 <span
                   key={typeof item === "string" ? item : idx}
-                  className="inline-flex items-center rounded-full bg-[#F8FAFC] px-3 py-1 text-[11px] font-medium text-[#64748B] border border-[#E2E8F0]"
+                  className="inline-flex items-center rounded-full bg-[var(--ui-bg)] px-3 py-1 text-[11px] font-medium text-[var(--ui-secondary)] border border-[var(--ui-border)]"
                 >
                   {String(item || "").replace(/_/g, " ")}
                 </span>
@@ -473,7 +429,7 @@ export default function CalendarPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#EDEFF2] flex items-center justify-center text-xs text-[#64748B]">
+        <div className="min-h-screen bg-[var(--ui-bg)] flex items-center justify-center text-xs text-[var(--ui-secondary)]">
           Loading statutory calendar...
         </div>
       }

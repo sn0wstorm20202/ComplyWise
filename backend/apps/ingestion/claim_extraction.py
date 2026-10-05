@@ -54,6 +54,26 @@ If no clear regulatory obligations are mentioned in the text, return {"claims": 
 """
 
 
+from domain.intelligence.output_safety import EVIDENCE_CONSTRAINTS
+SYSTEM_PROMPT += EVIDENCE_CONSTRAINTS
+
+
+def _validate_claim_output(output, source_text):
+    from domain.intelligence.output_safety import parse_object
+    claims = parse_object(output).get("claims")
+    if not isinstance(claims, list): raise ValueError("Claims must be an array.")
+    normalized = re.sub(r"\s+", " ", source_text)
+    for claim in claims:
+        if not isinstance(claim, dict) or not claim.get("requirement_name") or not claim.get("excerpt"):
+            raise ValueError("Claim requires name and evidence.")
+        if re.sub(r"\s+", " ", claim["excerpt"]).strip() not in normalized:
+            raise ValueError("Claim quotation is not in supplied capture.")
+        for field in ("fee_info", "deadline_info", "validity_info"):
+            detail = claim.get(field)
+            if detail and (not isinstance(detail, str) or detail.strip() not in normalized):
+                raise ValueError("Legal detail must appear verbatim in the source.")
+
+
 def extract_claims_from_text(
     *,
     text: str,
@@ -83,8 +103,7 @@ def extract_claims_from_text(
 
     provider = get_llm_provider()
     if not provider.is_configured:
-        # Honest fallback when LLM is unconfigured: extract basic heuristic claim
-        return _heuristic_claim_fallback(text, url, context)
+        return []
 
     try:
         res = provider.complete(
@@ -93,9 +112,11 @@ def extract_claims_from_text(
                 ChatMessage(role="user", content=user_prompt),
             ],
             temperature=0.0,
-            max_output_tokens=800,
+            max_output_tokens=1200,
+            response_format={"type": "json_object"},
             reasoning_effort="none",
             workflow="claim_extraction",
+            response_validator=lambda output: _validate_claim_output(output, truncated_text),
         )
         content = res.text.strip()
         # Strip markdown json block if present
@@ -117,7 +138,9 @@ def extract_claims_from_text(
             if not isinstance(c, dict):
                 continue
             name = str(c.get("requirement_name") or "").strip()
-            if not name:
+            excerpt = str(c.get("excerpt") or "").strip()
+            normalized_excerpt = re.sub(r"\s+", " ", excerpt).strip()
+            if not name or not normalized_excerpt or normalized_excerpt not in re.sub(r"\s+", " ", text):
                 continue
             validated.append({
                 "requirement_name": name[:250],
@@ -130,12 +153,12 @@ def extract_claims_from_text(
                 "fee_info": str(c.get("fee_info") or "").strip()[:200],
                 "deadline_info": str(c.get("deadline_info") or "").strip()[:200],
                 "validity_info": str(c.get("validity_info") or "").strip()[:200],
-                "excerpt": str(c.get("excerpt") or text[:500]).strip()[:1000],
+                "excerpt": excerpt[:1000],
             })
         return validated
     except (ProviderError, json.JSONDecodeError, Exception) as exc:
-        logger.warning("LLM claim extraction failed for %s: %s", url, exc)
-        return _heuristic_claim_fallback(text, url, context)
+        logger.warning("Claim extraction failed (%s)", type(exc).__name__)
+        return []
 
 
 def _heuristic_claim_fallback(text: str, url: str, context: DerivedBusinessContext) -> list[dict[str, Any]]:

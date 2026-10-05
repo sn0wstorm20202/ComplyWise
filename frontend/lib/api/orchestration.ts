@@ -3,12 +3,12 @@
  *
  * Authority: Milestone Step 01-04 Specifications; TRD_v2.0 §30, §31; PRD_v2.0 §10, §14.
  *
- * Provides typed methods for the unified 15-question and regulatory intelligence
+ * Provides typed methods for the compact interview and regulatory intelligence
  * assessment lifecycle:
  * - Create assessment run
  * - Check progress / safe status
  * - AI business understanding
- * - 15-question generation & answering
+ * - Zero to five unresolved first-pass questions and confirmed answers
  * - Canonical context retrieval
  * - Live regulatory discovery
  * - Compliance synthesis

@@ -158,11 +158,20 @@ def test_facade_retains_snapshot_capture_and_serializes_saved_profile(make_busin
     assert detail.status_code == 200 and detail.data["data"]["profile_variables"] == profile.variables
 
 
-@pytest.mark.parametrize("method,path", [("post", "orchestrate"), ("get", "status")])
-def test_facade_final_provider_exhaustion_returns_controlled_error(make_business, user, auth_client, method, path):
+def test_facade_final_provider_exhaustion_returns_controlled_error(make_business, user, auth_client):
     business, _, assessment = setup_assessment(make_business, user)
-    url = f"/api/v1/businesses/{business.id}/analysis/{path}?assessment_id={assessment.id}"
+    url = f"/api/v1/businesses/{business.id}/analysis/orchestrate?assessment_id={assessment.id}"
     with patch("domain.intelligence.orchestration.orchestrate_compliance_analysis", side_effect=ProviderError("all alternatives exhausted")):
-        result = getattr(auth_client, method)(url)
+        result = auth_client.post(url)
     assert result.status_code == 503
     assert result.data["error"]["code"] == "WORKSPACE_PREPARATION_FAILED"
+
+
+def test_status_read_does_not_invoke_an_exhausted_provider(make_business, user, auth_client):
+    business, _, assessment = setup_assessment(make_business, user)
+    url = f"/api/v1/businesses/{business.id}/analysis/status?assessment_id={assessment.id}"
+    with patch("domain.intelligence.orchestration.orchestrate_compliance_analysis", side_effect=ProviderError("all alternatives exhausted")) as orchestrate:
+        result = auth_client.get(url)
+    assert result.status_code == 200
+    assert result.data["data"]["assessment_id"] == str(assessment.id)
+    orchestrate.assert_not_called()

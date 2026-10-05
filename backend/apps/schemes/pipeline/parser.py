@@ -55,7 +55,7 @@ class ExtractedSchemeCandidate:
 class SchemeDOMParser:
     """Parses HTML DOM from official government portals into standardized candidate records."""
 
-    def parse(self, html_content: str, config: SchemeSourceConfig) -> list[ExtractedSchemeCandidate]:
+    def parse(self, html_content: str, config: SchemeSourceConfig, *, source_url: str | None = None) -> list[ExtractedSchemeCandidate]:
         if not html_content:
             return []
 
@@ -71,6 +71,8 @@ class SchemeDOMParser:
             try:
                 candidate = self._parse_element(el, config)
                 if candidate:
+                    if source_url:
+                        candidate.source_url = source_url
                     candidates.append(candidate)
             except Exception as exc:
                 logger.warning("Error parsing scheme element in %s: %s", config.key, exc)
@@ -119,9 +121,9 @@ class SchemeDOMParser:
         eligibility_statement = elig_el.get_text(strip=True) if elig_el else ""
 
         evidence_el = el.find(class_=lambda c: c and "evidence" in str(c))
-        evidence_snippet = evidence_el.get_text(strip=True) if evidence_el else (
-            f"Official Gazette & Guidelines from {authority} on {config.domain}"
-        )
+        # No source passage was captured when that element is absent. A source
+        # label is not a quotation, and must never be substituted for one.
+        evidence_snippet = evidence_el.get_text(strip=True) if evidence_el else ""
 
         app_route_el = el.find(class_=lambda c: c and any(k in str(c) for k in ["app-route", "route"]))
         app_route = app_route_el.get_text(strip=True) if app_route_el else f"Apply via {config.domain}"

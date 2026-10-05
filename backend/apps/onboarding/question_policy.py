@@ -32,6 +32,26 @@ def fact_identity(key, wording=""):
 
 def normalize_candidate(item, known, rule_refs=None, suggestions=None):
     item = dict(item)
+    from domain.intelligence.output_safety import validate_question_wording
+    # Remove a legacy legal preamble without changing the operational question
+    # or its fact identity. Remaining unsupported wording/options are rejected.
+    item["question_text"] = re.sub(
+        r"^Under\s+[^,?]+\b(?:Act|Rules|Regulations|Order)\b(?:\s*,?\s*\d{4})?\s*,\s*",
+        "", item.get("question_text", ""), flags=re.I,
+    )
+    try:
+        validate_question_wording(item["question_text"])
+        for choice in item.get("options") or item.get("allowed_values") or []:
+            for wording in choice.values() if isinstance(choice, dict) else [choice]:
+                if isinstance(wording, str):
+                    validate_question_wording(wording)
+    except ValueError:
+        return None
+    for field in ("reason", "why_it_matters", "expected_discovery_impact"):
+        try:
+            validate_question_wording(item.get(field, ""))
+        except ValueError:
+            item[field] = "This detail helps focus relevant source searches. Applicability will be checked against supporting evidence."
     key = item.get("variable_key") or item.get("target_variable_id", "")
     identity = fact_identity(key,item.get("question_text",""))
     wording = item.get("question_text", "").lower()

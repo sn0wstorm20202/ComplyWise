@@ -15,6 +15,8 @@ Architecture:
 
 from __future__ import annotations
 
+from domain.context.activity_text import strip_negations
+
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 import hashlib
@@ -77,14 +79,6 @@ def sanitize_scraped_text(raw_text: str) -> str:
     return cleaned.strip()[:MAX_CONTENT_CHARS_PER_SOURCE]
 
 
-def strip_negations(text: str) -> str:
-    """Strip negative clauses (e.g. 'no cement manufacturing', 'does not produce...')
-    so negative exclusions are not falsely matched as positive business activities.
-    """
-    if not text:
-        return ""
-    pattern = r"\b(?:no|not|neither|nor|without|does\s+not|doesn't|do\s+not|don't|has\s+no|have\s+no|excluding|except\s+for|except)\s+[^.;\n]+"
-    return re.sub(pattern, " ", text, flags=re.IGNORECASE)
 
 
 def _make_source_ids(canonical_url: str) -> tuple[str, str]:
@@ -101,11 +95,14 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
         from apps.ingestion.services import run_discovery
         business = Business.objects.get(pk=context.business_id)
         from domain.intelligence.regulatory_retrieval import retrieve_regulatory_context
+        from domain.providers.telemetry import measure_phase
         profile = assessment.profile_version if assessment else business.current_profile
         facts = profile.variables if profile else {}
         description = facts.get("product_description", {})
         description = description.get("value", "") if isinstance(description, dict) else description
-        remote = retrieve_regulatory_context(description or business.name, facts)
+        timings = {}
+        with measure_phase("regulatory_retrieval", timings):
+            remote = retrieve_regulatory_context(description or business.name, facts)
         data = run_discovery(business, max_scrape=3, assessment=assessment,
                              profile_version=assessment.profile_version if assessment else None)
         run = DiscoveryRun.objects.filter(pk=data.get("run_id")).first()
@@ -135,7 +132,8 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
             sources_count=data.get("sources_scraped", 0) + len(remote_sources), candidate_count=len(evidence_candidates),
             queries=data.get("queries", []), evidence_candidates=evidence_candidates,
             metadata={"discovery_run_id": str(run.id) if run else None, "warnings": data.get("errors", []),
-                "verified_count": 0, "fallback_used": False, "external_retrieval": remote}, errors=data.get("errors", []))
+                "verified_count": 0, "fallback_used": False, "external_retrieval": remote,
+                "timings_ms": {**timings, **data.get("timings_ms", {})}}, errors=data.get("errors", []))
 
     def _generate_verified_catalog_evidence(self, context, business):
         """Registry entries are source plans, never captured statutory evidence."""

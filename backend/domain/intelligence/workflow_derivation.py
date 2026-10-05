@@ -17,7 +17,7 @@ from typing import Any
 from django.utils import timezone
 
 from common.enums import ApplicabilityStatus, CaseStatus
-from apps.applicability.models import DecisionRun
+from apps.applicability.models import DecisionResult, DecisionRun
 from apps.businesses.models import Business
 from apps.knowledge.models import RequirementDefinition
 from apps.schemes.engine.matcher import match_business_schemes
@@ -632,10 +632,15 @@ def derive_business_workflows(
             .first()
         )
 
-    # Load existing ComplianceCases for this business
+    # A reused profile does not make progress interchangeable across assessments.
+    cases = ComplianceCase.objects.filter(business=business)
+    if assessment_id:
+        cases = cases.filter(assessment_id=assessment_id)
+        if assessment:
+            cases = cases.filter(profile_version_id=assessment.profile_version_id)
     cases_by_req: dict[str, ComplianceCase] = {
         c.requirement_id_code: c
-        for c in ComplianceCase.objects.filter(business=business).select_related(
+        for c in cases.select_related(
             "requirement", "current_workflow_instance"
         ).prefetch_related("document_requirements")
     }
@@ -722,6 +727,15 @@ def derive_business_workflows(
             req_def = req_defs.get(result.requirement_id)
             if req_def is None:
                 continue
+
+            # Historical standard decisions receive the same product-scope gate
+            # as the standards/compliance read APIs, without changing the record.
+            if (req_def.category.strip().upper() == "STANDARD"
+                    and isinstance(result, DecisionResult)):
+                from apps.requirements.presentation import decision_presentation
+                display_status, _ = decision_presentation(result, req_def)
+                if display_status not in {ApplicabilityStatus.APPLICABLE, ApplicabilityStatus.NEEDS_INFORMATION}:
+                    continue
 
             template_key = _match_workflow_template(req_def)
             recorded_workflow = (req_def.metadata or {}).get("workflow") or {}
@@ -964,7 +978,9 @@ def derive_business_workflows(
                  for i, title in enumerate(item["steps"], 1)]
         cases = ComplianceCase.objects.filter(business=business, requirement_id_code=item["requirement_id"])
         if assessment_id:
-            cases = cases.filter(metadata__assessment_id=str(assessment_id))
+            cases = cases.filter(assessment_id=assessment_id)
+            if assessment:
+                cases = cases.filter(profile_version_id=assessment.profile_version_id)
         case = cases.order_by("-created_at").first()
         saved = ((case.metadata or {}).get("workflow_state") or {}).get("steps", {}) if case else {}
         for step in steps:

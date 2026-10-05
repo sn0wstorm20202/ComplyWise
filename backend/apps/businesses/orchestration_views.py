@@ -19,6 +19,7 @@ Guarantees:
 from __future__ import annotations
 
 import logging
+import time
 import uuid
 from typing import Any
 
@@ -272,7 +273,7 @@ class AssessmentQuestionsListView(APIView):
         answers = run.stage_metadata.get("answers", {})
 
         # If questions not yet generated, attempt to generate or load them
-        if "question_generation" not in run.stage_metadata:
+        if run.stage_metadata.get("question_generation", {}).get("question_policy_version") != 5:
             from domain.intelligence.orchestration import AssessmentStage
             res = assessment_orchestrator.execute_stage(run, AssessmentStage.QUESTION_GENERATION)
             run = assessment_orchestrator.get_run(run.run_id) or run
@@ -308,8 +309,8 @@ class AssessmentQuestionsListView(APIView):
         response_data = {
             "questions": enriched_questions,
             "total_questions": len(enriched_questions),
-            "answered_count": len(answers),
-            "is_complete": len(answers) >= len(enriched_questions),
+            "answered_count": sum(question["is_answered"] for question in enriched_questions),
+            "is_complete": next_q is None,
             "next_question": next_q,
         }
         return Response(
@@ -324,6 +325,7 @@ class AssessmentAnswersSubmitView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, run_id: uuid.UUID) -> Response:
+        submission_started = time.perf_counter()
         run = assessment_orchestrator.get_run(run_id, user=request.user)
         if run is None:
             return error_response(
@@ -362,8 +364,11 @@ class AssessmentAnswersSubmitView(APIView):
             for qid, val in answers_dict.items():
                 last_result = interpreter.record_answer(run, qid, val)
 
+            duration_ms = round((time.perf_counter() - submission_started) * 1000, 2)
+            logger.info("Analysis phase answer_submission COMPLETED: %.2fms", duration_ms)
             return Response(
-                envelope(last_result, meta={"correlation_id": run.correlation_id}),
+                envelope(last_result, meta={"correlation_id": run.correlation_id,
+                    "timings_ms": {"answer_submission": duration_ms}}),
                 status=status.HTTP_200_OK,
             )
         except OrchestrationError as o_exc:
@@ -515,32 +520,17 @@ class AssessmentComplianceView(APIView):
 
             if engine2_run and engine2_run.results.exists():
                 # Build response from Engine 2 DecisionResults
-                from apps.knowledge.models import RequirementDefinition
-                from apps.evidence.models import Evidence
                 from knowledge_packs.catalogs import resolve_statutory_portal
-                from apps.requirements.views import _why_summary, PORTAL_KEY
+                from apps.requirements.presentation import requirement_reason_summary, PORTAL_KEY, evidence_citations, primary_citation, decision_presentation
+                from apps.requirements.selectors import load_requirement_evidence
 
                 results = list(engine2_run.results.all())
-                req_ids = [r.requirement_id for r in results]
-                req_defs = {
-                    rd.requirement_id: rd
-                    for rd in RequirementDefinition.objects.filter(requirement_id__in=req_ids)
-                }
-
-                all_ev_ids: set[str] = set()
-                for r in results:
-                    for ref in (r.evidence_refs or []):
-                        ev_id = ref.get("evidence_id") if isinstance(ref, dict) else ref
-                        if ev_id:
-                            all_ev_ids.add(str(ev_id))
-                evidences_map = {
-                    ev.evidence_id: ev
-                    for ev in Evidence.objects.filter(evidence_id__in=all_ev_ids).select_related("source")
-                }
+                req_defs, evidences_map = load_requirement_evidence(results)
 
                 requirements = []
                 for r in results:
                     req_def = req_defs.get(r.requirement_id)
+                    display_status, display_trace = decision_presentation(r, req_def)
                     auth = req_def.authority if req_def else "Authority"
                     cat = req_def.category if req_def else "GENERAL"
                     jur = req_def.jurisdiction if req_def else "CENTRAL"
@@ -554,20 +544,7 @@ class AssessmentComplianceView(APIView):
                     )
                     canonical_source_url = portal_info["url"]
                     portal_name = portal_info["name"]
-                    citations = []
-                    for ref in (r.evidence_refs or []):
-                        ev_id = ref.get("evidence_id") if isinstance(ref, dict) else ref
-                        ev_obj = evidences_map.get(str(ev_id))
-                        if ev_obj and ev_obj.source:
-                            citations.append({
-                                "evidence_id": ev_obj.evidence_id,
-                                "source_title": ev_obj.source.title,
-                                "authority": ev_obj.source.authority,
-                                "locator": ev_obj.locator,
-                                "excerpt": ev_obj.excerpt,
-                                "verification_status": ev_obj.verification_status,
-                                "canonical_url": ev_obj.source.canonical_url,
-                            })
+                    citations = evidence_citations(r.evidence_refs or [], evidences_map)
                     requirements.append({
                         "requirement_id": r.requirement_id,
                         "name": r.requirement_name,
@@ -577,18 +554,19 @@ class AssessmentComplianceView(APIView):
                         "jurisdiction": jur,
                         "domain": req_def.domain if req_def else "GENERAL",
                         "regulatory_domain": req_def.domain if req_def else "GENERAL",
-                        "description": req_def.description if req_def else "",
-                        "status": r.status,
+                        "description": requirement_reason_summary(display_trace, req_def) if req_def else "",
+                        "status": display_status,
+                        "recorded_status": r.status,
                         "matched_rule_id": r.explanation_trace.get("matched_rule_id"),
                         "evidence_count": len(r.evidence_refs or []),
                         "explanation_reason": r.explanation_trace.get("reason"),
-                        "reason_summary": _why_summary(r.explanation_trace, req_def) if req_def else "",
+                        "reason_summary": requirement_reason_summary(display_trace, req_def) if req_def else "",
                         "notes": r.explanation_trace.get("note", ""),
                         "portal": canonical_source_url,
                         "portal_url": canonical_source_url,
                         "portal_name": portal_name,
-                        "source_url": canonical_source_url,
-                        "source_title": (citations[0]["source_title"] if citations else (req_def.name if req_def else auth)),
+                        "source_url": primary_citation(citations).get("canonical_url") or "",
+                        "source_title": primary_citation(citations).get("source_title", ""),
                         "citations": citations,
                         "citation_count": len(citations),
                     })
@@ -644,12 +622,10 @@ class AssessmentComplianceView(APIView):
                 )
                 from domain.intelligence.synthesis import _sanitize_and_prune_irrelevant_requirements
                 profile_desc = ""
-                if biz and biz.current_profile:
-                    p_vars = biz.current_profile.variables or {}
+                if assessment.profile_version:
+                    p_vars = assessment.profile_version.variables or {}
                     p_val = p_vars.get("product_description")
                     profile_desc = p_val.get("value", "") if isinstance(p_val, dict) else str(p_val or "")
-                if not profile_desc and biz:
-                    profile_desc = biz.name
 
                 reqs = _sanitize_and_prune_irrelevant_requirements(reqs, profile_desc)
                 comp_data["requirements"] = reqs
@@ -751,11 +727,8 @@ class AssessmentSchemesView(APIView):
 
         try:
             from domain.intelligence.orchestration import AssessmentStage
-            if "schemes" not in run.stage_metadata:
-                res = assessment_orchestrator.execute_stage(run, AssessmentStage.SCHEMES)
-                schemes_data = res.data
-            else:
-                schemes_data = run.stage_metadata["schemes"]
+            res = assessment_orchestrator.execute_stage(run, AssessmentStage.SCHEMES)
+            schemes_data = res.data
 
             return Response(
                 envelope(schemes_data, meta={"correlation_id": run.correlation_id}),
@@ -784,11 +757,8 @@ class AssessmentStandardsView(APIView):
 
         try:
             from domain.intelligence.orchestration import AssessmentStage
-            if "standards" not in run.stage_metadata:
-                res = assessment_orchestrator.execute_stage(run, AssessmentStage.STANDARDS)
-                stds_data = res.data
-            else:
-                stds_data = run.stage_metadata["standards"]
+            res = assessment_orchestrator.execute_stage(run, AssessmentStage.STANDARDS)
+            stds_data = res.data
 
             return Response(
                 envelope(stds_data, meta={"correlation_id": run.correlation_id}),

@@ -9,10 +9,12 @@ flowchart TD
   Understand --> Known[Requested assessment snapshot / description / saved answers / canonical aliases]
   Known --> RuleGaps[Published rule AST missing facts / contextual source discovery gaps]
   Knowledge --> RuleGaps
-  RuleGaps --> QuestionPolicy[question_policy v4: identity dedup / known False and zero preserved / impact ranking]
+  RuleGaps --> QuestionPolicy[question_policy v5: identity dedup / known False and zero preserved / grounded wording / impact ranking]
   QuestionPolicy --> Questions[Saved assessment scoped plan: zero to five questions / deferred gaps]
   StarterSuggestions[Editable starter suggestions / not confirmed facts] --> Questions
-  Questions --> Answers[Validated confirmed answers / selected snapshot only / HP unit]
+  Questions --> IntakeAdapter[questionnaire.py compact lifecycle / question_types.py contract]
+  LegacyQuestions[Persisted older question plans] --> QuestionPolicy
+  IntakeAdapter --> Answers[Validated confirmed answers / selected snapshot only / HP unit]
   Answers --> Context[Canonical enriched context]
   Context --> Remote[Existing ComplianceRAG POST retrieval/search]
   Remote --> Filter[Validate metadata / official source / jurisdiction]
@@ -37,7 +39,7 @@ flowchart TD
   Review --> Knowledge[Published RequirementDefinition + RuleVersion + VERIFIED Evidence]
   Knowledge --> Local[Preserved verified evidence token overlap retrieval]
   Local --> Coverage{Sufficient published rule coverage?}
-  Coverage -->|yes| Engine[Deterministic AST applicability / jurisdiction / evidence / precedence]
+  Coverage -->|yes| Engine[Deterministic AST / TRUE FALSE UNKNOWN / typed product scope / jurisdiction / evidence]
   Coverage -->|insufficient or partial| Guidance[Structured contextual LLM guidance]
   Profile --> Engine
   Engine --> Decisions[DecisionRun + DecisionResult]
@@ -45,16 +47,31 @@ flowchart TD
   Persisted --> Guidance
   Available --> Guidance
   Decisions --> Guidance
-  Decisions --> Workspace[Normal assessment workspace]
-  Guidance --> Schema[Schema + evidence constraints validated inside provider attempts]
+  Decisions --> ReadModels[requirements/selectors.py / recorded fact trace / bound exact citations / cautious legacy scope]
+  Persisted --> ExactSource[evidence/presentation.py exact evidence URL / homepage and login rejection / application portal separate]
+  Knowledge --> ExactSource
+  ExactSource --> ReadModels
+  ReadModels --> Workspace[Normal assessment workspace]
+  Guidance --> Schema[Nested schema / source identity / legal detail / current snapshot facts validated inside provider attempts]
+  Schema --> Followups[Typed zero to five follow-ups / grounded wording / known fact dedup]
   Schema --> Saved[WorkspaceGuidance / LLM_FALLBACK_RESULT / no legal publication]
-  Saved --> Workspace
+  Saved --> CacheGuard[Grounding policy1 / selected snapshot + recorded passages / validate saved projection on read]
+  CacheGuard --> Workspace
+  CacheGuard -->|invalid history| Cautious[Exclude unsafe guidance / no provider or historical write on GET]
   Review --> Reevaluate[Reevaluate linked assessments on publication]
   Reevaluate --> Decisions
   Workspace --> Compliance[Compliance: decisions + contextual suggestions]
-  Workspace --> Documents[Preparation checklist / real versioned uploads / human review]
-  Workspace --> Workflow[Persisted steps / cases / reviewer treatment]
-  Workspace --> Support[Recorded schemes + contextual support / standards + quality planning]
+  Workspace --> Documents[Assessment-profile scoped preparation checklist / optional when unresolved / real uploads]
+  Workspace --> Workflow[Assessment-profile scoped cases / idempotent steps / reviewer treatment]
+  Workspace --> Support[Versioned source projections / schemes and standards / contextual quality planning]
+  SchemeCapture[Scheme acquisition / real text only / failed capture stays failed] --> SchemeVersion[SchemeVersion PENDING_REVIEW / criteria AST / captured source]
+  SchemeVersion --> SchemeGuard[Authored fixture fingerprint quarantine / preserve history / no verification promotion]
+  SchemeGuard --> SchemeMatch[Typed eligibility / explicit negatives / currentness / selected snapshot]
+  SchemeMatch --> Support
+  ReadModels --> Standards[Concrete product predicate / evidence-bound mandatory reference / candidate or review state]
+  Standards --> Mandate[Shared standard mandatory linkage / optional checklist when unknown or voluntary]
+  Mandate --> Documents
+  Standards --> Support
   Workspace --> Dates[Calendar / alerts only from recorded dates]
   Workspace --> Dashboard[Data driven metrics / actions / no made up readiness]
   Workspace --> DB[(Runtime PostgreSQL / assessment scope / tenant permissions)]
@@ -84,6 +101,13 @@ flowchart TD
   Error -->|understanding only| Heuristic[Local description heuristic / no invented geography or legal applicability]
   Providers --> Telemetry[Safe provider / slot / model / attempt / latency / token / failure telemetry]
   Valid --> Orchestrator
+  Providers --> JSONMode[Structured Gemini requests use native application/json output mode]
+  Orchestrator --> AnalysisState[Saved real stages and durations / completion state]
+  Telemetry --> PhaseTiming[Wall time for joined search / capture attempts / retrieval / evaluation / LLM / committed workspace writes]
+  PhaseTiming --> AnalysisState
+  API --> AnswerTiming[Answer submission duration in response metadata / no provider call]
+  API --> StatusRead[Analysis status GET is read-only / no orchestration or provider call]
+  AnalysisState --> StatusRead
   API --> Admin[Superuser atomic user and business creation / same starter selector]
   Admin --> Business
   API --> CaseReview[Assigned reviewer operational decisions / saved audit]

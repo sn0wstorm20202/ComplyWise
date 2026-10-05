@@ -33,7 +33,7 @@ from domain.intelligence.orchestration import (
     StageInputInvalid,
     StructuredOutputInvalid,
 )
-from domain.intelligence.questionnaire import QuestionAnswerType, SmartQuestion
+from domain.intelligence.question_types import QuestionAnswerType, SmartQuestion
 
 logger = logging.getLogger(__name__)
 

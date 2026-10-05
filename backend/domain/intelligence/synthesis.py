@@ -19,6 +19,8 @@ Guarantees:
 
 from __future__ import annotations
 
+from domain.context.activity_text import strip_negations
+
 import hashlib
 import json
 import logging
@@ -135,14 +137,6 @@ from domain.intelligence.output_safety import EVIDENCE_CONSTRAINTS
 SYNTHESIS_SYSTEM_PROMPT += EVIDENCE_CONSTRAINTS
 
 
-def strip_negations(text: str) -> str:
-    """Strip negative clauses (e.g. 'no cement manufacturing', 'does not produce...')
-    so negative exclusions are not falsely matched as positive business activities.
-    """
-    if not text:
-        return ""
-    pattern = r"\b(?:no|not|neither|nor|without|does\s+not|doesn't|do\s+not|don't|has\s+no|have\s+no|excluding|except\s+for|except)\s+[^.;\n]+"
-    return re.sub(pattern, " ", text, flags=re.IGNORECASE)
 
 
 def _sanitize_and_prune_irrelevant_requirements(
@@ -557,14 +551,20 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
         from apps.applicability.engine import ApplicabilityEngine
         from apps.evidence.models import Evidence
         from django.db import transaction
+        from apps.requirements.presentation import requirement_reason_summary, recorded_decision_facts
+        from apps.evidence.presentation import evidence_projection
 
         business = Business.objects.get(pk=context.business_id)
         assessment = business.assessments.filter(pk=assessment_id).first() if assessment_id else None
-        profile = assessment.profile_version if assessment and assessment.profile_version else business.current_profile
+        if assessment_id and assessment is None:
+            raise ValueError("Assessment does not belong to this business.")
+        profile = assessment.profile_version if assessment else business.current_profile
         if not profile:
             return ComplianceSynthesisResult(status="NEEDS_INFORMATION", applicable_count=0, requirements=[],
                 executive_summary={"total_evaluated": 0}, metadata={"coverage_state": "NEEDS_INFORMATION"})
-        with transaction.atomic():
+        from domain.providers.telemetry import measure_phase
+        timings = {}
+        with measure_phase("deterministic_evaluation", timings), transaction.atomic():
             decision_run = ApplicabilityEngine().evaluate_business_profile(business=business, profile_version=profile)
             if assessment:
                 decision_run.assessment = assessment
@@ -579,20 +579,22 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
             evidence = list(Evidence.objects.filter(evidence_id__in=refs).select_related("source"))
             requirements.append({
                 "requirement_id": result.requirement_id, "title": result.requirement_name,
-                "description": definition.description if definition else "",
+                "description": requirement_reason_summary(result.explanation_trace, definition) if definition else "",
                 "authority": definition.authority if definition else "",
                 "jurisdiction": definition.jurisdiction if definition else "",
                 "regulatory_domain": definition.domain if definition else "",
                 "status": result.status, "priority": "MEDIUM",
-                "why_it_matters": "Evaluated against the published rule and the saved business profile.",
+                "why_it_matters": requirement_reason_summary(result.explanation_trace, definition) if definition else "",
+                "matched_fact_values": recorded_decision_facts(result.explanation_trace),
                 "rule_version_id": str(result.rule_version_id) if result.rule_version_id else None,
                 "decision_result_id": str(result.id), "profile_version_id": str(profile.id),
-                "evidence_ids": refs, "source_urls": [e.source.canonical_url for e in evidence],
+                "evidence_ids": refs, "source_urls": [c["canonical_url"] for c in (evidence_projection(e) for e in evidence) if c["canonical_url"]],
+                "citations": [evidence_projection(e) for e in evidence],
                 "actions": [], "deadline": None, "explanation_trace": result.explanation_trace,
                 "result_origin": "DETERMINISTIC_KB_RESULT",
             })
         from domain.intelligence.workspace_guidance import ensure_workspace, compliance_rows
-        ensure_workspace(business, assessment, profile, requirements, discovered_material)
+        ensure_workspace(business, assessment, profile, requirements, discovered_material, timings=timings)
         requirements.extend(compliance_rows(business, assessment_id))
         count = sum(r["status"] == "APPLICABLE" for r in requirements)
         unknown = sum(r["status"] in {"NEEDS_INFORMATION", "UNVERIFIED", "CONFLICT_REVIEW"} for r in requirements)
@@ -603,7 +605,8 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
                 "needs_information_count": unknown, "high_priority_count": 0},
             metadata={"synthesis_provider": "deterministic_rule_engine", "decision_run_id": str(decision_run.id),
                 "profile_version_id": str(profile.id), "coverage_state": "COVERED" if requirements else "KNOWLEDGE_NOT_COVERED",
-                "discovery_state": discovered_material.get("status"), "trust_policy_version": 2},
+                "discovery_state": discovered_material.get("status"), "trust_policy_version": 2,
+                "timings_ms": timings},
         )
 
     def _build_context_summary(self, context: OrchestrationContext | EnrichedBusinessContext) -> str:

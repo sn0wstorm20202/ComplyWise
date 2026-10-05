@@ -101,6 +101,7 @@ function DocumentsContent() {
 
     ++requestVersion.current;
     setShowUpload(false); setSelectedDocForUpload(null); setActiveVerificationResult(null);
+    setPortalSaving({}); setUploading(false); setVerificationProgressStep(0);
     if (!bizId) { setBusinessId(""); setResponse(previous => ({...previous, documents: [], total_count: 0})); setLoading(false); return; }
     setBusinessId(bizId);
 
@@ -165,6 +166,7 @@ function DocumentsContent() {
   // Toggle manual official portal upload checkbox
   async function handleTogglePortalUploaded(docId: string) {
     if (!businessId || portalSaving[docId]) return;
+    const version = requestVersion.current;
     const previous = portalUploadedMap[docId] ?? Boolean(response.documents.find(doc => doc.id === docId)?.portal_uploaded);
     const nextState = !previous;
     const updated = {
@@ -177,10 +179,11 @@ function DocumentsContent() {
     try {
       await api.documents.updatePortalStatus(businessId, docId, nextState, searchParams.get("assessment_id") || (businessId === activeBusinessId ? activeAssessmentId : undefined) || undefined);
     } catch {
+      if (version !== requestVersion.current) return;
       setPortalUploadedMap(values => ({...values, [docId]: previous}));
       setError("Your filing status wasn't saved. Please try again.");
     } finally {
-      setPortalSaving(values => ({...values, [docId]: false}));
+      if (version === requestVersion.current) setPortalSaving(values => ({...values, [docId]: false}));
     }
   }
 
@@ -201,6 +204,7 @@ function DocumentsContent() {
   // Execute Systematic Software Verification Layer
   async function handleRunVerificationAndUpload(e: React.FormEvent) {
     e.preventDefault();
+    const version = requestVersion.current;
     setError(null);
 
     const actualFileName = fileObject ? fileObject.name : (fileName || "");
@@ -219,6 +223,7 @@ function DocumentsContent() {
         // Non-blocking file reading
       }
     }
+    if (version !== requestVersion.current) return;
 
     const verificationInput: DocumentVerificationInput = {
       name: docName,
@@ -263,6 +268,7 @@ function DocumentsContent() {
         },
         fileObject
       );
+      if (version !== requestVersion.current) return;
       if (!backendResp?.document?.id || !backendResp?.verification?.checks) {
         setError("We didn't receive a complete upload confirmation. Check your document vault before retrying.");
         setUploading(false);
@@ -271,6 +277,7 @@ function DocumentsContent() {
       }
       verification = backendResp.verification;
     } catch {
+      if (version !== requestVersion.current) return;
       setError("Your document wasn't uploaded. Please try again; your selected file is still available.");
       setUploading(false);
       setVerificationProgressStep(0);
@@ -1105,7 +1112,7 @@ function DocumentsContent() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredDocuments.map((doc: any) => {
-              const isUploaded = !!portalUploadedMap[doc.id];
+              const isUploaded = doc.isPortalUploaded;
               return (
                 <div
                   key={doc.id}

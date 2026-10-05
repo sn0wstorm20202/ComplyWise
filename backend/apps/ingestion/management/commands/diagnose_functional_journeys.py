@@ -17,10 +17,12 @@ class Command(BaseCommand):
         parser.add_argument("--live",action="store_true")
         parser.add_argument("--output",required=True)
         parser.add_argument("--business-type")
+        parser.add_argument("--profiles", help="Path to explicit synthetic QA business profiles.")
 
     def handle(self,*args,**options):
         if not options["live"]: raise CommandError("Explicit --live required.")
-        cases=json.loads((Path(settings.BASE_DIR).parent/'docs/hardening-business-profiles.json').read_text())
+        profile_path = Path(options["profiles"]) if options.get("profiles") else Path(settings.BASE_DIR).parent/'docs/hardening-business-profiles.json'
+        cases=json.loads(profile_path.read_text(encoding="utf-8"))
         if options["business_type"]: cases=[c for c in cases if c['type']==options['business_type']]
         report={"kind":"REAL_PROVIDER_RUNTIME_POSTGRESQL_API", "cases":[], "limitations":["Temporary synthetic business facts/answers; actual runtime published knowledge and real external providers. Not an expert legal benchmark."]}
         password=secrets.token_urlsafe(28); email='hardening-'+secrets.token_hex(7)+'@example.test'
@@ -37,6 +39,12 @@ class Command(BaseCommand):
                 def call(method,path,data=None,required=True):
                     mark=time.perf_counter(); response=getattr(client,method)(path,data or {},format='json')
                     row['stages'].append({'stage':path.split('?')[0].split('/')[-1], 'status':response.status_code,'seconds':round(time.perf_counter()-mark,3)})
+                    measured = response.data.get('meta', {}).get('timings_ms')
+                    if measured:
+                        row['stages'][-1]['timings_ms'] = measured
+                    phase_timings = response.data.get('data', {}).get('metadata', {}).get('timings_ms')
+                    if phase_timings:
+                        row['stages'][-1]['phase_timings_ms'] = phase_timings
                     if response.status_code>=400:
                         row['failures'].append({'stage':path.split('?')[0].split('/')[-1],'status':response.status_code,'code':response.data.get('error',{}).get('code')})
                         if required: raise CommandError("QA stage failed.")
@@ -68,7 +76,9 @@ class Command(BaseCommand):
                     discovery=call('post',f'/api/v1/assessments/{aid}/regulatory-discovery')
                     call('post',f'/api/v1/assessments/{aid}/compliance-synthesis')
                     before=len(telemetry_tracker._records)
-                    call('post',f'/api/v1/businesses/{b.id}/analysis/orchestrate',{'assessment_id':aid,'force_live_discovery':False})
+                    completion=call('post',f'/api/v1/businesses/{b.id}/analysis/orchestrate',{'assessment_id':aid,'force_live_discovery':False})
+                    row['analysis_timings_ms']=completion.get('timings_ms',{})
+                    row['analysis_phase_timings_ms']=completion.get('phase_timings_ms',{})
                     row['completion_extra_provider_calls']=len(telemetry_tracker._records)-before
                     a.refresh_from_db(); row['status']=a.status
                     row['decisions']={s:a.decision_run.results.filter(status=s).count() for s in ['APPLICABLE','NOT_APPLICABLE','NEEDS_INFORMATION','UNVERIFIED']} if a.decision_run else {}
@@ -82,6 +92,8 @@ class Command(BaseCommand):
                     for section in ('compliance','documents','workflows','schemes','calendar','dashboard'):
                         payload=call('get',f'/api/v1/businesses/{b.id}/{section}?assessment_id={aid}')
                         row['workspace'][section]={'counts':{k:len(v) for k,v in payload.items() if isinstance(v,list)},'available':payload.get('available'),'has_evaluation':payload.get('has_evaluation')}
+                        if section == 'schemes':
+                            row['schemes'] = payload
                     std=call('get',f'/api/v1/standards/search?business_id={b.id}&assessment_id={aid}')
                     row['standards']=std
                     row['workspace_get_provider_calls']=len(telemetry_tracker._records)-before

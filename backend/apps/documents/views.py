@@ -55,6 +55,8 @@ class BusinessDocumentsListView(APIView):
             return error_response("NOT_FOUND", "Business not found or access denied.", http_status=status.HTTP_404_NOT_FOUND)
 
         assessment_id = request.query_params.get("assessment_id")
+        if assessment_id and not business.assessments.filter(pk=assessment_id).exists():
+            return error_response("NOT_FOUND", "Assessment not found for this business.", http_status=404)
         payload = derive_business_documents(business, assessment_id=assessment_id)
         return Response(envelope(payload), status=status.HTTP_200_OK)
 
@@ -90,7 +92,9 @@ def _persist_checklist_record(business, assessment, document):
         cases = ComplianceCase.objects.filter(business=business,
             requirement_id_code=document["requirement_id"], profile_version=profile)
         if assessment:
-            cases = cases.filter(metadata__assessment_id=str(assessment.id))
+            cases = cases.filter(assessment=assessment)
+        else:
+            cases = cases.filter(assessment__isnull=True)
         case = cases.first()
         if not case:
             case = ComplianceCase.objects.create(business=business, assessment=assessment,

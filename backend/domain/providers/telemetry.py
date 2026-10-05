@@ -7,14 +7,33 @@ without EVER logging API keys, passwords, credentials, prompts, or sensitive bus
 from __future__ import annotations
 
 import logging
-import os
 import time
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def measure_phase(phase: str, timings: dict[str, float] | None = None):
+    """Measure real work, including failures, without logging inputs or secrets.
+
+    Repeated operations accumulate wall time; parallel search is timed around
+    the joined batch rather than by adding overlapping request durations.
+    """
+    started = time.perf_counter()
+    outcome = "FAILED"
+    try:
+        yield
+        outcome = "COMPLETED"
+    finally:
+        elapsed = round((time.perf_counter() - started) * 1000, 2)
+        if timings is not None:
+            timings[phase] = round(timings.get(phase, 0.0) + elapsed, 2)
+        logger.info("Analysis phase %s %s: %.2fms", phase, outcome, elapsed)
 
 # Official Per-1M-Tokens Pricing (USD) as of 2026
 # (input_per_1m, cached_input_per_1m, output_per_1m, reasoning_per_1m)

@@ -31,6 +31,7 @@ from common.enums import (
 from domain.evaluation.evaluator import evaluate_ast
 from domain.evaluation.truth import FALSE, TRUE, UNKNOWN
 from domain.jurisdictions.resolver import normalize_jurisdiction
+from domain.rules.ast import AstValidationError
 from apps.businesses.models import Business, BusinessProfileVersion
 from apps.evidence.models import Evidence
 from apps.knowledge.models import RequirementDefinition, RuleVersion
@@ -42,6 +43,31 @@ PRECEDENCE_MAP = {
     RuleType.EXCEPTION: 2,
     RuleType.NORMAL: 1,
 }
+
+# A narrative keyword can retrieve a product standard; it cannot establish that
+# a product falls within its regulated scope. These are structured scope facts,
+# not a list of businesses or statutory products.
+PRODUCT_SCOPE_FACTS = frozenset({
+    "product_type", "product_category", "product_classification", "product_types",
+    "notified_product_category", "standard_scope", "intended_use", "vehicle_category",
+    "manufacturing_process", "mandatory_standard_reference",
+})
+
+
+def _confirmed_product_scope(trace: dict[str, Any], node: dict[str, Any] | None = None) -> bool:
+    """Require a successful typed scope predicate, including in nested rules."""
+    if trace.get("result") != "TRUE":
+        return False
+    if trace.get("op") in {"EQ", "IN", "CONTAINS", "INTERSECTS", "MATCHES_CLASSIFICATION"}:
+        if not node or not PRODUCT_SCOPE_FACTS.intersection(trace.get("variables_used", {})):
+            return False
+        operands = [node.get("left"), node.get("right")]
+        # A self-comparison, another variable or an empty literal is not scope.
+        return any(not isinstance(value, dict) and value is not None and value != ""
+                   and value != [] for value in operands)
+    children = (node or {}).get("args", [(node or {}).get("arg")])
+    return any(_confirmed_product_scope(child, children[index] if index < len(children) else None)
+               for index, child in enumerate(trace.get("children", [])))
 
 
 def models_effective_filter(eval_date: datetime.date):
@@ -72,10 +98,8 @@ class ApplicabilityEngine:
             context[key] = entry.get("value") if isinstance(entry, dict) else entry
 
         # Generic aliases and derivations for robust knowledge evaluation
-        if not context.get("product_description"):
-            context["product_description"] = business.name
         if "primary_activity" not in context or not context.get("primary_activity"):
-            context["primary_activity"] = context.get("product_description") or business.name
+            context["primary_activity"] = context.get("product_description")
         if "total_workforce" not in context and "total_worker_count" in context:
             context["total_workforce"] = context["total_worker_count"]
         if "total_worker_count" not in context and "total_workforce" in context:
@@ -405,6 +429,34 @@ class ApplicabilityEngine:
                         evidence_reason = "UNVERIFIED_EVIDENCE"
                         break
 
+        scope_trace = None
+        scope_ast = (requirement.metadata or {}).get("scope_ast")
+        if scope_ast is not None:
+            try:
+                scope_truth, scope_evaluation = evaluate_ast(scope_ast, context)
+                scope_trace = scope_evaluation.to_dict()
+            except AstValidationError:
+                scope_truth = UNKNOWN
+                scope_trace = {"result": "UNKNOWN", "notes": ["Invalid recorded scope predicate."]}
+                final_status = ApplicabilityStatus.UNVERIFIED
+                evidence_reason = "INVALID_PRODUCT_SCOPE"
+            # A negative scope wins even when a broad candidate rule matched.
+            # Unknown scope never becomes positive applicability.
+            if scope_truth == FALSE:
+                final_status = ApplicabilityStatus.NOT_APPLICABLE
+            elif scope_truth == UNKNOWN and final_status == ApplicabilityStatus.APPLICABLE:
+                final_status = ApplicabilityStatus.NEEDS_INFORMATION
+                evidence_reason = "PRODUCT_SCOPE_UNRESOLVED"
+
+        if final_status == ApplicabilityStatus.APPLICABLE and requirement.category.strip().upper() == "STANDARD":
+            matched_trace = next((entry["trace"] for entry in rule_evaluations
+                                  if matched_rule and entry["rule_id"] == matched_rule.rule_id
+                                  and entry["version"] == matched_rule.version), {})
+            if not (_confirmed_product_scope(matched_trace, matched_rule.condition_ast if matched_rule else None) or
+                    (scope_trace and _confirmed_product_scope(scope_trace, scope_ast))):
+                final_status = ApplicabilityStatus.UNVERIFIED
+                evidence_reason = "PRODUCT_SCOPE_NOT_ESTABLISHED"
+
         explanation: dict[str, Any] = {
             "requirement_id": requirement.requirement_id,
             "requirement_name": requirement.name,
@@ -421,6 +473,8 @@ class ApplicabilityEngine:
             explanation["conflicts"] = conflicts
         if evidence_reason:
             explanation["evidence_reason"] = evidence_reason
+        if scope_trace is not None:
+            explanation["scope_evaluation"] = scope_trace
 
         return DecisionResult(
             decision_run=decision_run,

@@ -71,18 +71,24 @@ class BusinessComplianceCasesView(APIView):
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
+        assessment_id = request.query_params.get("assessment_id")
+        assessment = business.assessments.filter(pk=assessment_id).first() if assessment_id else business.latest_assessment
+        if assessment_id and assessment is None:
+            return error_response("NOT_FOUND", "Assessment not found for this business.", http_status=404)
         cases_qs = ComplianceCase.objects.filter(business=business).select_related(
             "requirement", "current_workflow_instance__current_step"
         ).prefetch_related("document_requirements")
+        if assessment_id:
+            cases_qs = cases_qs.filter(assessment=assessment, profile_version=assessment.profile_version)
 
         # Auto-instantiate cases if none exist yet for evaluated requirements
         if not cases_qs.exists():
-            assessment_id = request.query_params.get("assessment_id")
-            assessment = business.assessments.filter(pk=assessment_id).first() if assessment_id else business.latest_assessment
             generate_compliance_cases_for_business(business, assessment=assessment)
             cases_qs = ComplianceCase.objects.filter(business=business).select_related(
                 "requirement", "current_workflow_instance__current_step"
             ).prefetch_related("document_requirements")
+            if assessment_id:
+                cases_qs = cases_qs.filter(assessment=assessment, profile_version=assessment.profile_version)
 
         cases_data = ComplianceCaseListSerializer(cases_qs, many=True).data
 
@@ -123,6 +129,8 @@ class BusinessComplianceCasesView(APIView):
 
         assessment_id = request.data.get("assessment_id") or request.query_params.get("assessment_id")
         assessment = business.assessments.filter(pk=assessment_id).first() if assessment_id else business.latest_assessment
+        if assessment_id and assessment is None:
+            return error_response("NOT_FOUND", "Assessment not found for this business.", http_status=404)
         created_cases = generate_compliance_cases_for_business(business, assessment=assessment)
 
         cases_data = ComplianceCaseListSerializer(created_cases, many=True).data
@@ -705,8 +713,11 @@ class BusinessWorkflowsListView(APIView):
         assessment = (business.assessments.filter(pk=assessment_id).first() if assessment_id
                       else business.assessments.order_by("-assessment_number").first())
         profile = assessment.profile_version if assessment else business.current_profile
-        case = ComplianceCase.objects.select_for_update().filter(business=business,
-            requirement_id_code=req_code, profile_version=profile).first()
+        cases = ComplianceCase.objects.select_for_update().filter(business=business,
+            requirement_id_code=req_code, profile_version=profile)
+        if assessment_id:
+            cases = cases.filter(assessment=assessment)
+        case = cases.first()
         if not case:
             case = ComplianceCase.objects.create(business=business, assessment=assessment, case_number="CASE-" + uuid.uuid4().hex[:16].upper(),
                 requirement_id_code=req_code, profile_version=profile,

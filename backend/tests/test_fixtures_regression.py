@@ -129,7 +129,13 @@ def test_scenario_telangana_electronics(loaded_knowledge_packs, create_business_
 
     results = {r.requirement_id: r for r in run.results.all()}
 
-    assert results["REQ-BIS-CRS-SMART-METER"].status == ApplicabilityStatus.APPLICABLE
+    # The historical fixture only tests ELECTRONIC/METER narrative keywords.
+    # Even a meter business needs reviewed notified-product scope before this
+    # candidate may become a mandatory standard. Preserve its evidence chain.
+    crs = results["REQ-BIS-CRS-SMART-METER"]
+    assert crs.status == ApplicabilityStatus.UNVERIFIED
+    assert crs.explanation_trace["evidence_reason"] == "PRODUCT_SCOPE_NOT_ESTABLISHED"
+    assert crs.evidence_refs[0]["evidence_id"] == "EVD-BIS-CRS-ELECTRONICS"
     assert results["REQ-TSPCB-CTE"].status == ApplicabilityStatus.APPLICABLE
     assert results["REQ-CPCB-EPR-EWASTE"].status == ApplicabilityStatus.APPLICABLE
 

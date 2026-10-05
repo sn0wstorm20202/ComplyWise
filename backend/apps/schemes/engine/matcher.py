@@ -13,11 +13,16 @@ for all industries."
 from __future__ import annotations
 
 from typing import Any
+import re
 
 from apps.businesses.models import Business
-from apps.schemes.models import Scheme, SchemeVersion
-from apps.schemes.pipeline.service import SchemePipelineService
+from apps.schemes.models import Scheme
+from apps.schemes.presentation import scheme_evidence_projection, scheme_source_projection
+from apps.schemes.provenance import is_authored_fixture_version
 from domain.context.business_context import DerivedBusinessContext, build_business_context
+from domain.context.activity_text import strip_negations
+from apps.evidence.presentation import exact_source_url
+from .eligibility import assessment_facts, evaluate_declared_eligibility
 
 
 SECTOR_KEYWORDS = {
@@ -73,11 +78,12 @@ def evaluate_sector_eligibility(
     if not scheme_sectors or "ALL" in scheme_sectors or "UNIVERSAL" in scheme_sectors:
         return True, "All Industries", True
 
-    desc = (product_desc or "").lower()
+    desc = strip_negations((product_desc or "").lower())
 
     # Export scheme check
     if "EXPORT" in scheme_sectors:
-        if is_cross_border or any(w in desc for w in ["export", "overseas", "foreign trade", "icegate", "international"]):
+        # `is_cross_border` includes importing and cannot establish exports.
+        if re.search(r"\bexport\w*\b", desc):
             return True, "Export Promotion", False
         return False, "", False
 
@@ -87,7 +93,8 @@ def evaluate_sector_eligibility(
         sec_upper = sec.upper()
         if sec_upper in SECTOR_KEYWORDS:
             keywords = SECTOR_KEYWORDS[sec_upper]
-            if any(k in desc for k in keywords):
+            stems = {"vehic", "electron", "semiconduct", "machin", "fabricat", "dehydrat", "pharma", "consult"}
+            if any(re.search(r"\b" + re.escape(k) + (r"\w*\b" if k in stems else r"\b"), desc) for k in keywords):
                 matched_sectors.append(sec_upper.replace("_", " ").title())
 
     if matched_sectors:
@@ -112,8 +119,16 @@ def match_business_schemes(
         - State-specific schemes matching the business state (e.g. Maharashtra)
         - Targeted sector schemes matching the business's industry (Food, Auto, Textile, etc.)
     """
+    assessment = (business.assessments.filter(pk=assessment_id).first() if assessment_id
+                  else business.assessments.order_by("-assessment_number").first() if hasattr(business, "assessments") else None)
+    if assessment_id and (assessment is None or not assessment.profile_version_id):
+        return {"business_id": str(business.id), "business_name": business.name, "schemes": [],
+                "count": 0, "total_schemes_found": 0, "available": True, "assessment_id": str(assessment_id),
+                "scope_status": "ASSESSMENT_REQUIRED"}
     if context is None:
-        context = build_business_context(business)
+        context = build_business_context(business, profile_version=assessment.profile_version if assessment else None)
+    facts = assessment_facts(context)
+    manufacturing = facts.get("is_manufacturing") if isinstance(facts.get("is_manufacturing"), bool) else context.is_manufacturing
 
     raw_state = (context.state or "").upper()
     state_code = "MH" if raw_state in ["MH", "MAHARASHTRA"] else ("GJ" if raw_state in ["GJ", "GUJARAT"] else raw_state)
@@ -124,12 +139,19 @@ def match_business_schemes(
     active_schemes = Scheme.objects.filter(is_active=True).prefetch_related("versions")
 
     matched_schemes: list[dict[str, Any]] = []
+    quarantined_count = 0
 
     for scheme in active_schemes:
         ver = scheme.versions.filter(version_number=scheme.current_version_number, is_active=True).first()
         if not ver:
             ver = scheme.versions.filter(is_active=True).order_by("-version_number").first()
         if not ver:
+            continue
+        if is_authored_fixture_version(ver):
+            quarantined_count += 1
+            continue
+        eligibility_status, predicate_facts, unresolved_facts = evaluate_declared_eligibility(ver, facts)
+        if eligibility_status == "NOT_ELIGIBLE":
             continue
 
         # 1. Jurisdiction Match
@@ -153,7 +175,7 @@ def match_business_schemes(
                 continue
 
         # 1b. Non-manufacturing service exclusions
-        if not context.is_manufacturing:
+        if not manufacturing:
             # Physical cluster programs and manufacturing certifications do not apply
             if "CLUSTER" in ver.title.upper() or "MSE-CDP" in scheme.scheme_code or "ZED" in scheme.scheme_code:
                 continue
@@ -172,44 +194,45 @@ def match_business_schemes(
 
         # 3. Sector & Activity Match (Universal vs Targeted)
         scheme_sectors = ver.sectors or ["ALL"]
-        is_sector_eligible, matched_category_name, is_universal = evaluate_sector_eligibility(
-            scheme_sectors, desc, context.is_manufacturing, context.is_cross_border
-        )
+        if "EXPORT" in scheme_sectors:
+            if facts.get("exports") is False:
+                continue
+            is_sector_eligible = facts.get("exports") is True
+            matched_category_name, is_universal = "Export Promotion", False
+        else:
+            is_sector_eligible, matched_category_name, is_universal = evaluate_sector_eligibility(
+                scheme_sectors, desc, manufacturing, context.is_cross_border
+            )
         if not is_sector_eligible:
             continue
 
-        # 4. Generate Relevance Rationale
-        scale_str = msme_scale.capitalize() if msme_scale != "UNKNOWN" else "MSME"
-        if is_universal:
-            if not is_central:
-                rationale = (
-                    f"Universal Maharashtra State incentive: Available for all eligible {scale_str} "
-                    f"enterprises operating within {state_name} qualifying for state industrial incentives regardless of specific industry."
-                )
-            else:
-                rationale = (
-                    f"Universal National support program: Available for all eligible {scale_str} "
-                    f"enterprises across India under Central Ministry guidelines."
-                )
-        else:
-            if not is_central:
-                rationale = (
-                    f"Targeted state incentive: Formulated specifically for {matched_category_name} "
-                    f"enterprises in {state_name} with {scale_str} scale classification."
-                )
-            else:
-                rationale = (
-                    f"Targeted Central scheme: Dedicated national program formulated specifically "
-                    f"for {matched_category_name} manufacturing units."
-                )
+        matched_fact_values = {"state": context.state}
+        if scheme_scales and msme_scale != "UNKNOWN":
+            matched_fact_values["msme_scale"] = msme_scale
+        if not is_universal:
+            matched_fact_values["product_description"] = context.product_description
+        matched_fact_values.update({key: value for key, value in predicate_facts.items() if value is not None})
+        source_url = exact_source_url(ver.source_url)
+        usable_evidence = bool(source_url and (ver.evidence_snippet or "").strip())
+        if eligibility_status == "EVIDENCE_SUPPORTED" and (ver.verification_status != "VERIFIED" or not usable_evidence):
+            eligibility_status = "NEEDS_REVIEW"
 
-        dates_str = "Active"
+        rationale = "Matched recorded facts: " + "; ".join(
+            f"{key.replace('_', ' ')}: {state_name if key == 'state' else value}" for key, value in matched_fact_values.items()) + "."
+        if eligibility_status != "EVIDENCE_SUPPORTED":
+            rationale += " Relevance is a candidate match; full eligibility has not been established."
+        if unresolved_facts:
+            rationale += " Missing eligibility facts: " + ", ".join(key.replace("_", " ") for key in unresolved_facts) + "."
+        dates_str = "Currentness not recorded"
         if ver.effective_from and ver.effective_to:
-            dates_str = f"Active ({ver.effective_from.strftime('%b %Y')} – {ver.effective_to.strftime('%b %Y')})"
+            dates_str = f"Recorded window ({ver.effective_from.strftime('%b %Y')} – {ver.effective_to.strftime('%b %Y')})"
         elif ver.effective_from:
-            dates_str = f"Active (from {ver.effective_from.strftime('%b %Y')})"
+            dates_str = f"Recorded start: {ver.effective_from.strftime('%b %Y')}"
 
         jurisdiction_display = "Maharashtra State" if ver.jurisdiction in ["MH", "MAHARASHTRA"] else "Central Government"
+
+        source = scheme_source_projection(ver)
+        evidence = scheme_evidence_projection(ver)
 
         matched_schemes.append({
             "id": scheme.scheme_code,
@@ -224,7 +247,7 @@ def match_business_schemes(
             "benefit_summary": ver.benefit_summary,
             "benefit_details": ver.benefit_details,
             "eligibility": ver.eligibility_statement,
-            "eligibility_status": "ACTIVE_ELIGIBLE",
+            "eligibility_status": eligibility_status,
             "effective_dates": dates_str,
             "effective_from": ver.effective_from.isoformat() if ver.effective_from else None,
             "effective_to": ver.effective_to.isoformat() if ver.effective_to else None,
@@ -233,52 +256,35 @@ def match_business_schemes(
             "version": f"v{ver.version_number}.0",
             "version_number": ver.version_number,
             "content_hash": ver.content_hash,
-            "source_url": ver.source_url,
+            "source_url": source_url,
+            "source": source, "evidence": evidence,
+            "matched_facts": list(matched_fact_values), "matched_fact_values": matched_fact_values,
+            "unresolved_facts": unresolved_facts, "result_origin": "DETERMINISTIC_KB_RESULT" if eligibility_status == "EVIDENCE_SUPPORTED" else "HUMAN_REVIEW_RESULT",
             "source_domain": ver.source_domain or scheme.source_domain,
-            "action_url": ver.application_url or ver.source_url,
-            "portal_url": ver.application_url or ver.source_url,
+            "action_url": ver.application_url or None,
+            "portal_url": ver.application_url or None,
             "application_route": ver.application_route,
             "evidence_snippet": ver.evidence_snippet,
             "relevance_rationale": rationale,
             "is_universal": is_universal,
             "sector_category": matched_category_name,
-            "status": "ACTIVE_ELIGIBLE",
+            "status": eligibility_status,
             "is_state_specific": not is_central,
             "is_active": ver.is_active,
         })
 
     def _compute_relevance(s: dict[str, Any]) -> int:
-        code = s["scheme_code"].upper()
-        title = s["title"].lower()
-        score = 50
-        if not s["is_universal"]:
-            score += 20
-        if s.get("is_state_specific"):
-            score += 40
-        if not context.is_manufacturing:
-            if "STARTUP" in code or "SEED" in title or "SISFS" in code:
-                score += 45
-            elif "IPR" in code or "INTELLECTUAL PROPERTY" in title:
-                score += 40
-            elif "CGTMSE" in code or "CREDIT GUARANTEE" in title:
-                score += 35
-            elif "TREDS" in code or "FACTORING" in title:
-                score += 30
-            elif "SAMADHAAN" in code:
-                score += 25
-        else:
-            if "PSI" in code or "PACKAGE SCHEME" in title:
-                score += 40
-            elif "ZED" in code:
-                score += 35
-            elif "CGTMSE" in code:
-                score += 30
-            elif "CLUSTER" in title or "CDP" in code:
-                score += 25
+        score = 100 if s["eligibility_status"] == "EVIDENCE_SUPPORTED" else 0
+        score += 30 if s["source"]["url"] and s["evidence"] else -20
+        score += 20 if not s["is_universal"] else 0
+        score += 5 * len(s["matched_facts"])
+        score -= 10 * len(s["unresolved_facts"])
+        if s["eligibility_status"] == "EXPIRED_OR_NOT_CURRENT":
+            score -= 100
         return score
 
     matched_schemes.sort(key=_compute_relevance, reverse=True)
-    if not context.is_manufacturing:
+    if not manufacturing:
         # Non-manufacturing / Software / SaaS: cap at top 5 high-impact tech & financial support schemes
         matched_schemes = matched_schemes[:5]
 
@@ -288,6 +294,10 @@ def match_business_schemes(
     return {
         "business_id": str(business.id),
         "business_name": business.name,
+        "assessment_id": str(assessment.id) if assessment else None,
+        "excluded_unreviewed_count": quarantined_count,
+        "scope_status": "SOURCE_REVIEW_REQUIRED" if quarantined_count and not matched_schemes else "MATCHED" if matched_schemes else "PARTIAL_SCOPE",
+        "scope_note": "Historical authored scheme records have no established source evidence and are excluded from recommendations. Reviewed scheme sources must be acquired before eligibility can be established." if quarantined_count else "Candidate matches do not establish complete scheme eligibility.",
         "available": True,
         "state": state_code,
         "state_code": state_code,
@@ -303,9 +313,9 @@ def match_business_schemes(
         "central_schemes_count": sum(1 for s in matched_schemes if not s["is_state_specific"]),
         "schemes": matched_schemes,
         "discovery_mode": "CENTRAL_AND_MAHARASHTRA_INGESTION_PIPELINE",
-        "data_freshness": "OFFICIAL_PORTAL_VERIFIED",
+        "data_freshness": "RECORDED_VERSIONS",
         "disclaimer": (
             "Scheme relevance is derived from your business activity, jurisdiction, and MSME classification. "
-            "Universal programs apply across industries, while sector incentives require qualifying production activities."
+            "Candidate relevance is not eligibility; reviewed predicates and exact source evidence are required to support eligibility."
         ),
     }

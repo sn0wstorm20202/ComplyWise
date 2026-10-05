@@ -74,6 +74,8 @@ function WorkflowsContent() {
       activeBusinessId ||
       (typeof window !== "undefined" ? localStorage.getItem("complywise_active_business_id") : null);
 
+    setUpdatingStep(false); setSaveSuccessMsg(null); setStepError(null);
+    setStepUserRef(""); setStepNotes("");
     if (!bizId) { setWorkflows([]); setSelectedWorkflowId(null); setLoading(false); return; }
     setBusinessId(bizId);
     setWorkflows([]); // clear old business workflows immediately
@@ -248,6 +250,7 @@ function WorkflowsContent() {
   // Handle Step Status Update (Persists to Database)
   async function handleUpdateStepStatus(newStatus: "COMPLETED" | "IN_PROGRESS" | "NOT_STARTED") {
     if (!activeWf || !activeStep || !businessId) return;
+    const version = requestVersion.current;
     const stepNum = activeStep.step_number || activeStep.step;
 
     setUpdatingStep(true);
@@ -268,6 +271,7 @@ function WorkflowsContent() {
         authority: activeWf.authority,
         category: activeWf.category,
       });
+      if (version !== requestVersion.current) return;
 
       // Update local workflow state
       setWorkflows((prev) =>
@@ -311,16 +315,18 @@ function WorkflowsContent() {
         setSelectedStepNumber(stepNum + 1);
       }
     } catch (err: unknown) {
+      if (version !== requestVersion.current) return;
       const msg = err instanceof Error ? err.message : "Failed to update step.";
       setStepError(`Could not save this step: ${msg}`);
     } finally {
-      setUpdatingStep(false);
+      if (version === requestVersion.current) setUpdatingStep(false);
     }
   }
 
   // Handle saving notes / reference without changing status
   async function handleSaveReferenceOnly() {
     if (!activeWf || !activeStep || !businessId) return;
+    const version = requestVersion.current;
     const stepNum = activeStep.step_number || activeStep.step;
     setUpdatingStep(true);
     setSaveSuccessMsg(null);
@@ -335,6 +341,7 @@ function WorkflowsContent() {
         notes: stepNotes.trim(),
         total_steps: activeWf.total_steps || activeWf.steps.length,
       });
+      if (version !== requestVersion.current) return;
 
       // Update local state
       setWorkflows((prev) =>
@@ -356,10 +363,11 @@ function WorkflowsContent() {
 
       setSaveSuccessMsg("Reference number & notes saved to database.");
     } catch (err: unknown) {
+      if (version !== requestVersion.current) return;
       const msg = err instanceof Error ? err.message : "Failed to save reference.";
       setStepError(`Could not save your reference: ${msg}`);
     } finally {
-      setUpdatingStep(false);
+      if (version === requestVersion.current) setUpdatingStep(false);
     }
   }
 

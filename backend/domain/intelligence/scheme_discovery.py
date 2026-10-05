@@ -33,6 +33,7 @@ def discover_business_schemes(
                 "scheme_name": item["title"], "ministry": item["authority_or_regulator"],
                 "relevance_rationale": item["why_it_may_apply"], "benefit_summary": item["description"],
                 "status": "TO_EXPLORE", "is_universal": False, "sector_category": "SUPPORT_PLANNING",
-                "is_state_specific": False, "portal_url": None, "action_url": None})
+                "is_state_specific": False, "portal_url": None, "action_url": None,
+                "eligibility_status": "CONTEXTUAL", "source": None, "evidence": [], "matched_facts": []})
     payload["count"] = payload["total_schemes_found"] = len(payload["schemes"])
     return payload

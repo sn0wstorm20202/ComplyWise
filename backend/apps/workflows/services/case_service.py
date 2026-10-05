@@ -24,7 +24,9 @@ class CaseService:
     def get_business_context(cls, case: ComplianceCase) -> dict[str, Any]:
         """Derive readable business context profile for admin and user workspaces."""
         business = case.business
-        profile_ver = case.profile_version or getattr(business, "current_profile", None)
+        profile_ver = case.profile_version
+        if profile_ver is None:
+            profile_ver = case.assessment.profile_version if case.assessment_id else business.current_profile
         variables = profile_ver.variables if profile_ver else {}
 
         def get_val(var_name: str, fallback: str = "Not Specified") -> Any:
@@ -83,7 +85,7 @@ class CaseService:
             "business_type": industry,
             "product": product,
             "workers": workers,
-            "power_load": power if ("KW" in str(power).upper() or "HP" in str(power).upper()) else f"{power} KW",
+            "power_load": power if ("KW" in str(power).upper() or "HP" in str(power).upper()) else f"{power} HP",
             "profile_version": profile_ver.version if profile_ver else 1,
             "profile_version_id": str(profile_ver.id) if profile_ver else None,
             "profile_change_note": profile_ver.change_note if profile_ver else "",
@@ -98,14 +100,27 @@ class CaseService:
     @classmethod
     def get_why_applicable_summary(cls, case: ComplianceCase) -> str:
         """Derive explanation of why this requirement is applicable."""
-        if case.requirement and case.requirement.description:
-            return case.requirement.description
-
         meta = case.metadata or {}
+        if meta.get("result_origin") == "LLM_FALLBACK_RESULT":
+            return "Contextual preparation guidance for this assessment; statutory applicability has not been established."
+        if case.assessment_id and case.assessment.decision_run_id and case.requirement:
+            from apps.requirements.presentation import (
+                decision_presentation,
+                requirement_reason_summary,
+                standard_mandatory_status,
+            )
+            run = case.assessment.decision_run
+            if run.business_id == case.business_id and run.profile_version_id == case.profile_version_id:
+                decision = run.results.filter(requirement_id=case.requirement_id_code).first()
+                if decision:
+                    _, trace = decision_presentation(decision, case.requirement)
+                    if (case.requirement.category.strip().upper() == "STANDARD" and
+                            standard_mandatory_status(decision, case.requirement) is not True):
+                        return "Quality assessment or preparation planning; a mandatory legal linkage has not been established."
+                    return requirement_reason_summary(trace, case.requirement)
         if meta.get("applicability_reason"):
             return meta["applicability_reason"]
-
-        return f"Statutory requirement mandated under {case.requirement_id_code} for active operational profile."
+        return "Applicability evidence is not recorded for this case. Confirm the requirement before treating it as mandatory."
 
     @classmethod
     def get_current_user_task(cls, case: ComplianceCase) -> dict[str, Any]:
@@ -133,20 +148,28 @@ class CaseService:
 
         if step_type == WorkflowStepType.DOCUMENT_COLLECTION:
             # Check document completion
-            doc_reqs = case.document_requirements.all()
+            doc_reqs = list(case.document_requirements.all())
+            if not doc_reqs:
+                return {
+                    "action_type": "WAITING_REVIEW",
+                    "title": "No Filing Checklist Recorded",
+                    "description": "Confirm any required filing documents before submission. No document submission is recorded by this checklist.",
+                    "is_action_required": False,
+                    "button_label": None,
+                }
             missing_count = sum(1 for d in doc_reqs if not d.latest_submission)
             if missing_count > 0:
                 return {
                     "action_type": "UPLOAD_DOCUMENT",
-                    "title": f"Upload Mandated Statutory Documents ({missing_count} remaining)",
-                    "description": "Please upload all required certificates, blueprints, or declarations to proceed.",
+                    "title": f"Prepare Documents ({missing_count} remaining)",
+                    "description": "Review and upload the recorded checklist items for this case. Confirm which filing documents are required.",
                     "is_action_required": True,
                     "button_label": "Upload Documents",
                 }
             return {
                 "action_type": "WAITING_REVIEW",
                 "title": "Documents Submitted",
-                "description": "All mandated documents are uploaded and awaiting AI verification.",
+                "description": "The recorded checklist documents have been uploaded and are awaiting review.",
                 "is_action_required": False,
                 "button_label": None,
             }

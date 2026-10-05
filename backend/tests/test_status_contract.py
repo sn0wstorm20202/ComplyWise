@@ -2,7 +2,7 @@
 
 Authority: TRD_v2.0 §30, §31, §32; FRONTEND_INSTRUCTIONS.md §5; Audit Finding A4.
 
-Fails the build if frontend/types/index.ts drifts from backend canonical contracts.
+Fails the build if frontend's exported types drift from backend canonical contracts.
 """
 
 from __future__ import annotations
@@ -61,7 +61,15 @@ def _extract_ts_interface_fields(content: str, interface_name: str) -> set[str]:
 @pytest.fixture(scope="module")
 def ts_content() -> str:
     assert FRONTEND_TYPES_PATH.exists(), f"Frontend types file missing: {FRONTEND_TYPES_PATH}"
-    return FRONTEND_TYPES_PATH.read_text(encoding="utf-8")
+    barrel = FRONTEND_TYPES_PATH.read_text(encoding="utf-8")
+    modules = re.findall(r'export type \* from "\./([^"]+)";', barrel)
+    assert modules, "Canonical type barrel must export its domain contracts."
+    exported_contracts = [barrel]
+    for module in modules:
+        path = FRONTEND_TYPES_PATH.with_name(f"{module}.ts")
+        assert path.exists(), f"Exported frontend contract missing: {path}"
+        exported_contracts.append(path.read_text(encoding="utf-8"))
+    return "\n".join(exported_contracts)
 
 
 @pytest.mark.parametrize(

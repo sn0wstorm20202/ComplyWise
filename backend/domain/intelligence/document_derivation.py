@@ -18,7 +18,12 @@ from common.enums import ApplicabilityStatus
 from apps.applicability.models import DecisionRun
 from apps.businesses.models import Business
 from apps.knowledge.models import RequirementDefinition
-from apps.requirements.views import DOCUMENTS_KEY, _str_list
+from apps.requirements.presentation import (
+    DOCUMENTS_KEY,
+    decision_presentation,
+    metadata_string_list,
+    standard_mandatory_status,
+)
 from domain.context.business_context import DerivedBusinessContext, build_business_context
 
 # Domain-specific statutory document checklists keyed by authority or domain keyword
@@ -252,9 +257,19 @@ def derive_business_documents(
             req_def = req_defs.get(result.requirement_id)
             if req_def is None:
                 continue
+            if (hasattr(result, "explanation_trace") and
+                    decision_presentation(result, req_def)[0] not in {
+                        ApplicabilityStatus.APPLICABLE, ApplicabilityStatus.NEEDS_INFORMATION}):
+                # Historical narrative-only standard matches must not create a
+                # mandatory filing checklist after the read model downgrades them.
+                continue
+            mandate_confirmed = result.status == ApplicabilityStatus.APPLICABLE
+            if req_def.category.strip().upper() == "STANDARD":
+                mandate_confirmed = (hasattr(result, "explanation_trace") and
+                                     standard_mandatory_status(result, req_def) is True)
 
             # 1. Check if metadata explicitly carries required documents
-            explicit_names = _str_list((req_def.metadata or {}).get(DOCUMENTS_KEY))
+            explicit_names = metadata_string_list((req_def.metadata or {}).get(DOCUMENTS_KEY))
             req_docs: list[dict[str, Any]] = []
 
             if explicit_names:
@@ -263,7 +278,11 @@ def derive_business_documents(
                         "id": f"{result.requirement_id}::DOC-{idx}",
                         "name": doc_name,
                         "category": "STATUTORY_REQUIREMENT",
-                        "why_it_matters": f"Directly required by published regulatory specifications for {req_def.name}.",
+                        "why_it_matters": (
+                            f"Directly required by published regulatory specifications for {req_def.name}."
+                            if mandate_confirmed else
+                            f"Recorded preparation checklist for {req_def.name}; mandatory linkage is not established."
+                        ),
                     })
             else:
                 # 2. Derive from statutory template matching authority and domain
@@ -290,9 +309,12 @@ def derive_business_documents(
                     "portal_uploaded": False,
                     "prevalidation_status": "NEEDS_REVIEW",
                     "accepted_formats": "PDF, JPG, PNG (Max 10 MB)",
-                    "mandatory": getattr(result, "result_origin", "DETERMINISTIC_KB_RESULT") != "HUMAN_REVIEW_RESULT",
+                    "mandatory": (mandate_confirmed
+                                  and getattr(result, "result_origin", "DETERMINISTIC_KB_RESULT") != "HUMAN_REVIEW_RESULT"),
                     "result_origin": getattr(result, "result_origin", "DETERMINISTIC_KB_RESULT"),
-                    "notes": f"Required for submission to {req_def.authority}.",
+                    "notes": (f"Required for submission to {req_def.authority}."
+                              if mandate_confirmed
+                              else "Preparation checklist; applicability still needs confirmation."),
                 })
 
             requirements_summary.append({
@@ -315,7 +337,9 @@ def derive_business_documents(
     from apps.documents.models import DocumentRequirement
     recorded = DocumentRequirement.objects.filter(case__business=business).select_related("case")
     if assessment_id:
-        recorded = recorded.filter(case__metadata__assessment_id=str(assessment_id))
+        recorded = recorded.filter(case__assessment_id=assessment_id)
+        if assessment and assessment.profile_version_id:
+            recorded = recorded.filter(case__profile_version_id=assessment.profile_version_id)
     by_id = {(d.configuration or {}).get("checklist_id", d.document_type_code): d for d in recorded}
     for record_id, record in by_id.items():
         if (record.configuration or {}).get("business_record"):

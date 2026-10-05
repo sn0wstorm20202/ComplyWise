@@ -27,6 +27,7 @@ from rest_framework.views import APIView
 from common.enums import KnowledgeStatus
 from common.envelope import envelope
 from apps.evidence.models import Evidence
+from apps.evidence.presentation import evidence_projection
 from apps.knowledge.models import RequirementDefinition
 
 from apps.businesses.models import Business
@@ -105,17 +106,7 @@ class StandardsSearchView(APIView):
                 ev = evidence_by_id.get(ref)
                 if ev is None:
                     continue
-                citations.append(
-                    {
-                        "evidence_id": ev.evidence_id,
-                        "source_title": ev.source.title,
-                        "authority": ev.source.authority,
-                        "locator": ev.locator,
-                        "excerpt": ev.excerpt,
-                        "verification_status": ev.verification_status,
-                        "canonical_url": ev.source.canonical_url,
-                    }
-                )
+                citations.append(evidence_projection(ev))
 
             standards.append(
                 {
@@ -129,6 +120,10 @@ class StandardsSearchView(APIView):
                     # about whether the standard is mandatory for the searcher.
                     "category": req.category,
                     "citations": citations,
+                    "evidence": citations,
+                    "source": citations[0]["source"] if citations else None,
+                    "status": "CANDIDATE",
+                    "is_mandatory": None,
                     "citation_count": len(citations),
                 }
             )

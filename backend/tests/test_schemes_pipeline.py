@@ -42,6 +42,26 @@ def api_client():
     return APIClient()
 
 
+@pytest.fixture
+def synthetic_matching_catalog():
+    """Explicit non-legal records test matching independently of authored seeds."""
+    for code, jurisdiction, sectors, scales in (
+        ("SYN-MH-GENERAL", "MH", ["ALL"], ["MICRO", "SMALL"]),
+        ("SYN-MH-FOOD", "MH", ["FOOD_PROCESSING"], ["MICRO", "SMALL"]),
+        ("SYN-CENTRAL-GENERAL", "CENTRAL", ["ALL"], ["MICRO", "SMALL"]),
+        ("SYN-CENTRAL-FOOD", "CENTRAL", ["FOOD_PROCESSING"], ["MICRO", "SMALL"]),
+        ("SYN-CENTRAL-ENGINEERING", "CENTRAL", ["ENGINEERING"], ["MICRO", "SMALL"]),
+        ("SYN-MH-LARGE", "MH", ["ALL"], ["LARGE"]),
+    ):
+        scheme = Scheme.objects.create(scheme_code=code, title=code, jurisdiction=jurisdiction,
+            authority="Synthetic test authority", source_url="https://msme.gov.in/synthetic-matching-fixture", source_domain="msme.gov.in")
+        SchemeVersion.objects.create(scheme=scheme, version_number=1, content_hash="s"*64,
+            title=code, authority=scheme.authority, jurisdiction=jurisdiction,
+            summary="Synthetic matching fixture; not regulatory advice.", benefit_summary="Synthetic support area.",
+            eligibility_statement="Synthetic eligibility requires additional review.", sectors=sectors, scale_match=scales,
+            source_url=scheme.source_url, evidence_snippet="Synthetic captured matching passage.", verification_status="PENDING_REVIEW")
+
+
 from common.enums import VariableOrigin
 
 @pytest.fixture
@@ -241,7 +261,7 @@ def test_pipeline_rollback_safety():
 
 
 @pytest.mark.django_db
-def test_maharashtra_business_context_matching(mh_food_business):
+def test_maharashtra_business_context_matching(mh_food_business, synthetic_matching_catalog):
     """Verify that a Maharashtra food processing MSME matches Maharashtra schemes + Central schemes."""
     # Run pipeline first
     SchemePipelineService().run_pipeline(force=True)
@@ -254,25 +274,30 @@ def test_maharashtra_business_context_matching(mh_food_business):
     scheme_codes = [s["scheme_code"] for s in result["schemes"]]
 
     # Maharashtra schemes must be present
-    assert "SCHEME-MH-PSI-2019" in scheme_codes
-    assert "SCHEME-MH-INTEREST-SUBSIDY" in scheme_codes
-    assert "SCHEME-MH-POWER-TARIFF" in scheme_codes
-    assert "SCHEME-MH-ELECTRICITY-DUTY" in scheme_codes
+    assert "SYN-MH-GENERAL" in scheme_codes
+    assert "SYN-MH-FOOD" in scheme_codes
+    assert "SYN-MH-LARGE" not in scheme_codes
 
     # Central schemes must be present
-    assert "SCHEME-CGTMSE" in scheme_codes
-    assert "SCHEME-PMEGP" in scheme_codes
+    assert "SYN-CENTRAL-GENERAL" in scheme_codes
+    assert "SYN-CENTRAL-FOOD" in scheme_codes
+    assert "SYN-CENTRAL-ENGINEERING" not in scheme_codes
+    assert "SCHEME-CGTMSE" not in scheme_codes
+    assert result["excluded_unreviewed_count"] >= 10
 
     # Verify relevance rationale is populated and explains Maharashtra + Food Processing context
-    psi_scheme = next(s for s in result["schemes"] if s["scheme_code"] == "SCHEME-MH-PSI-2019")
+    psi_scheme = next(s for s in result["schemes"] if s["scheme_code"] == "SYN-MH-GENERAL")
     assert "Maharashtra" in psi_scheme["relevance_rationale"]
-    assert "qualifying for state industrial incentives" in psi_scheme["relevance_rationale"]
+    assert psi_scheme["matched_fact_values"]["state"] == "MAHARASHTRA"
+    assert psi_scheme["matched_fact_values"]["msme_scale"] == "MICRO"
+    assert psi_scheme["eligibility_status"] == "CANDIDATE"
+    assert "full eligibility has not been established" in psi_scheme["relevance_rationale"]
     assert psi_scheme["is_state_specific"] is True
     assert psi_scheme["last_verified_at"] is not None
 
 
 @pytest.mark.django_db
-def test_non_maharashtra_business_context_matching(gujarat_eng_business):
+def test_non_maharashtra_business_context_matching(gujarat_eng_business, synthetic_matching_catalog):
     """Verify that a Gujarat business matches Central schemes, but does NOT see Maharashtra schemes."""
     SchemePipelineService().run_pipeline(force=True)
 
@@ -283,19 +308,19 @@ def test_non_maharashtra_business_context_matching(gujarat_eng_business):
     scheme_codes = [s["scheme_code"] for s in result["schemes"]]
 
     # Central schemes must be present
-    assert "SCHEME-CGTMSE" in scheme_codes
-    assert "SCHEME-ZED-CERTIFICATION" in scheme_codes
-    assert "SCHEME-DPIIT-BHAVYA" in scheme_codes  # Automotive precision machining in DPIIT
+    assert "SYN-CENTRAL-GENERAL" in scheme_codes
+    assert "SYN-CENTRAL-ENGINEERING" in scheme_codes
+    assert "SYN-CENTRAL-FOOD" not in scheme_codes
 
     # Maharashtra state schemes MUST NOT be present for Gujarat business
-    assert "SCHEME-MH-PSI-2019" not in scheme_codes
-    assert "SCHEME-MH-ELECTRICITY-DUTY" not in scheme_codes
-    assert "SCHEME-MH-POWER-TARIFF" not in scheme_codes
+    assert "SYN-MH-GENERAL" not in scheme_codes
+    assert "SYN-MH-FOOD" not in scheme_codes
+    assert "SYN-MH-LARGE" not in scheme_codes
     assert result["maharashtra_schemes_count"] == 0
 
 
 @pytest.mark.django_db
-def test_business_schemes_api_endpoint(api_client, user, mh_food_business):
+def test_business_schemes_api_endpoint(api_client, user, mh_food_business, synthetic_matching_catalog):
     """Test GET /api/v1/businesses/{id}/schemes endpoint with authentication."""
     SchemePipelineService().run_pipeline(force=True)
     api_client.force_authenticate(user=user)
@@ -319,7 +344,7 @@ def test_business_schemes_api_endpoint(api_client, user, mh_food_business):
 
 
 @pytest.mark.django_db
-def test_schemes_catalog_api_endpoint(api_client):
+def test_schemes_catalog_api_endpoint(api_client, synthetic_matching_catalog):
     """Test GET /api/v1/schemes/catalog with filtering."""
     SchemePipelineService().run_pipeline(force=True)
 
@@ -327,18 +352,19 @@ def test_schemes_catalog_api_endpoint(api_client):
     response = api_client.get("/api/v1/schemes/catalog")
     assert response.status_code == 200
     catalog = response.json()["data"]
-    assert catalog["count"] >= 10
+    assert catalog["count"] == 6
 
     # 2. Filter by jurisdiction MH
     response_mh = api_client.get("/api/v1/schemes/catalog?jurisdiction=MH")
     catalog_mh = response_mh.json()["data"]
     assert all(s["jurisdiction_code"] == "MH" for s in catalog_mh["schemes"])
-    assert catalog_mh["count"] >= 5
+    assert catalog_mh["count"] == 3
 
     # 3. Filter by Central
     response_central = api_client.get("/api/v1/schemes/catalog?jurisdiction=CENTRAL")
     catalog_central = response_central.json()["data"]
     assert all(s["jurisdiction_code"] == "CENTRAL" for s in catalog_central["schemes"])
+    assert catalog_central["count"] == 3
 
 
 @pytest.mark.django_db

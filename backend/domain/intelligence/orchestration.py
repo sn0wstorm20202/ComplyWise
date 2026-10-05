@@ -252,7 +252,14 @@ class OrchestrationContext:
         assessment: Assessment | None = None,
         correlation_id: str | None = None,
     ) -> OrchestrationContext:
-        pv = assessment.profile_version if assessment and assessment.profile_version else business.current_profile
+        if assessment and assessment.business_id != business.id:
+            raise StageInputInvalid("The selected assessment belongs to another business.")
+        if assessment and not assessment.profile_version_id:
+            # An empty assessment can be initialized before profile intake. It
+            # must stay empty instead of inheriting a later mutable profile.
+            return cls(business_id=str(business.id), business_name=business.name,
+                       correlation_id=correlation_id or str(uuid.uuid4()))
+        pv = assessment.profile_version if assessment else business.current_profile
         derived = build_business_context(business, profile_version=pv)
         cid = correlation_id or str(uuid.uuid4())
 
@@ -392,6 +399,21 @@ class AssessmentRun:
 
     def to_safe_dict(self) -> dict[str, Any]:
         """Return safe user-facing state without leaking internal strategy or provider names."""
+        timings = {}
+        phase_timings = {}
+        for stage in STAGE_ORDER:
+            record = self.stage_metadata.get(stage.value, {})
+            if not isinstance(record, dict):
+                continue
+            duration = (record.get("metadata") or {}).get("duration_ms")
+            if isinstance(duration, (int, float)) and not isinstance(duration, bool) and duration >= 0:
+                timings[stage.value] = duration
+            details = (record.get("data") or {}).get("metadata") or {}
+            for phase, value in (details.get("timings_ms") or {}).items():
+                if isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0:
+                    phase_timings[phase] = round(phase_timings.get(phase, 0.0) + value, 2)
+        # Recorded execution time excludes the user's time answering questions.
+        # Missing historical measurements stay absent, rather than becoming zero.
         completed_stages = [
             k for k, v in self.stage_metadata.items()
             if isinstance(v, dict) and v.get("status") == StageStatus.COMPLETED
@@ -418,6 +440,9 @@ class AssessmentRun:
                 "percent": percent,
             },
             "safe_message": safe_msg,
+            "timings_ms": timings,
+            "phase_timings_ms": phase_timings,
+            "measured_stage_total_ms": round(sum(timings.values()), 2),
             "safe_error": self.error_message_safe if self.error_code else None,
             "error": {
                 "code": self.error_code,
@@ -458,6 +483,8 @@ class DefaultSchemeProvider(SchemeProvider):
         if not biz:
             return []
         selected_assessment = biz.assessments.filter(pk=assessment_id).first() if assessment_id else None
+        if assessment_id and (not selected_assessment or not selected_assessment.profile_version_id):
+            raise StageInputInvalid("The selected assessment has no business profile snapshot.")
         derived_ctx = build_business_context(biz, profile_version=selected_assessment.profile_version if selected_assessment else None)
         replacements: dict[str, Any] = {}
         desc = getattr(context, "raw_business_description", None) or getattr(context, "product", None)
@@ -481,8 +508,8 @@ class DefaultSchemeProvider(SchemeProvider):
                     benefit_type=item.get("benefit_type", "INCENTIVE_SCHEME"),
                     benefit_summary=item.get("benefit_summary", ""),
                     eligibility_statement=item.get("eligibility_statement", ""),
-                    source_url=item.get("source_url", "") or item.get("portal_url", ""),
-                    is_applicable=item.get("is_applicable", item.get("result_origin") != "LLM_FALLBACK_RESULT"),
+                    source_url=item.get("source_url") or "",
+                    is_applicable=item.get("eligibility_status") == "EVIDENCE_SUPPORTED",
                     match_score=item.get("match_score", 1.0),
                     extra=item,
                 )
@@ -573,6 +600,8 @@ class DefaultStandardsProvider(StandardsProvider):
         if not biz:
             return []
         selected_assessment = biz.assessments.filter(pk=assessment_id).first() if assessment_id else None
+        if assessment_id and (not selected_assessment or not selected_assessment.profile_version_id):
+            raise StageInputInvalid("The selected assessment has no business profile snapshot.")
         derived_ctx = build_business_context(biz, profile_version=selected_assessment.profile_version if selected_assessment else None)
         desc = getattr(context, "raw_business_description", None) or getattr(context, "product", None)
         if desc and desc != derived_ctx.product_description:
@@ -726,7 +755,7 @@ class LLMFirstStrategy(AssessmentStrategy):
             # Guarantee question set is explicitly stored in run stage_metadata
             state = dict(run.stage_metadata)
             state["question_generation"] = {
-                "question_policy_version": 2,
+                "question_policy_version": 5,
                 "questions": [q.to_dict() for q in questions],
                 "count": len(questions),
                 "generated_at": time.time(),
@@ -886,7 +915,7 @@ class LLMFirstStrategy(AssessmentStrategy):
 
         if stage == AssessmentStage.SCHEMES:
             cached = run.stage_metadata.get("schemes")
-            if isinstance(cached, dict) and "schemes" in cached:
+            if isinstance(cached, dict) and "schemes" in cached and cached.get("grounding_version") == 2:
                 return StageResult(
                     stage=stage,
                     status=StageStatus.COMPLETED,
@@ -904,10 +933,16 @@ class LLMFirstStrategy(AssessmentStrategy):
                     "jurisdiction": s.jurisdiction,
                     "eligibility": s.eligibility_statement,
                     "benefit": s.benefit_summary,
-                    "status": "TO_EXPLORE" if s.extra.get("result_origin") == "LLM_FALLBACK_RESULT" else "ACTIVE" if s.is_applicable else "UNKNOWN",
+                    "status": s.extra.get("status", "TO_EXPLORE" if s.extra.get("result_origin") == "LLM_FALLBACK_RESULT" else "CANDIDATE"),
+                    "eligibility_status": s.extra.get("eligibility_status", "CONTEXTUAL" if s.extra.get("result_origin") == "LLM_FALLBACK_RESULT" else "NEEDS_REVIEW"),
                     "result_origin": s.extra.get("result_origin", "DETERMINISTIC_KB_RESULT"),
                     "citations": s.extra.get("citations", []),
-                    "application_url": s.source_url or (s.extra.get("portal_url") if isinstance(s.extra, dict) else ""),
+                    "source_url": s.source_url,
+                    "source": s.extra.get("source"),
+                    "evidence": s.extra.get("evidence", []),
+                    "matched_facts": s.extra.get("matched_facts", []),
+                    "matched_fact_values": s.extra.get("matched_fact_values", {}),
+                    "application_url": s.extra.get("action_url") or s.extra.get("portal_url") or "",
                     "why_relevant": s.extra.get("relevance_rationale", s.eligibility_statement) if isinstance(s.extra, dict) else s.eligibility_statement,
                     "scheme_code": s.scheme_code,
                     "title": s.title,
@@ -916,6 +951,7 @@ class LLMFirstStrategy(AssessmentStrategy):
                 for s in raw_schemes
             ]
             clean_schemes = {
+                "grounding_version": 2,
                 "schemes": normalized_schemes,
                 "total_schemes": len(normalized_schemes),
             }
@@ -932,7 +968,7 @@ class LLMFirstStrategy(AssessmentStrategy):
 
         if stage == AssessmentStage.STANDARDS:
             cached = run.stage_metadata.get("standards")
-            if isinstance(cached, dict) and "standards" in cached:
+            if isinstance(cached, dict) and "standards" in cached and cached.get("grounding_version") == 2:
                 return StageResult(
                     stage=stage,
                     status=StageStatus.COMPLETED,
@@ -955,8 +991,13 @@ class LLMFirstStrategy(AssessmentStrategy):
                     "title": s.title,
                     "is_mandatory": s.is_mandatory,
                     "nature": s.category,
-                    "mandatory_status": s.extra.get("mandatory_status", "MANDATORY" if s.is_mandatory else "VOLUNTARY"),
-                    "verification_status": "CONTEXTUAL_GUIDANCE" if s.extra.get("result_origin") == "LLM_FALLBACK_RESULT" else "VERIFIED" if s.extra.get("citations") else "NEEDS_VERIFICATION",
+                    "mandatory_status": s.extra.get("mandatory_status", "MANDATORY" if s.is_mandatory is True else "VOLUNTARY" if s.is_mandatory is False else "UNKNOWN"),
+                    "verification_status": "CONTEXTUAL_GUIDANCE" if s.extra.get("result_origin") == "LLM_FALLBACK_RESULT" else "VERIFIED" if (s.extra.get("source") or {}).get("reviewed") else "NEEDS_VERIFICATION",
+                    "status": s.extra.get("status", "NEEDS_REVIEW"),
+                    "source": s.extra.get("source"),
+                    "evidence": s.extra.get("evidence", []),
+                    "matched_facts": s.extra.get("matched_facts", []),
+                    "matched_fact_values": s.extra.get("matched_fact_values", {}),
                     "result_origin": s.extra.get("result_origin", "DETERMINISTIC_KB_RESULT"),
                     "rule_version_id": s.extra.get("rule_version_id"),
                     "citations": s.extra.get("citations", []),
@@ -966,6 +1007,7 @@ class LLMFirstStrategy(AssessmentStrategy):
                 for s in raw_stds
             ]
             clean_stds = {
+                "grounding_version": 2,
                 "standards": normalized_stds,
                 "total_standards": len(normalized_stds),
             }
@@ -1242,7 +1284,9 @@ class AssessmentOrchestrator:
             correlation_id=run.correlation_id,
         )
 
+        stage_started = time.perf_counter()
         result = self.strategy.execute_stage(stage, ctx, run)
+        result.metadata["duration_ms"] = round((time.perf_counter() - stage_started) * 1000, 2)
         run.record_stage_result(result)
         return result
 
@@ -1269,6 +1313,7 @@ def orchestrate_compliance_analysis(
     start_time = datetime.now(timezone.utc)
     analysis_id = str(uuid.uuid4())
     stage_records: list[dict[str, Any]] = []
+    phase_started = time.perf_counter()
 
     # Resolve assessment if passed or latest
     assessment = None
@@ -1276,15 +1321,23 @@ def orchestrate_compliance_analysis(
         assessment = business.assessments.filter(pk=assessment_id).first()
     if assessment is None and not assessment_id:
         assessment = business.assessments.order_by("-assessment_number").first()
+    if assessment_id and assessment is None:
+        raise ValueError("Assessment does not belong to this business.")
+    if assessment and not assessment.profile_version_id:
+        raise StageInputInvalid("Save a business profile for this assessment before analysis.")
 
     def record_stage(stage_name: str, message: str, count: int = 0) -> None:
+        nonlocal phase_started
+        phase_finished = time.perf_counter()
         stage_records.append({
             "stage": stage_name,
             "status": "COMPLETED",
             "message": message,
             "count": count,
             "timestamp": datetime.now(timezone.utc).isoformat(),
+            "duration_ms": round((phase_finished - phase_started) * 1000, 2),
         })
+        phase_started = phase_finished
 
     # Stage 1: BUSINESS_CONTEXT
     context = build_business_context(business, profile_version=assessment.profile_version if assessment else None)
@@ -1352,11 +1405,7 @@ def orchestrate_compliance_analysis(
     except Exception:
         connection.close()
 
-    try:
-        profile_version = assessment.profile_version if assessment and assessment.profile_version else business.current_profile
-    except Exception:
-        connection.close()
-        profile_version = business.current_profile
+    profile_version = assessment.profile_version if assessment else business.current_profile
 
     existing_run = None
     if assessment and assessment.decision_run:
@@ -1440,6 +1489,7 @@ def orchestrate_compliance_analysis(
     )
 
     from domain.intelligence.workspace_guidance import ensure_workspace, get_workspace
+    workspace_timings = {}
     if assessment and profile_version and decision_run:
         recorded = [{"requirement_id": r.requirement_id, "title": r.requirement_name,
                      "status": r.status, "rule_version_id": str(r.rule_version_id) if r.rule_version_id else None}
@@ -1450,8 +1500,13 @@ def orchestrate_compliance_analysis(
         captured_context = [{"retrieved_document_id": str(capture.id), "source_url": capture.source.canonical_url,
             "source_title": capture.source.title, "excerpt": capture.normalized_content[:3000],
             "verification_status": "UNVERIFIED"} for capture in captures]
-        ensure_workspace(business, assessment, profile_version, recorded,
-                         {"queries": queries_run, "captured_sources": sources_count, "evidence_candidates": captured_context})
+        guidance_payload = ensure_workspace(business, assessment, profile_version, recorded,
+                         {"queries": queries_run, "captured_sources": sources_count, "evidence_candidates": captured_context},
+                         timings=workspace_timings)
+        guidance_count = len(guidance_payload.get("compliance_items", []))
+        record_stage("WORKSPACE_GUIDANCE", "Prepared contextual planning from this assessment." if guidance_count
+                     else "Workspace uses recorded decisions; no contextual guidance was added.", count=guidance_count)
+        stage_records[-1]["timings_ms"] = workspace_timings
 
     # Stage 6: DOCUMENT_PLANNING
     docs_payload = derive_business_documents(business, context=context, assessment_id=str(assessment.id) if assessment else None)
@@ -1485,7 +1540,7 @@ def orchestrate_compliance_analysis(
     total_standards = standards_payload.get("total_standards_found", 0)
     record_stage(
         "STANDARDS_DISCOVERY",
-        f"Found {total_standards} source-backed standards and contextual quality suggestions.",
+        f"Found {total_standards} standards matches and contextual quality suggestions for review.",
         count=total_standards,
     )
 
@@ -1522,12 +1577,23 @@ def orchestrate_compliance_analysis(
         "quarantined_claims": candidate_count,
     }
 
+    phase_timings = dict((disc_run.summary or {}).get("timings_ms", {})) if disc_run else {}
+    if assessment:
+        phase_timings.update(AssessmentRun(assessment).to_safe_dict()["phase_timings_ms"])
+    for phase, duration in workspace_timings.items():
+        phase_timings[phase] = round(phase_timings.get(phase, 0.0) + duration, 2)
+
     if assessment:
         assessment.status = AssessmentStatus.COMPLETED
         assessment.current_step = 5
         assessment.completed_at = end_time
         assessment.summary = executive_summary
-        assessment.save(update_fields=["status", "current_step", "completed_at", "summary"])
+        assessment.step_state = {**(assessment.step_state or {}), "analysis": {
+            "stages": stage_records, "timings_ms": {stage["stage"]: stage["duration_ms"] for stage in stage_records},
+            "phase_timings_ms": phase_timings,
+            "duration_seconds": (end_time - start_time).total_seconds(), "completed_at": end_time.isoformat(),
+        }}
+        assessment.save(update_fields=["status", "current_step", "completed_at", "summary", "step_state"])
 
         try:
             from apps.businesses.models import UserWorkspaceState
@@ -1606,6 +1672,8 @@ def orchestrate_compliance_analysis(
         "started_at": start_time.isoformat(),
         "completed_at": end_time.isoformat(),
         "duration_seconds": (end_time - start_time).total_seconds(),
+        "timings_ms": {stage["stage"]: stage["duration_ms"] for stage in stage_records},
+        "phase_timings_ms": phase_timings,
         "stages": stage_records,
         "decision_run": run_data,
         "executive_summary": executive_summary,

@@ -25,7 +25,8 @@ def standard_business(make_business, user):
     business = make_business(user, name="Synthetic charging equipment maker")
     profile = BusinessProfileVersion.objects.create(business=business, version=1, variables={
         "product_description": {"value": "Synthetic charging equipment assembly"},
-        "state": {"value": "WEST_BENGAL"}, "is_manufacturing": {"value": True}})
+        "state": {"value": "WEST_BENGAL"}, "is_manufacturing": {"value": True},
+        "product_type": {"value": "SYNTHETIC_CHARGING_EQUIPMENT"}})
     assessment = Assessment.objects.create(business=business, profile_version=profile)
     source = Source.objects.create(source_id="synthetic-standard-source", authority="Synthetic standards authority",
         title="Synthetic test standard", canonical_url="https://bis.gov.in/synthetic-test-fixture", status="ACTIVE")
@@ -37,7 +38,9 @@ def standard_business(make_business, user):
         evidence_refs=[evidence.evidence_id])
     rule = RuleVersion.objects.create(requirement=requirement, rule_id="EXAMPLE_EV_RULE", domain=requirement.domain,
         jurisdiction="CENTRAL", status="PUBLISHED", evidence_refs=[evidence.evidence_id],
-        condition_ast={"op": "EQ", "left": {"var": "is_manufacturing"}, "right": True})
+        condition_ast={"op": "AND", "args": [
+            {"op": "EQ", "left": {"var": "is_manufacturing"}, "right": True},
+            {"op": "EQ", "left": {"var": "product_type"}, "right": "SYNTHETIC_CHARGING_EQUIPMENT"}]})
     return business, profile, assessment, requirement, rule, evidence
 
 

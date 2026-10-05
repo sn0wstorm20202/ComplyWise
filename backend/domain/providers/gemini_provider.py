@@ -173,6 +173,8 @@ class GeminiProvider(LLMProvider):
         generation_config: dict[str, Any] = {"temperature": temperature}
         if max_output_tokens is not None:
             generation_config["maxOutputTokens"] = max_output_tokens
+        if (kwargs.get("response_format") or {}).get("type") == "json_object":
+            generation_config["responseMimeType"] = "application/json"
 
         payload: dict[str, Any] = {
             "contents": contents,

@@ -9,7 +9,8 @@ import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
 import { api } from "@/lib/api";
 import { StandardItem } from "@/types";
-import { sanitizeExternalUrl } from "@/lib/url";
+import { exactSourceUrl, standardClassification } from "@/lib/sourceProvenance";
+import SourceProvenance from "@/components/product/SourceProvenance";
 
 import { useBusinessContext } from "@/context/BusinessContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -184,7 +185,8 @@ function StandardsContent() {
                       <p className="text-xs text-[var(--ui-secondary)] leading-relaxed max-w-3xl">{st.description}</p>
                     )}
                     {st.why_it_matters && <p className="text-xs text-[var(--ui-secondary)]">Why it is relevant: {st.why_it_matters}</p>}
-                    <p className="text-xs text-[var(--ui-muted)]">{st.result_origin === "LLM_FALLBACK_RESULT" ? "Contextual planning guidance — no reviewed standard or mandatory status established." : st.is_mandatory === true ? "Mandatory within the recorded rule scope" : st.is_mandatory === false ? "Voluntary" : "Mandatory status not recorded"}</p>
+                    <p className="text-xs text-[var(--ui-muted)]">{standardClassification(st.status, st.is_mandatory, st.result_origin)}</p>
+                    {st.matched_facts?.length ? <p className="text-xs text-[var(--ui-secondary)]">Matched profile facts: {st.matched_facts.map(fact => fact.replaceAll('_', ' ')).join(', ')}</p> : null}
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
@@ -200,10 +202,11 @@ function StandardsContent() {
                   </div>
                 </div>
 
-                {/* Statutory citations */}
+                {(st.source || !st.citations?.length) && <SourceProvenance source={st.source} evidence={st.evidence} />}
+                {/* Stored evidence, not generated supporting quotations. */}
                 <Disclosure title={`Evidence & source clauses (${st.citation_count || 0})`}>
                   <span className="text-[11px] font-semibold text-[var(--ui-secondary)] block mb-2 uppercase tracking-wider">
-                    Statutory Evidence Citations ({st.citation_count}):
+                    Evidence Citations ({st.citation_count || 0}):
                   </span>
 
                   {st.citations && st.citations.length === 0 ? (
@@ -230,13 +233,13 @@ function StandardsContent() {
                             </span>
                           </div>
                           <p className="text-xs text-[var(--ui-secondary)] italic leading-relaxed">
-                            &ldquo;{ev.excerpt}&rdquo;
+                            {ev.excerpt ? <>&ldquo;{ev.excerpt}&rdquo;</> : 'Source passage not recorded.'}
                           </p>
                           <div className="flex items-center gap-2 text-[11px] pt-1">
                             <span className="text-[var(--ui-secondary)]">{ev.source_title}</span>
-                            {sanitizeExternalUrl(ev.canonical_url) && (
+                            {exactSourceUrl(ev.source?.url === undefined ? ev.canonical_url : ev.source.url) ? (
                               <a
-                                href={sanitizeExternalUrl(ev.canonical_url)!}
+                                href={exactSourceUrl(ev.source?.url === undefined ? ev.canonical_url : ev.source.url)!}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="font-semibold text-[var(--ui-info)] hover:underline inline-flex items-center gap-1"
@@ -244,7 +247,7 @@ function StandardsContent() {
                                 <span>View source</span>
                                 <span>↗</span>
                               </a>
-                            )}
+                            ) : <span>Source link not recorded.</span>}
                           </div>
                         </div>
                       ))}

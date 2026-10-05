@@ -1175,17 +1175,18 @@ def plan_adaptive_smart_questions(
     if existing_plan and existing_plan.questions.exists():
         cached_qs = []
         for q in existing_plan.questions.all():
-            policy = normalize_candidate({"variable_key":q.variable_key, "question_text":q.question_text}, known_facts,
-                suggestions=suggestions)
+            policy = normalize_candidate({"variable_key":q.variable_key, "question_text":q.question_text,
+                "reason":q.reason, "why_it_matters":q.why_it_matters, "options":q.options or [],
+                "answer_type":q.data_type}, known_facts, kb_analysis.variable_rules_map, suggestions)
             if q.is_answered or policy is None:
                 continue
             cached_qs.append({
                 "question_id": q.question_id or f"Q_{q.variable_key}",
                 "target_variable_id": q.target_variable_id or q.variable_key,
                 "variable_key": q.variable_key,
-                "question_text": q.question_text,
-                "why_it_matters": q.why_it_matters,
-                "reason": q.reason,
+                "question_text": policy["question_text"],
+                "why_it_matters": policy["why_it_matters"],
+                "reason": policy["reason"],
                 "domains": q.domains or ["STATUTORY_COMPLIANCE"],
                 "data_type": q.data_type,
                 "unit": policy.get("unit"),
@@ -1248,6 +1249,10 @@ questions. A different field name does not make a known fact missing. Worker cou
 total workforce and employee count share identity. Primary activity is already described
 by product_description. Ask a refinement only when a particular operation remains missing.
 Include a concrete source-search or unresolved-rule reason. Do not ask about legal approvals.
+No legal passages are supplied in this interview. Ask only about business operations;
+do not name legislation, standard identifiers, legal thresholds, mandatory status or
+statutory deadlines in questions, answer choices or explanations. These will be
+checked after source retrieval. Search topics may name candidate instruments to find.
 
 ALREADY KNOWN FACTS (DO NOT ASK ABOUT THESE):
 {json.dumps(known_facts, indent=2)}
@@ -1747,25 +1752,11 @@ def get_next_adaptive_question(
         plans = plans.filter(assessment_id=assessment_id)
     active_plan = plans.order_by("-created_at").first()
 
-    if active_plan:
-        unanswered_instance = active_plan.questions.filter(is_answered=False).first()
-        if unanswered_instance:
-            return {
-                "question_id": unanswered_instance.question_id or f"Q_{unanswered_instance.variable_key}",
-                "target_variable_id": unanswered_instance.target_variable_id or unanswered_instance.variable_key,
-                "variable_key": unanswered_instance.variable_key,
-                "question_text": unanswered_instance.question_text,
-                "why_it_matters": unanswered_instance.why_it_matters,
-                "data_type": unanswered_instance.data_type,
-                "options": unanswered_instance.options or [],
-                "domains": unanswered_instance.domains or ["STATUTORY_COMPLIANCE"],
-                "is_canonical": bool(unanswered_instance.variable_key in VARIABLES_BY_KEY),
-                "reason": unanswered_instance.reason,
-            }
-
+    # Reuse the same fact/provenance projection as batch intake. A raw cached
+    # instance would otherwise bypass known-fact and source-grounding guards.
     plan_result = plan_adaptive_smart_questions(
         business,
-        round_number=1,
+        round_number=active_plan.round_number if active_plan else 1,
         assessment_id=assessment_id,
         batch_size=1,
     )

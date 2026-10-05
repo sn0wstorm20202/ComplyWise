@@ -1,7 +1,7 @@
 "use client";
 import Overlay from "@/components/product/Overlay";
 
-import React, { useEffect, useState, useMemo, Suspense, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useRef, Suspense, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
@@ -14,7 +14,9 @@ import type { SchemeItem, SchemePipelineStatus, SchemeVersionRecord } from "@/ty
 import { useLanguage } from "@/context/LanguageContext";
 import { useBusinessContext } from "@/context/BusinessContext";
 import { useAuth } from "@/context/AuthContext";
-import { resolveAuthorityPortalUrl } from "@/lib/authorityPortals";
+import SourceProvenance from "@/components/product/SourceProvenance";
+import { schemeClassification } from "@/lib/sourceProvenance";
+import { sanitizeExternalUrl } from "@/lib/url";
 
 // Filter Level 1: Jurisdiction
 type JurisdictionFilter = "ALL" | "CENTRAL" | "STATE";
@@ -38,6 +40,7 @@ function SchemesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const paramBusinessId = searchParams.get("business_id");
+  const paramAssessmentId = searchParams.get("assessment_id");
 
   const {
     profile,
@@ -50,17 +53,15 @@ function SchemesContent() {
   // BusinessProvider already loads the tenant's business list and reports failures.
   const allBusinesses = userBusinesses;
 
-  // Effective business ID from URL, active context, localStorage, or latest dynamic business
+  // URL selection overrides the authenticated workspace, never an unscoped cache.
   const effectiveBusinessId = useMemo(() => {
     if (paramBusinessId) return paramBusinessId;
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("complywise_active_business_id");
-      if (stored) return stored;
-    }
     if (activeBusinessId) return activeBusinessId;
     if (allBusinesses.length > 0) return allBusinesses[0].id;
     return "";
   }, [paramBusinessId, activeBusinessId, allBusinesses]);
+  const effectiveAssessmentId = paramAssessmentId || (effectiveBusinessId === activeBusinessId ? activeAssessmentId : undefined);
+  const requestVersion = useRef(0);
 
   const [response, setResponse] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -97,20 +98,23 @@ function SchemesContent() {
 
   // Fetch schemes based on the real onboarded business profile version
   const loadSchemes = useCallback(async () => {
+    const version = ++requestVersion.current;
     setLoading(true);
     setError(null);
+    setResponse(null);
     try {
       if (viewMasterCatalog || !effectiveBusinessId) {
         // Load the persisted government scheme catalogue
         const cat = await api.schemes.catalog();
+        if (version !== requestVersion.current) return;
         setResponse({
           available: true,
           business_id: effectiveBusinessId || "catalog",
-          business_name: profile?.businessName || "Master Government Schemes Catalogue",
+          business_name: "Government Schemes Catalogue",
           state: "ALL",
           state_name: "All Jurisdictions (National & State)",
-          msme_scale: profile?.scale || "ALL MSME",
-          product_description: profile?.productDescription || "All industrial activities and services",
+          msme_scale: "All enterprise sizes",
+          product_description: "Catalogue candidates — eligibility is assessed against your saved business profile.",
           count: cat.count,
           total_schemes_found: cat.count,
           universal_schemes_count: cat.schemes.filter((s: any) => s.is_universal).length,
@@ -121,19 +125,22 @@ function SchemesContent() {
         });
       } else {
         // Load context-driven schemes matching the onboarded business's profile version
-        const res = await api.schemes.list(effectiveBusinessId, searchParams.get("assessment_id") || (effectiveBusinessId === activeBusinessId ? activeAssessmentId : undefined) || undefined);
+        const res = await api.schemes.list(effectiveBusinessId, effectiveAssessmentId || undefined);
+        if (version !== requestVersion.current) return;
         setResponse(res);
       }
     } catch (err: any) {
+      if (version !== requestVersion.current) return;
       console.error("Error loading schemes:", err);
       setError(err.message || "Failed to load government schemes.");
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) setLoading(false);
     }
-  }, [effectiveBusinessId, activeBusinessId, activeAssessmentId, searchParams, viewMasterCatalog, profile]);
+  }, [effectiveBusinessId, effectiveAssessmentId, viewMasterCatalog]);
 
   useEffect(() => {
     loadSchemes();
+    return () => { ++requestVersion.current; };
   }, [loadSchemes]);
 
   // Handle switching business
@@ -316,12 +323,13 @@ function SchemesContent() {
   }, [rawSchemes]);
 
   // Active business display info
-  const businessDisplayName = response?.business_name || (effectiveBusinessId ? profile?.businessName : "Scheme catalogue");
-  const businessStateName = response?.state_name || (effectiveBusinessId ? profile?.state : "All jurisdictions");
-  const businessScale = response?.msme_scale || (effectiveBusinessId ? profile?.scale : "All business sizes");
+  const profileMatchesScope = effectiveBusinessId === profile?.id;
+  const businessDisplayName = response?.business_name || (profileMatchesScope ? profile?.businessName : "Selected business");
+  const businessStateName = response?.state_name || (profileMatchesScope ? profile?.state : "Location not recorded");
+  const businessScale = response?.msme_scale || (profileMatchesScope ? profile?.scale : "Enterprise size not recorded");
   const businessProductDesc =
     response?.product_description ||
-    (effectiveBusinessId ? profile?.productDescription : "") ||
+    (profileMatchesScope ? profile?.productDescription : "") ||
     "Add your business context to see matched benefits.";
 
   return (
@@ -444,7 +452,7 @@ function SchemesContent() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
           <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-4 shadow-2xs">
             <div className="text-[10px] font-semibold text-[var(--ui-secondary)] uppercase tracking-wider">
-              Total Applicable
+              Matched support areas
             </div>
             <div className="text-2xl font-black text-[var(--ui-text)] mt-1">{counts.total}</div>
             <div className="text-[11px] text-[var(--ui-secondary)] mt-0.5">Matched for this profile</div>
@@ -468,7 +476,7 @@ function SchemesContent() {
 
           <div className="bg-white rounded-[16px] border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)]/20 p-4 shadow-2xs">
             <div className="text-[10px] font-semibold text-[var(--ui-sage)] uppercase tracking-wider">
-              Universal Support
+              Cross-sector support
             </div>
             <div className="text-2xl font-black text-[var(--ui-sage)] mt-1">{counts.universal}</div>
             <div className="text-[11px] text-[var(--ui-sage)]/80 mt-0.5">Open to all industries</div>
@@ -533,7 +541,7 @@ function SchemesContent() {
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-text)]">
                 Level 2: Scope &amp; Applicability
               </span>
-              <span className="text-[11px] text-[var(--ui-secondary)]">(Universal MSME vs Targeted Sector)</span>
+              <span className="text-[11px] text-[var(--ui-secondary)]">(Cross-sector vs sector-specific candidates)</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -554,7 +562,7 @@ function SchemesContent() {
                     : "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border border-[var(--ui-sage-soft)] hover:bg-[var(--ui-sage-soft)]"
                 }`}
               >
-                🌐 Universal Incentives ({counts.universal})
+                🌐 Cross-sector support ({counts.universal})
               </button>
               <button
                 onClick={() => setScopeFilter("TARGETED")}
@@ -633,7 +641,7 @@ function SchemesContent() {
         <div className="flex items-center justify-between text-xs text-[var(--ui-secondary)] px-1">
           <div>
             Showing <span className="font-bold text-[var(--ui-text)]">{filteredSchemes.length}</span> of{" "}
-            <span className="font-bold text-[var(--ui-text)]">{counts.total}</span> applicable schemes for{" "}
+            <span className="font-bold text-[var(--ui-text)]">{counts.total}</span> scheme and support areas for{" "}
             <span className="font-bold text-[var(--ui-text)]">{businessDisplayName}</span>
           </div>
           {(jurisdictionFilter !== "ALL" || scopeFilter !== "ALL" || benefitTypeFilter !== "ALL" || searchQuery) && (
@@ -691,6 +699,7 @@ function SchemesContent() {
               const isMH = sc.is_state_specific || sc.jurisdiction_code === "MH" || sc.jurisdiction?.includes("Maharashtra");
               const isUniversal = Boolean(sc.is_universal);
               const sectorCategory = (sc as any).sector_category;
+              const actionUrl = sanitizeExternalUrl(sc.action_url);
 
               return (
                 <div
@@ -712,7 +721,7 @@ function SchemesContent() {
                               : "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] border-[var(--ui-sage-soft)]"
                           }`}
                         >
-                          {isUniversal ? "🌐 Universal" : `🎯 ${sectorCategory || "Sector-Specific"}`}
+                          {isUniversal ? "🌐 Across sectors" : `🎯 ${sectorCategory || "Sector-Specific"}`}
                         </span>
 
                         {/* Jurisdiction Badge */}
@@ -732,6 +741,7 @@ function SchemesContent() {
                     <h3 className="font-sans text-base text-[var(--ui-text)] font-bold leading-snug">
                       {sc.title}
                     </h3>
+                    <p className="text-xs font-semibold text-[var(--ui-secondary)]">{schemeClassification(sc.eligibility_status, sc.result_origin)}</p>
 
                     {/* Authority */}
                     <div className="text-xs text-[var(--ui-sage)] font-semibold flex items-center gap-1.5">
@@ -763,7 +773,7 @@ function SchemesContent() {
                       >
                         <div className="font-semibold flex items-center gap-1.5 mb-1">
                           <span>{isUniversal ? "🌐" : "🎯"}</span>
-                          <span>{isUniversal ? "Universal MSME Eligibility:" : "Why Your Business Qualifies:"}</span>
+                          <span>Why this was considered:</span>
                         </div>
                         <p className="line-clamp-2">{sc.relevance_rationale}</p>
                       </div>
@@ -771,13 +781,9 @@ function SchemesContent() {
 
                     <Disclosure title="Eligibility & source evidence">
                     {sc.relevance_rationale && <p className="text-sm mb-3">{sc.relevance_rationale}</p>}
-                    {/* Evidence & Citation */}
-                    {sc.evidence_snippet && (
-                      <div className="text-[11px] text-[var(--ui-secondary)] italic bg-[var(--ui-inset)]/50 rounded-lg p-2.5 border border-[var(--ui-border)]/60 line-clamp-2">
-                        “{sc.evidence_snippet}”
-                      </div>
-                    )}
+                    {sc.matched_facts?.length ? <p className="text-xs mb-3">Matched profile facts: {sc.matched_facts.map(fact => fact.replaceAll('_', ' ')).join(', ')}</p> : null}
                     </Disclosure>
+                    <SourceProvenance source={sc.source} evidence={sc.evidence} />
                   </div>
 
                   {/* Footer Info & Actions */}
@@ -809,14 +815,14 @@ function SchemesContent() {
                         </button>}
                       </div>
 
-                      {Boolean(sc.action_url) && (
+                      {actionUrl && (
                         <a
-                          href={sc.action_url}
+                          href={actionUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-xs font-bold text-[var(--ui-info)] hover:text-[var(--ui-info)] transition-colors"
                         >
-                          <span>Official Portal</span>
+                          <span>Application information</span>
                           <span className="text-sm">↗</span>
                         </a>
                       )}

@@ -29,6 +29,8 @@ from urllib.parse import urlparse
 from django.conf import settings
 from django.utils import timezone
 
+from domain.providers.telemetry import measure_phase
+
 from common.enums import KnowledgeStatus, SourceStatus, VerificationStatus
 from domain.context.business_context import DerivedBusinessContext, build_business_context
 from domain.jurisdictions.resolver import JurisdictionRegistry, normalize_jurisdiction
@@ -349,10 +351,11 @@ def run_discovery(
 
     all_raw_candidates: list[dict[str, Any]] = []
     errors: list[str] = []
+    timings: dict[str, float] = {}
 
     # Queries are independent network reads. Keep all database writes on the
     # request thread, and collect results in query order for stable ranking.
-    with ThreadPoolExecutor(max_workers=min(3, len(queries))) as executor:
+    with measure_phase("source_discovery", timings), ThreadPoolExecutor(max_workers=min(3, len(queries))) as executor:
         futures = [executor.submit(search_provider.search, query, limit=5) for query in queries]
         for query, future in zip(queries, futures):
             try:
@@ -387,7 +390,8 @@ def run_discovery(
         url = item["url"]
         from domain.intelligence.official_sources import is_primary_official_source
         try:
-            acquired = acquire_source(url)
+            with measure_phase("acquisition", timings):
+                acquired = acquire_source(url)
         except Exception as exc:
             errors.append(f"Acquisition failed ({type(exc).__name__}).")
             continue
@@ -469,6 +473,7 @@ def run_discovery(
         "sources_scraped": len(scraped_records),
         "profile_version_id": profile_id,
         "claims_extracted": len(candidate_requirements_created),
+        "timings_ms": timings,
     }
     run.save()
 
@@ -477,6 +482,7 @@ def run_discovery(
         # captured material for this exact snapshot instead of a discovery dead end.
         return {"ran": True, "run_id": str(existing_run.id), "cached": True,
                 "recovered_from_persisted": True, "failed_run_id": str(run.id),
+                "timings_ms": timings,
                 "status": existing_run.status, "discovery_available": True,
                 "queries": existing_run.queries, "sources_scraped": existing_run.scraped_count,
                 "candidate_urls_count": existing_run.candidate_count, "errors": errors, "coverage": coverage}
@@ -486,6 +492,7 @@ def run_discovery(
         "run_id": str(run.id),
         "cached": False,
         "status": run.status,
+        "timings_ms": timings,
         "discovery_available": True,
         "reason": None,
         "coverage": coverage,

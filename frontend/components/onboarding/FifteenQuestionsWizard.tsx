@@ -1,7 +1,7 @@
 "use client";
 import { ProductMotion } from "@/components/product/ProductMotion";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { OrchestrationQuestion } from "@/lib/api/orchestration";
 import {
   Check,
@@ -24,7 +24,7 @@ interface FifteenQuestionsWizardProps {
   onPrefillAllAnswers?: () => Promise<void>;
   hasPresetAnswers?: boolean;
   presetName?: string;
-  onCompleteQuestions: () => void;
+  onCompleteQuestions: () => void | Promise<void>;
   onBackToProducts: () => void;
   loading?: boolean;
 }
@@ -57,6 +57,7 @@ export default function FifteenQuestionsWizard({
     return "";
   });
   const [saving, setSaving] = useState<boolean>(false);
+  const submissionInFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
   // Sync current value and explanation whenever active question changes
@@ -89,6 +90,7 @@ export default function FifteenQuestionsWizard({
   const progressPercent = Math.round((answeredCount / questions.length) * 100);
 
   async function handleSaveCurrentAndGo(targetIdx?: number) {
+    if (submissionInFlight.current) return;
     setError(null);
     const finalExplanation = currentExplanation.trim();
     let effectiveValue = currentValue;
@@ -113,6 +115,7 @@ export default function FifteenQuestionsWizard({
       ? { value: effectiveValue, explanation: finalExplanation, custom_text: finalExplanation }
       : effectiveValue;
 
+    submissionInFlight.current = true;
     setSaving(true);
     try {
       await onAnswerSubmitted(currentQ.question_id, submissionPayload);
@@ -121,11 +124,12 @@ export default function FifteenQuestionsWizard({
       } else if (!isLastQuestion) {
         onSelectQuestionIndex(activeQuestionIndex + 1);
       } else {
-        onCompleteQuestions();
+        await onCompleteQuestions();
       }
     } catch (err: any) {
       setError(err?.message || "Failed to save answer. Please try again.");
     } finally {
+      submissionInFlight.current = false;
       setSaving(false);
     }
   }

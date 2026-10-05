@@ -1,12 +1,8 @@
-"""Authoritative Official Portal Snapshot Payloads.
+"""Authored historical HTML fixtures, not captured or verified government sources.
 
-Contains 36 comprehensive official scheme snapshots across:
-- msme.gov.in (Central Ministry of MSME)
-- champions.gov.in (MSME Champions Portal)
-- dpiit.gov.in (Department for Promotion of Industry and Internal Trade)
-- mced.co.in / maitri.mahaonline.gov.in (Maharashtra State MCED & Directorate of Industries)
-
-Includes both Universal (applicable to all industries) and Sector-Specific schemes.
+Retained for parser/version regression fixtures and content-fingerprint quarantine.
+The fetcher must never use these as a live-acquisition recovery path. Their authored
+scheme terms, dates and quotations are not evidence of real current eligibility.
 """
 
 from __future__ import annotations

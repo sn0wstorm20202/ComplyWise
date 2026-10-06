@@ -36,6 +36,6 @@ Before the merge, the onboarding UI swallowed orchestration errors and used a le
 
 - Branch: `feature/compliance-scenario-suite`
 - Base deployment merge: `31c9359`
-- Final fix commit: pending
-- Azure deployment: pending
+- Fix commit: `ba0549f` (`Fix questionnaire completion after orchestration`)
+- Azure deployment: blocked. Both `az acr build` and Container Apps source deployment were rejected because ACR Tasks are disabled for `complywiseacr` (`TasksOperationsNotAllowed`). Local Docker Desktop was started, but its service is stopped and cannot be opened from this session. The deployed backend remains on image `31c9359`.
 - Main and BIS were not modified.

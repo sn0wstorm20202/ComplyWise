@@ -9,6 +9,7 @@ import ErrorState from "@/components/ErrorState";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { startGoogleSignIn } from "@/lib/googleAuth";
+import DemoReviewerAutofill from "@/components/DemoReviewerAutofill";
 import { businessesApi } from "@/lib/api/businesses";
 import {
   User,
@@ -196,6 +197,12 @@ export function SignInContent() {
               <span className="text-[11px] leading-tight">Reviewer</span>
             </button>
           </div>
+
+          {mode === "officer" && (
+            <DemoReviewerAutofill onFill={(demoEmail, demoPassword) => {
+              setEmail(demoEmail); setPassword(demoPassword); setError(null);
+            }} />
+          )}
 
           {mode === "officer" && (
             <div className="p-3 rounded-xl border border-[var(--ui-sage-soft)] bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] text-xs flex items-center justify-between">

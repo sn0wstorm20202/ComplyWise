@@ -8,6 +8,9 @@ import { request, setAuthToken } from "./client";
 import { AuthSession, User } from "@/types";
 
 export const authApi = {
+  demoReviewerCredentials: () => request<{ email: string; password: string }>("/auth/demo-reviewer-credentials", {
+    cache: "no-store",
+  }),
   googleExchange: (ticket: string, verifier: string) => request<AuthSession & {is_new_user: boolean}>("/auth/google/exchange", {
     method: "POST", body: JSON.stringify({ticket, verifier}),
   }),

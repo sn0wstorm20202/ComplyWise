@@ -21,5 +21,6 @@ else
     --threads "${GUNICORN_THREADS:-2}" \
     --timeout "${GUNICORN_TIMEOUT:-120}" \
     --access-logfile - \
+    --access-logformat '%(h)s %(t)s "%(m)s %(U)s %(H)s" %(s)s %(b)s' \
     --error-logfile -
 fi

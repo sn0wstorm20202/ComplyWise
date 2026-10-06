@@ -42,7 +42,12 @@ def test_google_login_handoff_is_browser_bound_and_single_use(api_client):
     assert exchange.call_args.args == ("fixture-code", attempt.code_verifier)
     wrong = api_client.post("/api/v1/auth/google/exchange", {"ticket": ticket, "verifier": "other-browser"}, format="json")
     assert wrong.status_code == 401
-    result = api_client.post("/api/v1/auth/google/exchange", {"ticket": ticket, "verifier": verifier}, format="json")
+    with patch.object(GoogleLoginAttempt.objects, "select_for_update",
+                      wraps=GoogleLoginAttempt.objects.select_for_update) as lock:
+        result = api_client.post("/api/v1/auth/google/exchange", {"ticket": ticket, "verifier": verifier}, format="json")
+    # A nullable user join cannot be locked on PostgreSQL. Lock only the attempt
+    # while preserving atomic consumption and browser binding.
+    lock.assert_called_once_with(of=("self",))
     assert result.status_code == 200 and result.data["token"]
     assert result.data["user"]["email"] == "new@gmail.com"
     replay = api_client.post("/api/v1/auth/google/exchange", {"ticket": ticket, "verifier": verifier}, format="json")

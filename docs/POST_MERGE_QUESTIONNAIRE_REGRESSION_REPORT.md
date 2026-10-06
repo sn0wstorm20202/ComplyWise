@@ -1,0 +1,41 @@
+# Post-Merge Questionnaire Regression Report
+
+## Root cause
+
+The deployed questionnaire saved all five answers. Its next request was compliance synthesis, after successful regulatory discovery. The UI returned to Smart Questions because that synthesis request failed.
+
+Two defects made this path fail and made its retry unsafe:
+
+1. `LiveComplianceSynthesisProvider` runs deterministic evaluation and then calls `ensure_workspace` to create optional contextual guidance. `ensure_workspace` re-raised a `ProviderError` when no deterministic result was `APPLICABLE`. The synthesis endpoint consequently returned its generic `INTERNAL_ERROR`, and the frontend discarded the structured API error and displayed only its generic assessment message. Optional guidance could therefore block the authoritative assessment even though the deterministic decision run had completed.
+2. Reposting an already-saved answer created another immutable profile version. Synthesis then created another `DecisionRun` for that new, otherwise unchanged profile snapshot.
+
+The live test assessment confirmed the sequence: five answers persisted; its orchestration state contained `REGULATORY_DISCOVERY` but no `COMPLIANCE_SYNTHESIS`; a deterministic DecisionRun had 63 `NOT_APPLICABLE` and 30 `UNVERIFIED` results; no workspace guidance row existed. After the user retried, the same assessment had two DecisionRuns against profile versions 7 and 8. No Meridian or VoltGrid assessment was modified.
+
+The frontend sends `POST /api/v1/assessments/{run_id}/compliance-synthesis/` with an empty JSON object after `POST /api/v1/assessments/{run_id}/regulatory-discovery/`. Backend generic exceptions are mapped to HTTP 500 / `INTERNAL_ERROR`. The browser automation surface does not expose network response events, and Azure log streaming failed with an Azure CLI `eventStreamEndpoint` error, so the production HTTP response headers and body could not be captured independently. This is the remaining limitation on the exact wire-level trace.
+
+## Pre-merge and post-merge behavior
+
+Before the merge, the onboarding UI swallowed orchestration errors and used a legacy analysis fallback. That could mask failures and show results without a successful staged analysis. After the merge, synthesis became a required step; optional workspace guidance errors surfaced as a failed onboarding step. The merged architecture remains in place. The fix keeps workspace guidance optional while preserving deterministic results and truthful `NEEDS_INFORMATION` outcomes.
+
+## Changes
+
+- `backend/domain/intelligence/workspace_guidance.py`: a workspace `ProviderError` now yields empty contextual-guidance collections and allows authoritative synthesis to finish. It does not invent or claim legal requirements.
+- `backend/domain/intelligence/answer_interpretation.py`: answer persistence is atomic and locks the assessment; resubmitting the same normalized answer no longer creates a profile version.
+- `backend/domain/intelligence/synthesis.py`: retries reuse the assessment’s existing DecisionRun when it matches the same immutable profile version.
+- `backend/tests/test_api_orchestration_step02.py`: one focused regression test covers duplicate final-answer submission, optional workspace-provider failure, synthesis completion, and decision-run reuse.
+
+## Verification
+
+- Live Playwright repro before the fix: Business Profile, Products & Activities, business understanding, question generation, and five answer submissions succeeded. Final submission entered Regulatory Analysis, then returned to Smart Questions with the error banner. The same analysis retry failed again.
+- Live database readback for the synthetic `Neighbourhood Kitchen` test assessment confirmed the persisted sequence described above. Its business ID is `e3ac2ad7-05d7-4d98-b286-a04e332f28fd`; its assessment ID is `5eb4d1e5-8771-4423-b7bc-2ad1636a57d3`.
+- Focused regression and neighboring suites: `56 passed` across `test_api_orchestration_step02.py`, `test_workspace_guidance.py`, and `test_workspace_cache_grounding.py`.
+- `git diff --check`: passed.
+- Post-fix live Playwright retest, Meridian Pharma, EV Charging, Construction, Textile Export, Data Centre, Microfinance, and Admin parity are pending deployment and retest. No claim is made that these acceptance checks have passed.
+
+## Git and deployment
+
+- Branch: `feature/compliance-scenario-suite`
+- Base deployment merge: `31c9359`
+- Final fix commit: pending
+- Azure deployment: pending
+- Main and BIS were not modified.

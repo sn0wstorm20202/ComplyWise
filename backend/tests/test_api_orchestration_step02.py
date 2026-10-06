@@ -529,6 +529,105 @@ def test_api_answer_submission_and_context(auth_client, test_business):
 
 
 @pytest.mark.django_db
+def test_smart_questions_completion_survives_optional_workspace_provider_failure(
+    auth_client, test_business, auth_user
+):
+    """Final-answer retries and optional guidance failure must not block synthesis."""
+    from domain.intelligence.orchestration import assessment_orchestrator
+    from domain.providers.base import ProviderError
+
+    test_business.name = "Questionnaire Regression Restaurant"
+    test_business.save(update_fields=["name"])
+    profile = BusinessProfileVersion.objects.create(
+        business=test_business,
+        version=2,
+        variables={
+            "product_description": {
+                "value": "A small local food service business",
+                "origin": "USER_PROVIDED",
+            },
+            "state": {"value": "KARNATAKA", "origin": "USER_PROVIDED"},
+        },
+    )
+    assessment = Assessment.objects.create(
+        business=test_business,
+        created_by=auth_user,
+        profile_version=profile,
+    )
+    run = assessment_orchestrator.create_run(
+        business=test_business,
+        user=auth_user,
+        strategy="LLM_FIRST",
+    )
+    run.stage_metadata = {
+        **run.stage_metadata,
+        "question_generation": {"question_policy_version": 5, "questions": [{
+            "question_id": "Q01",
+            "variable_key": "contract_workers",
+            "answer_type": "NUMBER",
+            "required": True,
+            "options": [],
+        }]},
+        "answers": {},
+        "regulatory_discovery": {"status": "COMPLETED", "evidence_candidates": []},
+    }
+    run.save()
+
+    # The created run adopts the existing assessment and its profile snapshot.
+    assert run.run_id == str(assessment.id)
+    answer_payload = {"question_id": "Q01", "value": 0}
+    first_answer = auth_client.post(
+        f"/api/v1/assessments/{run.run_id}/answers/",
+        data=answer_payload,
+        format="json",
+    )
+    assert first_answer.status_code == status.HTTP_200_OK
+    profile_versions_after_first_answer = BusinessProfileVersion.objects.filter(
+        business=test_business
+    ).count()
+    retry_answer = auth_client.post(
+        f"/api/v1/assessments/{run.run_id}/answers/",
+        data=answer_payload,
+        format="json",
+    )
+    assert retry_answer.status_code == status.HTTP_200_OK
+    assert retry_answer.json()["data"]["answered_count"] == 1
+    assert BusinessProfileVersion.objects.filter(business=test_business).count() == (
+        profile_versions_after_first_answer
+    )
+
+    with patch(
+        "domain.intelligence.workspace_guidance.generate_workspace",
+        side_effect=ProviderError("Optional contextual guidance is unavailable."),
+    ):
+        response = auth_client.post(
+            f"/api/v1/assessments/{run.run_id}/compliance-synthesis/",
+            data={},
+            format="json",
+        )
+
+    assert response.status_code == status.HTTP_200_OK
+    result = response.json()["data"]
+    assert result["status"] in {"COMPLETED", "NEEDS_INFORMATION"}
+    first_decision_run_id = Assessment.objects.get(pk=assessment.pk).decision_run_id
+    first_decision_run_count = test_business.decision_runs.count()
+
+    with patch(
+        "domain.intelligence.workspace_guidance.generate_workspace",
+        side_effect=ProviderError("Optional contextual guidance is unavailable."),
+    ):
+        retry_response = auth_client.post(
+            f"/api/v1/assessments/{run.run_id}/compliance-synthesis/",
+            data={},
+            format="json",
+        )
+    assert retry_response.status_code == status.HTTP_200_OK
+    assessment.refresh_from_db()
+    assert assessment.decision_run_id == first_decision_run_id
+    assert test_business.decision_runs.count() == first_decision_run_count
+
+
+@pytest.mark.django_db
 def test_tenant_isolation_step02(auth_client, other_business, other_user):
     """User cannot generate questions or submit answers to another user's assessment."""
     run = assessment_orchestrator.create_run(

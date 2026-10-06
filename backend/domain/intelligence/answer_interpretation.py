@@ -22,11 +22,10 @@ from decimal import Decimal
 from typing import Any
 
 from django.conf import settings
+from django.db import transaction
 
 from apps.businesses.models import Business
 from apps.onboarding.models import SmartQuestionInstance, SmartQuestionPlan
-from domain.providers.base import ChatMessage, ProviderError
-from domain.providers.registry import get_llm_provider
 from domain.intelligence.orchestration import (
     AssessmentRun,
     OrchestrationError,
@@ -34,6 +33,8 @@ from domain.intelligence.orchestration import (
     StructuredOutputInvalid,
 )
 from domain.intelligence.question_types import QuestionAnswerType, SmartQuestion
+from domain.providers.base import ChatMessage, ProviderError
+from domain.providers.registry import get_llm_provider
 
 logger = logging.getLogger(__name__)
 
@@ -148,6 +149,7 @@ def coerce_and_validate_answer(
 class AnswerInterpreter:
     """Manages answer ingestion, persistence, and structured fact extraction."""
 
+    @transaction.atomic
     def record_answer(
         self,
         run: AssessmentRun,
@@ -155,6 +157,23 @@ class AnswerInterpreter:
         raw_value: Any,
     ) -> dict[str, Any]:
         """Record an answer for a specific question without making an LLM call."""
+        # Serialize answer writes for an assessment so retries and near-simultaneous
+        # submissions see the latest answer/profile snapshot before creating versions.
+        locked_assessment = type(run.assessment).objects.select_for_update().get(
+            pk=run.assessment.pk
+        )
+        persisted_run = AssessmentRun(
+            locked_assessment,
+            strategy=run.strategy,
+            correlation_id=run.correlation_id,
+        )
+        run._assessment = locked_assessment
+        run.current_stage = persisted_run.current_stage
+        run.error_code = persisted_run.error_code
+        run.error_message_safe = persisted_run.error_message_safe
+        run.stage_metadata = persisted_run.stage_metadata
+        run.started_at = persisted_run.started_at
+        run.completed_at = persisted_run.completed_at
         qid = question_id.strip().upper()
 
         # Find question definition in stage metadata or database
@@ -193,7 +212,9 @@ class AnswerInterpreter:
                 inst.save(update_fields=["is_answered", "answer_value", "status"])
 
         variable_key = matched_q.get("variable_key") or (inst.variable_key if inst else None)
-        if variable_key:
+        answers = dict(run.stage_metadata.get("answers") or {})
+        is_idempotent_retry = qid in answers and answers[qid] == normalized_value
+        if variable_key and not is_idempotent_retry:
             from apps.onboarding.services import save_smart_question_answers
             profile = save_smart_question_answers(business=run.assessment.business, answers={variable_key: normalized_value}, assessment_id=str(run.assessment.pk))
             run.assessment.profile_version = profile

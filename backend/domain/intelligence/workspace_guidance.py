@@ -430,10 +430,14 @@ def ensure_workspace(business, assessment, profile, deterministic, retrieved=Non
             return generate_workspace(business, assessment, profile, deterministic, retrieved, timings=timings)
         return generate_workspace(business, assessment, profile, deterministic, retrieved)
     except ProviderError:
-        # A provider outage must not discard useful published decisions. For an
-        # arbitrary business with no usable result this is a real operation failure.
-        if any(r.get("status") == "APPLICABLE" for r in deterministic):
-            import logging
-            logging.getLogger(__name__).warning("Contextual guidance unavailable; preserved published decisions for assessment %s", assessment.id)
-            return {key: [] for key in COLLECTIONS}
-        raise
+        # Contextual workspace guidance is optional and cannot block the
+        # authoritative assessment, including when no published rule currently
+        # resolves to APPLICABLE. The synthesis result will then truthfully carry
+        # NEEDS_INFORMATION instead of turning an optional provider outage into
+        # a failed assessment transition.
+        logging.getLogger(__name__).warning(
+            "Contextual guidance unavailable; preserving deterministic assessment "
+            "results for assessment %s",
+            assessment.id,
+        )
+        return {key: [] for key in COLLECTIONS}

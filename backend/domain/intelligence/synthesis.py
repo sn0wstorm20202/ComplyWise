@@ -565,7 +565,15 @@ class LiveComplianceSynthesisProvider(ComplianceSynthesisProvider):
         from domain.providers.telemetry import measure_phase
         timings = {}
         with measure_phase("deterministic_evaluation", timings), transaction.atomic():
-            decision_run = ApplicabilityEngine().evaluate_business_profile(business=business, profile_version=profile)
+            decision_run = None
+            if assessment and assessment.decision_run_id:
+                existing = assessment.decision_run
+                if existing.profile_version_id == profile.id:
+                    decision_run = existing
+            if decision_run is None:
+                decision_run = ApplicabilityEngine().evaluate_business_profile(
+                    business=business, profile_version=profile
+                )
             if assessment:
                 decision_run.assessment = assessment
                 decision_run.save(update_fields=["assessment"])

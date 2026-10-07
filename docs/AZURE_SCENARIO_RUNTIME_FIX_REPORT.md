@@ -50,11 +50,18 @@ Existing resources retained:
 - Backend URL: `https://complywise-backend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io`
 - Existing RAG URL: `https://compliancerag.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io/v1`
 
-The backend's demo mode was confirmed enabled. The existing RAG health endpoint and backend/frontend health endpoints responded successfully before deployment. The frontend image build uses the existing backend API URLs from its Dockerfile. Image tags, active revisions, post-deployment health checks, and the deployed backend resolver import will be recorded below after deployment.
+The backend's demo mode was confirmed enabled. The existing RAG health endpoint and backend/frontend health endpoints responded successfully before deployment. The frontend image build uses the existing backend API URLs from its Dockerfile.
+
+Deployment is currently blocked before any Azure app update:
+
+- `az acr build` for the backend was rejected by Azure with `TasksOperationsNotAllowed` for `complywiseacr`.
+- The local Docker CLI is installed, but its Linux engine is unavailable: the `com.docker.service` service is stopped and the Docker engine named pipe is missing. Starting the service was denied by Windows permissions during this session.
+- No alternate local image builder (`podman`, `buildah`, `nerdctl`, `kaniko`, or `buildctl`) is installed.
+
+Therefore no new container image was published, no Container App revision was created, and traffic/configuration on the existing Azure apps remains unchanged. The backend image still lacks `demo.resolver`; the source fix is pushed but not yet live. To finish deployment, an operator with permission to start Docker Desktop can build and push both images from the latest pushed `feature/compliance-scenario-suite` commit, or an Azure administrator can enable ACR Tasks for this registry. Use that commit SHA as each image tag, update the existing backend and frontend Container Apps, then verify their active revisions and health.
 
 No RAG rebuild, infrastructure recreation, database seed, or BIS/main change was performed.
 
 ## Secrets
 
 This report intentionally contains no secret values, credentials, tokens, or environment dumps. During earlier diagnostics, a command output exposed Azure environment values in the tool output. Rotate any credentials that may have been included in that output, then update the corresponding Azure Container App secrets and environment references through the normal secret-management procedure.
-

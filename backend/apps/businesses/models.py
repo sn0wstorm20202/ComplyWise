@@ -509,21 +509,24 @@ class UserWorkspaceState(models.Model):
                     ws.active_business = ass.business
                     ws.save(update_fields=["active_business", "updated_at"])
 
-        # 2. If no valid active_assessment, but active_business is valid
+        # 2. Resolve the active assessment inside the active business only.
+        # A previous business's assessment must not undo an enterprise switch.
         if not ws.active_assessment and ws.active_business:
             biz = ws.active_business
             if not biz.is_accessible_by(user) or not biz.is_active:
                 ws.active_business = None
             else:
-                latest_ass = biz.assessments.filter(
-                    models.Q(created_by=user) | models.Q(business__owner=user)
+                latest_ass = Assessment.accessible_to(user).filter(
+                    business=biz
                 ).exclude(status="ARCHIVED").order_by("-updated_at").first()
                 if latest_ass:
                     ws.active_assessment = latest_ass
                     ws.save(update_fields=["active_assessment", "updated_at"])
 
-        # 3. If neither active_assessment nor active_business is valid, find most recent accessible workspace
-        if not ws.active_assessment or not ws.active_business:
+        # 3. Only discover a global fallback when no business is selected. If
+        # the selected business has no assessment, keep it selected so the
+        # client can start onboarding for that business.
+        if not ws.active_business:
             latest_ass = Assessment.accessible_to(user).exclude(status="ARCHIVED").order_by("-updated_at").first()
             if latest_ass:
                 ws.active_business = latest_ass.business

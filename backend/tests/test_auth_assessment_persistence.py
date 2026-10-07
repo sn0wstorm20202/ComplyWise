@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import pytest
 from apps.accounts.models import User
-from apps.businesses.models import Assessment, Business, UserWorkspaceState
+from apps.businesses.models import Assessment, Business, BusinessMembership, UserWorkspaceState
 from rest_framework import status
 
 pytestmark = pytest.mark.django_db
@@ -117,6 +117,57 @@ def test_workspace_switcher_persists_across_sessions(auth_client, user, make_bus
     assert get3.status_code == status.HTTP_200_OK
     assert get3.json()["data"]["active_assessment_id"] == str(ass2.id)
     assert get3.json()["data"]["active_assessment_title"] == "Q2 Expansion"
+
+
+def test_switching_business_does_not_restore_previous_business_assessment(
+    auth_client, user, other_user, make_business
+):
+    """Switching to a member business must not restore the prior enterprise."""
+    first_business = make_business(user, name="First Enterprise")
+    first_assessment = Assessment.objects.create(
+        business=first_business,
+        created_by=user,
+        assessment_number=1,
+        title="First assessment",
+        status="COMPLETED",
+    )
+
+    second_business = make_business(other_user, name="Second Enterprise")
+    BusinessMembership.objects.create(
+        business=second_business,
+        user=user,
+        role=BusinessMembership.Role.MANAGER,
+    )
+    second_assessment = Assessment.objects.create(
+        business=second_business,
+        created_by=other_user,
+        assessment_number=1,
+        title="Second assessment",
+        status="COMPLETED",
+    )
+    assert second_business.is_accessible_by(user)
+    assert Assessment.accessible_to(user).filter(pk=second_assessment.pk).exists()
+
+    first_switch = auth_client.post(
+        "/api/v1/user/workspace",
+        data={"business_id": str(first_business.id), "assessment_id": str(first_assessment.id)},
+        format="json",
+    )
+    assert first_switch.status_code == status.HTTP_200_OK
+
+    second_switch = auth_client.post(
+        "/api/v1/user/workspace",
+        data={"business_id": str(second_business.id)},
+        format="json",
+    )
+    assert second_switch.status_code == status.HTTP_200_OK
+    assert second_switch.json()["data"]["active_business_id"] == str(second_business.id)
+    assert second_switch.json()["data"]["active_assessment_id"] == str(second_assessment.id)
+
+    reloaded = auth_client.get("/api/v1/user/workspace")
+    assert reloaded.status_code == status.HTTP_200_OK
+    assert reloaded.json()["data"]["active_business_id"] == str(second_business.id)
+    assert reloaded.json()["data"]["active_assessment_id"] == str(second_assessment.id)
 
 
 def test_workspace_isolation_prevents_unauthorized_access(auth_client, user, make_business):

@@ -281,6 +281,10 @@ class UserWorkspaceView(APIView):
             biz = Business.accessible_to(user).filter(pk=biz_id).first()
             if not biz:
                 return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
+            if ws.active_business_id != biz.id:
+                # Do not carry a previous enterprise's assessment into the
+                # newly selected business workspace.
+                ws.active_assessment = None
             ws.active_business = biz
 
         if ass_id:
@@ -295,7 +299,7 @@ class UserWorkspaceView(APIView):
 
         ws.save()
 
-        _, redirect_target = UserWorkspaceState.resolve_for_user(user)
+        ws, redirect_target = UserWorkspaceState.resolve_for_user(user)
 
         if not ws.active_business:
             redirect_url = "/onboarding?new=true"

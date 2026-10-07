@@ -1,7 +1,9 @@
 name: Temporary backend image publish
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - feature/compliance-scenario-suite
 
 permissions:
   contents: read

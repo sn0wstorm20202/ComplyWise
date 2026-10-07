@@ -816,17 +816,34 @@ class LLMFirstStrategy(AssessmentStrategy):
                 ctx_to_use = build_canonical_enriched_context(context, under_res, interpreted_facts)
 
             disc_provider = LiveRegulatoryDiscoveryProvider()
-            disc_res = disc_provider.discover(ctx_to_use, assessment=run.assessment)
-            clean_disc = disc_res.to_dict()
-            discovery_id = (clean_disc.get("metadata") or {}).get("discovery_run_id")
-            if discovery_id:
-                persisted = DiscoveryRun.objects.filter(pk=discovery_id, business=run.assessment.business).first()
-                if persisted and not persisted.assessment_id:
-                    persisted.assessment = run.assessment
-                    persisted.save(update_fields=["assessment"])
-                if persisted and persisted.assessment_id == run.assessment.id:
-                    run.assessment.discovery_run = persisted
-                    run.assessment.save(update_fields=["discovery_run", "updated_at"])
+            try:
+                disc_res = disc_provider.discover(ctx_to_use, assessment=run.assessment)
+                clean_disc = disc_res.to_dict()
+                discovery_id = (clean_disc.get("metadata") or {}).get("discovery_run_id")
+                if discovery_id:
+                    persisted = DiscoveryRun.objects.filter(pk=discovery_id, business=run.assessment.business).first()
+                    if persisted and not persisted.assessment_id:
+                        persisted.assessment = run.assessment
+                        persisted.save(update_fields=["assessment"])
+                    if persisted and persisted.assessment_id == run.assessment.id:
+                        run.assessment.discovery_run = persisted
+                        run.assessment.save(update_fields=["discovery_run", "updated_at"])
+                sources_count = disc_res.sources_count
+                candidate_count = disc_res.candidate_count
+            except Exception as disc_exc:
+                logger.exception("Live regulatory discovery encountered an exception; continuing with verified knowledge: %s", disc_exc)
+                clean_disc = {
+                    "status": "PARTIAL",
+                    "sources_count": 0,
+                    "candidate_count": 0,
+                    "queries": [],
+                    "evidence_candidates": [],
+                    "candidate_requirements": [],
+                    "metadata": {"fallback_used": True, "error": str(disc_exc)},
+                    "warnings": [f"Live discovery temporarily degraded ({type(disc_exc).__name__}); local verified knowledge active."],
+                }
+                sources_count = 0
+                candidate_count = 0
 
             state = dict(run.stage_metadata)
             state["regulatory_discovery"] = clean_disc
@@ -837,8 +854,8 @@ class LLMFirstStrategy(AssessmentStrategy):
                 status=StageStatus.COMPLETED,
                 data=clean_disc,
                 metadata={
-                    "sources_count": disc_res.sources_count,
-                    "candidate_count": disc_res.candidate_count,
+                    "sources_count": sources_count,
+                    "candidate_count": candidate_count,
                     "provider": provider_name,
                 },
             )

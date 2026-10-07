@@ -372,7 +372,7 @@ ASSESSMENT_STRATEGY = os.getenv("ASSESSMENT_STRATEGY", "LLM_FIRST").strip().uppe
 # response: this key is billable and grants crawling on our account (§13).
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY", "") or os.getenv("SERP_API", "")
 SEARCH_TIMEOUT_SECONDS = int(os.getenv("SEARCH_TIMEOUT_SECONDS", "20"))
-ACQUISITION_TIMEOUT_SECONDS = int(os.getenv("ACQUISITION_TIMEOUT_SECONDS", "30"))
+ACQUISITION_TIMEOUT_SECONDS = int(os.getenv("ACQUISITION_TIMEOUT_SECONDS", "10"))
 
 # Discovery orchestration bounds (apps/ingestion). Discovery is OPTIONAL: without
 # a key the app runs in knowledge-only mode and reports discovery as unavailable.

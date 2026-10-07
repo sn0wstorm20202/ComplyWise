@@ -99,11 +99,12 @@ def normalize_capture(url, final_url, body, mime, status, *, mode, metadata=None
 
 class CrawleeAcquisitionProvider(BaseWebAcquisitionLayer):
     def __init__(self, timeout=None, user_agent="ComplyWise/2.0 Regulatory Research"):
-        self.timeout = timeout or getattr(settings, "ACQUISITION_TIMEOUT_SECONDS", 30)
+        self.timeout = timeout or getattr(settings, "ACQUISITION_TIMEOUT_SECONDS", 10)
         self.user_agent = user_agent
 
     def fetch_page(self, url, context=None):
         started = time.perf_counter()
+        effective_timeout = min(self.timeout, int((context or {}).get("timeout", self.timeout)))
         try:
             validate_destination(url)
             use_browser = bool((context or {}).get("use_browser"))
@@ -113,11 +114,15 @@ class CrawleeAcquisitionProvider(BaseWebAcquisitionLayer):
                 # A thin HTML shell can require rendering. Do not retry blocked,
                 # authentication, destination or timeout failures in a browser.
                 elapsed = time.perf_counter() - started
-                if use_browser or "Empty, boilerplate, or non-text source" not in str(exc) or elapsed >= self.timeout - 3:
+                if use_browser or "Empty, boilerplate, or non-text source" not in str(exc) or elapsed >= effective_timeout - 3:
                     raise
-                browser_provider = CrawleeAcquisitionProvider(timeout=max(3, self.timeout - elapsed))
-                result = browser_provider._fetch_via_crawlee(url, use_browser=True)
-                result.crawl_metadata["render_reason"] = "HTTP_THIN_CONTENT"
+                try:
+                    from crawlee.crawlers import PlaywrightCrawler  # noqa: F401
+                    browser_provider = CrawleeAcquisitionProvider(timeout=max(3, effective_timeout - elapsed))
+                    result = browser_provider._fetch_via_crawlee(url, use_browser=True)
+                    result.crawl_metadata["render_reason"] = "HTTP_THIN_CONTENT"
+                except Exception:
+                    raise exc
 
             result.crawl_metadata["latency_ms"] = round((time.perf_counter() - started) * 1000, 2)
             return result

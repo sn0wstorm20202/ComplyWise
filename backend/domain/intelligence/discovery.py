@@ -114,12 +114,13 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
             # Captured text remains usable even when claim extraction produces
             # nothing. A capture is contextual material, never verified evidence.
             from apps.ingestion.models import RetrievedDocument
-            source_ids = [row.get("source_id") for row in run.scraped_urls if isinstance(row, dict)]
-            for capture in RetrievedDocument.objects.filter(source__source_id__in=source_ids).select_related("source")[:8]:
-                evidence_candidates.append({"source_id": capture.source.source_id,
-                    "source_url": capture.source.canonical_url, "excerpt": capture.normalized_content[:3000],
-                    "authority": capture.source.authority, "verification_status": "UNVERIFIED",
-                    "retrieved_document_id": str(capture.id), "content_hash": capture.content_hash})
+            source_ids = [row.get("source_id") for row in (run.scraped_urls or []) if isinstance(row, dict)]
+            if source_ids:
+                for capture in RetrievedDocument.objects.filter(source__source_id__in=source_ids).select_related("source")[:8]:
+                    evidence_candidates.append({"source_id": capture.source.source_id,
+                        "source_url": capture.source.canonical_url, "excerpt": capture.normalized_content[:3000],
+                        "authority": capture.source.authority, "verification_status": "UNVERIFIED",
+                        "retrieved_document_id": str(capture.id), "content_hash": capture.content_hash})
             for candidate in run.candidate_requirements.select_related("source", "evidence"):
                 if candidate.evidence and candidate.source:
                     evidence_candidates.append({"evidence_id": candidate.evidence.evidence_id,
@@ -128,10 +129,11 @@ class LiveRegulatoryDiscoveryProvider(RegulatoryDiscoveryProvider):
                         "verification_status": candidate.evidence.verification_status,
                         "jurisdiction": candidate.jurisdiction})
         # Remote chunks are real retrieved context, never local published rules.
+        passages = (remote or {}).get("passages", [])
         evidence_candidates.extend({**passage, "verification_status": "EXTERNAL_CONTEXT"}
-                                   for passage in remote["passages"])
-        remote_sources = {passage["source_id"] for passage in remote["passages"] if passage["source_id"]}
-        return RegulatoryDiscoveryResult(status="COMPLETED" if remote["passages"] else data.get("status", "UNAVAILABLE"),
+                                   for passage in passages if isinstance(passage, dict))
+        remote_sources = {passage.get("source_id") for passage in passages if isinstance(passage, dict) and passage.get("source_id")}
+        return RegulatoryDiscoveryResult(status="COMPLETED" if passages else data.get("status", "UNAVAILABLE"),
             sources_count=data.get("sources_scraped", 0) + len(remote_sources), candidate_count=len(evidence_candidates),
             queries=data.get("queries", []), evidence_candidates=evidence_candidates,
             metadata={"discovery_run_id": str(run.id) if run else None, "warnings": data.get("errors", []),

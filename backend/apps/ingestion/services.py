@@ -309,7 +309,7 @@ def run_discovery(
         created_at__gte=recent_cutoff,
     ).order_by("-created_at").first()
 
-    if not force_refresh and existing_run and existing_run.scraped_count and existing_run.summary.get("profile_version_id") == profile_id:
+    if not force_refresh and existing_run and existing_run.scraped_count and (existing_run.summary or {}).get("profile_version_id") == profile_id:
         logger.info("Discovery cache hit: reusing completed run %s for business %s", existing_run.id, business.name)
         return {
             "ran": True,
@@ -378,80 +378,87 @@ def run_discovery(
     official_candidates = [c for c in ranked if c.get("is_official")]
     run.official_source_count = len(official_candidates)
 
-    # Scrape & extract claims from top candidates (up to max_scrape)
+    # Scrape & extract claims from top candidates concurrently (up to max_scrape)
     candidates_to_scrape = official_candidates[:max_scrape]
     scraped_records: list[dict[str, Any]] = []
     candidate_requirements_created: list[CandidateRequirement] = []
 
-    for item in candidates_to_scrape:
-        url = item["url"]
+    if candidates_to_scrape:
         from domain.intelligence.official_sources import is_primary_official_source
-        try:
-            acquired = acquire_source(url)
-        except Exception as exc:
-            errors.append(f"Acquisition failed ({type(exc).__name__}).")
-            continue
-        if acquired.errors or not 200 <= acquired.http_status < 300 or not is_primary_official_source(acquired.resolved_url):
-            errors.append("Source capture rejected: " + "; ".join(acquired.errors or ["invalid status or official domain"]))
-            continue
-        markdown = acquired.markdown_content or acquired.text_content
-        title = acquired.title or item.get("title", "")
-        url = acquired.resolved_url
-        acquisition_provider = acquired.acquisition_engine
-        if len(markdown.strip()) < 80:
-            errors.append("Source capture contained too little useful text.")
-            continue
+        per_page_timeout = getattr(settings, "ACQUISITION_TIMEOUT_SECONDS", 10)
+        with ThreadPoolExecutor(max_workers=min(3, len(candidates_to_scrape))) as scrape_executor:
+            futures = [
+                (item, scrape_executor.submit(acquire_source, item["url"]))
+                for item in candidates_to_scrape
+            ]
+            for item, future in futures:
+                url = item["url"]
+                try:
+                    acquired = future.result(timeout=per_page_timeout + 2)
+                except Exception as exc:
+                    errors.append(f"Acquisition failed ({type(exc).__name__}).")
+                    continue
+                if acquired.errors or not 200 <= acquired.http_status < 300 or not is_primary_official_source(acquired.resolved_url):
+                    errors.append("Source capture rejected: " + "; ".join(acquired.errors or ["invalid status or official domain"]))
+                    continue
+                markdown = acquired.markdown_content or acquired.text_content
+                title = acquired.title or item.get("title", "")
+                url = acquired.resolved_url
+                acquisition_provider = acquired.acquisition_engine
+                if len(markdown.strip()) < 80:
+                    errors.append("Source capture contained too little useful text.")
+                    continue
 
-        # Store discovered source & evidence
-        source, evidence = _store_discovered_source(
-            url=url,
-            title=title,
-            text=markdown,
-            query=item.get("query", ""),
-            authority_tier=item.get("authority_tier", "UNKNOWN"),
-            provider=acquisition_provider,
-            capture_metadata=acquired.crawl_metadata,
-        )
-        scraped_records.append({
-            "url": url,
-            "title": title,
-            "source_id": source.source_id,
-            "evidence_id": evidence.evidence_id,
-            "content_length": len(markdown),
-            "acquisition_mode": acquired.acquisition_engine,
-            "capture_metadata": acquired.crawl_metadata,
-        })
+                # Store discovered source & evidence
+                source, evidence = _store_discovered_source(
+                    url=url,
+                    title=title,
+                    text=markdown,
+                    query=item.get("query", ""),
+                    authority_tier=item.get("authority_tier", "UNKNOWN"),
+                    provider=acquisition_provider,
+                    capture_metadata=acquired.crawl_metadata,
+                )
+                scraped_records.append({
+                    "url": url,
+                    "title": title,
+                    "source_id": source.source_id,
+                    "evidence_id": evidence.evidence_id,
+                    "content_length": len(markdown),
+                    "acquisition_mode": acquired.acquisition_engine,
+                    "capture_metadata": acquired.crawl_metadata,
+                })
 
-        # Extract claims with prompt-injection boundary
-        claims = extract_claims_from_text(
-            text=markdown,
-            url=url,
-            context=context,
-        )
+                # Extract claims with prompt-injection boundary
+                claims = extract_claims_from_text(
+                    text=markdown,
+                    url=url,
+                    context=context,
+                )
 
-        for claim in claims:
-            claim_id = hashlib.sha256((source.source_id + claim["requirement_name"] + claim["excerpt"]).encode()).hexdigest()[:32].upper()
-            claim_evidence, _ = Evidence.objects.get_or_create(evidence_id="CLAIM-" + claim_id,
-                defaults={"source": source, "excerpt": claim["excerpt"], "locator": "Captured source passage",
-                          "structured_fact": evidence.structured_fact, "verification_status": VerificationStatus.UNVERIFIED})
-            cr = CandidateRequirement.objects.create(
-                discovery_run=run,
-                business=business,
-                requirement_name=claim["requirement_name"],
-                category=claim.get("category", "GENERAL"),
-                authority=claim.get("authority", source.authority),
-                jurisdiction=claim.get("jurisdiction", context.state or "CENTRAL"),
-                applicability_statement=claim.get("applicability_statement", ""),
-                prerequisite=claim.get("prerequisite", ""),
-                document_requirements=claim.get("document_requirements", []),
-                fee_info=claim.get("fee_info", ""),
-                deadline_info=claim.get("deadline_info", ""),
-                validity_info=claim.get("validity_info", ""),
-                source=source,
-                evidence=claim_evidence,
-                verification_status=VerificationStatus.UNVERIFIED,
-            )
-            candidate_requirements_created.append(cr)
+                for claim in claims:
+                    claim_id = hashlib.sha256((source.source_id + claim["requirement_name"] + claim["excerpt"]).encode()).hexdigest()[:32].upper()
+                    claim_evidence, _ = Evidence.objects.get_or_create(evidence_id="CLAIM-" + claim_id,
+                        defaults={"source": source, "excerpt": claim["excerpt"], "locator": "Captured source passage",
+                                  "structured_fact": evidence.structured_fact, "verification_status": VerificationStatus.UNVERIFIED})
+                    cr = CandidateRequirement.objects.create(
+                        discovery_run=run,
+                        business=business,
+                        requirement_name=claim["requirement_name"],
+                        category=claim.get("category", "GENERAL"),
+                        authority=claim.get("authority", source.authority),
+                        jurisdiction=claim.get("jurisdiction", context.state or "CENTRAL"),
+                        applicability_statement=claim.get("applicability_statement", ""),
+                        prerequisite=claim.get("prerequisite", ""),
+                        document_requirements=claim.get("document_requirements", []),
+                        fee_info=claim.get("fee_info", ""),
+                        deadline_info=claim.get("deadline_info", ""),
+                        validity_info=claim.get("validity_info", ""),
+                        source=source,
+                        evidence=claim_evidence,
+                        verification_status=VerificationStatus.UNVERIFIED,
+                    )
+                    candidate_requirements_created.append(cr)
 
     # Finalize DiscoveryRun
     run.scraped_urls = scraped_records
@@ -472,7 +479,7 @@ def run_discovery(
     }
     run.save()
 
-    if not scraped_records and errors and existing_run and existing_run.scraped_count and existing_run.summary.get("profile_version_id") == profile_id:
+    if not scraped_records and errors and existing_run and existing_run.scraped_count and (existing_run.summary or {}).get("profile_version_id") == profile_id:
         # Keep the failed attempt for diagnostics, but return real previously
         # captured material for this exact snapshot instead of a discovery dead end.
         return {"ran": True, "run_id": str(existing_run.id), "cached": True,

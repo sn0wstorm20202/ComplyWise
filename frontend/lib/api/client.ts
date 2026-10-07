@@ -13,6 +13,11 @@
 import { ApiEnvelope, ApiErrorEnvelope, ApiErrorDetail } from "@/types";
 
 export function getApiBaseUrl(): string {
+  // Use explicit public API base URL if provided (avoids Next.js rewrite proxy timeout bottlenecks)
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/+$/, "");
+  }
+
   // In the browser for deployed non-localhost environments, route through Next.js /api/v1 rewrites
   if (
     typeof window !== "undefined" &&
@@ -25,11 +30,6 @@ export function getApiBaseUrl(): string {
     ) {
       return `${window.location.origin}/api/v1`;
     }
-  }
-
-  // Use explicit public API base URL if provided
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/+$/, "");
   }
 
   // In server-side environments (SSR), route directly to backend internal URL if configured

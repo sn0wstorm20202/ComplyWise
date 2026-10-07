@@ -141,3 +141,53 @@ def test_quarantine_invariant_and_audit_logging(make_business, user):
             assert cand.verification_status == "UNVERIFIED"
             assert cand.source is not None
             assert cand.source.status == "DISCOVERED"
+
+
+@pytest.mark.django_db
+def test_concurrent_scrape_timeout_resilience(make_business, user):
+    """When candidates fail or timeout during concurrent acquisition, discovery finishes gracefully."""
+    biz = make_business(owner=user, name="Resilient Scrape Enterprise")
+    _create_profile(
+        biz,
+        1,
+        state="KA",
+        organization_type="SERVICE",
+        product_description="Software consultancy building cloud applications",
+    )
+
+    mock_search_results = [
+        {"url": "https://www.meity.gov.in/slow-portal", "title": "MeitY Slow", "description": "Official MeitY portal"},
+        {"url": "https://igr.karnataka.gov.in/dead-link", "title": "Karnataka Dead", "description": "Official Karnataka portal"},
+    ]
+
+    def mock_hanging_acquire(url):
+        # Simulate timeout error from WebAcquisitionLayer
+        raise TimeoutError(f"Simulated timeout connecting to {url}")
+
+    with patch("apps.ingestion.services.search_provider.is_configured", return_value=True), \
+         patch("apps.ingestion.services.search_provider.search", return_value=mock_search_results), \
+         patch("apps.ingestion.services.acquire_source", side_effect=mock_hanging_acquire):
+
+        result = run_discovery(biz, force_refresh=True)
+
+        assert result["ran"] is True
+        assert result["status"] in {"FAILED", "PARTIAL", "COMPLETED"}
+        assert len(result["errors"]) >= 1
+        assert "Acquisition failed" in result["errors"][0]
+
+
+@pytest.mark.django_db
+def test_orchestration_stage_discovery_graceful_on_provider_exception(make_business, user):
+    """Assessment orchestration handles unexpected discovery provider exceptions without failing the run."""
+    from domain.intelligence.orchestration import assessment_orchestrator, AssessmentStage
+    biz = make_business(owner=user, name="Fault Tolerant Flow Enterprise")
+    _create_profile(biz, 1, state="DL", product_description="E-commerce retail")
+    run = assessment_orchestrator.create_run(business=biz)
+
+    with patch("domain.intelligence.discovery.LiveRegulatoryDiscoveryProvider.discover", side_effect=RuntimeError("Upstream cluster unavailable")):
+        stage_result = assessment_orchestrator.execute_stage(run, AssessmentStage.REGULATORY_DISCOVERY)
+        assert stage_result.status.value == "COMPLETED"
+        assert stage_result.data["status"] == "PARTIAL"
+        assert stage_result.data["metadata"]["fallback_used"] is True
+        assert len(stage_result.data["warnings"]) >= 1
+

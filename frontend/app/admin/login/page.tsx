@@ -4,14 +4,15 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import DemoReviewerAutofill from "@/components/DemoReviewerAutofill";
 import { AlertCircle, Lock, Mail, Shield, ShieldCheck } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const { adminLogin } = useAuth();
 
-  const [email, setEmail] = useState("admin@complywise.in");
-  const [password, setPassword] = useState("Admin@1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,7 +23,7 @@ export default function AdminLoginPage() {
 
     try {
       const session = await adminLogin(email, password);
-      if (session?.user && (session.user.is_staff || session.user.is_superuser)) {
+      if (session?.user && (session.user.is_compliance_officer || session.user.is_staff || session.user.is_superuser)) {
         router.push("/admin");
       } else {
         setError("Access denied: Compliance Officer or Administrator privileges required.");
@@ -60,6 +61,9 @@ export default function AdminLoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <DemoReviewerAutofill onFill={(demoEmail, demoPassword) => {
+              setEmail(demoEmail); setPassword(demoPassword); setError(null);
+            }} />
             <div>
               <label className="text-xs font-semibold text-foreground block mb-1.5">
                 Staff Email Address

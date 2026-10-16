@@ -25,7 +25,35 @@
               "left": {
                 "var": "product_description"
               },
-              "right": "MILLET"
+              "right": "RESTAURANT"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "KITCHEN"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "MEAL"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "CATERING"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "CAFE"
             },
             {
               "op": "CONTAINS",
@@ -33,6 +61,27 @@
                 "var": "product_description"
               },
               "right": "SNACK"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "BEVERAGE"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "BAKERY"
+            },
+            {
+              "op": "CONTAINS",
+              "left": {
+                "var": "product_description"
+              },
+              "right": "MILLET"
             },
             {
               "op": "CONTAINS",

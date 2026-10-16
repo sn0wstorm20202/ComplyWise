@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import logging
 import re
 import secrets
 import urllib.request
@@ -23,6 +24,22 @@ from common.envelope import error_response
 from .models import GoogleIdentity, GoogleLoginAttempt
 from .views import _auth_payload
 from rest_framework.authtoken.models import Token
+
+logger = logging.getLogger(__name__)
+
+
+def verification_failure_reason(exc):
+    """Classify failures without logging claims, tokens, codes or exception bodies."""
+    message = str(exc)
+    if message.startswith("Token used too early"):
+        return "clock_skew"
+    if message.startswith("Token expired"):
+        return "expired_token"
+    if message == "Invalid nonce.":
+        return "nonce_mismatch"
+    if "existing email and password" in message:
+        return "existing_account"
+    return "invalid_claims"
 
 
 def digest(value):
@@ -46,7 +63,10 @@ def exchange_google_code(code, verifier):
     with urllib.request.urlopen(req, timeout=15) as response:
         payload = json.load(response)
     # Signature, issuer, audience and expiry are checked by Google's maintained library.
-    return verify_oauth2_token(payload["id_token"], Request(), settings.GOOGLE_AUTH_CLIENT_ID)
+    # Newly issued tokens can be a few seconds ahead of the host clock. Keep
+    # signature/issuer/audience/expiry checks, with a small bounded time tolerance.
+    return verify_oauth2_token(payload["id_token"], Request(), settings.GOOGLE_AUTH_CLIENT_ID,
+                              clock_skew_in_seconds=30)
 
 
 @transaction.atomic
@@ -123,12 +143,18 @@ class GoogleCallbackView(APIView):
                 if attempt:
                     attempt.callback_used_at = timezone.now()
                     attempt.save(update_fields=["callback_used_at"])
+            if not attempt:
+                logger.warning("Google sign-in rejected: stage=callback_binding reason=expired_or_used_attempt")
             if attempt and request.query_params.get("code") and not request.query_params.get("error"):
+                stage = "token_verification"
                 try:
                     claims = exchange_google_code(request.query_params["code"], attempt.code_verifier)
+                    stage = "nonce_verification"
                     if not secrets.compare_digest(str(claims.get("nonce", "")), attempt.nonce):
                         raise ValueError("Invalid nonce.")
+                    stage = "account_resolution"
                     user, created = resolve_google_user(claims)
+                    stage = "handoff_creation"
                     ticket = secrets.token_urlsafe(32)
                     attempt.user = user
                     attempt.is_new_user = created
@@ -142,11 +168,19 @@ class GoogleCallbackView(APIView):
                     response["Cache-Control"] = "no-store"
                     return response
                 except ValueError as exc:
+                    logger.warning("Google sign-in rejected: stage=%s reason=%s", stage,
+                                   verification_failure_reason(exc))
                     error = "existing_account" if "existing email" in str(exc) else "verification_failed"
-                except Exception:
+                except Exception as exc:
+                    logger.warning("Google sign-in failed: stage=%s exception_type=%s", stage, type(exc).__name__)
                     error = "provider_unavailable"
+        elif not request.query_params.get("error"):
+            reason = "missing_state_cookie" if not cookie else "state_mismatch"
+            logger.warning("Google sign-in rejected: stage=callback_binding reason=%s", reason)
         response = HttpResponseRedirect(target + "?error=" + error)
         response.delete_cookie("cw_google_state", path="/api/v1/auth/google/")
+        response["Cache-Control"] = "no-store"
+        response["Referrer-Policy"] = "no-referrer"
         return response
 
 
@@ -159,7 +193,9 @@ class GoogleExchangeView(APIView):
         ticket, verifier = request.data.get("ticket", ""), request.data.get("verifier", "")
         if not isinstance(ticket, str) or not isinstance(verifier, str) or len(ticket) > 128 or len(verifier) > 128:
             return error_response("VALIDATION_ERROR", "Invalid sign-in handoff.", 400)
-        attempt = GoogleLoginAttempt.objects.select_for_update().select_related("user").filter(
+        # Lock the handoff itself; its nullable user FK produces an outer join,
+        # whose nullable side PostgreSQL cannot lock with plain FOR UPDATE.
+        attempt = GoogleLoginAttempt.objects.select_for_update(of=("self",)).select_related("user").filter(
             ticket_digest=digest(ticket), ticket_used_at__isnull=True, expires_at__gt=timezone.now()).first()
         if not attempt or not attempt.user or not secrets.compare_digest(challenge(verifier), attempt.handoff_challenge):
             return error_response("AUTHENTICATION_FAILED", "Google sign-in expired. Please try again.", 401)

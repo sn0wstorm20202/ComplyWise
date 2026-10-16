@@ -373,7 +373,7 @@ ASSESSMENT_STRATEGY = os.getenv("ASSESSMENT_STRATEGY", "LLM_FIRST").strip().uppe
 # response: this key is billable and grants crawling on our account (§13).
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY", "") or os.getenv("SERP_API", "")
 SEARCH_TIMEOUT_SECONDS = int(os.getenv("SEARCH_TIMEOUT_SECONDS", "20"))
-ACQUISITION_TIMEOUT_SECONDS = int(os.getenv("ACQUISITION_TIMEOUT_SECONDS", "30"))
+ACQUISITION_TIMEOUT_SECONDS = int(os.getenv("ACQUISITION_TIMEOUT_SECONDS", "10"))
 
 # Discovery orchestration bounds (apps/ingestion). Discovery is OPTIONAL: without
 # a key the app runs in knowledge-only mode and reports discovery as unavailable.
@@ -468,3 +468,10 @@ GOOGLE_AUTH_CLIENT_ID = os.getenv("GOOGLE_AUTH_CLIENT_ID", "").strip()
 GOOGLE_AUTH_CLIENT_SECRET = os.getenv("GOOGLE_AUTH_CLIENT_SECRET", "").strip()
 GOOGLE_AUTH_REDIRECT_URI = os.getenv("GOOGLE_AUTH_REDIRECT_URI", "http://127.0.0.1:8000/api/v1/auth/google/callback").strip()
 GOOGLE_AUTH_FRONTEND_CALLBACK_URL = os.getenv("GOOGLE_AUTH_FRONTEND_CALLBACK_URL", "http://localhost:3000/auth/google/callback").strip()
+
+# Explicitly opt-in public demo autofill; privileged demo accounts require a second opt-in.
+DEMO_REVIEWER_AUTOFILL_ENABLED = env_bool("DEMO_REVIEWER_AUTOFILL_ENABLED", default=False)
+DEMO_REVIEWER_ALLOW_PRIVILEGED_ACCOUNT = env_bool("DEMO_REVIEWER_ALLOW_PRIVILEGED_ACCOUNT", default=False)
+DEMO_REVIEWER_EMAIL = os.getenv("DEMO_REVIEWER_EMAIL", "").strip()
+DEMO_REVIEWER_PASSWORD = os.getenv("DEMO_REVIEWER_PASSWORD", "")
+

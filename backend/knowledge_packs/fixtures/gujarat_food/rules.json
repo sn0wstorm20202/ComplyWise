@@ -10,7 +10,24 @@
     "condition_ast": {
       "op": "AND",
       "args": [
-        {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "FOOD"},
+        {
+          "op": "OR",
+          "args": [
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "FOOD"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "RESTAURANT"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "KITCHEN"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "MEAL"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "CATERING"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "CAFE"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "SNACK"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "BEVERAGE"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "BAKERY"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "MILLET"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "AGRO"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "GRAIN"},
+            {"op": "CONTAINS", "left": {"var": "product_description"}, "right": "FLOUR"}
+          ]
+        },
         {"op": "GTE", "left": {"var": "annual_turnover"}, "right": 1200000},
         {"op": "LTE", "left": {"var": "annual_turnover"}, "right": 200000000}
       ]

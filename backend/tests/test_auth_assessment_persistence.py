@@ -182,7 +182,7 @@ def test_workspace_isolation_prevents_unauthorized_access(auth_client, user, mak
         data={"business_id": str(other_biz.id)},
         format="json",
     )
-    assert res.status_code == status.HTTP_403_FORBIDDEN
+    assert res.status_code == status.HTTP_404_NOT_FOUND
 
     # Current user tries to switch to other user's assessment
     res2 = auth_client.post(
@@ -190,4 +190,4 @@ def test_workspace_isolation_prevents_unauthorized_access(auth_client, user, mak
         data={"assessment_id": str(other_ass.id)},
         format="json",
     )
-    assert res2.status_code == status.HTTP_403_FORBIDDEN
+    assert res2.status_code == status.HTTP_404_NOT_FOUND

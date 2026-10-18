@@ -21,8 +21,11 @@ from .orchestration_views import (
 )
 
 app_name = "orchestration"
+from .job_views import AssessmentJobsView, AssessmentJobDetailView
 
 urlpatterns = [
+    path("<uuid:run_id>/jobs/", AssessmentJobsView.as_view(), name="jobs"),
+    path("<uuid:run_id>/jobs/<uuid:job_id>/", AssessmentJobDetailView.as_view(), name="job-detail"),
     path("", AssessmentOrchestrationCreateView.as_view(), name="create"),
     path("<uuid:run_id>", AssessmentOrchestrationStatusView.as_view(), name="status"),
     path("<uuid:run_id>/", AssessmentOrchestrationStatusView.as_view(), name="status-slash"),

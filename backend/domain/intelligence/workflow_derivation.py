@@ -702,6 +702,11 @@ def derive_business_workflows(
                 requirement_id__in=[r.requirement_id for r in actionable_results]
             )
         }
+        if latest_run.evaluation_manifest:
+            from apps.applicability.snapshots import snapshot_models
+            saved_definitions, _ = snapshot_models(latest_run.evaluation_manifest)
+            req_defs.update(saved_definitions)
+
 
         priority_order = {
             "TRADE": 1,

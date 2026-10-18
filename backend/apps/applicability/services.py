@@ -18,10 +18,14 @@ import hashlib
 import hmac
 import json
 import logging
+from copy import deepcopy
 from typing import Any
+
+import rfc8785
 
 from django.conf import settings
 from django.utils import timezone
+from django.db import transaction
 
 from apps.applicability.models import DecisionResult, DecisionRun
 from apps.businesses.models import Business
@@ -32,26 +36,36 @@ logger = logging.getLogger("complywise.applicability.services")
 
 
 def _canonical_json_bytes(obj: Any) -> bytes:
-    """Serialize object using RFC 8785 style deterministic JSON canonicalization."""
-    return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+    """RFC 8785 canonical UTF-8 bytes, including numeric and Unicode ordering."""
+    return rfc8785.dumps(obj)
 
 
 def build_compliance_intelligence_record(
     decision_run: DecisionRun,
     assessment_id: str | None = None,
 ) -> dict[str, Any]:
-    """Project an immutable, cryptographically verifiable CIR from a DecisionRun."""
+    """Persist once; all subsequent readers receive the same historical payload."""
+    if decision_run.cir_snapshot:
+        return deepcopy(decision_run.cir_snapshot)
+    with transaction.atomic():
+        locked = DecisionRun.objects.select_for_update().select_related("business", "profile_version").get(pk=decision_run.pk)
+        if locked.cir_snapshot:
+            return deepcopy(locked.cir_snapshot)
+        if locked.status != "COMPLETED":
+            raise ValueError("Only completed decision runs can be sealed.")
+        payload = _project_cir(locked)
+        locked.cir_snapshot = payload
+        locked.save(update_fields=["cir_snapshot"])
+        decision_run.cir_snapshot = deepcopy(payload)
+        return deepcopy(payload)
+
+
+def _project_cir(decision_run):
     business = decision_run.business
     profile_version = decision_run.profile_version
-
-    resolved_assessment_id = assessment_id
-    if not resolved_assessment_id:
-        ass = decision_run.assessment
-        if not ass:
-            ass = business.assessments.filter(decision_run=decision_run).first()
-        if not ass:
-            ass = business.assessments.order_by("-assessment_number").first()
-        resolved_assessment_id = str(ass.id) if ass else str(business.id)
+    # A decision may be linked to an assessment after evaluation. Never invent
+    # ownership by choosing a different latest assessment during a read.
+    resolved_assessment_id = str(decision_run.assessment_id) if decision_run.assessment_id else None
 
     results = list(
         DecisionResult.objects.filter(decision_run=decision_run)
@@ -63,6 +77,9 @@ def build_compliance_intelligence_record(
         rd.requirement_id: rd
         for rd in RequirementDefinition.objects.filter(requirement_id__in=req_ids)
     }
+    if decision_run.evaluation_manifest:
+        from .snapshots import snapshot_models
+        req_defs, _ = snapshot_models(decision_run.evaluation_manifest)
 
     determinations: list[dict[str, Any]] = []
     applicable_count = 0
@@ -119,6 +136,7 @@ def build_compliance_intelligence_record(
                     authority=authority,
                     state_code=str(state_val or ""),
                     authoritative_url=portal_url,
+                    allow_live_network=False,
                 )
                 action_destination = act_dest.to_dict()
 
@@ -153,6 +171,11 @@ def build_compliance_intelligence_record(
         "determinations": determinations,
         "metrics": metrics,
         "created_at": created_at,
+        "schema_version": 2,
+        "canonicalization": "RFC8785",
+        "key_id": getattr(settings, "CIR_SIGNING_KEY_ID", "primary"),
+        "knowledge_fingerprint": decision_run.evaluation_manifest.get("content_hash"),
+        "provenance_status": "CAPTURED_AT_EVALUATION" if decision_run.evaluation_manifest else "LEGACY_UNPINNED",
     }
 
     # Cryptographic CIR digest per 05_DATA_CONTRACTS.md §8.1
@@ -160,26 +183,39 @@ def build_compliance_intelligence_record(
     content_hash = f"sha256:{hashlib.sha256(canonical_bytes).hexdigest()}"
 
     # HMAC signature
-    auth_key = getattr(settings, "CIR_AUTHORITY_KEY", "complywise-cir-root-authority").encode("utf-8")
-    signature = hmac.new(auth_key, canonical_bytes, hashlib.sha256).hexdigest()
+    auth_key = _signing_key(unsigned_payload["key_id"])
+    signature = hmac.new(auth_key.encode("utf-8"), canonical_bytes, hashlib.sha256).hexdigest() if auth_key else None
 
     cir_record = dict(unsigned_payload)
     cir_record["content_hash"] = content_hash
-    cir_record["authority_signature"] = f"hmac-sha256:{signature}"
+    cir_record["authority_signature"] = f"hmac-sha256:{signature}" if signature else None
 
     return cir_record
 
 
-def verify_cir_integrity(cir: dict[str, Any]) -> bool:
-    """Verify that a CIR payload's content_hash matches its canonical bytes."""
-    provided_hash = cir.get("content_hash", "")
-    if not provided_hash.startswith("sha256:"):
-        return False
+def _signing_key(key_id):
+    keys = getattr(settings, "CIR_VERIFICATION_KEYS", {})
+    if key_id == getattr(settings, "CIR_SIGNING_KEY_ID", "primary"):
+        return getattr(settings, "CIR_AUTHORITY_KEY", "")
+    return keys.get(key_id, "") if isinstance(keys, dict) else ""
 
-    payload = {k: v for k, v in cir.items() if k not in ("content_hash", "authority_signature")}
-    canonical_bytes = _canonical_json_bytes(payload)
-    computed_hash = f"sha256:{hashlib.sha256(canonical_bytes).hexdigest()}"
-    return hmac.compare_digest(provided_hash, computed_hash)
+
+def verify_cir_integrity(cir: dict[str, Any]) -> bool:
+    """Require both a valid digest and a trusted-key signature; fail closed."""
+    try:
+        if cir.get("schema_version") != 2 or cir.get("canonicalization") != "RFC8785":
+            return False
+        key = _signing_key(cir.get("key_id"))
+        if not key:
+            return False
+        payload = {k: v for k, v in cir.items() if k not in ("content_hash", "authority_signature")}
+        canonical_bytes = _canonical_json_bytes(payload)
+        digest = "sha256:" + hashlib.sha256(canonical_bytes).hexdigest()
+        signature = "hmac-sha256:" + hmac.new(key.encode(), canonical_bytes, hashlib.sha256).hexdigest()
+        return (hmac.compare_digest(cir.get("content_hash", ""), digest)
+                and hmac.compare_digest(cir.get("authority_signature", ""), signature))
+    except (TypeError, ValueError, AttributeError, rfc8785.CanonicalizationError):
+        return False
 
 
 def get_latest_cir(business: Business, assessment_id: str | None = None) -> dict[str, Any] | None:
@@ -187,6 +223,8 @@ def get_latest_cir(business: Business, assessment_id: str | None = None) -> dict
     assessment = None
     if assessment_id:
         assessment = business.assessments.filter(pk=assessment_id).first()
+        if assessment is None:
+            return None
     if assessment is None:
         assessment = business.assessments.order_by("-assessment_number").first()
 
@@ -196,10 +234,10 @@ def get_latest_cir(business: Business, assessment_id: str | None = None) -> dict
     elif assessment:
         latest_run = DecisionRun.objects.filter(assessment=assessment).order_by("-created_at").first()
 
-    if latest_run is None:
+    if latest_run is None and not assessment_id:
         latest_run = DecisionRun.objects.filter(business=business).order_by("-created_at").first()
 
-    if latest_run is None:
+    if latest_run is None or latest_run.business_id != business.id or latest_run.status != "COMPLETED":
         return None
 
     return build_compliance_intelligence_record(

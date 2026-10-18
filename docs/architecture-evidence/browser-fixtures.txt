@@ -1,0 +1,18 @@
+
+Running 11 tests using 1 worker
+
+(node:7140) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [chromium] › e2e\primary-journey.spec.ts:3:5 › Manual auth to starter, compact questions, saved workspace, evidence and all sections (31.8s)
+  ok  2 [chromium] › e2e\source-grounding-hardening.spec.ts:8:5 › primary business form precedes optional starters and starter values remain editable (3.9s)
+  ok  3 [chromium] › e2e\source-grounding-hardening.spec.ts:29:5 › explicit resumed assessment overrides stale storage and analysis shows honest wait with one request (5.1s)
+  ok  4 [chromium] › e2e\source-grounding-hardening.spec.ts:60:5 › completed assessment opens its recorded decision without re-evaluating the mutable business (3.3s)
+  ok  5 [chromium] › e2e\source-grounding-hardening.spec.ts:70:5 › standards expose exact bound source and do not turn contextual quality into mandatory status (6.4s)
+  ok  6 [chromium] › e2e\source-grounding-hardening.spec.ts:87:5 › scheme candidate and contradictory states retain exact source while generic homepage stays unlinked (3.3s)
+  ok  7 [chromium] › e2e\source-grounding-hardening.spec.ts:106:5 › a late schemes response cannot overwrite a newly selected business assessment (3.4s)
+  ok  8 [chromium] › e2e\workspace-assessment-isolation.spec.ts:39:5 › persisted filing status and a late failed toggle stay scoped to the selected assessment (4.6s)
+  ok  9 [chromium] › e2e\workspace-assessment-isolation.spec.ts:60:5 › late document upload confirmation cannot open a previous assessment verification modal (3.8s)
+  ok 10 [chromium] › e2e\workspace-assessment-isolation.spec.ts:90:7 › late workflow completion cannot update another assessment with the same workflow identifier (3.9s)
+  ok 11 [chromium] › e2e\workspace-assessment-isolation.spec.ts:90:7 › late workflow notes cannot update another assessment with the same workflow identifier (4.1s)
+
+  11 passed (1.3m)

@@ -40,6 +40,7 @@ class DecisionRunSerializer(serializers.ModelSerializer):
             "profile_version_number",
             "status",
             "evaluation_date",
+            "evaluation_manifest",
             "created_at",
             "results",
         ]

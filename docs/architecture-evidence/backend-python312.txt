@@ -1,0 +1,24 @@
+....................................................................s... [  6%]
+........................................................................ [ 13%]
+........................................................................ [ 20%]
+........................................................................ [ 27%]
+........................................................................ [ 34%]
+...............ss....................................................... [ 41%]
+........................................................................ [ 48%]
+........................................................................ [ 55%]
+.....................................................................ss. [ 62%]
+........................................................................ [ 69%]
+........................................................................ [ 76%]
+........................................................................ [ 83%]
+.....................ss................................................. [ 90%]
+........................................................................ [ 97%]
+.....................                                                    [100%]
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_api_orchestration_step03.py:695: Live integration smoke test disabled by default. Set COMPLYWISE_LIVE_INTEGRATION=1 to run.
+SKIPPED [1] tests\test_live_prototype_smoke.py:17: Real-provider smoke is opt-in.
+SKIPPED [1] tests\test_live_smoke_step05.py:73: Live integration smoke tests disabled by default. Set COMPLYWISE_LIVE_INTEGRATION=1 to run.
+SKIPPED [1] tests\test_postgres_assessment_jobs.py:30: Requires PostgreSQL SELECT FOR UPDATE SKIP LOCKED.
+SKIPPED [1] tests\test_postgres_assessment_jobs.py:41: Requires PostgreSQL row locks.
+SKIPPED [1] tests\test_live_and_offline_rag.py:349: SKIPPED � GEMINI_API_KEY or GEMINI_MODEL is not configured
+SKIPPED [1] tests\test_live_and_offline_rag.py:391: SKIPPED � FIRECRAWL_API_KEY is not configured in local environment
+1022 passed, 7 skipped in 69.43s (0:01:09)

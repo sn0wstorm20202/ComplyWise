@@ -438,16 +438,17 @@ class TestDynamicPortalBrowserInteraction:
     Verifies browser automation availability (Playwright) or honest fallback to Tier 2 DOM extraction.
     """
 
-    def test_browser_automation_availability_and_honest_reporting(self) -> None:
-        """Verify Playwright status: document exact state honestly without claiming passed if absent."""
-        try:
-            import playwright
-            has_playwright = True
-        except ImportError:
-            has_playwright = False
-
-        # In this environment, Playwright is not installed in the python virtualenv
-        assert has_playwright is False, "Playwright was expected to be absent in complywise-venv"
+    def test_unavailable_browser_is_reported_as_failed_acquisition(self) -> None:
+        """A missing browser dependency must not appear as a successful capture."""
+        from unittest.mock import patch
+        from domain.acquisition.crawlee_provider import CrawleeAcquisitionProvider
+        provider = CrawleeAcquisitionProvider()
+        with patch("domain.acquisition.crawlee_provider.validate_destination"), \
+             patch.object(provider, "_fetch_via_crawlee", side_effect=ImportError("synthetic unavailable browser")):
+            result = provider.fetch_page("https://regulator.gov.in/synthetic-browser", {"use_browser":True})
+        assert result.http_status == 0
+        assert result.acquisition_engine == "FAILED_ACQUISITION"
+        assert result.errors == ["Acquisition failed (ImportError)."]
 
     def test_tier2_dom_dynamic_portal_interaction_fallback(self) -> None:
         """Verify Tier 2 DOM extraction parses JavaScript button destinations and form actions."""

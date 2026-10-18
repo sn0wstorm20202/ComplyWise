@@ -96,10 +96,14 @@ def test_historical_narrative_match_cannot_establish_mandatory_status(mandatory_
     assert standard_mandatory_status(decision, definition) is None
 
 
-def test_standard_list_reuses_nullable_mandatory_projection(mandatory_decision):
+def test_standard_list_retains_recorded_mandatory_projection_until_reevaluation(mandatory_decision):
     decision, definition, _, _, business, assessment = mandatory_decision
     rows = discover_business_standards(business, assessment_id=assessment.id)["standards"]
     assert rows[0]["is_mandatory"] is standard_mandatory_status(decision, definition)
     definition.metadata = {"is_mandatory": True}
     definition.save(update_fields=["metadata"])
+    assert discover_business_standards(business, assessment_id=assessment.id)["standards"][0]["is_mandatory"] is True
+    new_run = ApplicabilityEngine().evaluate_business_profile(business=business,
+        profile_version=assessment.profile_version, assessment=assessment)
+    assessment.decision_run = new_run; assessment.save(update_fields=["decision_run"])
     assert discover_business_standards(business, assessment_id=assessment.id)["standards"][0]["is_mandatory"] is None

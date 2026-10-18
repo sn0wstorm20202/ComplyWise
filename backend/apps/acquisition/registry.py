@@ -199,11 +199,7 @@ class OfficialSourceRegistry:
         if "DISH" in auth_upper and "GUJARAT" in auth_upper:
             return STATUTORY_PORTAL_REGISTRY.get("DISH_GUJARAT")
         if "BOILER" in auth_upper and "GUJARAT" in auth_upper:
-            return {
-                "name": "Directorate of Boilers, Gujarat",
-                "authority": "Directorate of Boilers",
-                "url": "https://dish.gujarat.gov.in/boiler.htm",
-            }
+            return STATUTORY_PORTAL_REGISTRY.get("BOILERS_GUJARAT")
         if "DPDP" in auth_upper or "DATA PROTECTION" in auth_upper:
             return STATUTORY_PORTAL_REGISTRY.get("DPDP")
 

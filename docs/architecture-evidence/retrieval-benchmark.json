@@ -1,0 +1,12 @@
+{
+  "benchmark": "synthetic-indexed-bm25",
+  "corpus_size": 5000,
+  "repetitions": 200,
+  "construction_ms": 334.547,
+  "construction_peak_mib": 6.039,
+  "query_p50_ms": 0.248,
+  "query_p95_ms": 0.267,
+  "jurisdiction_leaks": 0,
+  "relevant_top10_fraction": 1.0,
+  "limits": "Synthetic exact-token workload, one process, local machine. Not a legal recall, semantic quality, throughput or production capacity benchmark."
+}

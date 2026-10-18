@@ -119,7 +119,7 @@ def test_question_get_upgrades_legacy_cache_without_counting_unrelated_answers(b
     assert payload["answered_count"] == 0 and payload["is_complete"] is False
     assessment.refresh_from_db()
     assert assessment.step_state["stage_metadata"]["answers"]["prior"] == "Saved previous answer"
-    assert assessment.step_state["stage_metadata"]["question_generation"]["question_policy_version"] == 5
+    assert assessment.step_state["stage_metadata"]["question_generation"]["question_policy_version"] == 6
 
 
 def guidance(count=None):

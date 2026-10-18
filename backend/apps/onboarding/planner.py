@@ -54,9 +54,11 @@ from apps.onboarding.models import SmartQuestionInstance, SmartQuestionPlan
 
 logger = logging.getLogger(__name__)
 
-TARGET_QUESTIONS_COUNT = 5
+from apps.onboarding.question_policy import QUESTION_LIMIT
+
+TARGET_QUESTIONS_COUNT = QUESTION_LIMIT
 MIN_QUESTIONS_PER_ROUND = 0
-MAX_QUESTIONS_PER_ROUND = 5
+MAX_QUESTIONS_PER_ROUND = TARGET_QUESTIONS_COUNT
 MAX_ROUNDS = 1
 
 
@@ -1563,7 +1565,7 @@ def plan_adaptive_smart_questions(
                 **{key:policy[key] for key in ("fact_key", "already_known", "reason_code", "source_decision_refs", "suggested_answer", "suggested_answer_origin")},
             })
         if cached_qs:
-            cached_qs = cached_qs[:min(batch_size or 5, 5)]
+            cached_qs = cached_qs[:min(batch_size or MAX_QUESTIONS_PER_ROUND, MAX_QUESTIONS_PER_ROUND)]
             return {
                 "business_id": str(business.id),
                 "business_name": business.name,
@@ -1607,7 +1609,7 @@ def plan_adaptive_smart_questions(
             }
 
         # Phase 4: Static prompt instructions first, dynamic business profile last for cache prefix stability
-        prompt = f"""Conduct an intake pre-discovery interview. Understand this specific business, detect information gaps, and generate 3 to 5 targeted discovery questions.
+        prompt = f"""Conduct an intake pre-discovery interview. Understand this specific business, detect information gaps, and generate 0 to {MAX_QUESTIONS_PER_ROUND} targeted discovery questions.
 
 RELEVANT TARGET VARIABLES FOR THIS INTERVIEW:
 {json.dumps(compact_vars, indent=2)}
@@ -2019,14 +2021,21 @@ MSME Scale: {context.msme_scale}"""
     answered = SmartQuestionInstance.objects.filter(business=business, is_answered=True)
     if assessment:
         answered = answered.filter(plan__assessment=assessment)
-    budget = max(0, 5 - answered.values("variable_key").distinct().count())
-    limit = min(budget, batch_size or 5)
+    budget = max(0, MAX_QUESTIONS_PER_ROUND - answered.values("variable_key").distinct().count())
+    limit = min(budget, batch_size or MAX_QUESTIONS_PER_ROUND)
     # General labour/environment rules must not consume the entire compact
     # interview before the business-specific facts needed for source discovery.
     discovery_items = [q for q in combined_items if q.get("domain") in {
         "FOOD_SAFETY", "MEDICAL_DEVICES", "DIGITAL_SAAS", "ENVIRONMENTAL_SAFETY", "AGROCHEMICALS",
     } or str(q["variable_key"]).startswith("dynamic_")]
     discovery_items.sort(key=lambda q: int(q.get("priority", 2)))
+    # Sequential rule clarification resolves existing branches first. The batch
+    # interview separately reserves space for discovery of catalogue gaps.
+    if batch_size == 1 and candidate_rules:
+        rank = {key: i for i, key in enumerate(kb_analysis.ranked_variables)}
+        combined_items = sorted((q for q in combined_items if q["variable_key"] in rank),
+                                key=lambda q: rank[q["variable_key"]])
+        discovery_items = []
     reserved = discovery_items[:min(2, limit)]
     reserved_keys = {q["variable_key"] for q in reserved}
     planned_items = (reserved + [q for q in combined_items if q["variable_key"] not in reserved_keys])[:limit]

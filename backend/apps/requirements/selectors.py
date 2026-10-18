@@ -15,6 +15,11 @@ if TYPE_CHECKING:
 def load_requirement_evidence(
     decisions: Sequence[DecisionResult],
 ) -> tuple[dict[str, RequirementDefinition], dict[str, Evidence]]:
+    if decisions:
+        run = decisions[0].decision_run
+        if run.evaluation_manifest and all(d.decision_run_id == run.id for d in decisions):
+            from apps.applicability.snapshots import snapshot_models
+            return snapshot_models(run.evaluation_manifest)
     requirement_ids = [decision.requirement_id for decision in decisions]
     definitions = {
         definition.requirement_id: definition

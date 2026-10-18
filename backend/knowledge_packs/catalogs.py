@@ -781,6 +781,10 @@ STATUTORY_WORKFLOW_TEMPLATES: dict[str, dict[str, Any]] = {
 import re
 
 STATUTORY_PORTAL_REGISTRY: dict[str, dict[str, str]] = {
+    "BOILERS_GUJARAT": {
+        "name": "Directorate of Boilers, Gujarat", "authority": "Directorate of Boilers",
+        "url": "https://dish.gujarat.gov.in/boiler.htm", "state": "GUJARAT",
+    },
     # Telecom, Wireless, Electronics
     "WPC": {
         "name": "Saral Sanchar (WPC Portal)",

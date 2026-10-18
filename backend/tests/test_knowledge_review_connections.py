@@ -27,7 +27,12 @@ def candidate_fixture(make_business, user):
 
 def review_payload():
     return {"decision": "PUBLISH", "reason": "Reviewed the synthetic captured statement", "requirement_id": "fixture-reviewed",
-        "rule_id": "fixture-rule", "condition_ast": {"op": "EXISTS", "var": "product_description"}}
+        "rule_id": "fixture-rule", "condition_ast": {"op": "EXISTS", "var": "product_description"},
+        "effective_from": "2020-01-01", "examples": [
+            {"kind":"positive", "facts":{"product_description":"Synthetic activity"}, "expected_truth":"TRUE"},
+            {"kind":"negative", "facts":{"product_description":None}, "expected_truth":"FALSE"},
+            {"kind":"missing", "facts":{}, "expected_truth":"FALSE"},
+        ]}
 
 
 def test_reviewer_publication_persists_audit_and_user_result(make_business, user, other_user, auth_client):

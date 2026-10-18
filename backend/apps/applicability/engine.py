@@ -17,6 +17,7 @@ from __future__ import annotations
 import datetime
 from typing import Any
 
+from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
@@ -81,6 +82,20 @@ def models_effective_filter(eval_date: datetime.date):
 class ApplicabilityEngine:
     """Deterministic, knowledge-driven compliance applicability evaluator."""
 
+    @staticmethod
+    def _complete_run(run, results, save_run):
+        run.status = DecisionRunStatus.COMPLETED
+        if not save_run:
+            return
+        from .services import build_compliance_intelligence_record
+        with transaction.atomic():
+            for result in results:
+                result.explanation_trace["snapshot_version"] = 1
+            if results:
+                DecisionResult.objects.bulk_create(results)
+            run.save(update_fields=["status", "evaluation_manifest"])
+            build_compliance_intelligence_record(run)
+
     def evaluate_business_profile(
         self,
         *,
@@ -88,9 +103,14 @@ class ApplicabilityEngine:
         profile_version: BusinessProfileVersion,
         evaluation_date: datetime.date | None = None,
         save_run: bool = True,
+        assessment=None,
     ) -> DecisionRun:
         """Run complete applicability evaluation for a business profile version."""
         eval_date = evaluation_date or timezone.localdate()
+        if profile_version.business_id != business.id:
+            raise ValueError("The profile does not belong to this business.")
+        if assessment is not None and assessment.business_id != business.id:
+            raise ValueError("The assessment does not belong to this business.")
 
         # Build context from profile variables
         context: dict[str, Any] = {}
@@ -123,6 +143,7 @@ class ApplicabilityEngine:
             profile_version=profile_version,
             evaluation_date=eval_date,
             status=DecisionRunStatus.RUNNING,
+            assessment=assessment,
         )
         if save_run:
             run.save()
@@ -138,11 +159,13 @@ class ApplicabilityEngine:
                         scenario=matched_scenario,
                         context=context,
                     )
-                    if save_run and results_to_create:
-                        DecisionResult.objects.bulk_create(results_to_create)
-                    run.status = DecisionRunStatus.COMPLETED
-                    if save_run:
-                        run.save(update_fields=["status"])
+                    from .snapshots import capture_manifest
+                    demo_ids = [r.requirement_id for r in results_to_create]
+                    demo_requirements = list(RequirementDefinition.objects.filter(requirement_id__in=demo_ids))
+                    demo_refs = {ref for r in demo_requirements for ref in r.evidence_refs or []}
+                    capture_manifest(run, demo_requirements, [],
+                                     Evidence.objects.filter(evidence_id__in=demo_refs).select_related("source"), mode="DEMO")
+                    self._complete_run(run, results_to_create, save_run)
                     return run
 
             # 1. Fetch ALL published requirements (TRD_v2.0 §25, C3, C5)
@@ -173,8 +196,10 @@ class ApplicabilityEngine:
                 all_evidence_refs.update(req.evidence_refs or [])
 
             evidence_map: dict[str, dict[str, Any]] = {}
+            evidence_records = []
             if all_evidence_refs:
                 for ev in Evidence.objects.filter(evidence_id__in=all_evidence_refs).select_related("source"):
+                    evidence_records.append(ev)
                     evidence_map[ev.evidence_id] = {
                         "evidence_id": ev.evidence_id,
                         "source_id": ev.source.source_id,
@@ -190,6 +215,8 @@ class ApplicabilityEngine:
                         "_raw_effective_until": ev.effective_until,
                     }
 
+            from .snapshots import capture_manifest
+            capture_manifest(run, all_published_reqs, published_rules, evidence_records)
             results_to_create: list[DecisionResult] = []
             had_failures = False
 
@@ -260,6 +287,12 @@ class ApplicabilityEngine:
                     if (r.effective_from is None or r.effective_from <= eval_date)
                     and (r.effective_until is None or r.effective_until >= eval_date)
                 ]
+                # Multiple versions of the same rule are alternatives in time,
+                # not independent conflicting rules. Keep the newest effective version.
+                newest = {}
+                for rule in effective_rules:
+                    newest.setdefault(rule.rule_id, rule)
+                effective_rules = list(newest.values())
 
                 # If no published rules exist at all (C5)
                 if not candidate_rules:
@@ -316,13 +349,7 @@ class ApplicabilityEngine:
                 )
                 results_to_create.append(res)
 
-            if save_run and results_to_create:
-                DecisionResult.objects.bulk_create(results_to_create)
-
-            # Update run status to COMPLETED (C9)
-            run.status = DecisionRunStatus.COMPLETED
-            if save_run:
-                run.save(update_fields=["status"])
+            self._complete_run(run, results_to_create, save_run)
 
             return run
 

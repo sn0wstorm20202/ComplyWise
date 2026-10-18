@@ -1,12 +1,14 @@
 """Assessment-scoped compact questionnaire lifecycle.
 
-The onboarding planner selects zero to five unresolved facts. This adapter maps
+The onboarding planner selects zero to four unresolved facts. This adapter maps
 its typed candidates to the orchestration contract and persists the existing plan
 without replacing its dependency metadata. Historical imports are re-exported
 for callers and regression tests; they are not the active planning path.
 """
 
 from __future__ import annotations
+
+from apps.onboarding.question_policy import QUESTION_POLICY_VERSION
 
 import logging
 import time
@@ -58,7 +60,7 @@ class QuestionnaireEngine:
         return get_llm_provider()
 
     def generate_questionnaire(self, context, run, understanding=None):
-        """Ask 0â€“5 gaps tied to unresolved published rules or source planning."""
+        """Ask 0–4 gaps tied to unresolved published rules or source planning."""
 
         from apps.onboarding.planner import plan_adaptive_smart_questions
 
@@ -66,14 +68,15 @@ class QuestionnaireEngine:
 
         cached = run.stage_metadata.get("question_generation", {})
 
-        if cached.get("question_policy_version") == 5:
+        if cached.get("question_policy_version") == QUESTION_POLICY_VERSION:
             return [SmartQuestion(**q) for q in cached.get("questions", [])]
 
         plan = plan_adaptive_smart_questions(business, assessment_id=run.run_id)
 
         questions = []
 
-        for index, item in enumerate(plan.get("questions", [])[:5], 1):
+        from apps.onboarding.planner import MAX_QUESTIONS_PER_ROUND
+        for index, item in enumerate(plan.get("questions", [])[:MAX_QUESTIONS_PER_ROUND], 1):
             options = [
                 {
                     "value": str(o.get("value", o.get("label", ""))),
@@ -137,7 +140,7 @@ class QuestionnaireEngine:
             state["question_generation"] = {
                 "questions": [q.to_dict() for q in questions],
                 "count": len(questions),
-                "question_policy_version": 5,
+                "question_policy_version": QUESTION_POLICY_VERSION,
                 "generated_at": time.time(),
             }
 

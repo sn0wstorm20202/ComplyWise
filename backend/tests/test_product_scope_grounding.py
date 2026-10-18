@@ -110,6 +110,7 @@ def test_invalid_scope_is_isolated_to_its_requirement(business, standard_rule):
 def test_legacy_claim_is_cautious_in_ui_without_mutating_history(business, standard_rule, auth_client):
     result = decide(business, {"product_description": "Electronic components"})
     result.status = "APPLICABLE"  # historical result before product-scope guard
+    result.explanation_trace.pop("snapshot_version", None)
     result.save()
     assessment = Assessment.objects.create(business=business, profile_version=result.decision_run.profile_version,
                                            decision_run=result.decision_run)

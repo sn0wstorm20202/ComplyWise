@@ -18,7 +18,11 @@ Guarantees:
 
 from __future__ import annotations
 
+from apps.onboarding.question_policy import QUESTION_POLICY_VERSION
+
 import logging
+from functools import wraps
+from django.db import transaction
 import time
 import uuid
 from typing import Any
@@ -53,6 +57,21 @@ def _resolve_business(request: Request, business_id: Any) -> Business | None:
     if request.user and request.user.is_authenticated:
         return Business.accessible_to(request.user).filter(pk=biz_uuid).first()
     return None
+
+
+def assessment_write(view):
+    """Serialize API mutations with job execution before loading mutable state."""
+    @wraps(view)
+    def guarded(self, request, run_id, *args, **kwargs):
+        from .models import Assessment, AssessmentJob
+        with transaction.atomic():
+            assessment = Assessment.accessible_to(request.user).select_for_update().filter(pk=run_id).first()
+            if not assessment:
+                return error_response("NOT_FOUND", "Assessment not found.", http_status=404)
+            if AssessmentJob.objects.filter(assessment=assessment, status__in=["QUEUED", "RUNNING"]).exists():
+                return error_response("JOB_CONFLICT", "An operation is running. Please wait before changing this assessment.", http_status=409)
+            return view(self, request, run_id, *args, **kwargs)
+    return guarded
 
 
 class AssessmentOrchestrationCreateView(APIView):
@@ -204,6 +223,7 @@ class AssessmentBusinessUnderstandingView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @assessment_write
     def post(self, request: Request, run_id: uuid.UUID) -> Response:
         run = assessment_orchestrator.get_run(run_id, user=request.user)
         if run is None:
@@ -228,10 +248,11 @@ class AssessmentBusinessUnderstandingView(APIView):
 
 
 class AssessmentQuestionGenerateView(APIView):
-    """Generate up to five decision-critical questions."""
+    """Generate up to four decision-critical questions."""
 
     permission_classes = [IsAuthenticated]
 
+    @assessment_write
     def post(self, request: Request, run_id: uuid.UUID) -> Response:
         run = assessment_orchestrator.get_run(run_id, user=request.user)
         if run is None:
@@ -260,6 +281,7 @@ class AssessmentQuestionsListView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @assessment_write
     def get(self, request: Request, run_id: uuid.UUID) -> Response:
         run = assessment_orchestrator.get_run(run_id, user=request.user)
         if run is None:
@@ -273,7 +295,7 @@ class AssessmentQuestionsListView(APIView):
         answers = run.stage_metadata.get("answers", {})
 
         # If questions not yet generated, attempt to generate or load them
-        if run.stage_metadata.get("question_generation", {}).get("question_policy_version") != 5:
+        if run.stage_metadata.get("question_generation", {}).get("question_policy_version") != QUESTION_POLICY_VERSION:
             from domain.intelligence.orchestration import AssessmentStage
             res = assessment_orchestrator.execute_stage(run, AssessmentStage.QUESTION_GENERATION)
             run = assessment_orchestrator.get_run(run.run_id) or run
@@ -324,6 +346,7 @@ class AssessmentAnswersSubmitView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @assessment_write
     def post(self, request: Request, run_id: uuid.UUID) -> Response:
         submission_started = time.perf_counter()
         run = assessment_orchestrator.get_run(run_id, user=request.user)
@@ -414,6 +437,7 @@ class AssessmentRegulatoryDiscoveryView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @assessment_write
     def post(self, request: Request, run_id: uuid.UUID) -> Response:
         run = assessment_orchestrator.get_run(run_id, user=request.user)
         if run is None:
@@ -449,6 +473,7 @@ class AssessmentComplianceSynthesisView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @assessment_write
     def post(self, request: Request, run_id: uuid.UUID) -> Response:
         run = assessment_orchestrator.get_run(run_id, user=request.user)
         if run is None:
@@ -487,7 +512,7 @@ class AssessmentComplianceView(APIView):
 
     Source priority (per audit mandate — RAG retrieves, rules decide, LLM explains):
     1. Engine 2 DecisionResults linked via assessment.decision_run  ← canonical, always preferred
-    2. Orchestration compliance_synthesis cache                      ← LLM, only used as fallback
+    2. No completed decision: explicit unevaluated response; never an LLM fallback.
     """
 
     permission_classes = [IsAuthenticated]
@@ -518,7 +543,7 @@ class AssessmentComplianceView(APIView):
                     assessment=assessment
                 ).prefetch_related("results").order_by("-created_at").first()
 
-            if engine2_run and engine2_run.results.exists():
+            if engine2_run and engine2_run.status == "COMPLETED":
                 # Build response from Engine 2 DecisionResults
                 from knowledge_packs.catalogs import resolve_statutory_portal
                 from apps.requirements.presentation import requirement_reason_summary, PORTAL_KEY, evidence_citations, primary_citation, decision_presentation
@@ -576,7 +601,9 @@ class AssessmentComplianceView(APIView):
                 applicable = [r for r in requirements if r["status"] == "APPLICABLE"]
                 needs_info = [r for r in requirements if r["status"] in {"NEEDS_INFORMATION", "NEEDS_VERIFICATION"}]
                 not_applicable = [r for r in requirements if r["status"] == "NOT_APPLICABLE"]
+                from apps.applicability.snapshots import coverage_for_run
                 comp_data = {
+                    "coverage": coverage_for_run(engine2_run),
                     "requirements": requirements,
                     "applicable_count": len(applicable),
                     "source": "ENGINE2_DECISION_RESULTS",
@@ -602,65 +629,14 @@ class AssessmentComplianceView(APIView):
                     status=status.HTTP_200_OK,
                 )
 
-            # ----------------------------------------------------------------
-            # PRIORITY 2: Orchestration compliance_synthesis cache (LLM, fallback only)
-            # ----------------------------------------------------------------
-            from domain.intelligence.orchestration import AssessmentStage
-            if "compliance_synthesis" not in run.stage_metadata:
-                if "regulatory_discovery" not in run.stage_metadata:
-                    assessment_orchestrator.execute_stage(run, AssessmentStage.REGULATORY_DISCOVERY)
-                res = assessment_orchestrator.execute_stage(run, AssessmentStage.COMPLIANCE_SYNTHESIS)
-                comp_data = res.data
-            else:
-                comp_data = run.stage_metadata["compliance_synthesis"]
-                reqs = comp_data.get("requirements") or []
-                fssai_count = sum(
-                    1 for r in reqs
-                    if "fssai" in (r.get("title") or "").lower()
-                    or "fssai" in (r.get("authority") or "").lower()
-                    or (r.get("regulatory_domain") or "").upper() == "FOOD_SAFETY"
-                )
-                from domain.intelligence.synthesis import _sanitize_and_prune_irrelevant_requirements
-                profile_desc = ""
-                if assessment.profile_version:
-                    p_vars = assessment.profile_version.variables or {}
-                    p_val = p_vars.get("product_description")
-                    profile_desc = p_val.get("value", "") if isinstance(p_val, dict) else str(p_val or "")
-
-                reqs = _sanitize_and_prune_irrelevant_requirements(reqs, profile_desc)
-                comp_data["requirements"] = reqs
-                comp_data["applicable_count"] = sum(1 for r in reqs if r.get("status") == "APPLICABLE")
-
-                if fssai_count > 1:
-                    from domain.intelligence.synthesis import _consolidate_fssai_requirements
-                    from domain.intelligence.orchestration import OrchestrationContext
-                    ctx = OrchestrationContext.from_business(
-                        run.assessment.business,
-                        assessment=run.assessment,
-                        correlation_id=run.correlation_id,
-                    )
-                    consolidated = _consolidate_fssai_requirements(ctx, reqs)
-                    comp_data["requirements"] = consolidated
-                    comp_data["applicable_count"] = sum(1 for r in consolidated if r.get("status") == "APPLICABLE")
-
-                if isinstance(comp_data.get("executive_summary"), dict):
-                    final_reqs = comp_data["requirements"]
-                    comp_data["executive_summary"]["total_evaluated"] = len(final_reqs)
-                    comp_data["executive_summary"]["applicable_count"] = sum(1 for r in final_reqs if r.get("status") == "APPLICABLE")
-                    comp_data["executive_summary"]["needs_information_count"] = sum(
-                        1 for r in final_reqs if r.get("status") in {"NEEDS_INFORMATION", "NEEDS_VERIFICATION"}
-                    )
-                state = dict(run.stage_metadata)
-                state["compliance_synthesis"] = comp_data
-                if "COMPLIANCE_SYNTHESIS" in state and isinstance(state["COMPLIANCE_SYNTHESIS"], dict):
-                    state["COMPLIANCE_SYNTHESIS"]["data"] = comp_data
-                run.stage_metadata = state
-                run.save()
-
-            return Response(
-                envelope(comp_data, meta={"correlation_id": run.correlation_id}),
-                status=status.HTTP_200_OK,
-            )
+            # A read must not execute an LLM or promote cached suggestions to legal truth.
+            from apps.applicability.snapshots import coverage_for_run
+            return Response(envelope({
+                "requirements": [], "applicable_count": 0,
+                "source": "NO_RECORDED_DECISION", "requires_evaluation": True,
+                "coverage": coverage_for_run(None),
+                "executive_summary": {"total_evaluated": 0, "applicable_count": 0},
+            }, meta={"correlation_id": run.correlation_id}), status=200)
         except OrchestrationError as o_exc:
             return error_response(o_exc.code, o_exc.message_safe, http_status=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:

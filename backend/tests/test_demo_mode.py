@@ -28,6 +28,11 @@ from apps.applicability.models import DecisionResult, DecisionRun
 from apps.applicability.services import build_compliance_intelligence_record
 
 
+@pytest.fixture(autouse=True)
+def explicitly_enable_demo(settings):
+    settings.COMPLYWISE_DEMO_MODE = True
+
+
 @pytest.mark.django_db
 class TestDemoScenarioResolution:
     """Test deterministic scenario matching."""

@@ -21,6 +21,17 @@ def discover_business_standards(business, context=None, assessment_id=None):
         results = {r.requirement_id: r for r in run.results.filter(status="APPLICABLE")}
         definitions = RequirementDefinition.objects.filter(requirement_id__in=results,
             category__iexact="STANDARD", status=KnowledgeStatus.PUBLISHED)
+        saved_evidence = None
+        if run.evaluation_manifest:
+            from apps.applicability.snapshots import snapshot_models
+            saved_definitions, saved_evidence = snapshot_models(run.evaluation_manifest)
+            definitions = [definition for key, definition in saved_definitions.items()
+                           if key in results and definition.category.strip().upper() == "STANDARD"]
+            for result in results.values():
+                definition = saved_definitions.get(result.requirement_id)
+                if definition and result.rule_version_id:
+                    result.rule_version = definition._snapshot_rules.get(str(result.rule_version_id))
+
         for req in definitions:
             result = results[req.requirement_id]
             from apps.applicability.engine import _confirmed_product_scope
@@ -34,8 +45,13 @@ def discover_business_standards(business, context=None, assessment_id=None):
                 # reviewed product standard by the read projection.
                 continue
             refs = [ref.get("evidence_id") if isinstance(ref, dict) else ref for ref in result.evidence_refs]
-            evidence = list(Evidence.objects.filter(evidence_id__in=refs,
-                verification_status=VerificationStatus.VERIFIED, source__status=SourceStatus.ACTIVE).select_related("source"))
+            if saved_evidence is not None:
+                evidence = [saved_evidence[key] for key in refs if key in saved_evidence
+                            and saved_evidence[key].verification_status == VerificationStatus.VERIFIED
+                            and saved_evidence[key].source.status == SourceStatus.ACTIVE]
+            else:
+                evidence = list(Evidence.objects.filter(evidence_id__in=refs,
+                    verification_status=VerificationStatus.VERIFIED, source__status=SourceStatus.ACTIVE).select_related("source"))
             if not evidence:
                 continue
             mandatory = standard_mandatory_status(result, req)

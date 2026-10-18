@@ -56,7 +56,7 @@ export type SourceStatus =
 
 export type VerificationStatus = "VERIFIED" | "UNVERIFIED" | "CONFLICTING";
 
-export type VariableOrigin = "USER_PROVIDED" | "DERIVED" | "LOOKUP";
+export type VariableOrigin = "USER_PROVIDED" | "DERIVED" | "LOOKUP" | "LLM_EXTRACTED" | "ADMIN_OVERRIDE" | "QUESTIONNAIRE_ANSWER";
 
 export type VariableRelevance = "CORE" | "CONDITIONAL" | "OPTIONAL" | "NOT_NEEDED";
 

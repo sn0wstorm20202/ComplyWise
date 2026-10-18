@@ -26,6 +26,7 @@ function ComplianceContent() {
   const [requirements, setRequirements] = useState<ComplianceRequirementItem[]>([]);
   const [candidates, setCandidates] = useState<CandidateRequirement[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [coverageMessage, setCoverageMessage] = useState<string | null>(null);
   const [businessId, setBusinessId] = useState<string | null>(null);
 
   const [categoryFilter, setCategoryFilter] = useState<string>("");
@@ -55,6 +56,7 @@ function ComplianceContent() {
       ]);
 
       if (version !== requestVersion.current) return;
+      setCoverageMessage(reqResp.status === "fulfilled" ? reqResp.value.coverage?.message || null : null);
       let loadedBusiness: Business | null = null;
       if (bizResp.status === "fulfilled" && bizResp.value) {
         loadedBusiness = bizResp.value;
@@ -111,6 +113,7 @@ function ComplianceContent() {
     setRequirements([]);
     setTotalCount(0);
     setBusiness(null);
+    setCoverageMessage(null);
 
     loadData(bizId);
   }, [paramBusinessId, contextBusinessId, activeAssessmentId, searchParams, categoryFilter]);
@@ -169,6 +172,7 @@ function ComplianceContent() {
           </div>
         </div>
 
+        {!loading && coverageMessage && <p role="note" className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg)] p-4 text-sm text-[var(--ui-secondary)]">{coverageMessage}</p>}
         {/* Controls / Filter Bar: Action Required Only */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ui-border)] pb-2">
           <div className="flex items-center gap-2">

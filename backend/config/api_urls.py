@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from django.urls import include, path
 
-from apps.ingestion.review import KnowledgeReviewQueueView, KnowledgeCandidateReviewView
+from apps.ingestion.review import KnowledgeReviewQueueView, KnowledgeCandidateReviewView, SourceChangeReviewView, SourceChangeReassessmentView
 from apps.businesses.admin_creation import AdminBusinessCreateView
 from .health_views import HealthView, ReadinessView
 
@@ -21,6 +21,8 @@ app_name = "api-v1"
 urlpatterns = [
     path("admin/businesses/create", AdminBusinessCreateView.as_view(), name="admin-business-create"),
     path("admin/knowledge", KnowledgeReviewQueueView.as_view(), name="knowledge-review-queue"),
+    path("admin/knowledge/source-changes/<uuid:change_id>/review", SourceChangeReviewView.as_view(), name="source-change-review"),
+    path("admin/knowledge/source-changes/<uuid:change_id>/reassess", SourceChangeReassessmentView.as_view(), name="source-change-reassess"),
     path("admin/knowledge/<uuid:candidate_id>/review", KnowledgeCandidateReviewView.as_view(), name="knowledge-review"),
     path("health", HealthView.as_view(), name="health"),
     path("health/ready", ReadinessView.as_view(), name="health-ready"),

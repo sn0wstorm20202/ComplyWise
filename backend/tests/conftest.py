@@ -31,6 +31,7 @@ def isolate_external_credentials(request, settings):
     # Authentication behavior is unchanged; avoid expensive production hashing
     # for hundreds of synthetic test accounts. Runtime settings are untouched.
     settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+    settings.CIR_AUTHORITY_KEY = "test-only-cir-signing-key-not-for-production"
     for key in ("OPENAI_API_KEY", "GEMINI_API_KEY", "GROK_API_KEY", "FIRECRAWL_API_KEY"):
         setattr(settings, key, "")
     settings.GEMINI_API_KEYS = []

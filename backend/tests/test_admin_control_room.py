@@ -75,7 +75,7 @@ def business_with_engine2(make_user, make_business):
         profile_version=pv,
         assessment=assessment,
         evaluation_date=timezone.now(),
-        status="SUCCESS",
+        status="COMPLETED",
     )
     assessment.decision_run = run
     assessment.save()

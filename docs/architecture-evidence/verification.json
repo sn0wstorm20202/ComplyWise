@@ -1,0 +1,75 @@
+{
+  "date": "2026-10-18",
+  "core_branch": "architecture/reconciled-core",
+  "core_baseline": "acbad8f",
+  "retrieval_branch": "architecture/retrieval-base",
+  "retrieval_commit": "7136f7833210ad89493a73ff9893acc987678d80",
+  "backend_runs": [
+    {
+      "python": "3.11",
+      "django": "5.2.17",
+      "passed": 1022,
+      "skipped": 7,
+      "evidence": "backend-python311.txt"
+    },
+    {
+      "python": "3.12.14",
+      "django": "6.0.9",
+      "passed": 1022,
+      "skipped": 7,
+      "evidence": "backend-python312.txt"
+    }
+  ],
+  "postgresql": {
+    "version": "16.15",
+    "targeted_passed": 22,
+    "runtimes": [
+      "Python 3.11 / Django 5.2.17",
+      "Python 3.12.14 / Django 6.0.9"
+    ],
+    "row_level_security_validated": false,
+    "evidence": [
+      "postgres-python311.txt",
+      "postgres-python312.txt"
+    ]
+  },
+  "browser": {
+    "real_backend_database_worker_journey_passed": 1,
+    "fixture_regressions_passed": 11,
+    "durable_failure_retry_passed": 1,
+    "total_passed": 13
+  },
+  "frontend": {
+    "production_build": "passed",
+    "typecheck": "passed",
+    "polling_tests_passed": 4,
+    "targeted_lint_errors": 0
+  },
+  "retrieval": {
+    "service_index_tests_passed": 7,
+    "imported_json_safety_tests_passed": 2,
+    "real_core_http_contract": "passed",
+    "actual_catalogue_descriptions": 55,
+    "catalogue_verification_status": "UNVERIFIED",
+    "actual_dense_model_quality": "not validated"
+  },
+  "django": {
+    "missing_migrations": false,
+    "local_migration_application": "passed",
+    "system_check": "passed with repository silences"
+  },
+  "document_verification": {
+    "passed": 20,
+    "platform": "Windows with declared OCR dependencies"
+  },
+  "dependency_check": "pip check: no broken requirements on fresh Python 3.12 environment",
+  "skips": {
+    "live_provider_opt_in": 5,
+    "postgres_only_in_sqlite_run": 2,
+    "postgres_only_exercised_separately": true
+  },
+  "live_deployment_performed": false,
+  "production_load_tested": false,
+  "linux_container_verified": false,
+  "temporary_api_frontend_and_postgresql_servers": "stopped after verification"
+}

@@ -46,6 +46,8 @@ class DecisionRun(models.Model):
         db_index=True,
     )
     evaluation_date = models.DateField(default=timezone.localdate)
+    evaluation_manifest = models.JSONField(default=dict, blank=True)
+    cir_snapshot = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -56,6 +58,16 @@ class DecisionRun(models.Model):
 
     def __str__(self) -> str:
         return f"DecisionRun {self.id} for {self.business.name} (v{self.profile_version.version}) [{self.status}]"
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            previous = type(self).objects.filter(pk=self.pk).values("evaluation_manifest", "cir_snapshot").first()
+            if previous:
+                for field in ("evaluation_manifest", "cir_snapshot"):
+                    if previous[field] and previous[field] != getattr(self, field):
+                        from django.core.exceptions import ValidationError
+                        raise ValidationError(f"{field} is immutable; create a new evaluation.")
+        return super().save(*args, **kwargs)
 
 
 class DecisionResult(models.Model):

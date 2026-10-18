@@ -32,6 +32,8 @@ def decision_presentation(decision, definition):
 
     trace = dict(decision.explanation_trace or {})
     status = decision.status
+    if trace.get("snapshot_version"):
+        return status, trace
     if definition and definition.category.strip().upper() == "STANDARD" and status == "APPLICABLE":
         rule = decision.rule_version
         matched = next((evaluation.get("trace", {}) for evaluation in trace.get("evaluations", [])
@@ -63,7 +65,8 @@ def standard_mandatory_status(decision, definition) -> bool | None:
     if metadata.get("is_mandatory") is not True or decision is None:
         return None
     status, _ = decision_presentation(decision, definition)
-    rule = decision.rule_version
+    rule = (definition._snapshot_rules.get(str(decision.rule_version_id))
+            if hasattr(definition, "_snapshot_rules") else decision.rule_version)
     reference = metadata.get("mandatory_reference")
     if (status != "APPLICABLE" or rule is None
             or decision.requirement_id != definition.requirement_id
@@ -86,10 +89,14 @@ def standard_mandatory_status(decision, definition) -> bool | None:
     if (not set(mandatory_ids).issubset(decision_ids)
             or not set(mandatory_ids).issubset(rule_ids)):
         return None
-    evidence = list(Evidence.objects.filter(
-        evidence_id__in=mandatory_ids, verification_status=VerificationStatus.VERIFIED,
-        source__status=SourceStatus.ACTIVE,
-    ).select_related("source"))
+    if hasattr(definition, "_snapshot_evidence"):
+        evidence = [record for key, record in definition._snapshot_evidence.items() if key in mandatory_ids
+                    and record.verification_status == VerificationStatus.VERIFIED and record.source.status == SourceStatus.ACTIVE]
+    else:
+        evidence = list(Evidence.objects.filter(
+            evidence_id__in=mandatory_ids, verification_status=VerificationStatus.VERIFIED,
+            source__status=SourceStatus.ACTIVE,
+        ).select_related("source"))
     if {record.evidence_id for record in evidence} != set(mandatory_ids):
         return None
     if any(not record.excerpt.strip() or not source_projection(record.source, record)["reviewed"]

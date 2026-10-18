@@ -105,6 +105,8 @@ class AdminScrutinyService:
                 selected_assessment = business.assessments.filter(pk=ass_uuid).first()
             except (ValueError, TypeError):
                 selected_assessment = None
+            if selected_assessment is None:
+                raise ValueError("Assessment not found for this business.")
         elif assessments_qs.exists():
             selected_assessment = assessments_qs.first()
 
@@ -112,7 +114,7 @@ class AdminScrutinyService:
         profile_version = None
         if selected_assessment and selected_assessment.profile_version:
             profile_version = selected_assessment.profile_version
-        elif business.current_profile:
+        elif not assessment_id and business.current_profile:
             profile_version = business.current_profile
 
         # 4. Profile Variables & Fact Provenance (§17)
@@ -175,9 +177,9 @@ class AdminScrutinyService:
             decision_run = selected_assessment.decision_run
         elif selected_assessment:
             decision_run = DecisionRun.objects.filter(assessment=selected_assessment).order_by("-created_at").first()
-        if not decision_run and profile_version:
+        if not decision_run and profile_version and not assessment_id:
             decision_run = profile_version.decision_runs.order_by("-created_at").first()
-        if not decision_run:
+        if not decision_run and not assessment_id:
             decision_run = DecisionRun.objects.filter(business=business).order_by("-created_at").first()
 
         # Build evidence lookup map
@@ -257,6 +259,17 @@ class AdminScrutinyService:
                         "effective_from": ev.effective_from.isoformat() if ev.effective_from else None,
                         "effective_until": ev.effective_until.isoformat() if ev.effective_until else None,
                     }
+
+            if decision_run.evaluation_manifest:
+                from apps.applicability.snapshots import snapshot_models
+                from apps.evidence.presentation import evidence_projection
+                req_defs, saved_evidence = snapshot_models(decision_run.evaluation_manifest)
+                evidences_map = {key: {**evidence_projection(value), "content_hash": value.source.content_hash}
+                                 for key, value in saved_evidence.items()}
+                for result in results_qs:
+                    definition = req_defs.get(result.requirement_id)
+                    if definition and result.rule_version_id:
+                        result.rule_version = definition._snapshot_rules.get(str(result.rule_version_id))
 
             # Import action resolver
             from apps.acquisition.services import resolve_action_for_requirement

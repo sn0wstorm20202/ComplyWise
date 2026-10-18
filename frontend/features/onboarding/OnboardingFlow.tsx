@@ -115,6 +115,7 @@ export default function OnboardingFlow() {
     Array<{ name: string; done: boolean; detail: string }>
   >([]);
   const analysisInFlight = useRef(false);
+  const [analysisFailed, setAnalysisFailed] = useState(false);
   const [decisionRun, setDecisionRun] = useState<DecisionRun | null>(null);
   const [discoveryResult, setDiscoveryResult] = useState<DiscoveryRunResult | null>(null);
   const [executiveSummary, setExecutiveSummary] = useState<any>(null);
@@ -188,6 +189,7 @@ export default function OnboardingFlow() {
     setBusinessUnderstanding(null);
     setOrchestrationQuestions([]);
     setSynthesizedCompliance(null);
+    setAnalysisFailed(false);
     setDiscoveryResult(null);
     setExecutiveSummary(null);
     setMatchedSchemesCount(0);
@@ -224,6 +226,7 @@ export default function OnboardingFlow() {
     setBusiness(null);
     setOrchestrationQuestions([]);
     setSynthesizedCompliance(null);
+    setAnalysisFailed(false);
     setDecisionRun(null);
     setDiscoveryResult(null);
     setExecutiveSummary(null);
@@ -655,7 +658,7 @@ export default function OnboardingFlow() {
       if (!runId) throw new Error("Your assessment could not be opened. Please retry.");
       const qList = await api.orchestration.listQuestions(runId);
       if (!Array.isArray(qList?.questions)) throw new Error("Your questions could not be prepared. Please retry.");
-      const questions = qList.questions.slice(0, 5);
+      const questions = qList.questions.slice(0, 4);
       setOrchestrationQuestions(questions);
       const nextIdx = questions.findIndex((q: any) => !q.is_answered);
       if (questions.length === 0 || nextIdx === -1) {
@@ -680,7 +683,7 @@ export default function OnboardingFlow() {
       if (!assessmentId) throw new Error("Your assessment could not be opened. Please retry.");
       await api.businesses.updateAssessment(business.id, assessmentId, { current_step: 4 });
       setStep(4);
-      await runRegulatoryAnalysis(business.id, assessmentId);
+      await runRegulatoryAnalysis(business.id, assessmentId, analysisFailed);
     } catch (err: any) {
       setError(err?.message || "We couldn't save your progress. Please retry.");
     }
@@ -748,9 +751,10 @@ export default function OnboardingFlow() {
   }
 
   // STEP 4: Run Real Regulatory Analysis & Live Regulatory Discovery
-  async function runRegulatoryAnalysis(bizId: string, assId?: string) {
+  async function runRegulatoryAnalysis(bizId: string, assId?: string, forceRefresh = false) {
     if (analysisInFlight.current) return;
     analysisInFlight.current = true;
+    setAnalysisFailed(false);
     const routeContext = initializedContext.current;
     const contextIsCurrent = () => initializedContext.current === routeContext;
     setLoading(true);
@@ -768,11 +772,11 @@ export default function OnboardingFlow() {
       if (targetRunId) {
         try {
           setActiveQueryText("Finding and reviewing relevant official sources…");
-          await api.orchestration.runDiscovery(targetRunId); // Partial capture is a normal backend result; failed requests preserve inputs.
+          await api.orchestration.runDiscovery(targetRunId, { force_refresh: forceRefresh }); // Partial capture is a normal backend result; failed requests preserve inputs.
           if (!contextIsCurrent()) return;
           setAnalysisStages([{ name: "Source discovery", done: true, detail: "Discovery response received; source coverage may be partial." }]);
           setActiveQueryText("Checking your saved facts against available rules and evidence…");
-          const compRes = await api.orchestration.runSynthesis(targetRunId);
+          const compRes = await api.orchestration.runSynthesis(targetRunId, { force_refresh: forceRefresh });
           if (!contextIsCurrent()) return;
           if (compRes && compRes.requirements) {
             setSynthesizedCompliance(compRes);
@@ -843,6 +847,7 @@ export default function OnboardingFlow() {
     } catch {
       if (!contextIsCurrent()) return;
       setError("We couldn't complete your assessment. Your answers are preserved; please try again.");
+      setAnalysisFailed(true);
       setStep(3);
       setLoading(false);
     } finally {
@@ -942,7 +947,14 @@ export default function OnboardingFlow() {
           <ErrorState
             title="We couldn't complete this step."
             message={error}
-            onRetry={() => setError(null)}
+            onRetry={() => {
+              setError(null);
+              if ((step === 4 || analysisFailed) && business?.id) {
+                setStep(4);
+                void runRegulatoryAnalysis(business.id, activeRunId || assessment?.id, true);
+              }
+              else if (step === 3) void handleProceedToQuestions();
+            }}
           />
         )}
 

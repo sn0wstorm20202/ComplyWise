@@ -244,8 +244,10 @@ def test_orchestration_pipeline_runs_all_stages(food_business):
 
         summary = res["executive_summary"]
         assert summary["total_requirements_evaluated"] >= 0
-        assert summary["documents_count"] > 0
-        assert summary["workflows_count"] > 0
+        # Legacy claims without pinned rules/evidence must be reevaluated.
+        # The fixture deliberately contains definitions but no executable rules.
+        assert summary["documents_count"] == 0
+        assert summary["workflows_count"] == 0
 
 
 @pytest.mark.django_db

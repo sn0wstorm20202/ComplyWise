@@ -143,7 +143,7 @@ def test_legacy_numbered_gemini_environment_keys_are_loaded_without_count_assump
                GEMINI_API2="synthetic-two", GEMINI_API12="synthetic-twelve",
                GEMINI_API_KEY_3="synthetic-two")
     process = subprocess.run([sys.executable,"-c", "import config.settings; from domain.providers.gemini_provider import _api_keys; print(len(_api_keys()))"],
-        env={**env,"DJANGO_SETTINGS_MODULE":"config.settings"}, capture_output=True,text=True,check=True)
+        env={**env,"DJANGO_SETTINGS_MODULE":"config.settings", "DJANGO_DEBUG":"true"}, capture_output=True,text=True,check=True)
     assert process.stdout.strip() == "4"
 
 

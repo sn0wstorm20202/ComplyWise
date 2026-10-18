@@ -252,6 +252,11 @@ def derive_business_documents(
                 requirement_id__in=[r.requirement_id for r in actionable_results]
             )
         }
+        if latest_run.evaluation_manifest:
+            from apps.applicability.snapshots import snapshot_models
+            saved_definitions, _ = snapshot_models(latest_run.evaluation_manifest)
+            req_defs.update(saved_definitions)
+
 
         for result in actionable_results:
             req_def = req_defs.get(result.requirement_id)

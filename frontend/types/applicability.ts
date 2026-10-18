@@ -20,6 +20,7 @@ export interface DecisionRun {
   profile_version: string;
   profile_version_number: number;
   status: DecisionRunStatus;
+  evaluation_manifest: Record<string, unknown>;
   evaluation_date: string;
   created_at: string;
   results: DecisionResult[];

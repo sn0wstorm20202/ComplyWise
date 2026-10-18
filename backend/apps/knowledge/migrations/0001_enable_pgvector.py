@@ -12,10 +12,11 @@ unavailable — it is not emulated.
 from __future__ import annotations
 
 from django.db import migrations
+from django.conf import settings
 
 
 def enable_vector(apps, schema_editor) -> None:  # noqa: ANN001, ARG001
-    if schema_editor.connection.vendor != "postgresql":
+    if schema_editor.connection.vendor != "postgresql" or not getattr(settings, "ENABLE_PGVECTOR", False):
         return
     # Requires the extension to be available on the server. Supabase ships it.
     schema_editor.execute("CREATE EXTENSION IF NOT EXISTS vector")

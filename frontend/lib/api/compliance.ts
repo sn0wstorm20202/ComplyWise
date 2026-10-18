@@ -12,6 +12,7 @@ export interface ComplianceListResponse {
   latest_run_id: string | null;
   count: number;
   requirements: ComplianceRequirementItem[];
+  coverage?: { status: string; is_exhaustive: boolean; message: string; knowledge_fingerprint?: string | null };
 }
 
 export interface ComplianceFilterParams {

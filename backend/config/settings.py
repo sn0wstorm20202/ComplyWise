@@ -48,6 +48,12 @@ IS_VERCEL = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV"))
 
 #: Reported by /health so a deployed instance can be identified unambiguously.
 COMPLYWISE_VERSION = os.getenv("COMPLYWISE_VERSION", "0.1.0-foundation")
+CIR_AUTHORITY_KEY = os.getenv("CIR_AUTHORITY_KEY", "")
+CIR_SIGNING_KEY_ID = os.getenv("CIR_SIGNING_KEY_ID", "primary")
+ENABLE_ASSESSMENT_JOBS = env_bool("ENABLE_ASSESSMENT_JOBS", default=False)
+# Retain old key IDs during rotation so historical signatures remain verifiable.
+import json as _json
+CIR_VERIFICATION_KEYS = _json.loads(os.getenv("CIR_VERIFICATION_KEYS", "{}"))
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "")
 if not SECRET_KEY:
@@ -201,9 +207,9 @@ DATABASE_IS_POSTGRES = DATABASES["default"]["ENGINE"].endswith(
     ("postgresql", "postgresql_psycopg2")
 )
 
-# pgvector is required for the RAG/standards retrieval work in later tasks.
-# It can only be enabled on PostgreSQL.
-ENABLE_PGVECTOR = DATABASE_IS_POSTGRES and env_bool("ENABLE_PGVECTOR", default=True)
+# Core decisions do not require vector storage. Retrieval owns its own index.
+# Keep the extension opt-in for deployments that explicitly use it.
+ENABLE_PGVECTOR = DATABASE_IS_POSTGRES and env_bool("ENABLE_PGVECTOR", default=False)
 
 # ---------------------------------------------------------------------------
 # Auth / passwords
@@ -392,9 +398,9 @@ DISCOVERY_TRUSTED_HOST_SUFFIXES = env_list(
 
 # Existing deployed retrieval service; backend-only and optional.
 COMPLIANCERAG_URL = os.getenv("COMPLIANCERAG_URL", "").strip().rstrip("/")
-COMPLIANCERAG_KEY = os.getenv("COMPLIANCERAG_KEY", "complywise-internal-secret").strip()
+COMPLIANCERAG_KEY = os.getenv("COMPLIANCERAG_KEY", "").strip()
 COMPLIANCERAG_TIMEOUT_SECONDS = int(os.getenv("COMPLIANCERAG_TIMEOUT_SECONDS", "8"))
-COMPLYWISE_DEMO_MODE = os.getenv("COMPLYWISE_DEMO_MODE", "true").lower() in ("true", "1", "yes")
+COMPLYWISE_DEMO_MODE = env_bool("COMPLYWISE_DEMO_MODE", default=False)
 
 KNOWLEDGE_PACKS_DIR = Path(os.getenv("KNOWLEDGE_PACKS_DIR", BASE_DIR / "knowledge_packs"))
 

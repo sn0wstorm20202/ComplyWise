@@ -323,6 +323,25 @@ class WorkspaceGuidance(BaseModel):
     provider_metadata = models.JSONField(default=dict)
 
 
+class AssessmentJob(BaseModel):
+    assessment = models.ForeignKey("Assessment", on_delete=models.CASCADE, related_name="jobs")
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    stage = models.CharField(max_length=40)
+    status = models.CharField(max_length=16, default="QUEUED", db_index=True)
+    idempotency_key = models.CharField(max_length=128)
+    input_fingerprint = models.CharField(max_length=64)
+    force_refresh = models.BooleanField(default=False)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    available_at = models.DateTimeField(default=timezone.now, db_index=True)
+    lease_until = models.DateTimeField(null=True, blank=True)
+    result = models.JSONField(default=dict)
+    error_code = models.CharField(max_length=40, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["assessment", "idempotency_key"], name="unique_assessment_job_key")]
+        indexes = [models.Index(fields=["status", "available_at"])]
+
+
 class Assessment(BaseModel):
     """An assessment session/version for a business.
 

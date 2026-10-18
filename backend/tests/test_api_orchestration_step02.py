@@ -561,7 +561,7 @@ def test_smart_questions_completion_survives_optional_workspace_provider_failure
     )
     run.stage_metadata = {
         **run.stage_metadata,
-        "question_generation": {"question_policy_version": 5, "questions": [{
+        "question_generation": {"question_policy_version": 6, "questions": [{
             "question_id": "Q01",
             "variable_key": "contract_workers",
             "answer_type": "NUMBER",

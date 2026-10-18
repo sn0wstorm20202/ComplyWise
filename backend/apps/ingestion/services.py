@@ -26,6 +26,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 from urllib.parse import urlparse
 
+from django.db import transaction
 from django.conf import settings
 from django.utils import timezone
 
@@ -120,6 +121,7 @@ def _source_ids_for(url: str) -> tuple[str, str]:
     return f"DISC-{digest}", f"DEVD-{digest}"
 
 
+@transaction.atomic
 def _store_discovered_source(
     *,
     url: str,
@@ -137,7 +139,7 @@ def _store_discovered_source(
     evidence_id += "-" + digest[:12].upper()
     host = (urlparse(url).hostname or "").lower()
 
-    source, _ = Source.objects.get_or_create(
+    source, source_created = Source.objects.get_or_create(
         source_id=source_id,
         defaults={
             "authority": host,
@@ -173,6 +175,9 @@ def _store_discovered_source(
             "verification_status": VerificationStatus.UNVERIFIED,
         },
     )
+    from .changes import record_source_change
+    if source_created:
+        record_source_change(source)
     return source, evidence
 
 

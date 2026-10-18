@@ -42,7 +42,10 @@ def source_projection(source, evidence=None):
     metadata = source.metadata if isinstance(source.metadata, dict) else {}
     capture = {}
     captured = None
-    if source.content_hash and hasattr(source, "retrieved_documents"):
+    if hasattr(source, "_recorded_capture"):
+        saved = source._recorded_capture or {}
+        capture = (saved.get("metadata") or {}).get("capture") or {}
+    elif source.content_hash and hasattr(source, "retrieved_documents"):
         captured = source.retrieved_documents.filter(content_hash=source.content_hash).first()
         if captured:
             capture = (captured.metadata or {}).get("capture") or {}
@@ -67,7 +70,7 @@ def source_projection(source, evidence=None):
         "source_type": source.source_type,
         "source_domain": urlsplit(url).hostname if url else None,
         "content_type": metadata.get("content_type") or metadata.get("mime_type") or capture.get("mime_type"),
-        "retrieved_at": metadata.get("retrieved_at") or metadata.get("captured_at") or metadata.get("fetched_at") or (captured.retrieved_at.isoformat() if captured else None),
+        "retrieved_at": metadata.get("retrieved_at") or metadata.get("captured_at") or metadata.get("fetched_at") or (getattr(source, "_recorded_capture", None) or {}).get("retrieved_at") or (captured.retrieved_at.isoformat() if captured else None),
         "publication_date": source.publication_date.isoformat() if source.publication_date else None,
         "effective_date": source.effective_date.isoformat() if source.effective_date else None,
         "content_hash": source.content_hash or None,

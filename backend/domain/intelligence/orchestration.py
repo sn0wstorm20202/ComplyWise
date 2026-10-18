@@ -15,6 +15,8 @@ This module provides the central application-level coordination boundary:
 
 from __future__ import annotations
 
+from apps.onboarding.question_policy import QUESTION_POLICY_VERSION
+
 import abc
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -755,7 +757,7 @@ class LLMFirstStrategy(AssessmentStrategy):
             # Guarantee question set is explicitly stored in run stage_metadata
             state = dict(run.stage_metadata)
             state["question_generation"] = {
-                "question_policy_version": 5,
+                "question_policy_version": QUESTION_POLICY_VERSION,
                 "questions": [q.to_dict() for q in questions],
                 "count": len(questions),
                 "generated_at": time.time(),
@@ -1433,7 +1435,8 @@ def orchestrate_compliance_analysis(
             existing_runs = existing_runs.filter(assessment=assessment)
         existing_run = existing_runs.order_by("-created_at").first()
 
-    if existing_run and profile_version and existing_run.profile_version_id == profile_version.id:
+    from apps.applicability.snapshots import can_reuse
+    if existing_run and profile_version and can_reuse(existing_run, profile_version):
         decision_run = existing_run
     elif profile_version:
         engine = ApplicabilityEngine()
@@ -1441,6 +1444,7 @@ def orchestrate_compliance_analysis(
             business=business,
             profile_version=profile_version,
             save_run=True,
+            assessment=assessment,
         )
         decision_run = new_run
     else:

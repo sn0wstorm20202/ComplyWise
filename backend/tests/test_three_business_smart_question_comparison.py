@@ -89,7 +89,11 @@ def test_three_business_smart_question_structural_differentiation(auth_client, u
 
     # Assertion 2: Food has food-specific variables
     food_expected = {"daily_processing_capacity", "food_contact_packaging"}
-    assert food_expected.issubset(food_keys), f"Food questions missing key variables: {food_expected - food_keys}"
+    deferred_food = {gap.get("target_field") for gap in food_plan["information_gaps"] if gap.get("deferred")}
+    assert food_expected.issubset(food_keys | deferred_food)
+    assert "daily_processing_capacity" in food_keys
+    assert len(food_keys & {"daily_processing_capacity", "food_contact_packaging", "cold_chain_storage", "boiler_installed"}) >= 2
+    assert len(food_keys) <= 4
 
     # Food must NEVER ask about MedTech or SaaS
     food_forbidden = {

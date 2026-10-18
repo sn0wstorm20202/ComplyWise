@@ -15,6 +15,10 @@ export async function functionalFixture(page:Page,options:{resumed?:boolean;stan
    const request=route.request(),path=new URL(request.url()).pathname.replace('/api/v1','').replace(/\/$/,'');
    const method=request.method(); let body:any={};try{body=request.postDataJSON()||{}}catch{}
    requests.push({path,method,body});let data:any={};
+   if (path.endsWith('/jobs')) {
+     await route.fulfill({ status: 503, json: { error: { code: 'ASYNC_DISABLED', message: 'Explicit synchronous fixture deployment' } } });
+     return;
+   }
    if(path==='/auth/login') data={token:'explicit-browser-fixture-token',user:{id:'synthetic-user',email:'browser-fixture@example.test',full_name:'Fixture Owner',is_staff:false,is_superuser:false},redirect_target:'ONBOARDING'};
    else if(path==='/auth/me') data={id:'synthetic-user',email:'browser-fixture@example.test',full_name:'Fixture Owner',is_staff:false,is_superuser:false};
    else if(path==='/user/profile') data={businesses:[business],recent_assessments:[assessment]};

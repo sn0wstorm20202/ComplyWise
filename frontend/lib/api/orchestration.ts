@@ -17,6 +17,7 @@
  */
 
 import { request } from "./client";
+import { runAssessmentJob } from "./assessmentJobs";
 
 export type AssessmentStage =
   | "INITIALIZED"
@@ -246,9 +247,9 @@ export const orchestrationApi = {
    * Execute AI business understanding.
    */
   understand: (runId: string): Promise<BusinessUnderstandingResponse> =>
-    request<BusinessUnderstandingResponse>(`assessments/${runId}/understand/`, {
+    runAssessmentJob(runId, "BUSINESS_UNDERSTANDING", () => request<BusinessUnderstandingResponse>(`assessments/${runId}/understand/`, {
       method: "POST",
-    }),
+    })),
 
   /**
    * Generate the 15 intelligent compliance questions in a single LLM call.
@@ -290,21 +291,21 @@ export const orchestrationApi = {
    * Execute live regulatory discovery across official portals.
    */
   runDiscovery: (runId: string, options?: { force_refresh?: boolean }): Promise<any> =>
-    request<any>(`assessments/${runId}/regulatory-discovery/`, {
+    runAssessmentJob(runId, "REGULATORY_DISCOVERY", () => request<any>(`assessments/${runId}/regulatory-discovery/`, {
       method: "POST",
       timeoutMs: 180000,
       body: JSON.stringify(options || {}),
-    }),
+    }), options),
 
   /**
    * Execute structured compliance synthesis grounded in official evidence.
    */
   runSynthesis: (runId: string, options?: { force_refresh?: boolean }): Promise<ComplianceResponse> =>
-    request<ComplianceResponse>(`assessments/${runId}/compliance-synthesis/`, {
+    runAssessmentJob(runId, "COMPLIANCE_SYNTHESIS", () => request<ComplianceResponse>(`assessments/${runId}/compliance-synthesis/`, {
       method: "POST",
       timeoutMs: 180000,
       body: JSON.stringify(options || {}),
-    }),
+    }), options),
 
   /**
    * Retrieve structured compliance requirements and executive summary.

@@ -17,6 +17,19 @@ from apps.businesses.models import Business
 from apps.evidence.models import Evidence, Source
 
 
+class SourceChange(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    previous_source = models.ForeignKey(Source, on_delete=models.PROTECT, related_name="outgoing_changes")
+    new_source = models.ForeignKey(Source, on_delete=models.PROTECT, related_name="incoming_changes")
+    affected_rule_ids = models.JSONField(default=list)
+    affected_decision_run_ids = models.JSONField(default=list)
+    status = models.CharField(max_length=30, default="PENDING_REVIEW")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["previous_source", "new_source"], name="unique_source_change")]
+
+
 class DiscoveryRun(models.Model):
     """An execution of regulatory source discovery for an unseen business."""
 

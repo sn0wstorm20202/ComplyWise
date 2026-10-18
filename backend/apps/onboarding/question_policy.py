@@ -1,6 +1,9 @@
 """Fact identity and presentation guards for the existing adaptive planner."""
 import re
 
+QUESTION_POLICY_VERSION = 6
+QUESTION_LIMIT = 4
+
 ALIASES = {
     "total_workforce":"total_worker_count", "worker_count":"total_worker_count",
     "employee_count":"total_worker_count", "number_of_workers":"total_worker_count",

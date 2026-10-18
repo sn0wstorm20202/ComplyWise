@@ -54,11 +54,13 @@ class BusinessComplianceListView(_BusinessScopedView):
         run = None
         if assessment_id:
             assessment = business.assessments.filter(pk=assessment_id).first()
+            if assessment is None:
+                return error_response("NOT_FOUND", "Assessment not found.", http_status=404)
             if assessment and assessment.decision_run:
                 run = assessment.decision_run
             elif assessment:
                 run = DecisionRun.objects.filter(assessment=assessment).prefetch_related("results").first()
-        if run is None:
+        if run is None and not assessment_id:
             run = (
                 DecisionRun.objects.filter(business=business)
                 .prefetch_related("results")
@@ -133,8 +135,8 @@ class BusinessComplianceListView(_BusinessScopedView):
                         "statutory_act": statutory_act or (citations[0]["locator"] if citations else ""),
                         "citations": citations,
                         "citation_count": len(citations),
-                        "required_documents": _str_list(metadata.get(DOCUMENTS_KEY)),
-                        "application_steps": _str_list(metadata.get(STEPS_KEY)),
+                        "required_documents": metadata_string_list(metadata.get(DOCUMENTS_KEY)),
+                        "application_steps": metadata_string_list(metadata.get(STEPS_KEY)),
                         "timeline": str(metadata.get("timeline") or metadata.get(VALIDITY_KEY) or "").strip(),
                         "statutory_fee": str(metadata.get(FEE_KEY) or "").strip(),
                     }
@@ -166,6 +168,7 @@ class BusinessComplianceListView(_BusinessScopedView):
         for item in items:
             item.update(treatments.get(item["requirement_id"], {}))
 
+        from apps.applicability.snapshots import coverage_for_run
         return Response(
             envelope(
                 {
@@ -173,6 +176,7 @@ class BusinessComplianceListView(_BusinessScopedView):
                     "latest_run_id": str(latest_run.id) if latest_run else None,
                     "count": len(items),
                     "requirements": items,
+                    "coverage": coverage_for_run(latest_run),
                 }
             ),
             status=status.HTTP_200_OK,

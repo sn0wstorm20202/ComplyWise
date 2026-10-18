@@ -153,7 +153,7 @@ class EvidenceSearchResult:
     locator: str = ""
     official_url: str = ""
     relevance_score: float = 0.0
-    verification_status: str = "VERIFIED"
+    verification_status: str = "UNVERIFIED"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -169,7 +169,7 @@ class EvidenceChunkDetail:
     locator: str = ""
     official_url: str = ""
     content_hash: str = ""
-    verification_status: str = "VERIFIED"
+    verification_status: str = "UNVERIFIED"
     effective_from: str | None = None
     effective_until: str | None = None
 
@@ -191,7 +191,7 @@ class ComplianceRagClient:
 
     def __init__(self, base_url: str | None = None, api_key: str | None = None):
         self.base_url = (base_url or getattr(settings, "COMPLIANCERAG_URL", "")).rstrip("/")
-        self.api_key = api_key or getattr(settings, "COMPLIANCERAG_KEY", "complywise-internal-secret")
+        self.api_key = api_key or getattr(settings, "COMPLIANCERAG_KEY", "")
 
     def _generate_signature_headers(self, payload: bytes) -> dict[str, str]:
         """Generate canonical authentication headers per CW-RAG-2026-V1 §3.A."""
@@ -404,10 +404,50 @@ class ComplianceRagClient:
         from apps.evidence.models import Evidence
         from common.enums import VerificationStatus
 
+        if not 1 <= query.top_k <= 100 or len(query.query) > 4000:
+            raise ValueError("Invalid retrieval query limits.")
+        if self.base_url.startswith("http") and self.api_key:
+            import urllib.request
+            payload = json.dumps({"query":query.query, "top_k":query.top_k,
+                "filters":{"state_code":query.state_code, "regulatory_domain":query.regulatory_domain}}).encode()
+            request = urllib.request.Request(f"{self.base_url}/retrieval/search", data=payload,
+                headers=self._generate_signature_headers(payload), method="POST")
+            try:
+                with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(request, timeout=5) as response:
+                    data = json.loads(response.read(2_000_000))
+                return [EvidenceSearchResult(chunk_id=item["chunk_id"], source_id=item.get("source_id", ""),
+                    source_title=item.get("source_metadata", {}).get("act_title", ""),
+                    authority=item.get("source_metadata", {}).get("issuing_authority", ""),
+                    content=item.get("excerpt", ""), locator=str(item.get("citation", {}).get("section", "")),
+                    official_url=item.get("source_metadata", {}).get("official_url", ""),
+                    relevance_score=float(item.get("relevance_score", 0)),
+                    verification_status=item.get("verification_status", "UNVERIFIED"))
+                    for item in data.get("results", [])[:query.top_k]]
+            except (OSError, ValueError, KeyError, TypeError):
+                logger.warning("Evidence service unavailable; using the local reviewed catalogue.")
+
         terms = [t.lower() for t in query.query.split() if len(t) > 2]
         qs = Evidence.objects.select_related("source").filter(
-            verification_status=VerificationStatus.VERIFIED
+            verification_status=VerificationStatus.VERIFIED, source__status="ACTIVE"
         )
+        from django.db.models import Q
+        from django.utils import timezone
+        from domain.jurisdictions.resolver import normalize_jurisdiction
+        from apps.knowledge.models import RequirementDefinition
+        today = timezone.localdate()
+        qs = qs.filter(Q(effective_from__isnull=True) | Q(effective_from__lte=today),
+                       Q(effective_until__isnull=True) | Q(effective_until__gte=today))
+        if query.state_code or query.regulatory_domain:
+            requirements = RequirementDefinition.objects.filter(status="PUBLISHED")
+            if query.state_code:
+                state = normalize_jurisdiction(query.state_code)
+                if not state:
+                    return []
+                requirements = requirements.filter(Q(jurisdiction="CENTRAL") | Q(jurisdiction=state))
+            if query.regulatory_domain:
+                requirements = requirements.filter(domain__iexact=query.regulatory_domain)
+            refs = {ref for row in requirements.values_list("evidence_refs", flat=True) for ref in row if isinstance(ref, str)}
+            qs = qs.filter(evidence_id__in=refs)
 
         results: list[EvidenceSearchResult] = []
         for ev in qs:

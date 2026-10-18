@@ -115,6 +115,7 @@ class RuleVersion(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    review_record = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["rule_id", "-version"]
@@ -135,3 +136,14 @@ class RuleVersion(models.Model):
     @property
     def is_published(self) -> bool:
         return self.status == KnowledgeStatus.PUBLISHED
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            previous = type(self).objects.filter(pk=self.pk).first()
+            if previous and previous.review_record:
+                immutable = ("rule_id", "version", "requirement_id", "condition_ast", "result", "evidence_refs",
+                             "effective_from", "effective_until", "rule_type", "jurisdiction", "domain", "review_record")
+                if any(getattr(previous, key) != getattr(self, key) for key in immutable):
+                    from django.core.exceptions import ValidationError
+                    raise ValidationError("Reviewed rules are immutable. Publish a new version.")
+        return super().save(*args, **kwargs)

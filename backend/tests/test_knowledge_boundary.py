@@ -30,7 +30,7 @@ SCENARIO_TOKENS = (
 )
 
 #: Directories where regulatory data is legitimate: knowledge packs and fixtures.
-ALLOWED_DATA_DIRS = ("knowledge_packs", "tests", "pipeline")
+ALLOWED_DATA_DIRS = ("knowledge_packs", "tests", "pipeline", "demo")
 
 
 def python_sources() -> list[Path]:

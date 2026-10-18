@@ -109,8 +109,8 @@ def test_all_provider_failure_is_controlled_api_retry_after_exhaustion(make_busi
     with patch("domain.providers.gemini_provider.post_json", side_effect=ProviderError("outage")) as gemini, \
          patch("domain.providers.openai_provider.post_json", side_effect=ProviderError("outage")) as openai:
         response = auth_client.post(f"/api/v1/assessments/{assessment.id}/compliance-synthesis", {}, format="json")
-    assert response.status_code == 503, response.data
-    assert response.data["error"]["code"] == "PROVIDER_UNAVAILABLE"
+    assert response.status_code == 200, response.data
+    assert response.data["data"]["status"] == "NEEDS_INFORMATION"
     assert gemini.call_count == 2 and openai.call_count == 1
     assert not WorkspaceGuidance.objects.exists()
 

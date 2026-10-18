@@ -32,6 +32,11 @@ from apps.onboarding.planner import plan_adaptive_smart_questions
 from common.enums import VariableOrigin
 
 
+@pytest.fixture(autouse=True)
+def explicit_demo_mode(settings):
+    settings.COMPLYWISE_DEMO_MODE = True
+
+
 @pytest.mark.django_db
 class TestScenarioResolutionSuite:
     """Verify deterministic scenario matching for all 6 curated businesses."""

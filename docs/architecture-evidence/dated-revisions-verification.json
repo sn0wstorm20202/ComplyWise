@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-18",
+  "scope": "Dated requirement procedural releases and concurrent publication",
+  "runtime": {"python": "3.12.14", "django": "6.0.9", "postgresql": "16.15"},
+  "backend": {"passed": 1030, "skipped": 10, "seconds": 75.50, "output": "dated-revisions-backend.txt"},
+  "postgresql": {"passed": 20, "seconds": 28.98, "output": "dated-revisions-postgres.txt"},
+  "frontend_build": {"passed": true, "output": "dated-revisions-frontend-build.txt"},
+  "targeted_lint": {"passed": true, "files": ["app/admin/knowledge/page.tsx", "e2e/architecture-real-integration.spec.ts"]},
+  "migrations": {"applied": true, "pending_model_changes": false, "system_check_errors": 0, "output": "dated-revisions-migrations.txt"},
+  "real_http_worker": {"passed": true, "output": "dated-revisions-http.txt"},
+  "browser": {"rerun": false, "reason": "Automatic approval review rejected local frontend server start without an explanation. Updated browser assertions are unexecuted for this increment."},
+  "deployment": {"deployed": false, "original_core_checkout_modified": false},
+  "limits": ["No production load claim", "No independent legal-content verification", "Legacy definitions are not automatically backdated", "Stable identity attributes are not separately versioned"]
+}

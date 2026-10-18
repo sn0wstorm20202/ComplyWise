@@ -91,6 +91,8 @@ class ApplicabilityEngine:
         with transaction.atomic():
             for result in results:
                 result.explanation_trace["snapshot_version"] = 1
+                result.explanation_trace["requirement_revision_id"] = run.evaluation_manifest.get(
+                    "selected_requirement_revisions", {}).get(result.requirement_id)
             if results:
                 DecisionResult.objects.bulk_create(results)
             run.save(update_fields=["status", "evaluation_manifest"])
@@ -174,6 +176,10 @@ class ApplicabilityEngine:
                     status=KnowledgeStatus.PUBLISHED
                 ).order_by("jurisdiction", "requirement_id")
             )
+            catalogue_requirements = all_published_reqs
+            from apps.knowledge.revisions import project_requirements
+            all_published_reqs, requirement_revisions, selected_revisions = project_requirements(
+                catalogue_requirements, eval_date)
 
             # 2. Fetch ALL published rules linked to published requirements
             published_rules_qs = RuleVersion.objects.filter(
@@ -193,6 +199,10 @@ class ApplicabilityEngine:
             for r in published_rules:
                 all_evidence_refs.update(r.evidence_refs or [])
             for req in all_published_reqs:
+                all_evidence_refs.update(req.evidence_refs or [])
+            for revision in requirement_revisions:
+                all_evidence_refs.update(revision.evidence_refs or [])
+            for req in catalogue_requirements:
                 all_evidence_refs.update(req.evidence_refs or [])
 
             evidence_map: dict[str, dict[str, Any]] = {}
@@ -216,7 +226,9 @@ class ApplicabilityEngine:
                     }
 
             from .snapshots import capture_manifest
-            capture_manifest(run, all_published_reqs, published_rules, evidence_records)
+            capture_manifest(run, all_published_reqs, published_rules, evidence_records,
+                catalogue_requirements=catalogue_requirements, requirement_revisions=requirement_revisions,
+                selected_revisions=selected_revisions)
             results_to_create: list[DecisionResult] = []
             had_failures = False
 
@@ -279,6 +291,12 @@ class ApplicabilityEngine:
                         continue
 
                 # Requirement is in jurisdiction scope (CENTRAL or matching state)
+                if not req._revision_available:
+                    results_to_create.append(DecisionResult(decision_run=run, requirement_id=req.requirement_id,
+                        requirement_name=req.name, status=ApplicabilityStatus.UNVERIFIED,
+                        explanation_trace={"reason":"NO_EFFECTIVE_REQUIREMENT_REVISION", "evaluations":[],
+                            "requirement_revision_id":selected_revisions.get(req.requirement_id)}, evidence_refs=[]))
+                    continue
                 candidate_rules = all_rules_by_req.get(req.requirement_id, [])
 
                 # Filter candidate rules by effective date (TRD_v2.0 §25, C5)
@@ -290,7 +308,8 @@ class ApplicabilityEngine:
                 # Multiple versions of the same rule are alternatives in time,
                 # not independent conflicting rules. Keep the newest effective version.
                 newest = {}
-                for rule in effective_rules:
+                for rule in sorted(effective_rules,
+                        key=lambda r: (r.effective_from.isoformat() if r.effective_from else "", r.version), reverse=True):
                     newest.setdefault(rule.rule_id, rule)
                 effective_rules = list(newest.values())
 
@@ -428,6 +447,8 @@ class ApplicabilityEngine:
         # Enforce Source -> Evidence -> Rule chain when result is APPLICABLE (C6)
         associated_evidence: list[dict[str, Any]] = []
         rule_evidence_refs = (matched_rule.evidence_refs if matched_rule else []) or []
+        if getattr(requirement, "_versioned_requirement", False) and matched_rule:
+            rule_evidence_refs = list(dict.fromkeys(rule_evidence_refs + (requirement.evidence_refs or [])))
 
         for ref in rule_evidence_refs:
             if ref in evidence_map:

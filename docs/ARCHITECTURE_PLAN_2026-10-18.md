@@ -55,6 +55,16 @@ Retrieval ranks candidates; a ranking score cannot establish applicability. A ve
 
 ## Remaining decisions that require measurements or deployment context
 
+### Follow-up: effective procedural releases
+
+RequirementRevision stores dated, reviewed descriptions and procedural metadata separately from stable catalogue identity. Publication creates a revision and links its immutable rule; manifests capture the selected revision and catalogue history. Selection uses latest effective start, then publication version for corrections with the same start. A backdated correction cannot displace a later-dated release. An expired or withdrawn selected procedural release produces UNVERIFIED rather than reviving older instructions.
+
+The modular core and batched catalogue reads remain. [Django row locking](https://docs.djangoproject.com/en/6.0/ref/models/querysets/#select-for-update) supports locking the stable requirement row while allocating versions. PostgreSQL concurrent-review tests exercise that implementation. [PostgreSQL range constraints](https://www.postgresql.org/docs/16/rangetypes.html#RANGETYPES-CONSTRAINT) offer non-overlap enforcement, but this implementation uses a superseding release timeline: older open-ended records stay immutable and the latest effective release takes precedence. Stored intervals may overlap.
+
+Effective date and recorded review time are distinct. A new evaluation of an old date uses currently reviewed knowledge applicable on that date. An archived decision retains the knowledge recorded when that decision was made. This is not a general bitemporal query engine.
+
+### Remaining measurements
+
 - Establish production latency, queue-age, error-rate, provider-cost and retrieval-quality targets, then load-test against the expected user volume.
 - Validate an actual embedding model on labelled queries before enabling dense serving. Synthetic vectors test fusion mechanics only.
 - Review legal commencement dates, jurisdiction coverage, exceptions and source validity with qualified reviewers. The current retrieval catalogue is not an exhaustive verified legal corpus.

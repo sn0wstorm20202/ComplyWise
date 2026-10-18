@@ -8,7 +8,7 @@ import Overlay from "@/components/product/Overlay";
 import { request } from "@/lib/api/client";
 
 type Candidate = { id: string; business_name: string; title: string; description: string; authority: string;
-  jurisdiction: string; source_url: string | null; source_title: string; excerpt: string; status: string; content_hash: string };
+  jurisdiction: string; source_url: string | null; source_title: string; excerpt: string; status: string; content_hash: string; document_requirements?: string[] };
 
 type SourceChange = { id: string; source_url: string; source_title: string; affected_rule_count: number;
   affected_decision_run_count: number; previous_hash: string; new_hash: string; status: string };
@@ -28,6 +28,7 @@ export default function KnowledgeReviewPage() {
   const [effectiveFrom, setEffectiveFrom] = useState("");
   const [effectiveUntil, setEffectiveUntil] = useState("");
   const [examples, setExamples] = useState("");
+  const [procedural, setProcedural] = useState("{}");
   const [saving, setSaving] = useState(false);
   const [decision, setDecision] = useState("RETURN_FOR_REVIEW");
   const [notice, setNotice] = useState("");
@@ -66,7 +67,7 @@ export default function KnowledgeReviewPage() {
       await request(`/admin/knowledge/${selected.id}/review`, { method: "POST", body: JSON.stringify({
         decision, reason, requirement_id: requirementId, rule_id: ruleId,
         ...(decision === "PUBLISH" ? { condition_ast: JSON.parse(ast), effective_from: effectiveFrom,
-          effective_until: effectiveUntil || null, examples: JSON.parse(examples) } : {}),
+          effective_until: effectiveUntil || null, examples: JSON.parse(examples), procedural_metadata: JSON.parse(procedural) } : {}),
       }) });
       setSelected(null); await load();
     } catch (err) { setReviewError(err instanceof Error ? err.message : "Couldn't save this review."); }
@@ -82,7 +83,7 @@ export default function KnowledgeReviewPage() {
     </article>)}
     {loading ? <LoadingSkeleton count={4} /> : error ? <ErrorState message={error} onRetry={() => void load()} /> : rows.length ? rows.map(row => <article key={row.id} className="ui-object flex flex-col sm:flex-row justify-between gap-4">
       <div><p className="ui-eyebrow">{row.business_name} · {row.jurisdiction}</p><h2 className="text-base mt-2">{row.title}</h2><p className="text-xs text-[var(--ui-secondary)] mt-2">{row.authority}</p></div>
-      <button className="ui-button self-start" onClick={() => { setSelected(row); setReason(""); setRequirementId(""); setRuleId(""); setAst(""); setEffectiveFrom(""); setEffectiveUntil(""); setExamples(""); setDecision("RETURN_FOR_REVIEW"); setReviewError(null); }}>Review passage →</button>
+      <button className="ui-button self-start" onClick={() => { setSelected(row); setReason(""); setRequirementId(""); setRuleId(""); setAst(""); setEffectiveFrom(""); setEffectiveUntil(""); setExamples(""); setProcedural(JSON.stringify(row.document_requirements?.length ? { required_documents: row.document_requirements } : {}, null, 2)); setDecision("RETURN_FOR_REVIEW"); setReviewError(null); }}>Review passage →</button>
     </article>) : <div className="ui-object"><h2>No source reviews waiting.</h2><p className="text-sm text-[var(--ui-secondary)] mt-2">Captured regulatory claims appear here for review.</p></div>}
     <Overlay open={Boolean(selectedChange)} onClose={() => { if (!saving) setSelectedChange(null); }} title="Review source change" drawer>
       {selectedChange && <form onSubmit={reviewChange} className="space-y-5">
@@ -111,6 +112,8 @@ export default function KnowledgeReviewPage() {
           <legend className="text-sm font-medium">Effective dates and rule verification</legend>
           <label className="block text-sm">Effective from<input type="date" required className="ui-input mt-2 w-full" value={effectiveFrom} onChange={e => setEffectiveFrom(e.target.value)} /></label>
           <label className="block text-sm">Effective until (if recorded)<input type="date" className="ui-input mt-2 w-full" value={effectiveUntil} onChange={e => setEffectiveUntil(e.target.value)} /></label>
+          <label className="block text-sm">Reviewed procedural information (optional JSON)<textarea className="ui-input font-mono mt-2 w-full min-h-32" value={procedural} onChange={e => setProcedural(e.target.value)} /></label>
+          <p className="text-xs text-[var(--ui-secondary)]">Supported fields: required_documents and application_steps (text lists), statutory_fee, validity_period and deadline_notes (text). Record only information supported by the source. Omitted fields retain the earlier effective version; an empty list explicitly clears a checklist. This information uses the effective dates above.</p>
           <label className="block text-sm">Executable review examples (JSON)<textarea required className="ui-input font-mono mt-2 w-full min-h-40" value={examples} onChange={e => setExamples(e.target.value)} /></label>
           <p className="text-xs text-[var(--ui-secondary)]">Provide positive, negative and missing-fact cases. Each needs kind, facts and expected_truth (TRUE, FALSE or UNKNOWN). The engine checks these before publication.</p>
         </fieldset>}

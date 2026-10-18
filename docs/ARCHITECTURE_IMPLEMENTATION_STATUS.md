@@ -31,6 +31,7 @@ Use [the architecture plan](ARCHITECTURE_PLAN_2026-10-18.md) for the design and 
 | Intake | A shared four-question limit and policy version invalidate old caches. Batch intake reserves discovery questions; sequential clarification prioritizes unresolved rule branches. Deferred gaps remain recorded. |
 | Coverage | The business UI states that the recorded catalogue is not exhaustive. Compliance GET does not invent a new applicability evaluation when none is recorded. |
 | Database setup | Vector storage is optional in the core; the initial extension migration respects the existing setting. PostgreSQL row locking targets the base rows, including queries with nullable related records. |
+| Dated procedural releases | Reviewed descriptions, document checklists, fees, steps and deadline notes have effective revisions. Evaluation selects the dated release in a batch and captures it in the manifest. Backdated corrections do not displace future releases. Unavailable releases produce UNVERIFIED; drafts do not change published coverage. |
 
 ## Verification
 
@@ -51,6 +52,16 @@ The seven skipped checks in the SQLite suite are five explicitly live-provider t
 
 ## Measured efficiency
 
+### Follow-up verification: dated procedural releases
+
+The `dated-revisions-*` evidence files record this increment independently from the baseline results above. The complete Python 3.12 / Django 6 suite passed 1,030 tests with 10 explicit skips (five live-provider checks, four PostgreSQL checks and one opt-in sibling retrieval HTTP check). Twenty targeted PostgreSQL tests passed separately, including two concurrent-review publication scenarios and worker claims. The production frontend build and targeted lint passed. A real HTTP/API/database/worker journey published dated information, processed reassessment, returned its checklist through compliance and preserved the old decision response.
+
+The updated Chrome test includes the procedural form and returned checklist assertion, but it was not executed for this increment: automatic approval review rejected starting the local frontend server without providing a reason. The earlier baseline browser results remain valid for their tested commit; they are not evidence for the changed form.
+
+Migration 0005 and Django system checks passed. The migration creates no invented historical releases. The additional projection query remains one batched query for a 20-entry test input. This is a query-count regression check, not a production throughput benchmark.
+
+### Baseline retrieval measurements
+
 The repeatable BM25 benchmark used 5,000 synthetic records and 200 identical exact-token queries, with a state filter. Construction took 334.547 ms and peaked at 6.039 MiB of traced allocations. Query p50 was 0.248 ms and p95 was 0.267 ms. There were zero jurisdiction leaks; all returned top-10 records matched the synthetic label.
 
 These are local, warm, single-process measurements. They do not establish semantic quality, legal recall, concurrent throughput, production capacity or improvement against every alternative. The actual imported catalogue contains 55 description records; they remain unverified. A real-model semantic benchmark is still required before enabling dense retrieval.
@@ -62,7 +73,7 @@ These are local, warm, single-process measurements. They do not establish semant
 - Tenant API authorization is covered. Database row-level security and a restricted production role have not been installed or certified by these local tests.
 - Worker writes currently retain a transaction through the existing orchestrator stage, including network work. This favours recoverability at the current scale; load measurements should determine when to split network work from the commit.
 - HMAC replay state is process-local. A multi-replica deployment needs shared replay handling or suitable authenticated infrastructure.
-- Rule effective dates are versioned, but requirement-level procedural metadata is still a shared catalogue definition. Independently dated changes to that metadata need separate identifiers or a further versioned-definition design. Existing captured runs preserve their original metadata.
+- Procedural releases are dated; stable identity attributes (authority, jurisdiction, domain and category) remain catalogue attributes. Corrections to these need deliberate catalogue review. Historical-date re-evaluation uses current reviewed knowledge, while saved runs preserve originally recorded knowledge.
 - OCR verification exercised the declared Windows OCR dependencies; Linux container OCR has not been validated.
 - Real embedding-model quality, production load, autoscaling, provider availability/cost and backup recovery are unverified.
 - A deployed release still needs matching API/worker commits, configured secrets, migration verification, traffic/revision checks and live user-journey evidence. No live service was modified here.

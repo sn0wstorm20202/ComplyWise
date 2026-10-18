@@ -87,6 +87,16 @@ For multiple serving replicas, implement a shared replay store or authenticated 
 
 ## Verification and rollout
 
+### Dated procedural information
+
+Apply knowledge migration 0005 before running the updated API and worker. It creates RequirementRevision and an optional rule link. It does not invent dates or reviewer provenance for legacy definitions. Definitions without revisions retain their previous behaviour until reviewed publication creates their first release. Before that first release date, fresh evaluations report the versioned requirement as UNVERIFIED. Saved historical assessments are unchanged.
+
+The reviewer form accepts optional required_documents/application_steps text lists and statutory_fee/validity_period/deadline_notes text. Explicit empty lists clear a checklist. Unspecified fields inherit the available release effective at the new start date, never a future release. Nonempty captured candidate document lists also update the checklist. Supporting evidence is retained when inheriting fields. Dates apply to both the published rule and procedural revision. Applicability conditions remain separately reviewed rule inputs.
+
+An ended or withdrawn latest procedural release does not revive an older open-ended record. Publish a replacement with reviewed evidence to restore coverage. Catalogue fingerprints include procedural revisions and statuses, so changes invalidate reuse. Ordinary model save guards are application controls, not database administrator restrictions.
+
+### Release checks
+
 Run the backend suite, PostgreSQL concurrency tests, frontend build and browser flows against the intended release. Verify migration success and the API/worker release IDs before switching traffic. Confirm a real assessment reaches a saved decision and appears in the intended user's workspace, then test worker recovery and an unchanged historical record.
 
 Provision and test browser binaries and Linux OCR dependencies in the actual deployment image. An installed Playwright Python package or passing Windows OCR tests do not establish those container capabilities.

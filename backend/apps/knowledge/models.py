@@ -60,6 +60,39 @@ class RequirementDefinition(models.Model):
         return f"{self.requirement_id}: {self.name} ({self.authority})"
 
 
+class RequirementRevision(models.Model):
+    """Reviewed procedural information with legal effective dates and recorded review time."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    requirement = models.ForeignKey(RequirementDefinition, on_delete=models.PROTECT, related_name="revisions")
+    version = models.PositiveIntegerField()
+    effective_from = models.DateField()
+    effective_until = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=30, choices=KnowledgeStatus.choices, default=KnowledgeStatus.DRAFT)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default="")
+    metadata = models.JSONField(default=dict)
+    evidence_refs = models.JSONField(default=list)
+    review_record = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["requirement_id", "-effective_from", "-version"]
+        constraints = [models.UniqueConstraint(fields=["requirement", "version"], name="unique_requirement_revision")]
+        indexes = [models.Index(fields=["requirement", "effective_from"])]
+
+    def save(self, *args, **kwargs):
+        from django.core.exceptions import ValidationError
+        if self.effective_until and self.effective_until < self.effective_from:
+            raise ValidationError("A revision cannot end before it starts.")
+        if not self._state.adding:
+            previous = type(self).objects.get(pk=self.pk)
+            immutable = ("requirement_id", "version", "effective_from", "effective_until", "name", "description",
+                         "metadata", "evidence_refs", "review_record")
+            if any(getattr(previous, field) != getattr(self, field) for field in immutable):
+                raise ValidationError("Reviewed requirement information is immutable. Publish a new revision.")
+        return super().save(*args, **kwargs)
+
+
 class RuleVersion(models.Model):
     """A versioned, structured condition rule governing applicability of a requirement.
 
@@ -116,6 +149,7 @@ class RuleVersion(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     review_record = models.JSONField(default=dict, blank=True)
+    requirement_revision = models.ForeignKey(RequirementRevision, on_delete=models.PROTECT, null=True, blank=True, related_name="rules")
 
     class Meta:
         ordering = ["rule_id", "-version"]
@@ -142,7 +176,7 @@ class RuleVersion(models.Model):
             previous = type(self).objects.filter(pk=self.pk).first()
             if previous and previous.review_record:
                 immutable = ("rule_id", "version", "requirement_id", "condition_ast", "result", "evidence_refs",
-                             "effective_from", "effective_until", "rule_type", "jurisdiction", "domain", "review_record")
+                             "effective_from", "effective_until", "rule_type", "jurisdiction", "domain", "review_record", "requirement_revision_id")
                 if any(getattr(previous, key) != getattr(self, key) for key in immutable):
                     from django.core.exceptions import ValidationError
                     raise ValidationError("Reviewed rules are immutable. Publish a new version.")

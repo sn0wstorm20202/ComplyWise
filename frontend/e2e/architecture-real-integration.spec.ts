@@ -27,6 +27,9 @@ test('real browser review publishes a version and queues reassessment while hist
   await page.getByLabel('Rule identifier', { exact: true }).fill('SYNTHETIC-BROWSER');
   await page.getByLabel('Reviewed applicability condition').fill(JSON.stringify({ op: 'EQ', left: { var: 'synthetic_fact' }, right: true }));
   await page.getByLabel('Effective from', { exact: true }).fill('2026-01-01');
+  await page.getByLabel('Reviewed procedural information').fill(JSON.stringify({
+    required_documents: ['Synthetic dated browser checklist'], statutory_fee: 'Synthetic browser fee',
+  }));
   await page.getByLabel('Executable review examples').fill(JSON.stringify([
     { kind: 'positive', facts: { synthetic_fact: true }, expected_truth: 'TRUE' },
     { kind: 'negative', facts: { synthetic_fact: false }, expected_truth: 'FALSE' },
@@ -46,6 +49,9 @@ test('real browser review publishes a version and queues reassessment while hist
   });
   const status = await request.get(`${api}/assessments/${fixture.assessment_id}/jobs/${jobId}/`, { headers });
   expect((await status.json()).data.status).toBe('SUCCEEDED');
+  const current = await request.get(`${api}/businesses/${fixture.business_id}/compliance?assessment_id=${fixture.assessment_id}`, { headers });
+  expect(current.ok()).toBeTruthy();
+  expect(JSON.stringify(await current.json())).toContain('Synthetic dated browser checklist');
   const archive = await request.get(`${api}/businesses/${fixture.business_id}/decisions/${fixture.original_run_id}`, { headers });
   expect(archive.ok()).toBeTruthy();
   expect((await archive.json()).data).toEqual(original.data);

@@ -5,6 +5,21 @@ from domain.rules.ast import validate_ast
 from domain.evaluation.evaluator import evaluate_ast
 
 
+def validate_procedural_metadata(value):
+    if not isinstance(value, dict):
+        raise ValueError("Reviewed procedural information must be an object.")
+    allowed = {"required_documents", "application_steps", "statutory_fee", "validity_period", "deadline_notes"}
+    if set(value) - allowed:
+        raise ValueError("Unsupported procedural fields. Scope, mandate and jurisdiction changes require a separate knowledge review.")
+    for key, entry in value.items():
+        if key in {"required_documents", "application_steps"}:
+            if not isinstance(entry, list) or len(entry) > 100 or any(not isinstance(item, str) or not item.strip() or len(item) > 2000 for item in entry):
+                raise ValueError(f"{key} must contain at most 100 non-empty text entries.")
+        elif not isinstance(entry, str) or len(entry) > 4000:
+            raise ValueError(f"{key} must be text of at most 4000 characters.")
+    return deepcopy(value)
+
+
 def validate_publication(ast, effective_from, effective_until, examples):
     ast = deepcopy(ast)
     validate_ast(ast)

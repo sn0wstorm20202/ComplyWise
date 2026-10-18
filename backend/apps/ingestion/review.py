@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from common.envelope import envelope, error_response
 from common.permissions import IsComplianceReviewer
 from apps.ingestion.models import CandidateRequirement, RetrievedDocument
-from apps.knowledge.models import RequirementDefinition, RuleVersion
+from apps.knowledge.models import RequirementDefinition, RequirementRevision, RuleVersion
 from apps.workflows.models import SecurityAuditEvent
 from apps.applicability.engine import ApplicabilityEngine
 from domain.rules.ast import validate_ast, AstValidationError
@@ -29,6 +29,7 @@ class KnowledgeReviewQueueView(APIView):
         return Response(envelope({"source_changes":changes, "candidates": [{"id": str(c.id), "business_name": c.business.name,
             "title": c.requirement_name, "description": c.applicability_statement, "authority": c.authority,
             "jurisdiction": c.jurisdiction, "category": c.category, "status": c.verification_status,
+            "document_requirements": c.document_requirements,
             "source_url": c.source.canonical_url if c.source else None,
             "source_title": c.source.title if c.source else "", "excerpt": c.evidence.excerpt if c.evidence else "",
             "content_hash": c.source.content_hash if c.source else ""} for c in rows]}))
@@ -53,9 +54,10 @@ class KnowledgeCandidateReviewView(APIView):
         if decision == "PUBLISH":
             ast = request.data.get("condition_ast")
             try:
-                from apps.knowledge.publication import validate_publication
+                from apps.knowledge.publication import validate_publication, validate_procedural_metadata
                 ast, effective_from, effective_until, examples = validate_publication(ast,
                     request.data.get("effective_from"), request.data.get("effective_until"), request.data.get("examples"))
+                procedural = validate_procedural_metadata(request.data.get("procedural_metadata", {}))
             except (AstValidationError, ValueError) as exc:
                 return error_response("VALIDATION_ERROR", str(exc), http_status=400)
             requirement_id = str(request.data.get("requirement_id", "")).strip()
@@ -68,7 +70,7 @@ class KnowledgeCandidateReviewView(APIView):
                 return error_response("CONFLICT", "A rule identifier cannot move to another requirement.", http_status=409)
             if existing_requirement and not prior:
                 return error_response("CONFLICT", "Use the existing rule identifier to publish its next version.", http_status=409)
-            capture = RetrievedDocument.objects.filter(source=candidate.source).first() if candidate.source else None
+            capture = RetrievedDocument.objects.filter(source=candidate.source, content_hash=candidate.source.content_hash).first() if candidate.source else None
             excerpt = candidate.evidence.excerpt if candidate.evidence else ""
             normalized = lambda text: re.sub(r"\s+", " ", text).strip()
             from domain.intelligence.official_sources import is_primary_official_source
@@ -80,25 +82,56 @@ class KnowledgeCandidateReviewView(APIView):
                 return error_response("VALIDATION_ERROR", "A verbatim passage in persisted source content is required.", http_status=400)
             if hashlib.sha256(capture.normalized_content.encode()).hexdigest() != capture.content_hash:
                 return error_response("CONFLICT", "Captured content no longer matches its recorded version.", http_status=409)
-            # The reviewer authorises this exact captured version and granular claim.
-            candidate.source.status = "ACTIVE"
-            candidate.source.save(update_fields=["status", "updated_at"])
-            candidate.evidence.verification_status = "VERIFIED"
-            candidate.evidence.save(update_fields=["verification_status", "updated_at"])
-            requirement = existing_requirement or RequirementDefinition.objects.create(requirement_id=requirement_id,
+            defaults = dict(
                 name=candidate.requirement_name, description=candidate.applicability_statement,
                 authority=candidate.authority[:100], jurisdiction=candidate.jurisdiction,
                 domain=str(request.data.get("domain", candidate.category))[:50], category=candidate.category,
                 status="PUBLISHED", evidence_refs=[candidate.evidence.evidence_id],
                 metadata={"reviewed_candidate_id": str(candidate.id), "reviewer_id": str(request.user.id),
                           "required_documents": candidate.document_requirements})
+            if existing_requirement:
+                requirement = existing_requirement
+            else:
+                requirement, created = RequirementDefinition.objects.get_or_create(requirement_id=requirement_id, defaults=defaults)
+                requirement = RequirementDefinition.objects.select_for_update().get(pk=requirement.pk)
+                if not created:
+                    prior = RuleVersion.objects.select_for_update().filter(rule_id=rule_id).order_by("-version").first()
+                    if not prior or prior.requirement_id != requirement.pk:
+                        return error_response("CONFLICT", "The requirement was published concurrently. Reload its rule identifier.", http_status=409)
+            # Catalogue identity remains stable. Effective procedural releases
+            # carry their own reviewed text and supporting passage.
+            latest_revision = requirement.revisions.order_by("-version").first()
+            baseline = requirement.revisions.filter(effective_from__lte=effective_from,
+                status__in=["PUBLISHED", "SUPERSEDED", "ARCHIVED"]).first()
+            baseline_available = baseline and baseline.status == "PUBLISHED" and (
+                baseline.effective_until is None or baseline.effective_until >= effective_from)
+            metadata = dict(baseline.metadata if baseline_available else ({} if latest_revision else requirement.metadata))
+            if candidate.document_requirements:
+                metadata["required_documents"] = candidate.document_requirements
+            metadata.update(procedural)
+            metadata.update(reviewed_candidate_id=str(candidate.id), reviewer_id=str(request.user.pk))
+            review_record = {"reviewer_id":str(request.user.pk), "reviewed_at":timezone.now().isoformat(),
+                "reason":reason, "source_hash":capture.content_hash, "source_url":candidate.source.canonical_url,
+                "examples":examples}
+            revision = RequirementRevision.objects.create(requirement=requirement,
+                status="PUBLISHED",
+                version=latest_revision.version + 1 if latest_revision else 1,
+                effective_from=effective_from, effective_until=effective_until,
+                name=candidate.requirement_name, description=candidate.applicability_statement,
+                metadata=metadata, evidence_refs=list(dict.fromkeys(
+                    (baseline.evidence_refs if baseline_available else []) + [candidate.evidence.evidence_id])),
+                review_record=review_record)
+            # The reviewer authorises this exact captured version and granular claim.
+            candidate.source.status = "ACTIVE"
+            candidate.source.save(update_fields=["status", "updated_at"])
+            candidate.evidence.verification_status = "VERIFIED"
+            candidate.evidence.save(update_fields=["verification_status", "updated_at"])
             rule = RuleVersion.objects.create(rule_id=rule_id, requirement=requirement, domain=requirement.domain,
+                requirement_revision=revision,
                 version=prior.version + 1 if prior else 1, supersedes=prior,
                 jurisdiction=requirement.jurisdiction, condition_ast=ast, evidence_refs=[candidate.evidence.evidence_id],
                 status="PUBLISHED", result="APPLICABLE", effective_from=effective_from, effective_until=effective_until,
-                review_record={"reviewer_id":str(request.user.pk), "reviewed_at":timezone.now().isoformat(),
-                    "reason":reason, "source_hash":capture.content_hash, "source_url":candidate.source.canonical_url,
-                    "examples":examples})
+                review_record=review_record)
             candidate.verification_status = "VERIFIED"
         else:
             candidate.verification_status = "CONFLICTING"
@@ -106,6 +139,7 @@ class KnowledgeCandidateReviewView(APIView):
         SecurityAuditEvent.objects.create(actor_user=request.user, actor_type="ADMIN", action="KNOWLEDGE_" + decision,
             resource_type="CandidateRequirement", resource_id=str(candidate.id), metadata={"reason": reason,
             "before": before, "after": candidate.verification_status, "source_hash": candidate.source.content_hash if candidate.source else None,
+            "requirement_revision_id": str(rule.requirement_revision_id) if rule else None,
             "rule_version_id": str(rule.id) if rule else None, "reviewed_at": timezone.now().isoformat()})
         if rule:
             assessment = candidate.discovery_run.assessment
@@ -118,7 +152,8 @@ class KnowledgeCandidateReviewView(APIView):
                     assessment.decision_run = run
                     assessment.save(update_fields=["decision_run", "updated_at"])
         return Response(envelope({"candidate_id": str(candidate.id), "status": candidate.verification_status,
-                                  "rule_version_id": str(rule.id) if rule else None}))
+                                  "requirement_revision_id": str(rule.requirement_revision_id) if rule else None,
+            "rule_version_id": str(rule.id) if rule else None}))
 
 
 class SourceChangeReviewView(APIView):

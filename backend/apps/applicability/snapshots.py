@@ -10,7 +10,7 @@ from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.forms.models import model_to_dict
 
-EVALUATOR_VERSION = "engine2-2026-10-18.1"
+EVALUATOR_VERSION = "engine2-2026-10-18.2"
 
 
 def record(model):
@@ -31,11 +31,12 @@ def evidence_record(evidence, captures):
     return result
 
 
-def capture_manifest(run, requirements, rules, evidence, *, mode="PRODUCTION"):
+def capture_manifest(run, requirements, rules, evidence, *, mode="PRODUCTION", catalogue_requirements=None,
+                     requirement_revisions=(), selected_revisions=None):
     evidence = list(evidence)
     captures = captured_sources(evidence)
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "mode": mode,
         "evaluator_version": EVALUATOR_VERSION,
         "release_version": settings.COMPLYWISE_VERSION,
@@ -43,6 +44,9 @@ def capture_manifest(run, requirements, rules, evidence, *, mode="PRODUCTION"):
         "profile_version_id": str(run.profile_version_id),
         "profile": deepcopy(run.profile_version.variables),
         "requirements": {r.requirement_id: record(r) for r in requirements},
+        "catalogue_requirements": {r.requirement_id: record(r) for r in (catalogue_requirements if catalogue_requirements is not None else requirements)},
+        "requirement_revisions": {str(r.pk): record(r) for r in requirement_revisions},
+        "selected_requirement_revisions": selected_revisions or {},
         "rules": {str(r.id): record(r) for r in rules},
         "evidence": {e.evidence_id: evidence_record(e, captures) for e in evidence},
     }
@@ -54,19 +58,23 @@ def capture_manifest(run, requirements, rules, evidence, *, mode="PRODUCTION"):
 
 def catalogue_hash(manifest):
     data = {key: manifest[key] for key in ("requirements", "rules", "evidence")}
+    data["requirements"] = manifest.get("catalogue_requirements", data["requirements"])
+    data["requirement_revisions"] = manifest.get("requirement_revisions", {})
     return hashlib.sha256(rfc8785.dumps(data)).hexdigest()
 
 
 def current_catalogue_hash():
-    from apps.knowledge.models import RequirementDefinition, RuleVersion
+    from apps.knowledge.models import RequirementDefinition, RequirementRevision, RuleVersion
     from apps.evidence.models import Evidence
     requirements = list(RequirementDefinition.objects.filter(status="PUBLISHED"))
     rules = list(RuleVersion.objects.filter(status="PUBLISHED", requirement__status="PUBLISHED"))
-    refs = {ref for obj in requirements + rules for ref in obj.evidence_refs or [] if isinstance(ref, str)}
+    revisions = list(RequirementRevision.objects.filter(requirement__status="PUBLISHED"))
+    refs = {ref for obj in requirements + rules + revisions for ref in obj.evidence_refs or [] if isinstance(ref, str)}
     evidence = list(Evidence.objects.filter(evidence_id__in=refs).select_related("source"))
     captures = captured_sources(evidence)
     return catalogue_hash({"requirements":{r.requirement_id:record(r) for r in requirements},
         "rules":{str(r.id):record(r) for r in rules},
+        "requirement_revisions":{str(r.pk):record(r) for r in revisions},
         "evidence":{e.evidence_id:evidence_record(e, captures) for e in evidence}})
 
 

@@ -52,6 +52,14 @@ def test_invalid_business_page_is_rejected(auth_client):
     assert auth_client.get("/api/v1/user/profile?business_page=bad").status_code == 400
 
 
+def test_business_search_reaches_older_rows_with_tenant_isolation(auth_client, older_business, make_business, other_user):
+    hidden = make_business(other_user, name="Synthetic older business")
+    data = auth_client.get("/api/v1/user/profile?search=Synthetic%20older").data["data"]
+    assert data["matching_businesses"] == 1 and data["next_business_page"] is None
+    assert str(older_business.pk) in {row["id"] for row in data["businesses"]}
+    assert str(hidden.pk) not in {row["id"] for row in data["businesses"]}
+
+
 def test_demo_explanation_and_coverage_are_explicit():
     from types import SimpleNamespace
     from apps.requirements.presentation import requirement_reason_summary

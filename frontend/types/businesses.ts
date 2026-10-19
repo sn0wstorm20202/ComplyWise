@@ -130,6 +130,7 @@ export interface BusinessSummary {
 
 export interface UserProfileHome {
   next_business_page?: number | null;
+  matching_businesses?: number;
   user: {
     id: string;
     email: string;

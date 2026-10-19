@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Bell,
@@ -27,6 +27,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { LanguageSelector } from "./LanguageSelector";
 import { api } from "@/lib/api";
+import type { BusinessSummary } from "@/types";
 
 interface TopBarProps {
   activePill: "dashboard" | "compliance" | "reports" | null;
@@ -53,6 +54,51 @@ export function TopBar({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [businessSearch, setBusinessSearch] = useState("");
+  const [businessChoices, setBusinessChoices] = useState<BusinessSummary[]>([]);
+  const [businessNextPage, setBusinessNextPage] = useState<number | null>(null);
+  const [businessMatches, setBusinessMatches] = useState(0);
+  const [businessOptionsLoading, setBusinessOptionsLoading] = useState(false);
+  const [businessOptionsError, setBusinessOptionsError] = useState<string | null>(null);
+  const businessListVersion = useRef(0);
+  useEffect(() => {
+    const version = ++businessListVersion.current;
+    if (!profileDropdownOpen) return;
+    let active = true;
+    setBusinessChoices(userBusinesses);
+    setBusinessOptionsLoading(true);
+    setBusinessOptionsError(null);
+    const timer = setTimeout(() => {
+      api.businesses.getProfileHome(activeBusinessId, 1, businessSearch)
+        .then(home => {
+          if (!active || businessListVersion.current !== version) return;
+          setBusinessChoices(home.businesses);
+          setBusinessNextPage(home.next_business_page || null);
+          setBusinessMatches(home.matching_businesses ?? home.total_businesses);
+        })
+        .catch(() => {
+          if (active && businessListVersion.current === version) setBusinessOptionsError("We couldn't load your businesses. Try another search.");
+        })
+        .finally(() => { if (active && businessListVersion.current === version) setBusinessOptionsLoading(false); });
+    }, 250);
+    return () => { active = false; clearTimeout(timer); };
+  }, [profileDropdownOpen, businessSearch, activeBusinessId, userBusinesses]);
+
+  async function loadMoreBusinesses() {
+    if (businessOptionsLoading || !businessNextPage) return;
+    const version = businessListVersion.current;
+    setBusinessOptionsLoading(true); setBusinessOptionsError(null);
+    try {
+      const home = await api.businesses.getProfileHome(activeBusinessId, businessNextPage, businessSearch);
+      if (businessListVersion.current !== version) return;
+      setBusinessChoices(previous => [...new Map([...previous, ...home.businesses].map(business => [business.id, business])).values()]);
+      setBusinessNextPage(home.next_business_page || null);
+    } catch {
+      if (businessListVersion.current === version) setBusinessOptionsError("We couldn't load more businesses. Please retry.");
+    } finally {
+      if (businessListVersion.current === version) setBusinessOptionsLoading(false);
+    }
+  }
   useEffect(() => {
     if (!profileDropdownOpen) return;
     function close(event: KeyboardEvent) { if (event.key === "Escape") setProfileDropdownOpen(false); }
@@ -238,11 +284,14 @@ export function TopBar({
                   <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--ui-muted)] flex items-center justify-between">
                     <span>{t("navigation.switchEnterprise")}</span>
                     <span className="font-mono text-[9px] text-[var(--ui-muted)] font-normal">
-                      {userBusinesses.length} registered
+                      {businessMatches} {businessSearch ? "matches" : "registered"}
                     </span>
                   </div>
                   <div className="max-h-56 overflow-y-auto space-y-0.5">
-                    {userBusinesses.map((b) => {
+                    <label className="block px-2 pb-2">Find a business<input className="ui-input mt-1 w-full" value={businessSearch} onChange={event => setBusinessSearch(event.target.value)} /></label>
+                    {businessOptionsLoading && <p role="status" className="px-3 py-2">Finding businesses…</p>}
+                    {businessOptionsError && <p role="alert" className="px-3 py-2">{businessOptionsError}</p>}
+                    {businessChoices.map((b) => {
                       const isActive = profile.id === b.id || profile.businessName === (b as any).name || profile.businessName === (b as any).businessName;
                       const displayName = (b as any).name || (b as any).businessName;
                       return (
@@ -272,6 +321,7 @@ export function TopBar({
                         </button>
                       );
                     })}
+                    {businessNextPage && <button className="ui-button w-full mt-2" disabled={businessOptionsLoading} onClick={() => void loadMoreBusinesses()}>Load more businesses</button>}
                   </div>
                 </div>
 

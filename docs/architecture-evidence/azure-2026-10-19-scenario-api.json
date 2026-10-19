@@ -1,0 +1,68 @@
+[
+  {
+    "scenario": "Meridian Pharma Formulations Pvt. Ltd.",
+    "business_id": "7f27ea65-f87d-4c48-9764-ae9edb14c506",
+    "assessment_id": "24b0e695-d297-4671-9183-987e42745bc4",
+    "total_requirements": 18,
+    "action_required": 14,
+    "demo_label": true,
+    "curated_origin": true,
+    "cir_signature_valid": true,
+    "seconds_for_compliance_and_dashboard": 19.17
+  },
+  {
+    "scenario": "VoltGrid Mobility Services Pvt. Ltd.",
+    "business_id": "8a11ea65-f87d-4c48-9764-ae9edb14c507",
+    "assessment_id": "1a048026-7227-4dea-8f14-9e13edccd8a6",
+    "total_requirements": 14,
+    "action_required": 11,
+    "demo_label": true,
+    "curated_origin": true,
+    "cir_signature_valid": true,
+    "seconds_for_compliance_and_dashboard": 19.01
+  },
+  {
+    "scenario": "ApexBuild Infrastructure Pvt. Ltd.",
+    "business_id": "9b22ea65-f87d-4c48-9764-ae9edb14c508",
+    "assessment_id": "bf1e2991-2287-4f6b-a895-fd95293f6998",
+    "total_requirements": 14,
+    "action_required": 12,
+    "demo_label": true,
+    "curated_origin": true,
+    "cir_signature_valid": true,
+    "seconds_for_compliance_and_dashboard": 19.25
+  },
+  {
+    "scenario": "SilkRoute Exports Pvt. Ltd.",
+    "business_id": "ac33ea65-f87d-4c48-9764-ae9edb14c509",
+    "assessment_id": "b434d483-92a1-4d14-82af-08387881cb63",
+    "total_requirements": 14,
+    "action_required": 10,
+    "demo_label": true,
+    "curated_origin": true,
+    "cir_signature_valid": true,
+    "seconds_for_compliance_and_dashboard": 19.29
+  },
+  {
+    "scenario": "CloudAxis Data Centres India Pvt. Ltd.",
+    "business_id": "bd44ea65-f87d-4c48-9764-ae9edb14c510",
+    "assessment_id": "b1e67d12-a911-400b-a655-406a19d473ed",
+    "total_requirements": 15,
+    "action_required": 13,
+    "demo_label": true,
+    "curated_origin": true,
+    "cir_signature_valid": true,
+    "seconds_for_compliance_and_dashboard": 18.5
+  },
+  {
+    "scenario": "Sahaya Microfinance Services Ltd.",
+    "business_id": "ce55ea65-f87d-4c48-9764-ae9edb14c511",
+    "assessment_id": "e8c36901-c597-4901-8f28-7f4a511be87b",
+    "total_requirements": 14,
+    "action_required": 11,
+    "demo_label": true,
+    "curated_origin": true,
+    "cir_signature_valid": true,
+    "seconds_for_compliance_and_dashboard": 19.25
+  }
+]

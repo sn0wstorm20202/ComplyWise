@@ -1,0 +1,51 @@
+[
+  {
+    "name": "complywise-backend",
+    "url": "https://complywise-backend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io",
+    "provisioning": "Succeeded",
+    "image": "complywiseacr.azurecr.io/complywise-backend:architecture-38af647f2ddb7ced0ad2ac21f09024574252e8a3",
+    "resources": {
+      "cpu": 1.0,
+      "ephemeralStorage": "4Gi",
+      "memory": "2.0Gi"
+    },
+    "container_count": 1,
+    "flags": {
+      "COMPLYWISE_DEMO_MODE": "true",
+      "COMPLYWISE_VERSION": "38af647f2ddb7ced0ad2ac21f09024574252e8a3",
+      "ENABLE_ASSESSMENT_JOBS": "false"
+    },
+    "digest": "sha256:bb61e76eb900271abb8ffac347b992592d9c21da9d910033260fb10283d250df"
+  },
+  {
+    "name": "complywise-frontend",
+    "url": "https://complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io",
+    "provisioning": "Succeeded",
+    "image": "complywiseacr.azurecr.io/complywise-frontend:architecture-38af647f2ddb7ced0ad2ac21f09024574252e8a3",
+    "resources": {
+      "cpu": 0.5,
+      "ephemeralStorage": "2Gi",
+      "memory": "1Gi"
+    },
+    "container_count": 1,
+    "flags": {},
+    "digest": "sha256:765a9a59a96e0a4954ce8326d7dd339ef2e207039a592ed05149825fe86a3294"
+  },
+  {
+    "name": "compliancerag",
+    "url": "https://compliancerag.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io",
+    "provisioning": "Succeeded",
+    "image": "complywiseacr.azurecr.io/compliancerag:architecture-897c55a1ff2bd97d1e5e69ff05bbfef233e86c87",
+    "resources": {
+      "cpu": 0.5,
+      "ephemeralStorage": "2Gi",
+      "memory": "1.0Gi"
+    },
+    "container_count": 1,
+    "flags": {
+      "COMPLYWISE_DEMO_MODE": "false",
+      "COMPLYWISE_VERSION": "897c55a1ff2bd97d1e5e69ff05bbfef233e86c87"
+    },
+    "digest": "sha256:37cababe0fa285a6c2f4f8b4e316708a54c683d6f5a446ff16abd7418f2d794a"
+  }
+]

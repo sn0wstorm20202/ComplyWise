@@ -2,7 +2,7 @@
 
 ## Result
 
-The reconciled implementation now follows the chosen architecture for deterministic evaluation, captured decision inputs, signed historical CIRs, reviewed publication, durable assessment jobs and private retrieval. The work is implemented in isolated branches and verified locally. It has not been pushed, deployed or declared production-ready.
+The reconciled implementation follows the chosen architecture for deterministic evaluation, captured decision inputs, signed historical CIRs, reviewed publication, durable assessment jobs and authenticated retrieval. The verification sections below record the initial local work on 18 October. The subsequent judge-demo Azure rollout is recorded in [the 19 October release report](AZURE_ARCHITECTURE_DEMO_RELEASE_2026-10-19.md), including its enabled demo mode, preserved URLs and disabled worker feature on Azure Express. This does not establish production readiness.
 
 Use [the architecture plan](ARCHITECTURE_PLAN_2026-10-18.md) for the design and research decisions, and [the operations guide](ARCHITECTURE_OPERATIONS.md) for configuration and rollout.
 

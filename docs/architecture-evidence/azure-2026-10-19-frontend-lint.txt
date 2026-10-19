@@ -1,0 +1,19 @@
+
+E:\complience\_scratch\complywise-architecture\frontend\app\dashboard\page.tsx
+  6:10  warning  'NavView' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+E:\complience\_scratch\complywise-architecture\frontend\components\TopBar.tsx
+    8:3    warning  'Plus' is defined but never used. Allowed unused vars must match /^_/u                        @typescript-eslint/no-unused-vars
+   50:38   warning  'availableProfiles' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   50:73   warning  'switchProfile' is assigned a value but never used. Allowed unused vars must match /^_/u      @typescript-eslint/no-unused-vars
+  295:94   warning  Unexpected any. Specify a different type                                                      @typescript-eslint/no-explicit-any
+  295:138  warning  Unexpected any. Specify a different type                                                      @typescript-eslint/no-explicit-any
+  296:49   warning  Unexpected any. Specify a different type                                                      @typescript-eslint/no-explicit-any
+  296:68   warning  Unexpected any. Specify a different type                                                      @typescript-eslint/no-explicit-any
+
+E:\complience\_scratch\complywise-architecture\frontend\lib\api\businesses.ts
+   51:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  133:76  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 10 problems (0 errors, 10 warnings)
+

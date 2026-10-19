@@ -1,0 +1,8 @@
+bun test v1.3.4 (5eb2145b)
+
+tests\businessDirectory.test.ts:
+(pass) workspace bootstrap does not walk all 432 administrator businesses [16.00ms]
+
+ 1 pass
+ 0 fail
+Ran 1 test across 1 file. [121.00ms]

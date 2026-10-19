@@ -1,0 +1,50 @@
+[
+  {
+    "scenario": "Meridian",
+    "business_visible": true,
+    "action_required": 14,
+    "displayed_requirements": 14,
+    "demo_label": true,
+    "old_generic_explanation_absent": true
+  },
+  {
+    "scenario": "VoltGrid",
+    "business_visible": true,
+    "action_required": 11,
+    "displayed_requirements": 11,
+    "demo_label": true,
+    "old_generic_explanation_absent": true
+  },
+  {
+    "scenario": "ApexBuild",
+    "business_visible": true,
+    "action_required": 12,
+    "displayed_requirements": 12,
+    "demo_label": true,
+    "old_generic_explanation_absent": true
+  },
+  {
+    "scenario": "SilkRoute",
+    "business_visible": true,
+    "action_required": 10,
+    "displayed_requirements": 10,
+    "demo_label": true,
+    "old_generic_explanation_absent": true
+  },
+  {
+    "scenario": "CloudAxis",
+    "business_visible": true,
+    "action_required": 13,
+    "displayed_requirements": 13,
+    "demo_label": true,
+    "old_generic_explanation_absent": true
+  },
+  {
+    "scenario": "Sahaya",
+    "business_visible": true,
+    "action_required": 11,
+    "displayed_requirements": 11,
+    "demo_label": true,
+    "old_generic_explanation_absent": true
+  }
+]

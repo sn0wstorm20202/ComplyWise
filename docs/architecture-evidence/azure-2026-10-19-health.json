@@ -1,0 +1,36 @@
+{
+  "api": {
+    "status": 200,
+    "body": {
+      "data": {
+        "status": "ok",
+        "service": "complywise-api",
+        "version": "38af647f2ddb7ced0ad2ac21f09024574252e8a3",
+        "api_version": "v1"
+      },
+      "meta": {}
+    }
+  },
+  "ready": {
+    "status": 200,
+    "version": "38af647f2ddb7ced0ad2ac21f09024574252e8a3",
+    "database": {
+      "engine": "postgresql",
+      "is_target_engine": true,
+      "status": "ok"
+    }
+  },
+  "retrieval": {
+    "status": 200,
+    "body": {
+      "status": "HEALTHY",
+      "service": "ComplianceRag",
+      "index_version": "b8aa4ab89e37f534eac05f17782cd97c9a1fc2f0655296ecddfd4c8d3915c3cf",
+      "total_chunks_indexed": 55,
+      "total_requirements_indexed": 55
+    }
+  },
+  "frontend": {
+    "status": 200
+  }
+}

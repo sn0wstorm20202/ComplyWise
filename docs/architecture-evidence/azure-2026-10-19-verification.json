@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-19",
+  "timezone": "Asia/Calcutta",
+  "deployment": "VERIFIED_JUDGE_DEMO",
+  "core_commit": "38af647f2ddb7ced0ad2ac21f09024574252e8a3",
+  "retrieval_commit": "897c55a1ff2bd97d1e5e69ff05bbfef233e86c87",
+  "frontend_url": "https://complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io",
+  "demo_enabled": true,
+  "assessment_jobs_enabled": false,
+  "worker_deployed": false,
+  "hosting_limit": "Azure Container Apps Express does not support worker sidecars or jobs",
+  "backend_tests": {
+    "passed": 1039,
+    "skipped": 10
+  },
+  "focused_tests_passed": 57,
+  "directory_client_test_passed": true,
+  "typescript_passed": true,
+  "targeted_lint_errors": 0,
+  "targeted_lint_warnings": 10,
+  "live_browser_scenarios": 6,
+  "live_cir_signatures_verified": 6,
+  "saved_archive_preservation_checked": true,
+  "historical_assessment_dashboard_verified": true,
+  "business_search_and_switch_verified": true,
+  "temporary_build_credentials_removed": true,
+  "live_provider_submission_tested": false,
+  "background_worker_tested_on_azure": false,
+  "original_core_checkout_preserved": true
+}

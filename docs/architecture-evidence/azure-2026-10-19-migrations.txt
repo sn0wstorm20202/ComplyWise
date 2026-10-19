@@ -1,0 +1,9 @@
+Operations to perform:
+  Apply all migrations: accounts, admin, applicability, auth, authtoken, businesses, calendar, contenttypes, documents, evidence, ingestion, knowledge, onboarding, schemes, sessions, workflows
+Running migrations:
+  Applying applicability.0004_decisionrun_cir_snapshot_and_more... OK
+  Applying businesses.0005_assessmentjob... OK
+  Applying ingestion.0005_sourcechange... OK
+  Applying knowledge.0004_ruleversion_review_record... OK
+  Applying knowledge.0005_requirementrevision_ruleversion_requirement_revision_and_more... OK
+Live additive migrations completed. No seed or password reset executed.

@@ -1,0 +1,74 @@
+[
+  {
+    "business_id": "7f27ea65-f87d-4c48-9764-ae9edb14c506",
+    "business": "Meridian Pharma Formulations Pvt. Ltd.",
+    "assessment_id": "24b0e695-d297-4671-9183-987e42745bc4",
+    "original_run_id": "9c7f9027-7f37-4662-9637-e6594db0090b",
+    "run_id": "757f44d0-994e-4ec7-90ff-04f137d2a179",
+    "mode": "DEMO",
+    "release": "1f80ceaec62657760e2f3f9ff6bf1e7f2eb5c0b2",
+    "total": 18,
+    "applicable": 11,
+    "old_archive_unchanged": true
+  },
+  {
+    "business_id": "8a11ea65-f87d-4c48-9764-ae9edb14c507",
+    "business": "VoltGrid Mobility Services Pvt. Ltd.",
+    "assessment_id": "1a048026-7227-4dea-8f14-9e13edccd8a6",
+    "original_run_id": "87974ae5-2846-4293-a191-d35c5c3e1357",
+    "run_id": "8e52abc9-01f9-4e3b-b31f-4f112a7e6c75",
+    "mode": "DEMO",
+    "release": "1f80ceaec62657760e2f3f9ff6bf1e7f2eb5c0b2",
+    "total": 14,
+    "applicable": 9,
+    "old_archive_unchanged": true
+  },
+  {
+    "business_id": "9b22ea65-f87d-4c48-9764-ae9edb14c508",
+    "business": "ApexBuild Infrastructure Pvt. Ltd.",
+    "assessment_id": "bf1e2991-2287-4f6b-a895-fd95293f6998",
+    "original_run_id": "29c73644-d850-424b-a165-1cb3950c1c31",
+    "run_id": "2975dd5c-d1cb-4895-8469-1dd8afe0ae82",
+    "mode": "DEMO",
+    "release": "1f80ceaec62657760e2f3f9ff6bf1e7f2eb5c0b2",
+    "total": 14,
+    "applicable": 9,
+    "old_archive_unchanged": true
+  },
+  {
+    "business_id": "ac33ea65-f87d-4c48-9764-ae9edb14c509",
+    "business": "SilkRoute Exports Pvt. Ltd.",
+    "assessment_id": "b434d483-92a1-4d14-82af-08387881cb63",
+    "original_run_id": "b154b50d-2829-4e38-abc2-f1e7ccd6e9bb",
+    "run_id": "dcf6aaec-459f-4165-a857-1378ad85356a",
+    "mode": "DEMO",
+    "release": "1f80ceaec62657760e2f3f9ff6bf1e7f2eb5c0b2",
+    "total": 14,
+    "applicable": 8,
+    "old_archive_unchanged": true
+  },
+  {
+    "business_id": "bd44ea65-f87d-4c48-9764-ae9edb14c510",
+    "business": "CloudAxis Data Centres India Pvt. Ltd.",
+    "assessment_id": "b1e67d12-a911-400b-a655-406a19d473ed",
+    "original_run_id": "7fe98940-2ed7-4c1d-82e2-4282d30055c0",
+    "run_id": "dcc866c7-ff2b-4a9b-ba6e-622e82f9a52b",
+    "mode": "DEMO",
+    "release": "1f80ceaec62657760e2f3f9ff6bf1e7f2eb5c0b2",
+    "total": 15,
+    "applicable": 11,
+    "old_archive_unchanged": true
+  },
+  {
+    "business_id": "ce55ea65-f87d-4c48-9764-ae9edb14c511",
+    "business": "Sahaya Microfinance Services Ltd.",
+    "assessment_id": "e8c36901-c597-4901-8f28-7f4a511be87b",
+    "original_run_id": "e0b15f57-af2d-426c-850e-417f606ee9de",
+    "run_id": "9cf83bce-e308-4fa1-bbb1-df90e9a0a60f",
+    "mode": "DEMO",
+    "release": "1f80ceaec62657760e2f3f9ff6bf1e7f2eb5c0b2",
+    "total": 14,
+    "applicable": 9,
+    "old_archive_unchanged": true
+  }
+]

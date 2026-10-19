@@ -1,6 +1,6 @@
 # Operating the reconciled architecture
 
-This is a release preparation guide. No live deployment was performed by this change.
+This is the architecture operations guide. The initial implementation was verified locally; the later judge-demo Azure rollout and its Azure Express limitations are recorded in [the 19 October release report](AZURE_ARCHITECTURE_DEMO_RELEASE_2026-10-19.md). That deployment enables demo mode and keeps background jobs disabled.
 
 ## Release units
 

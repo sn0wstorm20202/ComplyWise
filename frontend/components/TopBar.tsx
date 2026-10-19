@@ -295,12 +295,10 @@ export function TopBar({
                       const isActive = profile.id === b.id || profile.businessName === (b as any).name || profile.businessName === (b as any).businessName;
                       const displayName = (b as any).name || (b as any).businessName;
                       return (
-                        <button
+                        <Link
                           key={b.id}
-                          onClick={async () => {
-                            await switchProfile(b.id);
-                            setProfileDropdownOpen(false);
-                          }}
+                          href={`/dashboard?business_id=${encodeURIComponent(b.id)}`}
+                          onClick={() => setProfileDropdownOpen(false)}
                           className={`w-full text-left px-3 py-1.5 rounded-[8px] text-xs flex items-center justify-between gap-2 transition-colors cursor-pointer ${
                             isActive
                               ? "bg-[var(--ui-sage-faint)] text-[var(--ui-sage)] font-semibold"
@@ -318,7 +316,7 @@ export function TopBar({
                           {isActive && (
                             <span className="h-1.5 w-1.5 rounded-full bg-[var(--ui-sage)] ring-2 ring-[var(--ui-sage-soft)] shrink-0" />
                           )}
-                        </button>
+                        </Link>
                       );
                     })}
                     {businessNextPage && <button className="ui-button w-full mt-2" disabled={businessOptionsLoading} onClick={() => void loadMoreBusinesses()}>Load more businesses</button>}

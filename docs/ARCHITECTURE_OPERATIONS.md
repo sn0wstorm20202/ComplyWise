@@ -102,3 +102,7 @@ Run the backend suite, PostgreSQL concurrency tests, frontend build and browser 
 Provision and test browser binaries and Linux OCR dependencies in the actual deployment image. An installed Playwright Python package or passing Windows OCR tests do not establish those container capabilities.
 
 Database row security, a restricted runtime database role, production load targets, backup restoration, actual embedding quality and live provider behaviour are separate validation items. See the status report for what has actually been exercised locally.
+
+### Assessment processing mode discovery
+
+The frontend first reads `GET /api/v1/assessments/{id}/jobs/` (authenticated, assessment-scoped, no-store). When `background_processing_enabled` is false, it calls the existing synchronous stage directly without a jobs POST. Do not enable background jobs until a matching worker is running. Network failures never trigger a second execution path. Older clients retain the explicit `ASYNC_DISABLED` compatibility response. See [the verified release notes](ASYNC_MODE_FIX_2026-10-19.md).

@@ -1,0 +1,15 @@
+{
+  "version": "141c0de4c20bff8df48a363521d3c42b390fb88a",
+  "calls": [
+    {
+      "path": "/api/v1/assessments/24b0e695-d297-4671-9183-987e42745bc4/jobs/",
+      "method": "GET",
+      "status": 200
+    }
+  ],
+  "synchronousSelections": 1,
+  "jobsPosted": 0,
+  "expected503Requests": 0,
+  "providerOperationsStarted": 0,
+  "savedAssessmentsModified": 0
+}

@@ -191,7 +191,13 @@ class UserProfileHomeView(APIView):
         total_businesses = businesses.count()
         total_assessments = assessments.count()
 
-        businesses_list = list(businesses[:20])
+        try:
+            business_page = int(request.query_params.get("business_page", "1"))
+            if not 1 <= business_page <= 10000:
+                raise ValueError
+        except ValueError:
+            return error_response("VALIDATION_ERROR", "Choose a valid business page.", http_status=400)
+        businesses_list = list(businesses[(business_page - 1) * 20:business_page * 20])
         # Recent summaries are not an authorization or selection boundary.
         # Retain an older active/requested business without loading every tenant.
         requested_id = request.query_params.get("business_id")
@@ -244,6 +250,7 @@ class UserProfileHomeView(APIView):
             "businesses": BusinessSummarySerializer(businesses_list, many=True).data,
             "recent_assessments": AssessmentSummarySerializer(recent_assessments, many=True).data,
             "total_businesses": total_businesses,
+            "next_business_page": business_page + 1 if business_page * 20 < total_businesses else None,
             "total_assessments": total_assessments,
         }
         return Response(envelope(data), status=status.HTTP_200_OK)

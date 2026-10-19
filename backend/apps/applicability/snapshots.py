@@ -129,5 +129,7 @@ def coverage_for_run(run):
         "is_exhaustive": False,
         "evaluated_requirement_count": len(manifest.get("requirements", {})),
         "knowledge_fingerprint": manifest.get("content_hash"),
-        "message": "This assessment covers the recorded knowledge catalogue. It does not establish that every legal obligation has been identified.",
+        "message": ("Demo assessment: these are curated scenario results for demonstration, not an independently verified legal assessment."
+            if manifest.get("mode") == "DEMO" else
+            "This assessment covers the recorded knowledge catalogue. It does not establish that every legal obligation has been identified."),
     }

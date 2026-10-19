@@ -129,6 +129,7 @@ export interface BusinessSummary {
 }
 
 export interface UserProfileHome {
+  next_business_page?: number | null;
   user: {
     id: string;
     email: string;

@@ -216,6 +216,8 @@ def requirement_reason_summary(trace: dict[str, Any] | None, req_def: Requiremen
         )
 
     reason = trace.get("reason")
+    if reason == "DEMO_SCENARIO_EVALUATION":
+        return "Curated demo scenario. " + str(trace.get("note") or "This is a prepared demonstration result.")
     if reason in _REASON_SUMMARIES:
         return _REASON_SUMMARIES[reason]
 

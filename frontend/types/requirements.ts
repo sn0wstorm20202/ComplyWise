@@ -8,7 +8,7 @@ export interface ComplianceRequirementItem {
   user_action_required?: boolean;
   admin_disposition?: string;
   review_reason?: string;
-  result_origin?: "DETERMINISTIC_KB_RESULT" | "LLM_FALLBACK_RESULT" | "HUMAN_REVIEW_RESULT";
+  result_origin?: "DETERMINISTIC_KB_RESULT" | "LLM_FALLBACK_RESULT" | "HUMAN_REVIEW_RESULT" | "DEMO_SCENARIO_RESULT";
   source_reference?: string;
   requirement_id: string;
   name: string;

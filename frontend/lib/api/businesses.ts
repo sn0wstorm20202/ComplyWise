@@ -19,9 +19,23 @@ import {
 
 export const businessesApi = {
   /** Get current user's profile home (businesses & recent assessments) */
-  getProfileHome: (businessId?: string | null) => request<UserProfileHome>("/user/profile", {
-    params: businessId ? { business_id: businessId } : undefined,
-  }),
+  getProfileHome: async (businessId?: string | null): Promise<UserProfileHome> => {
+    const params = businessId ? { business_id: businessId } : {};
+    const home = await request<UserProfileHome>("/user/profile", { params });
+    const businesses = new Map(home.businesses.map(business => [business.id, business]));
+    let next = home.next_business_page;
+    while (next) {
+      const page = await request<UserProfileHome>("/user/profile", {
+        params: { ...params, business_page: String(next) },
+      });
+      for (const business of page.businesses) businesses.set(business.id, business);
+      if (page.next_business_page && page.next_business_page <= next) {
+        throw new Error("We couldn't finish loading your businesses. Please retry.");
+      }
+      next = page.next_business_page;
+    }
+    return { ...home, businesses: [...businesses.values()] };
+  },
 
   /** List businesses accessible to current user */
   list: () => request<Business[]>("/businesses"),

@@ -37,3 +37,28 @@ def test_explicit_inaccessible_selection_never_falls_back(auth_client, make_busi
 
 def test_malformed_selection_is_not_a_server_error(auth_client):
     assert auth_client.get("/api/v1/user/profile?business_id=invalid").status_code == 404
+
+
+def test_all_authorized_businesses_are_reachable_by_paging(auth_client, older_business):
+    first = auth_client.get("/api/v1/user/profile").data["data"]
+    assert first["next_business_page"] == 2
+    second = auth_client.get("/api/v1/user/profile?business_page=2").data["data"]
+    assert second["next_business_page"] is None
+    assert len({row["id"] for page in (first, second) for row in page["businesses"]}) == 22
+
+
+def test_invalid_business_page_is_rejected(auth_client):
+    assert auth_client.get("/api/v1/user/profile?business_page=0").status_code == 400
+    assert auth_client.get("/api/v1/user/profile?business_page=bad").status_code == 400
+
+
+def test_demo_explanation_and_coverage_are_explicit():
+    from types import SimpleNamespace
+    from apps.requirements.presentation import requirement_reason_summary
+    from apps.applicability.snapshots import coverage_for_run
+    summary = requirement_reason_summary({"reason": "DEMO_SCENARIO_EVALUATION", "status": "APPLICABLE",
+        "note": "Prepared fixture explanation."}, None)
+    assert summary == "Curated demo scenario. Prepared fixture explanation."
+    assert "no published rule" not in summary.lower()
+    coverage = coverage_for_run(SimpleNamespace(evaluation_manifest={"mode": "DEMO"}))
+    assert coverage["status"] == "DEMO" and "curated" in coverage["message"]

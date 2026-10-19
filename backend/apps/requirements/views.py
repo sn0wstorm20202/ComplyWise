@@ -112,7 +112,7 @@ class BusinessComplianceListView(_BusinessScopedView):
                 items.append(
                     {
                         "requirement_id": r.requirement_id,
-                        "result_origin": "DETERMINISTIC_KB_RESULT",
+                        "result_origin": "DEMO_SCENARIO_RESULT" if display_trace.get("reason") == "DEMO_SCENARIO_EVALUATION" else "DETERMINISTIC_KB_RESULT",
                         "name": r.requirement_name,
                         "authority": auth,
                         "category": cat,
@@ -272,6 +272,7 @@ class BusinessRequirementDetailView(_BusinessScopedView):
         )
 
         detail_data = {
+            "result_origin": "DEMO_SCENARIO_RESULT" if trace.get("reason") == "DEMO_SCENARIO_EVALUATION" else "DETERMINISTIC_KB_RESULT",
             "requirement_id": req_def.requirement_id,
             "name": req_def.name,
             "authority": req_def.authority,

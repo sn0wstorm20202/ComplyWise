@@ -1,0 +1,31 @@
+{
+  "url": "https://complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io/dashboard?business_id=7f27ea65-f87d-4c48-9764-ae9edb14c506&assessment_id=24b0e695-d297-4671-9183-987e42745bc4",
+  "savedDemoDashboardVisible": true,
+  "savedActionCountVisible": true,
+  "preparedBusinessesInSwitcher": [
+    {
+      "name": "Meridian Pharma Formulations Pvt. Ltd.",
+      "visible": true
+    },
+    {
+      "name": "VoltGrid Mobility Services Pvt. Ltd.",
+      "visible": true
+    },
+    {
+      "name": "ApexBuild Infrastructure Pvt. Ltd.",
+      "visible": true
+    },
+    {
+      "name": "SilkRoute Exports Pvt. Ltd.",
+      "visible": true
+    },
+    {
+      "name": "CloudAxis Data Centres India Pvt. Ltd.",
+      "visible": true
+    },
+    {
+      "name": "Sahaya Microfinance Services Ltd.",
+      "visible": true
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "business": "Meridian Pharma Formulations Pvt. Ltd.",
+    "assessment_id": "24b0e695-d297-4671-9183-987e42745bc4",
+    "requirements": 18,
+    "demo_label": true,
+    "existing_demo_account_access": true
+  },
+  {
+    "business": "VoltGrid Mobility Services Pvt. Ltd.",
+    "assessment_id": "1a048026-7227-4dea-8f14-9e13edccd8a6",
+    "requirements": 14,
+    "demo_label": true,
+    "existing_demo_account_access": true
+  },
+  {
+    "business": "ApexBuild Infrastructure Pvt. Ltd.",
+    "assessment_id": "bf1e2991-2287-4f6b-a895-fd95293f6998",
+    "requirements": 14,
+    "demo_label": true,
+    "existing_demo_account_access": true
+  },
+  {
+    "business": "SilkRoute Exports Pvt. Ltd.",
+    "assessment_id": "b434d483-92a1-4d14-82af-08387881cb63",
+    "requirements": 14,
+    "demo_label": true,
+    "existing_demo_account_access": true
+  },
+  {
+    "business": "CloudAxis Data Centres India Pvt. Ltd.",
+    "assessment_id": "b1e67d12-a911-400b-a655-406a19d473ed",
+    "requirements": 15,
+    "demo_label": true,
+    "existing_demo_account_access": true
+  },
+  {
+    "business": "Sahaya Microfinance Services Ltd.",
+    "assessment_id": "e8c36901-c597-4901-8f28-7f4a511be87b",
+    "requirements": 14,
+    "demo_label": true,
+    "existing_demo_account_access": true
+  }
+]

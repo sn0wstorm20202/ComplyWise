@@ -1,0 +1,12 @@
+{
+  "version": "6ae587a1cc3b446d1a78da285762f0b9e37a49c9",
+  "demo_login_status": 200,
+  "existing_account": true,
+  "privileged": false,
+  "accessible_businesses": 10,
+  "six_prepared_fixtures_present": true,
+  "quick_login_redirect": "/dashboard?business_id=7f27ea65-f87d-4c48-9764-ae9edb14c506&assessment_id=24b0e695-d297-4671-9183-987e42745bc4",
+  "empty_workspace_notification_count": 0,
+  "empty_workspace_bell_count": 0,
+  "other_account_notifications_status": 404
+}

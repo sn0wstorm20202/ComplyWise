@@ -1,0 +1,13 @@
+{
+  "complywise-backend": {
+    "image": "complywiseacr.azurecr.io/complywise-backend:architecture-6ae587a1cc3b446d1a78da285762f0b9e37a49c9",
+    "state": "Succeeded",
+    "url": "complywise-backend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io"
+  },
+  "complywise-frontend": {
+    "image": "complywiseacr.azurecr.io/complywise-frontend:architecture-6ae587a1cc3b446d1a78da285762f0b9e37a49c9",
+    "state": "Succeeded",
+    "url": "complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io"
+  },
+  "readiness_status": 200
+}

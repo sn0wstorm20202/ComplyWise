@@ -10,6 +10,7 @@ from .google_auth import GoogleStartView, GoogleCallbackView, GoogleExchangeView
 app_name = "accounts"
 
 urlpatterns = [
+    path("demo-login", views.DemoLoginView.as_view(), name="demo-login"),
     path("google/start", GoogleStartView.as_view(), name="google-start"),
     path("google/callback", GoogleCallbackView.as_view(), name="google-callback"),
     path("google/exchange", GoogleExchangeView.as_view(), name="google-exchange"),

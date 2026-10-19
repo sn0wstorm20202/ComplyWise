@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -11,6 +11,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { startGoogleSignIn } from "@/lib/googleAuth";
 import DemoReviewerAutofill from "@/components/DemoReviewerAutofill";
 import { businessesApi } from "@/lib/api/businesses";
+import { authApi } from "@/lib/api/auth";
 import {
   User,
   UserPlus,
@@ -33,7 +34,13 @@ export function SignInContent() {
   const requestedRedirect = searchParams.get("redirect");
   const redirectTarget = requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//") ? requestedRedirect : "/dashboard";
 
-  const { login, register, adminLogin } = useAuth();
+  const { login, register, adminLogin, fastDemoLogin } = useAuth();
+  const [demoEnabled, setDemoEnabled] = useState(false);
+  useEffect(() => {
+    let active = true;
+    authApi.demoLoginAvailability().then(result => { if (active) setDemoEnabled(result.enabled); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   const queryMode = searchParams.get("mode");
   const initialMode: AuthMode =
@@ -148,6 +155,15 @@ export function SignInContent() {
           </div>
 
           {/* 3-Option Mode Switcher */}
+          {mode === "signin" && demoEnabled && <div className="space-y-2">
+            <button type="button" className="ui-button w-full justify-center" disabled={loading} onClick={async () => {
+              setLoading(true); setError(null);
+              try { await fastDemoLogin(); await resolveWorkspaceAndRedirect("/dashboard"); }
+              catch (err) { setError(err instanceof Error ? err.message : "Demo sign-in failed. Please retry."); }
+              finally { setLoading(false); }
+            }}>Fast Demo Login</button>
+            <p className="text-xs text-[var(--ui-secondary)]">Explore the existing demo account with prepared businesses and saved results.</p>
+          </div>}
           <div className="grid grid-cols-3 rounded-2xl bg-[var(--ui-inset)] p-1.5 border border-[var(--ui-border)] gap-1">
             <button
               type="button"

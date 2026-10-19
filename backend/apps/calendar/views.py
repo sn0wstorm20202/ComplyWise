@@ -35,6 +35,11 @@ from apps.calendar.models import (
 from domain.intelligence.calendar_derivation import derive_business_calendar
 
 
+def notification_records(business, user):
+    records = DeadlineNotificationDelivery.objects.filter(business=business)
+    return records if user.is_compliance_officer else records.filter(user=user)
+
+
 class BusinessCalendarListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -66,7 +71,7 @@ class BusinessCalendarNotificationsListView(APIView):
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
-        query = DeadlineNotificationDelivery.objects.filter(business=business)
+        query = notification_records(business, request.user)
 
         channel = request.query_params.get("channel")
         if channel:
@@ -135,7 +140,7 @@ class NotificationMarkReadView(APIView):
         except (ValueError, TypeError):
             return error_response("INVALID_ID", "Invalid notification UUID.", http_status=status.HTTP_400_BAD_REQUEST)
 
-        record = DeadlineNotificationDelivery.objects.filter(pk=notif_uuid, business=business).first()
+        record = notification_records(business, request.user).filter(pk=notif_uuid).first()
         if record is None:
             return error_response("NOT_FOUND", "Notification not found.", http_status=status.HTTP_404_NOT_FOUND)
 
@@ -165,8 +170,7 @@ class NotificationMarkAllReadView(APIView):
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
         now = timezone.now()
-        updated_count = DeadlineNotificationDelivery.objects.filter(
-            business=business,
+        updated_count = notification_records(business, request.user).filter(
             is_read=False,
         ).update(is_read=True, read_at=now)
 
@@ -190,9 +194,10 @@ class NotificationSummaryView(APIView):
         if business is None:
             return error_response("NOT_FOUND", "Business not found.", http_status=status.HTTP_404_NOT_FOUND)
 
-        qs = DeadlineNotificationDelivery.objects.filter(business=business)
+        qs = notification_records(business, request.user)
         total = qs.count()
         unread = qs.filter(is_read=False).count()
+        in_app_unread = qs.filter(is_read=False, channel="IN_APP", status="DELIVERED").count()
         urgent = qs.filter(priority__in=["HIGH", "CRITICAL"]).count()
         overdue = qs.filter(event_type="OVERDUE").count()
         upcoming = qs.filter(event_type="UPCOMING").count()
@@ -214,6 +219,7 @@ class NotificationSummaryView(APIView):
             envelope({
                 "total": total,
                 "unread_count": unread,
+                "in_app_unread_count": in_app_unread,
                 "urgent_count": urgent,
                 "overdue_count": overdue,
                 "upcoming_count": upcoming,

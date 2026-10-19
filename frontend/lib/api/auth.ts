@@ -8,6 +8,8 @@ import { request, setAuthToken } from "./client";
 import { AuthSession, User } from "@/types";
 
 export const authApi = {
+  demoLoginAvailability: () => request<{ enabled: boolean }>("/auth/demo-login", { cache: "no-store" }),
+  fastDemoLogin: () => request<AuthSession>("/auth/demo-login", { method: "POST" }),
   demoReviewerCredentials: () => request<{ email: string; password: string }>("/auth/demo-reviewer-credentials", {
     cache: "no-store",
   }),

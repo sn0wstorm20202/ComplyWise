@@ -123,3 +123,27 @@ class DemoReviewerCredentialsView(APIView):
         response["Pragma"] = "no-cache"
         return response
 
+
+class DemoLoginView(APIView):
+    """Opt-in quick login to the existing public demo user. Never seed or register."""
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        response = Response({"enabled": bool(settings.DEMO_USER_LOGIN_ENABLED and settings.DEMO_USER_EMAIL and settings.DEMO_USER_PASSWORD)})
+        response["Cache-Control"] = "no-store, private"
+        return response
+
+    def post(self, request):
+        from django.contrib.auth import authenticate
+        user = None
+        if settings.DEMO_USER_LOGIN_ENABLED and settings.DEMO_USER_EMAIL and settings.DEMO_USER_PASSWORD:
+            user = authenticate(request=request, email=settings.DEMO_USER_EMAIL, password=settings.DEMO_USER_PASSWORD)
+        if not user or user.is_compliance_officer or user.role != AdminRole.USER:
+            response = error_response("DEMO_UNAVAILABLE", "Demo sign-in is currently unavailable.", 403)
+        else:
+            token, _ = Token.objects.get_or_create(user=user)
+            response = Response(_auth_payload(user, token))
+        response["Cache-Control"] = "no-store, private"
+        return response
+

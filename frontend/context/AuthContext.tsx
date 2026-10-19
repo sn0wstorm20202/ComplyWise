@@ -17,6 +17,7 @@ interface AuthContextValue {
   loading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<AuthSession>;
+  fastDemoLogin: () => Promise<AuthSession>;
   adminLogin: (email: string, password: string) => Promise<AuthSession>;
   register: (
     email: string,
@@ -93,6 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const session = await authApi.login(email, password);
+      clearTenantLocalStorage();
       setUser(session.user);
       setTokenState(session.token);
       setAuthToken(session.token);
@@ -102,6 +104,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const fastDemoLogin = async (): Promise<AuthSession> => {
+    setLoading(true);
+    try {
+      const session = await authApi.fastDemoLogin();
+      clearTenantLocalStorage();
+      setAuthToken(session.token);
+      setUser(session.user);
+      setTokenState(session.token);
+      return session;
+    } finally { setLoading(false); }
+  };
+
   const adminLogin = async (
     email: string,
     password: string
@@ -109,6 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const session = await authApi.adminLogin(email, password);
+      clearTenantLocalStorage();
       setUser(session.user);
       setTokenState(session.token);
       setAuthToken(session.token);
@@ -130,6 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const session = await authApi.register(email, password, fullName, phoneNumber);
+      clearTenantLocalStorage();
       setUser(session.user);
       setTokenState(session.token);
       setAuthToken(session.token);
@@ -141,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const completeGoogleSignIn = useCallback(async (ticket: string, verifier: string) => {
     const session = await authApi.googleExchange(ticket, verifier);
+    clearTenantLocalStorage();
     setAuthToken(session.token);
     setUser(session.user);
     setTokenState(session.token);
@@ -171,6 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     isAuthenticated: Boolean(user && token),
     login,
+    fastDemoLogin,
     adminLogin,
     register,
     completeGoogleSignIn,

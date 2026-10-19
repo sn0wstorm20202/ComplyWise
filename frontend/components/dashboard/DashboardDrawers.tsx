@@ -719,13 +719,17 @@ export function NotificationsPopover({
     }>
   >([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [alertsError, setAlertsError] = useState<string | null>(null);
+  const [alertsLoading, setAlertsLoading] = useState(false);
 
   useEffect(() => {
+    setAlerts([]); setUnreadCount(0); setAlertsError(null); setAlertsLoading(false);
     if (!isOpen || !activeBusinessId) return;
+    setAlertsLoading(true);
 
     let mounted = true;
     api.calendar
-      .listNotifications(activeBusinessId, { limit: 5 })
+      .listNotifications(activeBusinessId, { limit: 5, channel: "IN_APP", status: "DELIVERED" })
       .then((res: DeadlineNotificationsResponse) => {
         if (!mounted) return;
         if (res.notifications && res.notifications.length > 0) {
@@ -749,23 +753,13 @@ export function NotificationsPopover({
           setAlerts(mapped);
           setUnreadCount(mapped.filter((m: { isRead: boolean }) => !m.isRead).length);
         } else {
-          setAlerts([
-            {
-              id: "demo-fallback-1",
-              title: "Statutory Deadline Reminder Active",
-              desc: "Periodic boiler inspection and BIS lab renewals monitored automatically.",
-              time: "Today",
-              urgent: false,
-              channel: "GOOGLE_CALENDAR",
-              isRead: true,
-            },
-          ]);
+          setAlerts([]);
           setUnreadCount(0);
         }
       })
       .catch(() => {
-        // Fallback gracefully
-      });
+        if (mounted) setAlertsError("We couldn’t load your alerts. Please reopen to retry.");
+      }).finally(() => { if (mounted) setAlertsLoading(false); });
 
     return () => {
       mounted = false;
@@ -809,7 +803,7 @@ export function NotificationsPopover({
 
       <div className="space-y-2 max-h-72 overflow-y-auto">
         {alerts.length === 0 ? (
-          <div className="py-6 text-center text-xs text-[var(--ui-secondary)]">No recent compliance alerts.</div>
+          <div className="py-6 text-center text-xs text-[var(--ui-secondary)]">{alertsLoading ? "Loading alerts…" : alertsError || "No recent compliance alerts."}</div>
         ) : (
           alerts.map((a) => (
             <div

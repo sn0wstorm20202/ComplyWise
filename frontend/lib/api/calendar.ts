@@ -52,6 +52,7 @@ export interface DeadlineNotificationsResponse {
 export interface NotificationSummaryResponse {
   total: number;
   unread_count: number;
+  in_app_unread_count?: number;
   urgent_count: number;
   overdue_count: number;
   upcoming_count: number;

@@ -108,6 +108,7 @@ export function TopBar({
 
   // Synchronize unread badge with real calendar notification summary
   useEffect(() => {
+    setUnreadCount(0);
     if (!activeBusinessId) return;
 
     let isMounted = true;
@@ -115,7 +116,7 @@ export function TopBar({
       .getSummary(activeBusinessId)
       .then((res) => {
         if (isMounted && res) {
-          setUnreadCount(res.unread_count || 0);
+          setUnreadCount(res.in_app_unread_count ?? res.unread_count ?? 0);
         }
       })
       .catch(() => {
@@ -125,7 +126,7 @@ export function TopBar({
     return () => {
       isMounted = false;
     };
-  }, [activeBusinessId]);
+  }, [activeBusinessId, user?.id]);
 
   async function handleLogout() {
     setProfileDropdownOpen(false);

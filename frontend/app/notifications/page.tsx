@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import ErrorState from "@/components/ErrorState";
@@ -50,77 +50,8 @@ interface UnifiedNotification {
   failureReason?: string;
 }
 
-const DEMO_FALLBACK_NOTIFICATIONS: UnifiedNotification[] = [
-  {
-    id: "demo-1",
-    source: "DEMO",
-    type: "DEADLINE",
-    title: "Annual Boiler Inspection Filing Due in 7 Days",
-    message: "Indian Boilers Act certificate calibration and hydrostatic pressure test logs must be uploaded.",
-    timestamp: "T-7 Advance Reminder",
-    urgency: "HIGH",
-    channel: "GOOGLE_CALENDAR",
-    status: "DELIVERED",
-    eventType: "UPCOMING",
-    deadlineDate: "2026-09-20",
-    offsetDays: 7,
-    actionLabel: "View Calendar",
-    actionUrl: "/calendar",
-    isRead: false,
-  },
-  {
-    id: "demo-2",
-    source: "DEMO",
-    type: "DEADLINE",
-    title: "KSPCB Consent to Operate (CTO) Quadrennial Renewal Due Tomorrow",
-    message: "Karnataka State Pollution Control Board online portal mandatory annual consent renewal.",
-    timestamp: "T-1 Urgent Alert",
-    urgency: "CRITICAL",
-    channel: "EMAIL",
-    status: "DELIVERED",
-    eventType: "UPCOMING",
-    deadlineDate: "2026-09-14",
-    offsetDays: 1,
-    actionLabel: "Open Documents",
-    actionUrl: "/documents",
-    isRead: false,
-  },
-  {
-    id: "demo-3",
-    source: "DEMO",
-    type: "REGULATORY_UPDATE",
-    title: "New QCO Mandate Published: Smart Meters (IS 16444)",
-    message: "Ministry of Power gazette notification amends transition timeline for micro-enterprises by 90 days.",
-    timestamp: "1 day ago",
-    urgency: "MEDIUM",
-    channel: "IN_APP",
-    status: "DELIVERED",
-    eventType: "UPCOMING",
-    actionLabel: "Read Gazette Update",
-    actionUrl: "/regulatory-updates",
-    isRead: true,
-  },
-  {
-    id: "demo-4",
-    source: "DEMO",
-    type: "DOCUMENT_ISSUE",
-    title: "Overdue Statutory Compliance: Factory Electrical Safety Audit",
-    message: "Filing deadline was 7 days ago. Penalty escalation risk under Karnataka Factories Rules §12.",
-    timestamp: "Overdue (+7d)",
-    urgency: "CRITICAL",
-    channel: "IN_APP",
-    status: "DELIVERED",
-    eventType: "OVERDUE",
-    deadlineDate: "2026-09-06",
-    offsetDays: -7,
-    actionLabel: "Resolve Overdue",
-    actionUrl: "/compliance",
-    isRead: false,
-  },
-];
-
 function NotificationsContent() {
-  const { profile, activeBusinessId, isDemoMode } = useBusinessContext();
+  const { profile, activeBusinessId } = useBusinessContext();
   const { t } = useLanguage();
 
   const [filter, setFilter] = useState<string>("ALL");
@@ -133,10 +64,14 @@ function NotificationsContent() {
   const [isUpdatingPrefs, setIsUpdatingPrefs] = useState(false);
   const [isLiveBackend, setIsLiveBackend] = useState(false);
 
+  const loadVersion = useRef(0);
   // Fetch live notifications and summary
   const loadNotificationsData = useCallback(async () => {
+    const version = ++loadVersion.current;
+    setNotifications([]); setSummary(null); setPreferences(null); setError(null);
     if (!activeBusinessId) {
-      setNotifications(isDemoMode ? DEMO_FALLBACK_NOTIFICATIONS : []);
+      setIsLoading(false);
+      setNotifications([]);
       setIsLiveBackend(false);
       return;
     }
@@ -150,6 +85,7 @@ function NotificationsContent() {
         api.calendar.getPreferences(activeBusinessId),
       ]);
 
+      if (version !== loadVersion.current) return;
       if (notifRes.status === "fulfilled" && notifRes.value.notifications) {
         const liveItems: UnifiedNotification[] = notifRes.value.notifications.map(
           (r: DeadlineNotificationRecord) => {
@@ -193,8 +129,8 @@ function NotificationsContent() {
         }
         setIsLiveBackend(true);
       } else {
-        setNotifications(isDemoMode ? DEMO_FALLBACK_NOTIFICATIONS : []);
-        if (!isDemoMode) setError("We couldn't load your alerts. Please try again.");
+        setNotifications([]);
+        setError("We couldn't load your alerts. Please try again.");
         setIsLiveBackend(false);
       }
 
@@ -206,16 +142,18 @@ function NotificationsContent() {
         setPreferences(prefRes.value);
       }
     } catch {
-      setNotifications(isDemoMode ? DEMO_FALLBACK_NOTIFICATIONS : []);
-      if (!isDemoMode) setError("We couldn't load your alerts. Please try again.");
+      if (version !== loadVersion.current) return;
+      setNotifications([]);
+      setError("We couldn't load your alerts. Please try again.");
       setIsLiveBackend(false);
     } finally {
-      setIsLoading(false);
+      if (version === loadVersion.current) setIsLoading(false);
     }
-  }, [activeBusinessId, isDemoMode]);
+  }, [activeBusinessId]);
 
   useEffect(() => {
     loadNotificationsData();
+    return () => { ++loadVersion.current; };
   }, [loadNotificationsData]);
 
   // Mark an individual notification as read

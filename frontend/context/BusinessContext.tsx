@@ -12,7 +12,6 @@ import React, {
 import {
   BusinessProfile,
   DEMO_PROFILES,
-  DEFAULT_BUSINESS_PROFILE,
   DashboardData,
   getDashboardData,
 } from "@/data/demo";
@@ -311,12 +310,14 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   // Listen for logout event to completely reset tenant state
   useEffect(() => {
     const handleLogout = () => {
+      ++requestVersion.current;
+      setIsLoading(false);
       setActiveBusinessId(null);
       setActiveAssessmentIdState(null);
       setUserBusinesses([]);
       setRecentAssessments([]);
       setLiveDashboardSummary(null);
-      setProfileState(DEFAULT_BUSINESS_PROFILE);
+      setProfileState(EMPTY_PROFILE);
       setIsDemoMode(false);
     };
 

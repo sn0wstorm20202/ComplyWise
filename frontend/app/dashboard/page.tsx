@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { NavView } from "@/components/Sidebar";
@@ -11,7 +11,9 @@ function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const businessIdFromUrl = searchParams?.get("business_id");
-  const { switchProfile, activeBusinessId } = useBusinessContext();
+  const assessmentIdFromUrl = searchParams?.get("assessment_id");
+  const { switchProfile, activeBusinessId, activeAssessmentId, setActiveAssessmentId, isLoading } = useBusinessContext();
+  const attemptedSelection = useRef<string | null>(null);
   const [_newQueryOpen, setNewQueryOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -19,6 +21,17 @@ function DashboardContent() {
       switchProfile(businessIdFromUrl);
     }
   }, [businessIdFromUrl, activeBusinessId, switchProfile]);
+
+  useEffect(() => {
+    if (isLoading || !activeBusinessId || !assessmentIdFromUrl ||
+        (businessIdFromUrl && businessIdFromUrl !== activeBusinessId) ||
+        assessmentIdFromUrl === activeAssessmentId) return;
+    const selection = `${activeBusinessId}:${assessmentIdFromUrl}`;
+    // A rejected historical selection is displayed once, without retry loops.
+    if (attemptedSelection.current === selection) return;
+    attemptedSelection.current = selection;
+    setActiveAssessmentId(assessmentIdFromUrl);
+  }, [businessIdFromUrl, assessmentIdFromUrl, activeBusinessId, activeAssessmentId, isLoading, setActiveAssessmentId]);
 
   function handleNavigate(target: string) {
     const currentBizId =

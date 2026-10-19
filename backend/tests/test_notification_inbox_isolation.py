@@ -6,6 +6,25 @@ from apps.calendar.models import DeadlineNotificationDelivery
 pytestmark = pytest.mark.django_db
 
 
+def test_registered_account_starts_without_demo_businesses_or_alerts(api_client, make_user, make_business):
+    existing = make_business(make_user(email="existing.fixture@example.test"))
+    response = api_client.post("/api/v1/auth/register", {
+        "email": "fresh.registration@example.test", "password": "Synthetic-registration-passphrase-2026",
+        "full_name": "Synthetic registration test"})
+    assert response.status_code == 201
+    data = response.json()["data"]
+    assert not data["user"]["is_compliance_officer"]
+    api_client.credentials(HTTP_AUTHORIZATION=f"Token {data['token']}")
+    assert api_client.get("/api/v1/user/profile").json()["data"]["businesses"] == []
+    response = api_client.post("/api/v1/businesses", {"name": "Fresh synthetic workspace"})
+    assert response.status_code == 201
+    business_id = response.json()["data"]["id"]
+    inbox = f"/api/v1/businesses/{business_id}/calendar/notifications"
+    assert api_client.get(inbox).json()["data"]["notifications"] == []
+    assert api_client.get(inbox + "/summary").json()["data"]["unread_count"] == 0
+    assert api_client.get(f"/api/v1/businesses/{existing.id}/calendar/notifications").status_code == 404
+
+
 def test_new_account_has_no_alerts_and_cannot_read_existing_business(api_client, make_user, make_business):
     owner = make_user(email="old@example.test")
     member = make_user(email="new@example.test")

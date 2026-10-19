@@ -93,6 +93,7 @@ export interface User {
 export interface AuthSession {
   user: User;
   token: string;
+  redirect_url?: string;
 }
 
 // ---------------------------------------------------------------------------

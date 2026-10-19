@@ -158,7 +158,10 @@ export function SignInContent() {
           {mode === "signin" && demoEnabled && <div className="space-y-2">
             <button type="button" className="ui-button w-full justify-center" disabled={loading} onClick={async () => {
               setLoading(true); setError(null);
-              try { await fastDemoLogin(); await resolveWorkspaceAndRedirect("/dashboard"); }
+              try {
+                const session = await fastDemoLogin();
+                await resolveWorkspaceAndRedirect(session.redirect_url || "/dashboard");
+              }
               catch (err) { setError(err instanceof Error ? err.message : "Demo sign-in failed. Please retry."); }
               finally { setLoading(false); }
             }}>Fast Demo Login</button>

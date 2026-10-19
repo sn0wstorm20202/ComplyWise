@@ -143,7 +143,17 @@ class DemoLoginView(APIView):
             response = error_response("DEMO_UNAVAILABLE", "Demo sign-in is currently unavailable.", 403)
         else:
             token, _ = Token.objects.get_or_create(user=user)
-            response = Response(_auth_payload(user, token))
+            payload = _auth_payload(user, token)
+            from apps.businesses.models import Assessment, UserWorkspaceState
+            prepared = Assessment.accessible_to(user).filter(
+                status="COMPLETED", decision_run__evaluation_manifest__mode="DEMO",
+            ).exclude(decision_run__cir_snapshot={}).order_by("-updated_at")
+            workspace = UserWorkspaceState.objects.filter(user=user).first()
+            assessment = prepared.filter(pk=workspace.active_assessment_id).first() if workspace else None
+            assessment = assessment or prepared.first()
+            if assessment:
+                payload["redirect_url"] = f"/dashboard?business_id={assessment.business_id}&assessment_id={assessment.id}"
+            response = Response(payload)
         response["Cache-Control"] = "no-store, private"
         return response
 

@@ -157,6 +157,7 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
                     authority=req_def.authority if req_def else "",
                     state_code=str(state_val or ""),
                     authoritative_url=source_url,
+                    allow_live_network=False,
                 )
                 action_destination = act_dest.to_dict()
 

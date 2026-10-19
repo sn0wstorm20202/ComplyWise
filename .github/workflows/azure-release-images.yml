@@ -1,0 +1,36 @@
+name: Build Azure release images
+
+on:
+  push:
+    branches: [architecture/reconciled-core]
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Authenticate to the existing Azure registry
+        uses: docker/login-action@v3
+        with:
+          registry: complywiseacr.azurecr.io
+          username: 00000000-0000-0000-0000-000000000000
+          password: ${{ secrets.AZURE_RELEASE_ACR_TOKEN }}
+      - name: Build and push the exact source revision
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.component }}
+          file: ./${{ matrix.component }}/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: complywiseacr.azurecr.io/complywise-${{ matrix.component }}:architecture-${{ github.sha }}
+          build-args: |
+            BACKEND_INTERNAL_URL=https://complywise-backend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io
+            NEXT_PUBLIC_API_BASE_URL=https://complywise-backend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io/api/v1

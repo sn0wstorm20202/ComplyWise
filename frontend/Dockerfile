@@ -25,6 +25,9 @@ RUN npm run build
 FROM node:22-alpine AS runner
 WORKDIR /app
 
+ARG BACKEND_INTERNAL_URL="https://complywise-backend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io"
+ARG NEXT_PUBLIC_API_BASE_URL="https://complywise-backend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io/api/v1"
+
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \

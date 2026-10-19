@@ -12,6 +12,22 @@ interface AssessmentJob<T> {
 /** The same input resumes the persisted operation after a page reload or lost response. */
 export async function runAssessmentJob<T>(runId: string, stage: JobStage,
   legacy: () => Promise<T>, options?: { force_refresh?: boolean }): Promise<T> {
+  // Discover the deployment mode without submitting work or provoking a 503.
+  // Never switch execution paths on a timeout: a submitted job may still run.
+  let synchronous = false;
+  try {
+    const capability = await request<{ background_processing_enabled: boolean }>(
+      `assessments/${runId}/jobs/`, { cache: "no-store" });
+    if (typeof capability.background_processing_enabled !== "boolean") {
+      throw new ApiError("INVALID_CAPABILITY_RESPONSE", "The assessment processing mode could not be determined.", 502);
+    }
+    synchronous = !capability.background_processing_enabled;
+  } catch (error) {
+    // During rolling upgrades an older API may not yet support GET discovery.
+    // Its explicit ASYNC_DISABLED response below remains the compatibility path.
+    if (!(error instanceof ApiError && error.status === 405)) throw error;
+  }
+  if (synchronous) return legacy();
   let job: AssessmentJob<T>;
   try {
     job = await request<AssessmentJob<T>>(`assessments/${runId}/jobs/`, {

@@ -6,6 +6,10 @@ test('an explicit retry refreshes a failed durable job without calling synchrono
   let discoveryAttempts = 0;
   let refreshObserved = false;
   await page.route('**/assessments/*/jobs/', async route => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({ json: { data: { background_processing_enabled: true } } });
+      return;
+    }
     const body = route.request().postDataJSON();
     let result: unknown = {};
     let failed = false;

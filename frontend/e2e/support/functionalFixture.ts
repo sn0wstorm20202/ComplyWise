@@ -16,6 +16,10 @@ export async function functionalFixture(page:Page,options:{resumed?:boolean;stan
    const method=request.method(); let body:any={};try{body=request.postDataJSON()||{}}catch{}
    requests.push({path,method,body});let data:any={};
    if (path.endsWith('/jobs')) {
+     if (method === 'GET') {
+       await route.fulfill({ json: { data: { background_processing_enabled: false } } });
+       return;
+     }
      await route.fulfill({ status: 503, json: { error: { code: 'ASYNC_DISABLED', message: 'Explicit synchronous fixture deployment' } } });
      return;
    }

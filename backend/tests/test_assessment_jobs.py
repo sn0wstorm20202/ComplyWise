@@ -96,6 +96,19 @@ def test_feature_flag_preserves_deployment_compatibility(assessment, auth_client
     assert response.json()["error"]["code"] == "ASYNC_DISABLED"
 
 
+@pytest.mark.parametrize("enabled", [False, True])
+def test_processing_mode_is_read_only_and_tenant_scoped(assessment, auth_client, other_user, settings, enabled):
+    settings.ENABLE_ASSESSMENT_JOBS = enabled
+    url = f"/api/v1/assessments/{assessment.id}/jobs/"
+    response = auth_client.get(url)
+    assert response.status_code == 200
+    assert response.json()["data"] == {"background_processing_enabled": enabled}
+    assert "no-store" in response["Cache-Control"]
+    assert not AssessmentJob.objects.exists()
+    auth_client.force_authenticate(other_user)
+    assert auth_client.get(url).status_code == 404
+
+
 def test_pending_job_blocks_answer_mutation_and_malformed_stage_is_400(assessment, user, auth_client, settings):
     settings.ENABLE_ASSESSMENT_JOBS = True
     assert auth_client.post(f"/api/v1/assessments/{assessment.id}/jobs/", {"stage":[]}, format="json").status_code == 400

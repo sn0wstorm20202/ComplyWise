@@ -10,6 +10,15 @@ from .jobs import enqueue, project, JobConflict
 class AssessmentJobsView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get(self, request, run_id):
+        if not Assessment.accessible_to(request.user).filter(pk=run_id).exists():
+            return error_response("NOT_FOUND", "Assessment not found.", http_status=404)
+        response = Response(envelope({
+            "background_processing_enabled": bool(getattr(settings, "ENABLE_ASSESSMENT_JOBS", False)),
+        }))
+        response["Cache-Control"] = "no-store, private"
+        return response
+
     def post(self, request, run_id):
         if not isinstance(request.data, dict):
             return error_response("VALIDATION_ERROR", "Expected an operation object.", http_status=400)

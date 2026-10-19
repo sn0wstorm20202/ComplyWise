@@ -19,7 +19,9 @@ import {
 
 export const businessesApi = {
   /** Get current user's profile home (businesses & recent assessments) */
-  getProfileHome: () => request<UserProfileHome>("/user/profile"),
+  getProfileHome: (businessId?: string | null) => request<UserProfileHome>("/user/profile", {
+    params: businessId ? { business_id: businessId } : undefined,
+  }),
 
   /** List businesses accessible to current user */
   list: () => request<Business[]>("/businesses"),

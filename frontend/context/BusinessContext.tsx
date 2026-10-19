@@ -188,7 +188,8 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     }
     setIsLoading(true);
     try {
-      const home = await api.businesses.getProfileHome();
+      const requestedBusiness = preferredBizId || localStorage.getItem("complywise_active_business_id");
+      const home = await api.businesses.getProfileHome(requestedBusiness);
       if (!current()) return;
       const homeBusinesses = home.businesses || [];
       setUserBusinesses(homeBusinesses);

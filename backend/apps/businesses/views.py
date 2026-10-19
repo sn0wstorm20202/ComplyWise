@@ -9,6 +9,8 @@ in the URL is never trusted on its own.
 
 from __future__ import annotations
 
+from django.core.exceptions import ValidationError
+
 from django.db import transaction
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -190,6 +192,22 @@ class UserProfileHomeView(APIView):
         total_assessments = assessments.count()
 
         businesses_list = list(businesses[:20])
+        # Recent summaries are not an authorization or selection boundary.
+        # Retain an older active/requested business without loading every tenant.
+        requested_id = request.query_params.get("business_id")
+        requested_business = None
+        if requested_id:
+            try:
+                requested_business = businesses.filter(pk=requested_id).first()
+            except (ValueError, ValidationError):
+                return error_response("NOT_FOUND", "Business not found.", http_status=404)
+            if requested_business is None:
+                return error_response("NOT_FOUND", "Business not found.", http_status=404)
+        selected_ids = {b.id for b in businesses_list}
+        for selected_business in (requested_business, ws.active_business):
+            if selected_business and selected_business.id not in selected_ids:
+                businesses_list.append(selected_business)
+                selected_ids.add(selected_business.id)
         biz_ids = [b.id for b in businesses_list]
         if biz_ids:
             pvs_by_biz = {}

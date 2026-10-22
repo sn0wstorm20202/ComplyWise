@@ -7,6 +7,7 @@ import AppShell from "@/components/AppShell";
 import StatusBadge from "@/components/StatusBadge";
 import LoadingSkeleton from "@/components/LoadingSkeleton";
 import ErrorState from "@/components/ErrorState";
+import { EvidenceSummaryView } from "@/components/product/AssessmentEvidence";
 import { api } from "@/lib/api";
 import { sanitizeExternalUrl } from "@/lib/url";
 import { RequirementDetail } from "@/types";
@@ -200,6 +201,10 @@ function RequirementDetailContent({ params }: PageProps) {
             </div>
 
             {/* The 4 Core Questions Grid */}
+            <section className="ui-object" aria-label="Evidence and completion status">
+              {detail.coverage && <p className="text-sm text-[var(--ui-secondary)]">{detail.coverage.message}</p>}
+              <EvidenceSummaryView evidence={detail.evidence_summary} />
+            </section>
             <div className="space-y-6">
               {/* Question 1: Why does this apply? */}
               <div className="bg-white rounded-[16px] border border-[var(--ui-border)] p-6 shadow-2xs space-y-3">

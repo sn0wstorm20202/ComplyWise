@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "description": "Initial judging-release acceptance budgets; sampled probes do not certify capacity or a production SLO.",
+  "minimum_warm_samples": 20,
+  "concurrency": 3,
+  "timeout_seconds": 20,
+  "routes": {
+    "dashboard": {"p95_seconds": 10, "max_seconds": 15},
+    "comparison": {"p95_seconds": 8, "max_seconds": 12},
+    "job_status": {"p95_seconds": 3, "max_seconds": 6}
+  },
+  "required_success_ratio": 1.0
+}

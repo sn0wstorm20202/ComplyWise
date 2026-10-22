@@ -5,10 +5,14 @@ from __future__ import annotations
 from django.urls import path
 
 from . import views
+from .comparison_views import AssessmentComparisonView, DecisionHistoryView, PreparedWalkthroughView
 
 app_name = "businesses"
 
 urlpatterns = [
+    path("assessment-walkthrough", PreparedWalkthroughView.as_view()),
+    path("businesses/<uuid:business_id>/decision-history", DecisionHistoryView.as_view()),
+    path("businesses/<uuid:business_id>/compare/<uuid:before_id>/<uuid:after_id>", AssessmentComparisonView.as_view()),
     path("user/workspace", views.UserWorkspaceView.as_view(), name="user-workspace"),
     path("user/profile", views.UserProfileHomeView.as_view(), name="user-profile"),
     path("user/home", views.UserProfileHomeView.as_view(), name="user-home"),

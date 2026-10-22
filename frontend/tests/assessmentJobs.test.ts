@@ -31,6 +31,15 @@ test('enabled processing returns durable job results without synchronous executi
     assert.deepEqual(calls.map(call => call.method), ['GET', 'POST']);
   });
 });
+
+test('an unavailable supervised worker never starts synchronous work or submits a job', async () => {
+  await transport(() => data({ background_processing_enabled: true, worker_ready: false }), async calls => {
+    let executions = 0;
+    await assert.rejects(runAssessmentJob('synthetic', 'REGULATORY_DISCOVERY', async () => { executions++; }), /temporarily unavailable/);
+    assert.equal(executions, 0);
+    assert.deepEqual(calls.map(call => call.method), ['GET']);
+  });
+});
 for (const failureStage of ['capability', 'submission']) {
   test(`${failureStage} network failure does not start synchronous work`, async () => {
     await transport(call => {

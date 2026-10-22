@@ -5,6 +5,7 @@ import type { ComplianceRequirementItem } from "@/types";
 import StatusBadge from "../StatusBadge";
 import Disclosure from "./Disclosure";
 import { sanitizeExternalUrl } from "@/lib/url";
+import { EvidenceSummaryView } from "./AssessmentEvidence";
 
 export default function RequirementCard({ requirement: req, businessId, assessmentId, onInspect }: { requirement: ComplianceRequirementItem; businessId: string | null; assessmentId?: string | null; onInspect: () => void }) {
   const params = new URLSearchParams();
@@ -16,6 +17,7 @@ export default function RequirementCard({ requirement: req, businessId, assessme
   return <article className="ui-object">
     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4"><div className="min-w-0"><p className="ui-eyebrow mb-2">{req.authority}</p><h2 className="text-lg font-semibold">{req.name}</h2><p className="text-sm text-[var(--ui-secondary)] mt-2 max-w-3xl line-clamp-2">{req.description}</p></div><StatusBadge status={req.status === "APPLICABLE" ? "REQUIRED" : req.status} size="md" /></div>
     {contextual && <p className="mt-3 text-xs text-[var(--ui-secondary)]">Planning guidance · confirm the relevant requirements before acting.{req.source_reference && ` Context: ${req.source_reference}`}</p>}
+    <EvidenceSummaryView evidence={req.evidence_summary} />
     <div className="mt-4"><Disclosure title="Why it applies · evidence & next steps">
       <div className="space-y-5">
         <div><p className="text-sm text-[var(--ui-secondary)]">{req.description || "Open the assessment trace to review the business facts behind this requirement."}</p><button className="text-xs text-[var(--ui-sage)] font-medium mt-2" onClick={onInspect}>Inspect assessment trace →</button></div>

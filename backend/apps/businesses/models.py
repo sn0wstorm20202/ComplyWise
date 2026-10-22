@@ -342,6 +342,13 @@ class AssessmentJob(BaseModel):
         indexes = [models.Index(fields=["status", "available_at"])]
 
 
+class AssessmentWorkerHeartbeat(models.Model):
+    """Operational lease only; contains no business inputs or provider credentials."""
+    worker_id = models.CharField(max_length=120, primary_key=True)
+    release = models.CharField(max_length=100)
+    seen_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+
 class Assessment(BaseModel):
     """An assessment session/version for a business.
 

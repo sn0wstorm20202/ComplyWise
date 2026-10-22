@@ -108,6 +108,7 @@ class BusinessComplianceListView(_BusinessScopedView):
                 portal_name = portal_info["name"]
 
                 citations = evidence_citations(r.evidence_refs or [], evidences_map)
+                from apps.applicability.comparison import row_provenance
 
                 items.append(
                     {
@@ -135,6 +136,7 @@ class BusinessComplianceListView(_BusinessScopedView):
                         "statutory_act": statutory_act or (citations[0]["locator"] if citations else ""),
                         "citations": citations,
                         "citation_count": len(citations),
+                        "evidence_summary": row_provenance(r, evidences_map, latest_run),
                         "required_documents": metadata_string_list(metadata.get(DOCUMENTS_KEY)),
                         "application_steps": metadata_string_list(metadata.get(STEPS_KEY)),
                         "timeline": str(metadata.get("timeline") or metadata.get(VALIDITY_KEY) or "").strip(),
@@ -240,15 +242,11 @@ class BusinessRequirementDetailView(_BusinessScopedView):
         if latest_run:
             decision_result = latest_run.results.filter(requirement_id=requirement_id).first()
 
-        # Gather evidence details
-        evidence_items = []
-        ev_refs = (decision_result.evidence_refs if decision_result else []) or []
-        for ref in ev_refs:
-            ev_id = ref.get("evidence_id") if isinstance(ref, dict) else ref
-            ev_obj = Evidence.objects.filter(evidence_id=ev_id).select_related("source").first()
-            if ev_obj:
-                from apps.evidence.presentation import evidence_projection
-                evidence_items.append(evidence_projection(ev_obj))
+        # Historical evidence and procedural metadata come from the captured
+        # manifest, never today's mutable catalogue. Legacy records stay labelled.
+        definitions, evidence_records = load_requirement_evidence([decision_result]) if decision_result else ({}, {})
+        req_def = definitions.get(requirement_id, req_def)
+        evidence_items = evidence_citations((decision_result.evidence_refs if decision_result else []) or [], evidence_records)
 
         eval_status = decision_result.status if decision_result else "UNVERIFIED"
         trace: dict[str, Any] = (decision_result.explanation_trace or {}) if decision_result else {}
@@ -338,6 +336,11 @@ class BusinessRequirementDetailView(_BusinessScopedView):
             "statutory_evidence": evidence_items,
             "evidence_count": len(evidence_items),
         }
+        if decision_result and latest_run:
+            from apps.applicability.comparison import row_provenance
+            from apps.applicability.snapshots import coverage_for_run
+            detail_data["evidence_summary"] = row_provenance(decision_result, evidence_records, latest_run)
+            detail_data["coverage"] = coverage_for_run(latest_run)
 
         from apps.workflows.services.disposition_service import reviewed_requirement_treatment
         detail_data.update(reviewed_requirement_treatment(business, assessment_id,

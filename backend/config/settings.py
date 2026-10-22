@@ -51,6 +51,7 @@ COMPLYWISE_VERSION = os.getenv("COMPLYWISE_VERSION", "0.1.0-foundation")
 CIR_AUTHORITY_KEY = os.getenv("CIR_AUTHORITY_KEY", "")
 CIR_SIGNING_KEY_ID = os.getenv("CIR_SIGNING_KEY_ID", "primary")
 ENABLE_ASSESSMENT_JOBS = env_bool("ENABLE_ASSESSMENT_JOBS", default=False)
+ASSESSMENT_WORKER_HEALTH_REQUIRED = env_bool("ASSESSMENT_WORKER_HEALTH_REQUIRED", default=False)
 # Retain old key IDs during rotation so historical signatures remain verifiable.
 import json as _json
 CIR_VERIFICATION_KEYS = _json.loads(os.getenv("CIR_VERIFICATION_KEYS", "{}"))
@@ -134,6 +135,7 @@ COMPLYWISE_APPS = [
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + COMPLYWISE_APPS
 
 MIDDLEWARE = [
+    "common.read_latency.ReadLatencyMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",

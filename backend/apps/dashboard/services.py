@@ -89,6 +89,8 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
     from domain.intelligence.workspace_guidance import compliance_rows
     guidance = compliance_rows(business, str(assessment.id) if assessment else None)
     results = list(latest_run.results.all())
+    from apps.applicability.comparison import run_provenance
+    provenance = run_provenance(latest_run, results)
     total_evaluated = len(results)
 
     # Coverage honesty: how well the loaded knowledge base covers this business's
@@ -296,6 +298,7 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
         "recent_updates_available": False,
         "coverage": coverage,
         "cir": cir,
+        "provenance": provenance,
     }
 
 

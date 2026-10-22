@@ -56,6 +56,7 @@ export interface StatutoryDeadline {
 }
 
 export interface DashboardSummary {
+  provenance?: import("./comparison").AssessmentProvenance;
   widgets?: {
     activity: { weeklyTasks: number; growthPercentage: string; maxTasks: number; daily: Array<{day: string; tasks: number; isHighlight: boolean; dateStr: string}> };
     documents: { totalCount: number; onTrackCount: number; changeThisWeek: string; verifiedPercentage: number; underReviewPercentage: number };

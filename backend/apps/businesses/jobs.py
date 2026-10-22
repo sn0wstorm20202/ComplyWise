@@ -46,11 +46,29 @@ def enqueue(assessment, actor, stage, *, idempotency_key="", force_refresh=False
         raise ValueError("Idempotency key must be at most 128 characters.")
     if force_refresh and not idempotency_key:
         raise ValueError("Force refresh requires an idempotency key.")
-    assessment = Assessment.objects.select_for_update().get(pk=assessment.pk)
     if not assessment.is_accessible_by(actor):
         raise PermissionError("Assessment is unavailable.")
     fingerprint = input_fingerprint(assessment)
     key = idempotency_key or f"{stage}:{fingerprint}"
+    # A worker may hold the assessment lock throughout a long provider call.
+    # Resume an already persisted operation before waiting for that lock. New
+    # submissions still serialize below and repeat these checks under the lock.
+    existing = AssessmentJob.objects.filter(assessment=assessment, idempotency_key=key).first()
+    if existing:
+        if existing.stage != stage or existing.input_fingerprint != fingerprint or existing.force_refresh != force_refresh:
+            raise JobConflict("This retry key belongs to different assessment inputs.")
+        return existing
+    active = AssessmentJob.objects.filter(assessment=assessment, status__in=["QUEUED", "RUNNING"]).first()
+    if active:
+        if active.stage == stage and active.input_fingerprint == fingerprint and active.force_refresh == force_refresh:
+            return active
+        raise JobConflict("An operation is already running for this assessment.")
+    assessment = Assessment.objects.select_for_update().get(pk=assessment.pk)
+    if not assessment.is_accessible_by(actor):
+        raise PermissionError("Assessment is unavailable.")
+    # Inputs could change between the initial read and this lock acquisition.
+    if input_fingerprint(assessment) != fingerprint:
+        raise JobConflict("Assessment inputs changed while submitting this operation. Please try again.")
     existing = AssessmentJob.objects.filter(assessment=assessment, idempotency_key=key).first()
     if existing:
         if existing.stage != stage or existing.input_fingerprint != fingerprint or existing.force_refresh != force_refresh:
@@ -65,12 +83,14 @@ def enqueue(assessment, actor, stage, *, idempotency_key="", force_refresh=False
         idempotency_key=key, input_fingerprint=fingerprint, force_refresh=force_refresh)
 
 
-def claim_next():
+def claim_next(assessment_id=None):
     now = timezone.now()
     with transaction.atomic():
         query = AssessmentJob.objects.filter(
             Q(status="QUEUED", available_at__lte=now) | Q(status="RUNNING", lease_until__lt=now)
         ).order_by("created_at")
+        if assessment_id is not None:
+            query = query.filter(assessment_id=assessment_id)
         if connection.features.has_select_for_update_skip_locked:
             query = query.select_for_update(skip_locked=True)
         else:
@@ -89,8 +109,8 @@ def claim_next():
         return job.id, job.attempts
 
 
-def process_next():
-    claim = claim_next()
+def process_next(assessment_id=None):
+    claim = claim_next(assessment_id=assessment_id)
     if claim is None:
         return False
     identifier, attempt = claim

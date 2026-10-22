@@ -16,12 +16,15 @@ export async function runAssessmentJob<T>(runId: string, stage: JobStage,
   // Never switch execution paths on a timeout: a submitted job may still run.
   let synchronous = false;
   try {
-    const capability = await request<{ background_processing_enabled: boolean }>(
+    const capability = await request<{ background_processing_enabled: boolean; worker_ready?: boolean }>(
       `assessments/${runId}/jobs/`, { cache: "no-store" });
     if (typeof capability.background_processing_enabled !== "boolean") {
       throw new ApiError("INVALID_CAPABILITY_RESPONSE", "The assessment processing mode could not be determined.", 502);
     }
     synchronous = !capability.background_processing_enabled;
+    if (!synchronous && capability.worker_ready === false) {
+      throw new ApiError("WORKER_UNAVAILABLE", "Assessment processing is temporarily unavailable. Your saved details are retained. Please try again shortly.", 503);
+    }
   } catch (error) {
     // During rolling upgrades an older API may not yet support GET discovery.
     // Its explicit ASYNC_DISABLED response below remains the compatibility path.

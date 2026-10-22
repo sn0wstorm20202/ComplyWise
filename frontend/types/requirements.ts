@@ -5,6 +5,7 @@ import type { ApplicabilityStatus, VerificationStatus, WorkspaceRequirementStatu
 // ---------------------------------------------------------------------------
 
 export interface ComplianceRequirementItem {
+  evidence_summary?: import("./comparison").EvidenceSummary;
   user_action_required?: boolean;
   admin_disposition?: string;
   review_reason?: string;
@@ -86,6 +87,8 @@ export interface RuleEvaluationTrace {
 }
 
 export interface RequirementDetail {
+  evidence_summary?: import("./comparison").EvidenceSummary;
+  coverage?: { message: string; status: string; is_exhaustive: boolean };
   user_action_required?: boolean;
   admin_disposition?: string;
   review_reason?: string;

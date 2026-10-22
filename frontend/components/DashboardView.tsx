@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import type { NavView } from "./Sidebar";
 import StatusBadge from "./StatusBadge";
 import Disclosure from "./product/Disclosure";
+import { AssessmentEvidencePanel } from "./product/AssessmentEvidence";
 interface DashboardViewProps { onNavigateToView: (view: NavView) => void; onOpenNewQuery?: () => void }
 export default function DashboardView({ onNavigateToView }: DashboardViewProps) {
   const [activityOpen, setActivityOpen] = useState(false);
@@ -38,6 +39,8 @@ export default function DashboardView({ onNavigateToView }: DashboardViewProps) 
       </div>
       <Link href={hasBusiness ? "/compliance" + query : "/onboarding?new=true"} className="ui-button ui-button-primary">{hasBusiness ? "View requirements" : "Understand your business"}<ArrowRight size={16} /></Link>
     </header>
+    {hasBusiness && <Link href={"/assessment-comparison" + query} className="ui-button">Compare saved assessments →</Link>}
+    <AssessmentEvidencePanel provenance={summary?.provenance} />
     <nav className="ui-attention" aria-label="Needs attention">
       <Link href={"/compliance" + query}><strong>{actionCount}</strong><span>actions to review</span></Link>
       <Link href={"/calendar" + query}><strong>{assessed ? deadlines.length : "—"}</strong><span>upcoming deadlines</span></Link>

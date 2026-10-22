@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from common.envelope import envelope, error_response
 from .models import Assessment, AssessmentJob
 from .jobs import enqueue, project, JobConflict
+from .worker_health import worker_ready
 
 
 class AssessmentJobsView(APIView):
@@ -13,9 +14,12 @@ class AssessmentJobsView(APIView):
     def get(self, request, run_id):
         if not Assessment.accessible_to(request.user).filter(pk=run_id).exists():
             return error_response("NOT_FOUND", "Assessment not found.", http_status=404)
-        response = Response(envelope({
+        capability = {
             "background_processing_enabled": bool(getattr(settings, "ENABLE_ASSESSMENT_JOBS", False)),
-        }))
+        }
+        if settings.ENABLE_ASSESSMENT_JOBS and settings.ASSESSMENT_WORKER_HEALTH_REQUIRED:
+            capability["worker_ready"] = worker_ready()
+        response = Response(envelope(capability))
         response["Cache-Control"] = "no-store, private"
         return response
 
@@ -27,6 +31,8 @@ class AssessmentJobsView(APIView):
             return error_response("NOT_FOUND", "Assessment not found.", http_status=404)
         if not getattr(settings, "ENABLE_ASSESSMENT_JOBS", False):
             return error_response("ASYNC_DISABLED", "Background processing is not enabled.", http_status=503)
+        if not worker_ready():
+            return error_response("WORKER_UNAVAILABLE", "Assessment processing is temporarily unavailable. Your saved details are retained. Please try again shortly.", http_status=503)
         try:
             refresh = request.data.get("force_refresh", False)
             if not isinstance(refresh, bool):

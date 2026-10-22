@@ -82,7 +82,14 @@ function Comparison() {
     <header><p className="ui-eyebrow">Saved assessment history · {businessName}</p><h1 className="text-3xl mt-2">What changed, and why?</h1>
       <p className="text-sm text-[var(--ui-secondary)] mt-3">Compare recorded business facts and decisions. Selecting a snapshot reads history; it does not rerun or overwrite an assessment.</p>
       <div className="flex flex-wrap gap-3 mt-4"><Link className="ui-button" href={businessId ? `/dashboard?business_id=${businessId}` : "/dashboard"}>← Dashboard</Link>
-        {walkthrough && <button className="ui-button" onClick={() => router.push(`/assessment-comparison?business_id=${walkthrough.business_id}${walkthrough.before_run_id ? `&before_run_id=${walkthrough.before_run_id}&after_run_id=${walkthrough.after_run_id}` : ""}`)}>Merchant export → manufacturing walkthrough</button>}</div>
+        {walkthrough && <button className="ui-button" onClick={() => {
+          // The URL can already identify this pair while the selectors show a
+          // different pair. Reset local selection even when navigation is a no-op.
+          if (businessId === walkthrough.business_id && walkthrough.before_run_id && walkthrough.after_run_id) {
+            setBefore(walkthrough.before_run_id); setAfter(walkthrough.after_run_id);
+          }
+          router.push(`/assessment-comparison?business_id=${walkthrough.business_id}${walkthrough.before_run_id ? `&before_run_id=${walkthrough.before_run_id}&after_run_id=${walkthrough.after_run_id}` : ""}`);
+        }}>Merchant export → manufacturing walkthrough</button>}</div>
     </header>
     {walkthrough?.business_id === businessId && <p role="note" className="ui-object text-sm">Fictional business facts, evaluated by the ordinary rule engine against the existing catalogue. Compare merchant export with manufacturing, then select “3 · Manufacturing · power information unknown” to see why uncertainty returns. No filing or approval is claimed.</p>}
     {error && <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} />}

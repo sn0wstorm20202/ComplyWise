@@ -55,7 +55,7 @@ def main():
     secrets = {item["name"]: item.get("value") for item in secret_records}
     container = source["properties"]["template"]["containers"][0]
     image = container["image"]
-    if image.rsplit(":", 1)[-1] not in {"architecture-" + args.release, "architecture-" + args.release + "-workers"}:
+    if image.rsplit(":", 1)[-1] not in {"architecture-" + args.release + suffix for suffix in ("", "-workers", "-sync")}:
         raise RuntimeError("Deploy this release to the API before provisioning its matching worker.")
     source_env = {item["name"]: item.get("value", secrets.get(item.get("secretRef"))) for item in container["env"]}
     allowed = {"DJANGO_SECRET_KEY", "DJANGO_DEBUG", "DJANGO_ALLOWED_HOSTS", "CORS_ALLOWED_ORIGINS", "CSRF_TRUSTED_ORIGINS",

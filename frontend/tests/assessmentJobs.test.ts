@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runAssessmentJob } from '../lib/api/assessmentJobs';
+import { orchestrationApi } from '../lib/api/orchestration';
 
 type Call = { url: string; method: string };
 async function transport(handler: (call: Call) => Response | Promise<Response>, check: (calls: Call[]) => Promise<void>) {
@@ -38,6 +39,16 @@ test('an unavailable supervised worker never starts synchronous work or submits 
     await assert.rejects(runAssessmentJob('synthetic', 'REGULATORY_DISCOVERY', async () => { executions++; }), /temporarily unavailable/);
     assert.equal(executions, 0);
     assert.deepEqual(calls.map(call => call.method), ['GET']);
+  });
+});
+
+test('question generation submits the supported queued stage and preserves its result', async () => {
+  await transport(call => call.method === 'GET' ? data({ background_processing_enabled: true, worker_ready: true }) :
+    data({ job_id: 'synthetic-questions', status: 'SUCCEEDED', result: { questions: [], total_questions: 0 } }), async calls => {
+    const result = await orchestrationApi.generateQuestions('synthetic');
+    assert.deepEqual(result, { questions: [], total_questions: 0 });
+    assert.equal(calls.length, 2);
+    assert.ok(calls.every(call => !String(call.url).includes('/questions/generate/')));
   });
 });
 for (const failureStage of ['capability', 'submission']) {

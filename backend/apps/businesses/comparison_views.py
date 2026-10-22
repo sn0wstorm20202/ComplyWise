@@ -62,5 +62,10 @@ class PreparedWalkthroughView(APIView):
 
     def get(self, request):
         business = Business.resolve_safely(WALKTHROUGH_ID, request.user)
+        runs = list(DecisionRun.objects.filter(business=business, status="COMPLETED",
+                    assessment__assessment_number__in=[1, 2]).exclude(cir_snapshot={})
+                    .order_by("assessment__assessment_number").values_list("id", flat=True)) if business else []
         return private_response({"available": business is not None,
-                                 "business_id": str(business.id) if business else None})
+                                 "business_id": str(business.id) if business else None,
+                                 "before_run_id": str(runs[0]) if len(runs) == 2 else None,
+                                 "after_run_id": str(runs[1]) if len(runs) == 2 else None})

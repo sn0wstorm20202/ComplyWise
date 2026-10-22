@@ -26,7 +26,8 @@ class Command(BaseCommand):
             defaults={"name": "Threadline operating model walkthrough", "owner": user})
         if business.owner_id != user.id:
             raise CommandError("The walkthrough belongs to another account.")
-        existing = list(business.assessments.select_for_update().select_related("decision_run"))
+        business = Business.objects.select_for_update().get(pk=business.pk)
+        existing = list(business.assessments.select_for_update(of=("self",)).select_related("decision_run"))
         if existing:
             if len(existing) == 3 and all(a.decision_run and a.decision_run.cir_snapshot for a in existing):
                 self.stdout.write("Existing sealed walkthrough retained.")

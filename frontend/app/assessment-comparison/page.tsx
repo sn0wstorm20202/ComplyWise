@@ -33,6 +33,8 @@ function Comparison() {
   const router = useRouter();
   const { activeBusinessId } = useBusinessContext();
   const businessId = params.get("business_id") || activeBusinessId;
+  const requestedBefore = params.get("before_run_id");
+  const requestedAfter = params.get("after_run_id");
   const [runs, setRuns] = useState<HistoryRunCard[]>([]);
   const [before, setBefore] = useState("");
   const [after, setAfter] = useState("");
@@ -40,13 +42,13 @@ function Comparison() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("attention");
-  const [walkthrough, setWalkthrough] = useState<string | null>(null);
+  const [walkthrough, setWalkthrough] = useState<{business_id: string; before_run_id: string | null; after_run_id: string | null} | null>(null);
   const [businessName, setBusinessName] = useState("");
   const [retry, setRetry] = useState(0);
   useEffect(() => {
     let disposed = false;
-    request<{available: boolean; business_id: string | null}>("/assessment-walkthrough", {cache: "no-store"})
-      .then(data => { if (!disposed && data.available) setWalkthrough(data.business_id); }).catch(() => {});
+    request<{available: boolean; business_id: string; before_run_id: string | null; after_run_id: string | null}>("/assessment-walkthrough", {cache: "no-store"})
+      .then(data => { if (!disposed && data.available) setWalkthrough(data); }).catch(() => {});
     return () => { disposed = true; };
   }, []);
   useEffect(() => {
@@ -56,11 +58,14 @@ function Comparison() {
     setLoading(true);
     request<{runs: HistoryRunCard[]; business_name: string; has_older_runs: boolean}>(`/businesses/${businessId}/decision-history`, {cache: "no-store"})
       .then(data => { if (!disposed) { setRuns(data.runs); setBusinessName(data.business_name);
-        setBefore(data.runs.length > 1 ? data.runs[data.runs.length - 1].run_id : ""); setAfter(data.runs[0]?.run_id || ""); } })
+        if ((requestedBefore && !data.runs.some(r => r.run_id === requestedBefore)) || (requestedAfter && !data.runs.some(r => r.run_id === requestedAfter))) {
+          setError("The requested snapshots are unavailable in this business’s recent saved history. Choose an available snapshot."); return;
+        }
+        setBefore(requestedBefore || (data.runs.length > 1 ? data.runs[data.runs.length - 1].run_id : "")); setAfter(requestedAfter || data.runs[0]?.run_id || ""); } })
       .catch(() => { if (!disposed) setError("Saved assessment history could not be loaded. Your records have not been changed."); })
       .finally(() => { if (!disposed) setLoading(false); });
     return () => { disposed = true; };
-  }, [businessId, retry]);
+  }, [businessId, retry, requestedBefore, requestedAfter]);
   useEffect(() => {
     let disposed = false;
     setComparison(null);
@@ -77,8 +82,9 @@ function Comparison() {
     <header><p className="ui-eyebrow">Saved assessment history · {businessName}</p><h1 className="text-3xl mt-2">What changed, and why?</h1>
       <p className="text-sm text-[var(--ui-secondary)] mt-3">Compare recorded business facts and decisions. Selecting a snapshot reads history; it does not rerun or overwrite an assessment.</p>
       <div className="flex flex-wrap gap-3 mt-4"><Link className="ui-button" href={businessId ? `/dashboard?business_id=${businessId}` : "/dashboard"}>← Dashboard</Link>
-        {walkthrough && <button className="ui-button" onClick={() => router.push(`/assessment-comparison?business_id=${walkthrough}`)}>Merchant export → manufacturing walkthrough</button>}</div>
+        {walkthrough && <button className="ui-button" onClick={() => router.push(`/assessment-comparison?business_id=${walkthrough.business_id}${walkthrough.before_run_id ? `&before_run_id=${walkthrough.before_run_id}&after_run_id=${walkthrough.after_run_id}` : ""}`)}>Merchant export → manufacturing walkthrough</button>}</div>
     </header>
+    {walkthrough?.business_id === businessId && <p role="note" className="ui-object text-sm">Fictional business facts, evaluated by the ordinary rule engine against the existing catalogue. Compare merchant export with manufacturing, then select “3 · Manufacturing · power information unknown” to see why uncertainty returns. No filing or approval is claimed.</p>}
     {error && <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} />}
     <div className="grid gap-4 sm:grid-cols-2">{[["Before", before, setBefore], ["After", after, setAfter]].map(([label, selected, setter]) => <label key={String(label)} className="text-sm font-semibold">{String(label)}
       <select className="ui-input w-full mt-2" value={String(selected)} onChange={e => (setter as (v: string) => void)(e.target.value)}><option value="">Choose a saved snapshot</option>{runs.map(run => <option key={run.run_id} value={run.run_id}>{run.title || `Profile v${run.profile_version}`} · {recordedDate(run.evaluation_date)}</option>)}</select>

@@ -1,0 +1,271 @@
+{
+  "seconds": 4.951,
+  "query_count": 30,
+  "tables": {
+    "businesses_assessment": [
+      1,
+      0.4646481999952812
+    ],
+    "businesses_workspaceguidance": [
+      1,
+      0.04988769999908982
+    ],
+    "applicability_decisionresult": [
+      4,
+      1.0111653999847476
+    ],
+    "knowledge_ruleversion": [
+      2,
+      0.18801189999794587
+    ],
+    "knowledge_requirementdefinition": [
+      6,
+      0.5710994999899413
+    ],
+    "businesses_profile_version": [
+      4,
+      0.2532485999981873
+    ],
+    "workflows_requirement_disposition": [
+      1,
+      0.12845750000269618
+    ],
+    "schemes_scheme": [
+      1,
+      0.07773199999792268
+    ],
+    "schemes_schemeversion": [
+      1,
+      0.15412180000566877
+    ],
+    "documents_requirement": [
+      2,
+      0.13001639999856707
+    ],
+    "workflows_compliance_case": [
+      5,
+      0.2699190999919665
+    ],
+    "applicability_decisionrun": [
+      1,
+      0.31525250000413507
+    ],
+    "workflows_event": [
+      1,
+      0.06993390000570798
+    ]
+  },
+  "functions": [
+    {
+      "function": "wrapped",
+      "file": "common/read_scope.py",
+      "calls": 1,
+      "seconds": 4.951
+    },
+    {
+      "function": "get_dashboard_summary",
+      "file": "apps/dashboard/services.py",
+      "calls": 1,
+      "seconds": 4.945
+    },
+    {
+      "function": "wrapped",
+      "file": "common/read_scope.py",
+      "calls": 16,
+      "seconds": 0.82
+    },
+    {
+      "function": "derive_business_documents",
+      "file": "domain/intelligence/document_derivation.py",
+      "calls": 1,
+      "seconds": 0.694
+    },
+    {
+      "function": "derive_business_workflows",
+      "file": "domain/intelligence/workflow_derivation.py",
+      "calls": 1,
+      "seconds": 0.603
+    },
+    {
+      "function": "match_business_schemes",
+      "file": "apps/schemes/engine/matcher.py",
+      "calls": 1,
+      "seconds": 0.576
+    },
+    {
+      "function": "discover_business_standards",
+      "file": "domain/intelligence/standards_discovery.py",
+      "calls": 1,
+      "seconds": 0.497
+    },
+    {
+      "function": "read_assessment",
+      "file": "common/read_scope.py",
+      "calls": 1,
+      "seconds": 0.48
+    },
+    {
+      "function": "<module>",
+      "file": "apps/acquisition/services.py",
+      "calls": 1,
+      "seconds": 0.408
+    },
+    {
+      "function": "<module>",
+      "file": "apps/acquisition/router.py",
+      "calls": 1,
+      "seconds": 0.382
+    },
+    {
+      "function": "get_workspace_widgets",
+      "file": "apps/dashboard/services.py",
+      "calls": 1,
+      "seconds": 0.354
+    },
+    {
+      "function": "is_authored_fixture_version",
+      "file": "apps/schemes/provenance.py",
+      "calls": 36,
+      "seconds": 0.314
+    },
+    {
+      "function": "assess_knowledge_coverage",
+      "file": "apps/ingestion/services.py",
+      "calls": 1,
+      "seconds": 0.304
+    },
+    {
+      "function": "<genexpr>",
+      "file": "apps/schemes/provenance.py",
+      "calls": 37,
+      "seconds": 0.28
+    },
+    {
+      "function": "authored_fixture_fingerprints",
+      "file": "apps/schemes/provenance.py",
+      "calls": 1,
+      "seconds": 0.28
+    },
+    {
+      "function": "parse",
+      "file": "apps/schemes/pipeline/parser.py",
+      "calls": 4,
+      "seconds": 0.277
+    },
+    {
+      "function": "build_business_context",
+      "file": "domain/context/business_context.py",
+      "calls": 2,
+      "seconds": 0.246
+    },
+    {
+      "function": "current_profile",
+      "file": "apps/businesses/models.py",
+      "calls": 3,
+      "seconds": 0.219
+    },
+    {
+      "function": "detect_activity_keywords",
+      "file": "apps/onboarding/services.py",
+      "calls": 2,
+      "seconds": 0.204
+    },
+    {
+      "function": "reviewer_assigned_requirements",
+      "file": "apps/workflows/services/disposition_service.py",
+      "calls": 3,
+      "seconds": 0.163
+    },
+    {
+      "function": "reviewed_requirement_treatment",
+      "file": "apps/workflows/services/disposition_service.py",
+      "calls": 1,
+      "seconds": 0.158
+    },
+    {
+      "function": "_parse_element",
+      "file": "apps/schemes/pipeline/parser.py",
+      "calls": 36,
+      "seconds": 0.085
+    },
+    {
+      "function": "get_workspace",
+      "file": "domain/intelligence/workspace_guidance.py",
+      "calls": 1,
+      "seconds": 0.08
+    },
+    {
+      "function": "compliance_rows",
+      "file": "domain/intelligence/workspace_guidance.py",
+      "calls": 1,
+      "seconds": 0.08
+    },
+    {
+      "function": "resolve_statutory_portal",
+      "file": "knowledge_packs/catalogs.py",
+      "calls": 28,
+      "seconds": 0.042
+    },
+    {
+      "function": "<module>",
+      "file": "demo/__init__.py",
+      "calls": 1,
+      "seconds": 0.04
+    },
+    {
+      "function": "<module>",
+      "file": "demo/resolver.py",
+      "calls": 1,
+      "seconds": 0.037
+    },
+    {
+      "function": "<module>",
+      "file": "apps/onboarding/services.py",
+      "calls": 1,
+      "seconds": 0.035
+    },
+    {
+      "function": "<module>",
+      "file": "apps/schemes/pipeline/__init__.py",
+      "calls": 1,
+      "seconds": 0.031
+    },
+    {
+      "function": "<module>",
+      "file": "apps/onboarding/planner.py",
+      "calls": 1,
+      "seconds": 0.026
+    },
+    {
+      "function": "<module>",
+      "file": "apps/schemes/pipeline/service.py",
+      "calls": 1,
+      "seconds": 0.023
+    },
+    {
+      "function": "<module>",
+      "file": "demo/scenarios/__init__.py",
+      "calls": 1,
+      "seconds": 0.022
+    },
+    {
+      "function": "_statutory_deadlines",
+      "file": "apps/dashboard/services.py",
+      "calls": 1,
+      "seconds": 0.021
+    },
+    {
+      "function": "<module>",
+      "file": "domain/intelligence/workflow_derivation.py",
+      "calls": 1,
+      "seconds": 0.02
+    },
+    {
+      "function": "<module>",
+      "file": "apps/onboarding/adaptive.py",
+      "calls": 1,
+      "seconds": 0.018
+    }
+  ],
+  "action_count": 14
+}

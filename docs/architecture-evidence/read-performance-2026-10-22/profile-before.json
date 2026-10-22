@@ -1,0 +1,271 @@
+{
+  "seconds": 13.155,
+  "query_count": 135,
+  "tables": {
+    "businesses_assessment": [
+      15,
+      1.2553056999895489
+    ],
+    "businesses_profile_version": [
+      9,
+      0.5970151000074111
+    ],
+    "applicability_decisionrun": [
+      4,
+      1.361631200001284
+    ],
+    "businesses_workspaceguidance": [
+      5,
+      0.26757830000133254
+    ],
+    "applicability_decisionresult": [
+      4,
+      0.45477589999791235
+    ],
+    "knowledge_ruleversion": [
+      4,
+      0.48660529999324353
+    ],
+    "knowledge_requirementdefinition": [
+      6,
+      0.5508581999893067
+    ],
+    "workflows_requirement_disposition": [
+      4,
+      0.21327569999994012
+    ],
+    "documents_requirement": [
+      2,
+      0.10152529999322724
+    ],
+    "workflows_compliance_case": [
+      5,
+      0.2670724000054179
+    ],
+    "schemes_scheme": [
+      2,
+      0.18410210000001825
+    ],
+    "schemes_schemeversion": [
+      74,
+      5.434558700006164
+    ],
+    "workflows_event": [
+      1,
+      0.04795180000655819
+    ]
+  },
+  "functions": [
+    {
+      "function": "get_dashboard_summary",
+      "file": "apps/dashboard/services.py",
+      "calls": 1,
+      "seconds": 13.155
+    },
+    {
+      "function": "match_business_schemes",
+      "file": "apps/schemes/engine/matcher.py",
+      "calls": 2,
+      "seconds": 6.796
+    },
+    {
+      "function": "derive_business_workflows",
+      "file": "domain/intelligence/workflow_derivation.py",
+      "calls": 1,
+      "seconds": 4.672
+    },
+    {
+      "function": "discover_business_schemes",
+      "file": "domain/intelligence/scheme_discovery.py",
+      "calls": 1,
+      "seconds": 3.527
+    },
+    {
+      "function": "derive_business_documents",
+      "file": "domain/intelligence/document_derivation.py",
+      "calls": 1,
+      "seconds": 1.264
+    },
+    {
+      "function": "build_business_context",
+      "file": "domain/context/business_context.py",
+      "calls": 4,
+      "seconds": 0.774
+    },
+    {
+      "function": "assess_knowledge_coverage",
+      "file": "apps/ingestion/services.py",
+      "calls": 1,
+      "seconds": 0.683
+    },
+    {
+      "function": "<module>",
+      "file": "apps/acquisition/services.py",
+      "calls": 1,
+      "seconds": 0.655
+    },
+    {
+      "function": "get_workspace",
+      "file": "domain/intelligence/workspace_guidance.py",
+      "calls": 5,
+      "seconds": 0.651
+    },
+    {
+      "function": "<module>",
+      "file": "apps/acquisition/router.py",
+      "calls": 1,
+      "seconds": 0.629
+    },
+    {
+      "function": "discover_business_standards",
+      "file": "domain/intelligence/standards_discovery.py",
+      "calls": 1,
+      "seconds": 0.589
+    },
+    {
+      "function": "reviewed_requirement_treatment",
+      "file": "apps/workflows/services/disposition_service.py",
+      "calls": 4,
+      "seconds": 0.52
+    },
+    {
+      "function": "detect_activity_keywords",
+      "file": "apps/onboarding/services.py",
+      "calls": 4,
+      "seconds": 0.513
+    },
+    {
+      "function": "is_authored_fixture_version",
+      "file": "apps/schemes/provenance.py",
+      "calls": 72,
+      "seconds": 0.446
+    },
+    {
+      "function": "reviewer_assigned_requirements",
+      "file": "apps/workflows/services/disposition_service.py",
+      "calls": 3,
+      "seconds": 0.407
+    },
+    {
+      "function": "<genexpr>",
+      "file": "apps/schemes/provenance.py",
+      "calls": 37,
+      "seconds": 0.407
+    },
+    {
+      "function": "authored_fixture_fingerprints",
+      "file": "apps/schemes/provenance.py",
+      "calls": 1,
+      "seconds": 0.407
+    },
+    {
+      "function": "parse",
+      "file": "apps/schemes/pipeline/parser.py",
+      "calls": 4,
+      "seconds": 0.405
+    },
+    {
+      "function": "current_profile",
+      "file": "apps/businesses/models.py",
+      "calls": 6,
+      "seconds": 0.385
+    },
+    {
+      "function": "get_workspace_widgets",
+      "file": "apps/dashboard/services.py",
+      "calls": 1,
+      "seconds": 0.329
+    },
+    {
+      "function": "compliance_rows",
+      "file": "domain/intelligence/workspace_guidance.py",
+      "calls": 1,
+      "seconds": 0.15
+    },
+    {
+      "function": "_parse_element",
+      "file": "apps/schemes/pipeline/parser.py",
+      "calls": 36,
+      "seconds": 0.129
+    },
+    {
+      "function": "resolve_statutory_portal",
+      "file": "knowledge_packs/catalogs.py",
+      "calls": 28,
+      "seconds": 0.047
+    },
+    {
+      "function": "<module>",
+      "file": "demo/__init__.py",
+      "calls": 1,
+      "seconds": 0.038
+    },
+    {
+      "function": "<module>",
+      "file": "demo/resolver.py",
+      "calls": 1,
+      "seconds": 0.036
+    },
+    {
+      "function": "<module>",
+      "file": "apps/schemes/pipeline/__init__.py",
+      "calls": 1,
+      "seconds": 0.035
+    },
+    {
+      "function": "<module>",
+      "file": "apps/schemes/pipeline/service.py",
+      "calls": 1,
+      "seconds": 0.031
+    },
+    {
+      "function": "_statutory_deadlines",
+      "file": "apps/dashboard/services.py",
+      "calls": 1,
+      "seconds": 0.03
+    },
+    {
+      "function": "<module>",
+      "file": "apps/onboarding/services.py",
+      "calls": 1,
+      "seconds": 0.03
+    },
+    {
+      "function": "<module>",
+      "file": "apps/onboarding/planner.py",
+      "calls": 1,
+      "seconds": 0.022
+    },
+    {
+      "function": "<module>",
+      "file": "demo/scenarios/__init__.py",
+      "calls": 1,
+      "seconds": 0.02
+    },
+    {
+      "function": "<module>",
+      "file": "apps/schemes/pipeline/diff.py",
+      "calls": 1,
+      "seconds": 0.019
+    },
+    {
+      "function": "<module>",
+      "file": "apps/onboarding/adaptive.py",
+      "calls": 1,
+      "seconds": 0.015
+    },
+    {
+      "function": "<module>",
+      "file": "apps/acquisition/resolver.py",
+      "calls": 1,
+      "seconds": 0.015
+    },
+    {
+      "function": "<module>",
+      "file": "apps/schemes/pipeline/parser.py",
+      "calls": 1,
+      "seconds": 0.015
+    }
+  ],
+  "action_count": 14
+}

@@ -1,0 +1,21 @@
+{
+  "verified_date": "2026-10-22",
+  "code_revision": "1116e903b9b6357e049eb5101acdb859e36850c7",
+  "image_build_run": "39740428506",
+  "backend": {
+    "state": "Succeeded",
+    "url": "https://complywise-backend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io",
+    "cpu": 1.0,
+    "memory": "2.0Gi",
+    "DATABASE_CONN_MAX_AGE": 60
+  },
+  "frontend": {
+    "state": "Succeeded",
+    "url": "https://complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io",
+    "cpu": 0.5,
+    "memory": "1Gi"
+  },
+  "temporary_registry_build_secret_removed": true,
+  "schema_migrations": false,
+  "resource_sizes_changed": false
+}

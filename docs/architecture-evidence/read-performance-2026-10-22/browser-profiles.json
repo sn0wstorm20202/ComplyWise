@@ -1,0 +1,48 @@
+{
+  "profiles": [
+    {
+      "name": "Meridian Pharma Formulations Pvt. Ltd.",
+      "editableName": "Meridian Pharma Formulations Pvt. Ltd.",
+      "selected": true
+    },
+    {
+      "name": "VoltGrid Mobility Services Pvt. Ltd.",
+      "editableName": "VoltGrid Mobility Services Pvt. Ltd.",
+      "selected": true
+    },
+    {
+      "name": "ApexBuild Infrastructure Pvt. Ltd.",
+      "editableName": "ApexBuild Infrastructure Pvt. Ltd.",
+      "selected": true
+    },
+    {
+      "name": "SilkRoute Exports Pvt. Ltd.",
+      "editableName": "SilkRoute Exports Pvt. Ltd.",
+      "selected": true
+    },
+    {
+      "name": "CloudAxis Data Centres India Pvt. Ltd.",
+      "editableName": "CloudAxis Data Centres India Pvt. Ltd.",
+      "selected": true
+    },
+    {
+      "name": "Sahaya Microfinance Services Ltd.",
+      "editableName": "Sahaya Microfinance Services Ltd.",
+      "selected": true
+    },
+    {
+      "name": "HarvestLink Foods & Cold Chain Pvt. Ltd.",
+      "editableName": "HarvestLink Foods & Cold Chain Pvt. Ltd.",
+      "selected": true
+    },
+    {
+      "name": "MediBridge Devices India Pvt. Ltd.",
+      "editableName": "MediBridge Devices India Pvt. Ltd.",
+      "selected": true
+    }
+  ],
+  "editable": true,
+  "ownBusinessClears": true,
+  "everydayProfilesRetained": true,
+  "assessmentSubmitted": false
+}

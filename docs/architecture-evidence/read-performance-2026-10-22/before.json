@@ -1,0 +1,56 @@
+[
+  {
+    "name": "directory",
+    "seconds": 2.997,
+    "status": 200,
+    "bytes": 14603
+  },
+  {
+    "name": "workspace",
+    "seconds": 1.805,
+    "status": 200,
+    "bytes": 683
+  },
+  {
+    "name": "business",
+    "seconds": 2.176,
+    "status": 200,
+    "bytes": 579
+  },
+  {
+    "name": "assessments",
+    "seconds": 2.332,
+    "status": 200,
+    "bytes": 50277
+  },
+  {
+    "name": "profile",
+    "seconds": 1.872,
+    "status": 200,
+    "bytes": 19603
+  },
+  {
+    "name": "assessment",
+    "seconds": 1.934,
+    "status": 200,
+    "bytes": 14578
+  },
+  {
+    "name": "dashboard",
+    "seconds": 16.798,
+    "status": 200,
+    "bytes": 28188
+  },
+  {
+    "name": "compliance",
+    "seconds": 2.831,
+    "status": 200,
+    "bytes": 34555
+  },
+  {
+    "name": "dashboard_repeat",
+    "seconds": 15.472,
+    "status": 200,
+    "bytes": 28188
+  }
+]

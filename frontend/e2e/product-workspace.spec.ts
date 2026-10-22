@@ -352,6 +352,7 @@ test('visible starter autofill is editable, does not submit, and own business cl
   await workspace(page, {respond:async(route,path)=>{ if(route.request().method()==='POST' && path==='/businesses') writes++; return false; }});
   await page.goto('/onboarding?new=true');
   const starter = page.getByRole('button', {name:/Restaurant.*Neighbourhood Kitchen/});
+  await page.getByText('Everyday business profiles (7)', { exact: true }).click();
   await expect(starter).toBeVisible();
   await page.screenshot({path:'../docs/submission-screenshots/02-starter-selection.png',fullPage:true});
   await starter.click();

@@ -15,6 +15,7 @@ from copy import deepcopy
 from django.db import transaction
 
 from apps.businesses.models import WorkspaceGuidance
+from common.read_scope import scoped_projection, read_assessment
 from domain.intelligence.output_safety import (
     EVIDENCE_CONSTRAINTS,
     _reject_evidence_identity,
@@ -371,9 +372,9 @@ def generate_workspace(business, assessment, profile, deterministic, retrieved=N
     return payload
 
 
+@scoped_projection
 def get_workspace(business, assessment_id=None):
-    assessment = (business.assessments.filter(pk=assessment_id).first() if assessment_id
-                  else business.assessments.order_by("-assessment_number").first())
+    assessment = read_assessment(business, assessment_id)
     if not assessment or not assessment.profile_version_id:
         return {key: [] for key in COLLECTIONS}
     row = WorkspaceGuidance.objects.select_related("assessment", "profile_version").filter(

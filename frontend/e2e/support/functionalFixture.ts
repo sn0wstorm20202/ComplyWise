@@ -68,7 +68,10 @@ export async function fixtureLogin(page:Page){
 export async function completeFixtureJourney(page:Page,own=false){
  await page.goto('/onboarding?new=true');
  if(own){await page.getByRole('button',{name:/Start from my own business/}).click();await page.getByRole('textbox',{name:'Business name',exact:true}).fill('Arbitrary synthetic business');await page.getByRole('combobox',{name:'Legal constitution'}).selectOption('PROPRIETORSHIP');await page.getByRole('combobox',{name:'Operating state'}).selectOption('KARNATAKA');await page.getByRole('textbox',{name:'District',exact:true}).fill('Bengaluru');await page.getByRole('combobox',{name:'Lifecycle stage'}).selectOption('OPERATIONAL');}
- else await page.getByRole('button',{name:/Manufacturing Unit Precision Workshop/}).click();
+ else {
+   await page.getByText('Everyday business profiles (7)', { exact: true }).click();
+   await page.getByRole('button',{name:/Manufacturing Unit Precision Workshop/}).click();
+ }
  await page.getByRole('button',{name:/Continue to Products/}).click();
  await expect(page.getByRole('heading',{name:'Products & Activities',exact:true})).toBeVisible();
  if(own) await page.locator('textarea').first().fill('A synthetic repair and upcycling workshop providing domestic services.');

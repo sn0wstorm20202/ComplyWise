@@ -5,6 +5,7 @@ test.describe('Starter and arbitrary business regression - explicit browser fixt
  test.beforeEach(async({page})=>{await functionalFixture(page);await fixtureLogin(page);});
  test('Five business starters remain editable and do not auto-submit',async({page})=>{
   await page.goto('/onboarding?new=true');
+  await page.getByText('Everyday business profiles (7)', { exact: true }).click();
   for(const name of ['Precision Workshop','Neighbourhood Kitchen','Clearpath Digital','City Storage','Community Clinic']){
    const starter=page.getByRole('button',{name:new RegExp(name)});await starter.click();
    await expect(starter).toHaveAttribute('aria-pressed','true');

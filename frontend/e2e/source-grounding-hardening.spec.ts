@@ -12,6 +12,7 @@ test('primary business form precedes optional starters and starter values remain
   await expect(form).toBeVisible(); await expect(starters).toBeVisible();
   expect(await form.evaluate((node) => Boolean(node.compareDocumentPosition(document.querySelector('[aria-label="Optional starting profiles"]')!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
   await expect(page.getByRole('heading', { name: 'Need a head start? Use a starter profile' })).toBeVisible();
+  await page.getByText('Everyday business profiles (7)', { exact: true }).click();
   await page.getByRole('button', { name: /Manufacturing Unit Precision Workshop/ }).click();
   await page.getByRole('textbox', { name: 'Business name', exact: true }).fill('Editable supplied business');
   await expect(page.getByRole('textbox', { name: 'Business name', exact: true })).toHaveValue('Editable supplied business');

@@ -18,6 +18,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from common.enums import ActorType, AdminDisposition
+from common.read_scope import scoped_projection, read_assessment
 from apps.knowledge.models import RequirementDefinition
 from apps.workflows.models import (
     CaseRequirementDisposition,
@@ -29,13 +30,14 @@ from apps.workflows.models import (
 logger = logging.getLogger(__name__)
 
 
+@scoped_projection
 def reviewed_requirement_treatment(business, assessment_id=None, profile_version_id=None):
     """Read case-level reviewer treatment without rewriting engine truth."""
     from django.db.models import Q
     rows = CaseRequirementDisposition.objects.filter(case__business=business,
         reviewer__isnull=False, user_visible=True).select_related("case", "reviewer", "requirement")
     if assessment_id:
-        assessment = business.assessments.filter(pk=assessment_id).first()
+        assessment = read_assessment(business, assessment_id)
         if not assessment:
             return {}
         rows = rows.filter(Q(case__assessment=assessment) | Q(case__metadata__assessment_id=str(assessment.id)) |

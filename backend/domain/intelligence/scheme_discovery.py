@@ -12,6 +12,7 @@ Discovers business-specific government support schemes based on:
 from __future__ import annotations
 
 from typing import Any
+from copy import deepcopy
 
 from apps.businesses.models import Business
 from apps.schemes.engine.matcher import match_business_schemes
@@ -22,9 +23,11 @@ def discover_business_schemes(
     business: Business,
     context: DerivedBusinessContext | None = None,
     assessment_id: str | None = None,
+    *, scheme_matches: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Dynamically discover government schemes matching the business's profile via ingestion database."""
-    payload = match_business_schemes(business, context=context, assessment_id=assessment_id)
+    payload = (deepcopy(scheme_matches) if scheme_matches is not None else
+               match_business_schemes(business, context=context, assessment_id=assessment_id))
     from domain.intelligence.workspace_guidance import get_workspace
     known_titles = {s["title"].casefold() for s in payload.get("schemes", [])}
     for item in get_workspace(business, assessment_id)["schemes"]:

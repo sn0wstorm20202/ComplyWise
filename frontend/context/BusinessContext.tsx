@@ -19,6 +19,7 @@ import { api } from "@/lib/api";
 import { DashboardSummary, Business, BusinessSummary, AssessmentSummary } from "@/types";
 import { getAuthToken } from "@/lib/api/client";
 import { useAuth } from "./AuthContext";
+import { selectWorkspaceAssessment } from "@/lib/workspaceSelection";
 import { INITIAL_DATABASE_BUSINESSES, INITIAL_DATABASE_ASSESSMENTS } from "@/data/userProfileHomeData";
 
 interface BusinessContextValue {
@@ -132,7 +133,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   const { token, loading: authLoading } = useAuth();
   const [profile, setProfileState] = useState<BusinessProfile>(EMPTY_PROFILE);
   const requestVersion = useRef(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [liveDashboardSummary, setLiveDashboardSummary] = useState<DashboardSummary | null>(null);
@@ -187,7 +188,8 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     }
     setIsLoading(true);
     try {
-      const requestedBusiness = preferredBizId || localStorage.getItem("complywise_active_business_id");
+      const route = new URLSearchParams(window.location.search);
+      const requestedBusiness = preferredBizId || route.get("business_id") || localStorage.getItem("complywise_active_business_id");
       const home = await api.businesses.getProfileHome(requestedBusiness);
       if (!current()) return;
       const homeBusinesses = home.businesses || [];
@@ -199,28 +201,27 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("complywise_active_assessment_id");
         return;
       }
-      const serverWs = await api.businesses.getWorkspace();
+      const serverWs = home.workspace ?? await api.businesses.getWorkspace();
       if (!current()) return;
-      const preferred = preferredBizId || localStorage.getItem("complywise_active_business_id") || serverWs?.active_business_id;
+      const preferred = requestedBusiness || serverWs?.active_business_id;
       const selected = homeBusinesses.find(b => b.id === preferred) || homeBusinesses[0];
       const bizId = selected.id;
       const cachedAssessment = localStorage.getItem("complywise_active_assessment_id");
-      const assessments = await api.businesses.getAssessments(bizId);
+      const routeAssessment = route.get("business_id") === bizId ? route.get("assessment_id") : null;
+      const effectiveAssId = routeAssessment || await selectWorkspaceAssessment(bizId, serverWs, cachedAssessment, api.businesses.getAssessments);
       if (!current()) return;
-      const requested = serverWs?.active_business_id === bizId ? serverWs.active_assessment_id : cachedAssessment;
-      const effectiveAssId = assessments.find(a => a.id === requested)?.id || assessments[0]?.id || null;
       setActiveBusinessId(bizId); setActiveAssessmentIdState(effectiveAssId);
       localStorage.setItem("complywise_active_business_id", bizId);
       if (effectiveAssId) localStorage.setItem("complywise_active_assessment_id", effectiveAssId);
       else localStorage.removeItem("complywise_active_assessment_id");
-      const [profileResp, bizDetail, summary, selectedAssessment] = await Promise.all([
-        api.businesses.getProfile(bizId), api.businesses.get(bizId), api.dashboard.get(bizId, effectiveAssId),
+      const [profileResp, summary, selectedAssessment] = await Promise.all([
+        effectiveAssId ? Promise.resolve(null) : api.businesses.getProfile(bizId), api.dashboard.get(bizId, effectiveAssId),
         effectiveAssId ? api.businesses.getAssessment(bizId, effectiveAssId) : Promise.resolve(null),
       ]);
       if (!current()) return;
       const matchedSummary = selected;
-      const bizName = bizDetail.name;
-      const cv = selectedAssessment?.profile_variables ?? profileResp.current_version?.variables;
+      const bizName = selected.name;
+      const cv = selectedAssessment?.profile_variables ?? profileResp?.current_version?.variables;
         const rawState = String(cv?.state?.value || (selectedAssessment ? "" : matchedSummary?.state) || "");
         const stateFormatted = formatStateName(rawState);
         const district = String(cv?.district?.value || (selectedAssessment ? "" : matchedSummary?.district) || "");

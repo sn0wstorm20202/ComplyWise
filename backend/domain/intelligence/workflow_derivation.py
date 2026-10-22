@@ -604,6 +604,7 @@ def derive_business_workflows(
     business: Business,
     context: DerivedBusinessContext | None = None,
     assessment_id: str | None = None,
+    *, scheme_matches: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Derive prioritized statutory workflow roadmaps for a business.
     
@@ -618,7 +619,8 @@ def derive_business_workflows(
 
     latest_run = None
     if assessment_id:
-        assessment = business.assessments.filter(pk=assessment_id).first()
+        from common.read_scope import read_assessment
+        assessment = read_assessment(business, assessment_id)
         if assessment and assessment.decision_run:
             latest_run = assessment.decision_run
         elif assessment:
@@ -872,7 +874,8 @@ def derive_business_workflows(
 
     # 2. Derive Applicable Government Schemes
     try:
-        schemes_res = match_business_schemes(business, context=context, assessment_id=assessment_id)
+        schemes_res = (scheme_matches if scheme_matches is not None else
+                       match_business_schemes(business, context=context, assessment_id=assessment_id))
         matched_schemes = schemes_res.get("schemes", [])
     except Exception as exc:
         logger.debug("Failed to discover schemes for workflows: %s", exc)

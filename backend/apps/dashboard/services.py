@@ -21,15 +21,17 @@ from apps.ingestion.services import assess_knowledge_coverage
 from apps.knowledge.models import RequirementDefinition
 from common.enums import ApplicabilityStatus
 from knowledge_packs.catalogs import resolve_statutory_portal
+from common.read_scope import read_scope, read_assessment
 
 
+@read_scope
 def get_dashboard_summary(business: Business, assessment_id: str | None = None) -> dict[str, Any]:
     """Compile comprehensive dashboard intelligence for the business, optionally scoped to an assessment."""
     assessment = None
     if assessment_id:
-        assessment = business.assessments.filter(pk=assessment_id).first()
+        assessment = read_assessment(business, assessment_id)
     if assessment is None and not assessment_id:
-        assessment = business.assessments.order_by("-assessment_number").first()
+        assessment = read_assessment(business)
 
     profile = assessment.profile_version if assessment and assessment.profile_version else business.current_profile
 
@@ -80,7 +82,7 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
             "recent_updates": [],
             "recent_updates_available": False,
             # Coverage is meaningful before any run exists.
-            "coverage": assess_knowledge_coverage(business),
+            "coverage": assess_knowledge_coverage(business, profile_version=profile),
             "cir": None,
         }
 
@@ -91,7 +93,7 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
 
     # Coverage honesty: how well the loaded knowledge base covers this business's
     # jurisdiction/activity at all (distinct from per-requirement outcomes).
-    coverage = assess_knowledge_coverage(business)
+    coverage = assess_knowledge_coverage(business, profile_version=profile)
 
     status_counts = {
         ApplicabilityStatus.APPLICABLE: 0,
@@ -230,9 +232,13 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
     from domain.intelligence.standards_discovery import discover_business_standards
 
     aid = str(assessment.id) if assessment else None
-    doc_data = derive_business_documents(business, assessment_id=aid)
-    wf_data = derive_business_workflows(business, assessment_id=aid)
-    scheme_data = discover_business_schemes(business, assessment_id=aid)
+    from domain.context.business_context import build_business_context
+    from apps.schemes.engine.matcher import match_business_schemes
+    context = build_business_context(business, profile_version=profile)
+    scheme_matches = match_business_schemes(business, context=context, assessment_id=aid)
+    doc_data = derive_business_documents(business, context=context, assessment_id=aid)
+    wf_data = derive_business_workflows(business, context=context, assessment_id=aid, scheme_matches=scheme_matches)
+    scheme_data = discover_business_schemes(business, context=context, assessment_id=aid, scheme_matches=scheme_matches)
     std_data = discover_business_standards(business, assessment_id=aid)
     from apps.applicability.services import build_compliance_intelligence_record
     cir = build_compliance_intelligence_record(latest_run, assessment_id=aid)

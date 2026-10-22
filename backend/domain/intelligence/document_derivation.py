@@ -214,7 +214,8 @@ def derive_business_documents(
 
     latest_run = None
     if assessment_id:
-        assessment = business.assessments.filter(pk=assessment_id).first()
+        from common.read_scope import read_assessment
+        assessment = read_assessment(business, assessment_id)
         if assessment and assessment.decision_run:
             latest_run = assessment.decision_run
         elif assessment:

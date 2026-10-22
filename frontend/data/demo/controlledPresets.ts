@@ -17,6 +17,8 @@ export interface DemoPresetDefinition extends BusinessProfile {
   presetKey: string;
   tagline: string;
   badge: string;
+  focus?: string;
+  tradeIntent?: "NONE" | "IMPORT_ONLY" | "EXPORT_ONLY" | "IMPORT_AND_EXPORT";
   presetAnswers: Record<string, any>;
 }
 

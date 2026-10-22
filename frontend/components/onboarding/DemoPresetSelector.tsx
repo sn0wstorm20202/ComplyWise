@@ -3,6 +3,7 @@
 import React from "react";
 import { DemoPresetDefinition } from "@/data/demo/controlledPresets";
 import { BUSINESS_STARTERS } from "@/data/businessStarters";
+import { INDUSTRY_STARTERS } from "@/data/industryStarters";
 import { Check, Sparkles } from "lucide-react";
 
 interface DemoPresetSelectorProps {
@@ -28,7 +29,7 @@ export default function DemoPresetSelector({
             Choose a starting point
           </h3>
           <p className="text-xs text-[var(--ui-secondary)]">
-            We've prepared a starting profile. You can change anything before continuing.
+            Example business facts only. Review and edit them before starting your assessment.
           </p>
         </div>
         <span className="text-[11px] font-semibold text-[var(--ui-sage)] bg-[var(--ui-sage-soft)]/80 px-2.5 py-1 rounded-full self-start sm:self-auto">
@@ -37,7 +38,7 @@ export default function DemoPresetSelector({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {BUSINESS_STARTERS.map((preset) => {
+        {INDUSTRY_STARTERS.map((preset) => {
           const isSelected = selectedKey === preset.presetKey;
           return (
             <button
@@ -68,6 +69,7 @@ export default function DemoPresetSelector({
                 <p className="text-[11px] text-[var(--ui-secondary)] line-clamp-2 mt-1 leading-relaxed">
                   {preset.tagline}
                 </p>
+                <p className="text-[11px] font-medium text-[var(--ui-sage)] mt-2">{preset.focus}</p>
               </div>
 
               <div className="pt-3 mt-3 border-t border-[var(--ui-border)] flex items-center justify-between text-[10px] text-[var(--ui-secondary)]">
@@ -78,6 +80,18 @@ export default function DemoPresetSelector({
           );
         })}
       </div>
+      <details className="mt-4 rounded-xl border border-[var(--ui-border)] p-3" open={BUSINESS_STARTERS.some(preset => preset.presetKey === selectedKey) || undefined}>
+        <summary className="cursor-pointer text-xs font-semibold">Everyday business profiles ({BUSINESS_STARTERS.length})</summary>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+          {BUSINESS_STARTERS.map(preset => <button key={preset.presetKey} type="button"
+            aria-pressed={selectedKey === preset.presetKey} onClick={() => onSelectPreset(preset)}
+            className={`text-left rounded-xl border p-3 ${selectedKey === preset.presetKey ? "bg-[var(--ui-sage-faint)] border-[var(--ui-sage)]" : "bg-white border-[var(--ui-border)]"}`}>
+            <span className="text-[10px] text-[var(--ui-sage)]">{preset.badge}</span>
+            <h4 className="text-xs font-semibold mt-1">{preset.businessName}</h4>
+            <p className="text-[11px] text-[var(--ui-secondary)] mt-1">{preset.tagline}</p>
+          </button>)}
+        </div>
+      </details>
       <button type="button" className="ui-button mt-4" onClick={onStartOwn}>Start from my own business →</button>
     </div>
   );

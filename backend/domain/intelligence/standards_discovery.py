@@ -5,11 +5,11 @@ from apps.evidence.presentation import evidence_projection, source_projection
 from apps.knowledge.models import RequirementDefinition
 from apps.requirements.presentation import standard_mandatory_status
 from common.enums import KnowledgeStatus, SourceStatus, VerificationStatus
+from common.read_scope import read_assessment
 
 
 def discover_business_standards(business, context=None, assessment_id=None):
-    assessment = (business.assessments.filter(pk=assessment_id).first() if assessment_id
-                  else business.assessments.order_by("-assessment_number").first())
+    assessment = read_assessment(business, assessment_id)
     # A later mutable business profile must never replace this assessment's facts.
     run = None
     if assessment and assessment.profile_version_id:

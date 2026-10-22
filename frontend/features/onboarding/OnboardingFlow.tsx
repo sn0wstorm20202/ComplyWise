@@ -156,11 +156,11 @@ export default function OnboardingFlow() {
     setEmployeeCount(String(preset.employeeCount));
     setProductDescription(preset.productDescription || "");
     setTradeIntent(
-      preset.exports
+        preset.tradeIntent ?? (preset.exports
         ? "EXPORT_ONLY"
         : preset.activities.some((a) => a.toLowerCase().includes("import"))
         ? "IMPORT_ONLY"
-        : "NONE"
+          : "NONE")
     );
     setStep(1);
   }, []);

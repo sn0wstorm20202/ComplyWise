@@ -129,6 +129,12 @@ export interface BusinessSummary {
 }
 
 export interface UserProfileHome {
+  workspace?: {
+    active_business_id: string | null;
+    active_assessment_id: string | null;
+    redirect_target: string;
+    redirect_url: string;
+  };
   next_business_page?: number | null;
   matching_businesses?: number;
   user: {

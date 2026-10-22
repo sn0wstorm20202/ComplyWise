@@ -17,10 +17,10 @@ function DashboardContent() {
   const [_newQueryOpen, setNewQueryOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    if (businessIdFromUrl && businessIdFromUrl !== activeBusinessId) {
+    if (!isLoading && businessIdFromUrl && businessIdFromUrl !== activeBusinessId) {
       switchProfile(businessIdFromUrl);
     }
-  }, [businessIdFromUrl, activeBusinessId, switchProfile]);
+  }, [businessIdFromUrl, activeBusinessId, switchProfile, isLoading]);
 
   useEffect(() => {
     if (isLoading || !activeBusinessId || !assessmentIdFromUrl ||

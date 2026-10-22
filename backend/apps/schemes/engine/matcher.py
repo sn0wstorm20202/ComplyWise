@@ -16,13 +16,15 @@ from typing import Any
 import re
 
 from apps.businesses.models import Business
-from apps.schemes.models import Scheme
+from django.db.models import Prefetch
+from apps.schemes.models import Scheme, SchemeVersion
 from apps.schemes.presentation import scheme_evidence_projection, scheme_source_projection
 from apps.schemes.provenance import is_authored_fixture_version
 from domain.context.business_context import DerivedBusinessContext, build_business_context
 from domain.context.activity_text import strip_negations
 from apps.evidence.presentation import exact_source_url
 from .eligibility import assessment_facts, evaluate_declared_eligibility
+from common.read_scope import read_assessment
 
 
 SECTOR_KEYWORDS = {
@@ -119,8 +121,7 @@ def match_business_schemes(
         - State-specific schemes matching the business state (e.g. Maharashtra)
         - Targeted sector schemes matching the business's industry (Food, Auto, Textile, etc.)
     """
-    assessment = (business.assessments.filter(pk=assessment_id).first() if assessment_id
-                  else business.assessments.order_by("-assessment_number").first() if hasattr(business, "assessments") else None)
+    assessment = read_assessment(business, assessment_id) if hasattr(business, "assessments") else None
     if assessment_id and (assessment is None or not assessment.profile_version_id):
         return {"business_id": str(business.id), "business_name": business.name, "schemes": [],
                 "count": 0, "total_schemes_found": 0, "available": True, "assessment_id": str(assessment_id),
@@ -136,15 +137,21 @@ def match_business_schemes(
     msme_scale = context.msme_scale  # "MICRO", "SMALL", "MEDIUM", "LARGE", "UNKNOWN"
     desc = (context.product_description or "").lower()
 
-    active_schemes = Scheme.objects.filter(is_active=True).prefetch_related("versions")
+    active_schemes = Scheme.objects.filter(is_active=True).prefetch_related(Prefetch(
+        "versions", queryset=SchemeVersion.objects.filter(is_active=True).order_by("-version_number"),
+        to_attr="active_versions",
+    ))
 
     matched_schemes: list[dict[str, Any]] = []
     quarantined_count = 0
 
     for scheme in active_schemes:
-        ver = scheme.versions.filter(version_number=scheme.current_version_number, is_active=True).first()
-        if not ver:
-            ver = scheme.versions.filter(is_active=True).order_by("-version_number").first()
+        # Filtering a related manager bypasses its prefetch cache and previously
+        # issued up to two extra queries for every scheme in the catalogue.
+        ver = next((version for version in scheme.active_versions
+                    if version.version_number == scheme.current_version_number), None)
+        if ver is None:
+            ver = next(iter(scheme.active_versions), None)
         if not ver:
             continue
         if is_authored_fixture_version(ver):

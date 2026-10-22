@@ -115,3 +115,17 @@ def test_pending_job_blocks_answer_mutation_and_malformed_stage_is_400(assessmen
     enqueue(assessment, user, "REGULATORY_DISCOVERY")
     response = auth_client.post(f"/api/v1/assessments/{assessment.id}/answers", {"answers":{"q":"value"}}, format="json")
     assert response.status_code == 409
+
+
+def test_question_generation_runs_through_worker_with_legacy_response_contract(assessment, user, auth_client, settings):
+    settings.ENABLE_ASSESSMENT_JOBS = True
+    url = f"/api/v1/assessments/{assessment.id}/jobs/"
+    response = auth_client.post(url, {"stage": "QUESTION_GENERATION"}, format="json")
+    assert response.status_code == 202
+    assert process_next(assessment_id=assessment.id)
+    result = auth_client.get(response["Location"]).json()["data"]
+    assert result["status"] == "SUCCEEDED"
+    assert 0 <= len(result["result"]["questions"]) <= 4
+    legacy = auth_client.post(f"/api/v1/assessments/{assessment.id}/questions/generate/", {}, format="json")
+    assert legacy.status_code == 200
+    assert legacy.json()["data"] == result["result"]

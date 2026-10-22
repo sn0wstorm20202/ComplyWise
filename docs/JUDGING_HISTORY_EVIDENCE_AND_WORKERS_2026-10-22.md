@@ -34,4 +34,10 @@ The API logs route templates, status, duration, request ID and release; it does 
 3. Verify same-release heartbeat, durable completion and existing archive integrity. Then enable ENABLE_ASSESSMENT_JOBS and ASSESSMENT_WORKER_HEALTH_REQUIRED on the API. Frontend polling resumes the persisted job without a second execution path.
 4. If the worker fails, stop accepting new jobs and retain queued operations for recovery. Do not execute a job synchronously after a network timeout. Disable jobs explicitly only after assessing queued/running work; rollback API/worker images together. Retain signing keys and the additive table. Do not rewrite historical archives.
 
-Deployment and live results will be recorded after verification.
+## Regional validation finding
+
+The East Asia worker could process persisted jobs, but its provider requests fell back to local heuristics. Direct tests inside the container established OpenAI HTTP 403 with code unsupported_country_region_territory and Gemini HTTP 400 with FAILED_PRECONDITION and a regional restriction. The same credentials completed a local provider request successfully. Configuration presence/model-list access was therefore insufficient proof of usable generation.
+
+The supported worker target is Korea Central, which is listed by [OpenAI](https://help.openai.com/en/articles/5347006-openai-api-supported-countries-and-territories) and [Google](https://ai.google.dev/gemini-api/docs/available-regions). The public frontend/API URLs stay unchanged. Provider-backed question generation joins the three existing queued stages; deterministic answer interpretation stays local. The student subscription's one-standard-environment quota requires replacing the temporary East Asia worker environment rather than retaining two running workers. No provider key is changed or printed.
+
+Deployment and final live results will be recorded after verification.

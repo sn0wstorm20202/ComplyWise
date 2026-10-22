@@ -1,6 +1,6 @@
 # Operating the reconciled architecture
 
-This is the architecture operations guide. The initial implementation was verified locally; the later judge-demo Azure rollout and its Azure Express limitations are recorded in [the 19 October release report](AZURE_ARCHITECTURE_DEMO_RELEASE_2026-10-19.md). That deployment enables demo mode and keeps background jobs disabled.
+This is the architecture operations guide. The historical [19 October release](AZURE_ARCHITECTURE_DEMO_RELEASE_2026-10-19.md) enabled demo mode with jobs disabled. The [22 October history/evidence/worker release](JUDGING_HISTORY_EVIDENCE_AND_WORKERS_2026-10-22.md) adds an independently supervised worker; use its final verification record for the current processing mode.
 
 ## Release units
 
@@ -16,6 +16,8 @@ The retrieval branch is `architecture/retrieval-base`, in `E:/complience/_scratc
 | DATABASE_URL | PostgreSQL for durable workers and concurrent requests |
 | COMPLYWISE_DEMO_MODE=False | General operation; demo fixtures require explicit opt-in |
 | ENABLE_ASSESSMENT_JOBS=False initially | Enable after the worker from the same release is running |
+| ASSESSMENT_WORKER_HEALTH_REQUIRED=True | Require a heartbeat from the API's release, refreshed within 60 seconds, before accepting queued work |
+| DATABASE_CONN_MAX_AGE=60 | Current WSGI/session-pooler setting with connection health checks; do not transfer blindly to ASGI/transaction pooling |
 | CIR_AUTHORITY_KEY | Private signing key from the deployment secret store; never a repository default |
 | CIR_SIGNING_KEY_ID | Current key identifier stored with newly signed CIRs |
 | CIR_VERIFICATION_KEYS | JSON object retaining older key IDs and keys while historical signatures need verification |
@@ -46,7 +48,7 @@ The initial pgvector migration now respects ENABLE_PGVECTOR. This corrects fresh
 
 ## Jobs and retries
 
-- POST `/api/v1/assessments/{id}/jobs/` with BUSINESS_UNDERSTANDING, REGULATORY_DISCOVERY or COMPLIANCE_SYNTHESIS.
+- POST `/api/v1/assessments/{id}/jobs/` with BUSINESS_UNDERSTANDING, QUESTION_GENERATION, REGULATORY_DISCOVERY or COMPLIANCE_SYNTHESIS.
 - HTTP 202 supplies Location and Retry-After. GET the job resource to observe QUEUED, RUNNING, SUCCEEDED or FAILED.
 - The default retry key derives from the saved input fingerprint. Repeated requests for unchanged inputs return the same operation. A reused explicit key for different inputs is rejected.
 - A deliberate force refresh requires a new Idempotency-Key. A terminal failed job remains terminal for that key; a new explicit refresh starts a new operation. The frontend discovery/synthesis clients support this refresh path.
@@ -56,6 +58,14 @@ The initial pgvector migration now respects ENABLE_PGVECTOR. This corrects fresh
 - Workers use configured provider credentials. Request-scoped browser provider keys are not persisted into jobs.
 
 Monitor the age of the oldest queued operation, expired RUNNING leases, failed operation counts, attempts, stage duration and worker restarts. The release includes persisted status and error codes, not a production monitoring installation or autoscaling policy.
+
+Use `python manage.py assessment_queue_status` for a credential-free aggregate snapshot. The separate worker runs `python manage.py process_assessment_jobs`, has no ingress, and uses min/max replicas 1. A heartbeat continues during provider calls. Graceful shutdown stops accepting more work; transactional writes and expiring leases protect interrupted attempts. Existing operation retries resume without waiting on the assessment lock held by a running provider call.
+
+### Provider region and worker deployment
+
+Host provider-driven jobs in a region supported by the configured vendors. Direct verification from Azure East Asia returned OpenAI HTTP 403 (`unsupported_country_region_territory`) and Gemini HTTP 400 (`FAILED_PRECONDITION`, regional restriction), despite valid credentials. South Korea is listed by both providers. The worker deployment target is a standard WorkloadProfiles Consumption environment in Korea Central; the existing public web/API addresses remain in East Asia. Provider-backed question generation also uses the worker; deterministic answer validation stays in the API.
+
+`ops/deploy_assessment_worker.py` copies the existing API's relevant configuration in memory, including strategy and cost/discovery limits, into stable named secret references. It does not persist keys to files or enable the API flag. Apply migration 0006 first; verify the same-release heartbeat and a real provider result before enabling submissions. The student subscription allows only one standard environment, so replace the newly created empty/test environment rather than leaving duplicate workers. See the dated report for the measured rollout.
 
 ## Source changes and publication
 

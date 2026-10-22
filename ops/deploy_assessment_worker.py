@@ -6,12 +6,16 @@ never printed or written to parameter files. Does not enable API job submission.
 import argparse
 import json
 import subprocess
+import shutil
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
 
 def az_json(*args):
-    process = subprocess.run(["az", *args, "--output", "json"], capture_output=True, text=True, shell=False)
+    executable = shutil.which("az")
+    if not executable:
+        raise RuntimeError("Install Azure CLI and sign in before deployment.")
+    process = subprocess.run([executable, *args, "--output", "json"], capture_output=True, text=True, shell=False)
     if process.returncode:
         raise RuntimeError("Azure CLI prerequisite failed; inspect the named resource separately.")
     return json.loads(process.stdout)
@@ -51,19 +55,28 @@ def main():
     secrets = {item["name"]: item.get("value") for item in secret_records}
     container = source["properties"]["template"]["containers"][0]
     image = container["image"]
-    if not image.endswith("architecture-" + args.release):
+    if image.rsplit(":", 1)[-1] not in {"architecture-" + args.release, "architecture-" + args.release + "-workers"}:
         raise RuntimeError("Deploy this release to the API before provisioning its matching worker.")
     source_env = {item["name"]: item.get("value", secrets.get(item.get("secretRef"))) for item in container["env"]}
-    allowed = {"DJANGO_SECRET_KEY", "DJANGO_DEBUG", "DATABASE_URL", "DATABASE_CONN_MAX_AGE", "DATABASE_CONN_HEALTH_CHECKS",
+    allowed = {"DJANGO_SECRET_KEY", "DJANGO_DEBUG", "DJANGO_ALLOWED_HOSTS", "CORS_ALLOWED_ORIGINS", "CSRF_TRUSTED_ORIGINS",
+               "DATABASE_URL", "DATABASE_CONN_MAX_AGE", "DATABASE_CONN_HEALTH_CHECKS",
                "COMPLYWISE_DEMO_MODE", "COMPLYWISE_VERSION", "ENABLE_PGVECTOR", "CIR_AUTHORITY_KEY", "CIR_SIGNING_KEY_ID",
                "CIR_VERIFICATION_KEYS", "LLM_PROVIDER", "SEARCH_PROVIDER", "LOG_LEVEL", "KNOWLEDGE_PACKS_DIR"}
-    prefixes = ("OPENAI_", "GEMINI_", "GROK_", "SERPAPI_", "FIRECRAWL_", "COMPLIANCERAG_")
+    allowed.update({"EMBEDDING_PROVIDER", "ASSESSMENT_STRATEGY", "ENABLE_API_ORCHESTRATION",
+        "ENABLE_USER_PATH_AUTO_INGEST", "MAX_LLM_CALLS_PER_ASSESSMENT", "MAX_TOTAL_TOKENS_PER_ASSESSMENT",
+        "MAX_ESTIMATED_COST_PER_ASSESSMENT", "SEARCH_TIMEOUT_SECONDS", "ACQUISITION_TIMEOUT_SECONDS", "SERP_API"})
+    prefixes = ("OPENAI_", "GEMINI_", "GROK_", "SERPAPI_", "FIRECRAWL_", "COMPLIANCERAG_", "DISCOVERY_")
     values = {k: str(v) for k, v in source_env.items() if v is not None and (k in allowed or k.startswith(prefixes))}
     values.update(AUTO_MIGRATE="false", ENABLE_ASSESSMENT_JOBS="true", COMPLYWISE_VERSION=args.release,
                   ASSESSMENT_WORKER_HEALTH_REQUIRED="true", DATABASE_CONN_MAX_AGE="60")
     env, worker_secrets = [], []
-    for index, (key, value) in enumerate(sorted(values.items())):
-        secret_name = f"runtime-{index}"
+    for key, value in sorted(values.items()):
+        if not value:
+            env.append({"name": key, "value": ""})
+            continue  # Azure rejects empty secret values; an unset optional key is not a secret.
+        # Stable names avoid rebinding other settings when an optional key is
+        # added during a rolling update.
+        secret_name = "runtime-" + key.lower().replace("_", "-")
         worker_secrets.append({"name": secret_name, "value": value})
         env.append({"name": key, "secretRef": secret_name})
     registries = source["properties"]["configuration"].get("registries", [])

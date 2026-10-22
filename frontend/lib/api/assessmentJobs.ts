@@ -1,6 +1,6 @@
 import { ApiError, request } from "./client";
 
-export type JobStage = "BUSINESS_UNDERSTANDING" | "REGULATORY_DISCOVERY" | "COMPLIANCE_SYNTHESIS";
+export type JobStage = "BUSINESS_UNDERSTANDING" | "QUESTION_GENERATION" | "REGULATORY_DISCOVERY" | "COMPLIANCE_SYNTHESIS";
 interface AssessmentJob<T> {
   job_id: string;
   status: "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED";

@@ -252,12 +252,12 @@ export const orchestrationApi = {
     })),
 
   /**
-   * Generate the 15 intelligent compliance questions in a single LLM call.
+   * Generate the compact question set through the supervised worker when enabled.
    */
   generateQuestions: (runId: string): Promise<{ questions: OrchestrationQuestion[]; count: number }> =>
-    request<{ questions: OrchestrationQuestion[]; count: number }>(`assessments/${runId}/questions/generate/`, {
+    runAssessmentJob(runId, "QUESTION_GENERATION", () => request<{ questions: OrchestrationQuestion[]; count: number }>(`assessments/${runId}/questions/generate/`, {
       method: "POST",
-    }),
+    })),
 
   /**
    * List the 15 questions and user completion status for an assessment.

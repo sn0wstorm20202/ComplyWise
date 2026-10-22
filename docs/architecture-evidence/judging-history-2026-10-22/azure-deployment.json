@@ -1,0 +1,93 @@
+{
+  "verified_date": "2026-10-22",
+  "capacity_certified": false,
+  "applications": [
+    {
+      "name": "complywise-backend",
+      "location": "East Asia",
+      "state": "Succeeded",
+      "image": "complywiseacr.azurecr.io/complywise-backend:architecture-d648ac4bec9f78514ff306cf137202b202b8a3de-workers",
+      "resources": {
+        "cpu": 1.0,
+        "ephemeralStorage": "4Gi",
+        "memory": "2.0Gi"
+      },
+      "public_hostname": "complywise-backend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io",
+      "scale": {
+        "cooldownPeriod": null,
+        "maxReplicas": null,
+        "minReplicas": null,
+        "pollingInterval": null,
+        "rules": [
+          {
+            "http": {
+              "metadata": {
+                "concurrentRequests": "10"
+              }
+            },
+            "name": "http-scaler"
+          }
+        ]
+      },
+      "runtime_flags": {
+        "COMPLYWISE_VERSION": "d648ac4bec9f78514ff306cf137202b202b8a3de",
+        "COMPLYWISE_DEMO_MODE": "true",
+        "ENABLE_ASSESSMENT_JOBS": "true",
+        "ASSESSMENT_WORKER_HEALTH_REQUIRED": "true"
+      }
+    },
+    {
+      "name": "complywise-frontend",
+      "location": "East Asia",
+      "state": "Succeeded",
+      "image": "complywiseacr.azurecr.io/complywise-frontend:architecture-8112778d52cd749cf3d55c8fc110282bfde47ffa",
+      "resources": {
+        "cpu": 0.5,
+        "ephemeralStorage": "2Gi",
+        "memory": "1Gi"
+      },
+      "public_hostname": "complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io",
+      "scale": {
+        "cooldownPeriod": null,
+        "maxReplicas": 2,
+        "minReplicas": 1,
+        "pollingInterval": null,
+        "rules": [
+          {
+            "http": {
+              "metadata": {
+                "concurrentRequests": "10"
+              }
+            },
+            "name": "http-scaler"
+          }
+        ]
+      },
+      "runtime_flags": {}
+    },
+    {
+      "name": "complywise-assessment-worker",
+      "location": "Korea Central",
+      "state": "Succeeded",
+      "image": "complywiseacr.azurecr.io/complywise-backend:architecture-d648ac4bec9f78514ff306cf137202b202b8a3de-sync",
+      "resources": {
+        "cpu": 0.5,
+        "ephemeralStorage": "2Gi",
+        "memory": "1Gi"
+      },
+      "public_hostname": null,
+      "scale": {
+        "cooldownPeriod": 300,
+        "maxReplicas": 1,
+        "minReplicas": 1,
+        "pollingInterval": 30,
+        "rules": null
+      },
+      "runtime_flags": {
+        "storage": "Azure secret references; values deliberately omitted"
+      },
+      "verified_release": "d648ac4bec9f78514ff306cf137202b202b8a3de",
+      "release_verification": "Matching live database heartbeat and successful isolated provider-backed jobs"
+    }
+  ]
+}

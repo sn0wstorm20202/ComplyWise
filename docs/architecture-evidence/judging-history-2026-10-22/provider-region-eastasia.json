@@ -1,0 +1,13 @@
+{
+  "location": "eastasia",
+  "openai": {
+    "http": 403,
+    "error_code": "unsupported_country_region_territory"
+  },
+  "gemini": {
+    "http": 400,
+    "error_status": "FAILED_PRECONDITION",
+    "regional_restriction": true
+  },
+  "same_credentials_work_from_local_supported_region": true
+}

@@ -1,0 +1,16 @@
+{
+  "release": "d648ac4bec9f78514ff306cf137202b202b8a3de",
+  "assessment_id": "7d2ee5b3-f7b0-49bd-8f0c-30ade697c9ca",
+  "stage": "BUSINESS_UNDERSTANDING",
+  "worker_ready_before_submission": true,
+  "enqueue_seconds": 2.782,
+  "status": "SUCCEEDED",
+  "attempts": 1,
+  "total_seconds": 18.251,
+  "error_code": "",
+  "saved_understanding": true,
+  "fact_sources": [
+    "LLM_BUSINESS_UNDERSTANDING"
+  ],
+  "worker_ready_after_execution": true
+}

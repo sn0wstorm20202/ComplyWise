@@ -1,0 +1,316 @@
+{
+  "budgets": {
+    "schema_version": 1,
+    "description": "Initial judging-release acceptance budgets; sampled probes do not certify capacity or a production SLO.",
+    "minimum_warm_samples": 20,
+    "concurrency": 3,
+    "timeout_seconds": 20,
+    "routes": {
+      "dashboard": {
+        "p95_seconds": 10,
+        "max_seconds": 15
+      },
+      "comparison": {
+        "p95_seconds": 8,
+        "max_seconds": 12
+      },
+      "job_status": {
+        "p95_seconds": 3,
+        "max_seconds": 6
+      }
+    },
+    "required_success_ratio": 1.0
+  },
+  "results": {
+    "dashboard": {
+      "first_read": {
+        "seconds": 6.433,
+        "status": 200
+      },
+      "warm": {
+        "samples": 20,
+        "p95_seconds": 6.75,
+        "max_seconds": 7.582,
+        "successes": 20,
+        "passed": true
+      },
+      "measurements": [
+        {
+          "seconds": 5.327,
+          "status": 200
+        },
+        {
+          "seconds": 5.873,
+          "status": 200
+        },
+        {
+          "seconds": 5.326,
+          "status": 200
+        },
+        {
+          "seconds": 5.396,
+          "status": 200
+        },
+        {
+          "seconds": 5.81,
+          "status": 200
+        },
+        {
+          "seconds": 4.874,
+          "status": 200
+        },
+        {
+          "seconds": 4.834,
+          "status": 200
+        },
+        {
+          "seconds": 4.957,
+          "status": 200
+        },
+        {
+          "seconds": 5.056,
+          "status": 200
+        },
+        {
+          "seconds": 4.701,
+          "status": 200
+        },
+        {
+          "seconds": 4.858,
+          "status": 200
+        },
+        {
+          "seconds": 7.582,
+          "status": 200
+        },
+        {
+          "seconds": 5.084,
+          "status": 200
+        },
+        {
+          "seconds": 6.75,
+          "status": 200
+        },
+        {
+          "seconds": 5.11,
+          "status": 200
+        },
+        {
+          "seconds": 4.875,
+          "status": 200
+        },
+        {
+          "seconds": 4.998,
+          "status": 200
+        },
+        {
+          "seconds": 4.847,
+          "status": 200
+        },
+        {
+          "seconds": 4.778,
+          "status": 200
+        },
+        {
+          "seconds": 4.959,
+          "status": 200
+        }
+      ]
+    },
+    "comparison": {
+      "first_read": {
+        "seconds": 2.27,
+        "status": 200
+      },
+      "warm": {
+        "samples": 20,
+        "p95_seconds": 2.792,
+        "max_seconds": 3.285,
+        "successes": 20,
+        "passed": true
+      },
+      "measurements": [
+        {
+          "seconds": 2.281,
+          "status": 200
+        },
+        {
+          "seconds": 2.294,
+          "status": 200
+        },
+        {
+          "seconds": 2.166,
+          "status": 200
+        },
+        {
+          "seconds": 2.211,
+          "status": 200
+        },
+        {
+          "seconds": 2.209,
+          "status": 200
+        },
+        {
+          "seconds": 2.291,
+          "status": 200
+        },
+        {
+          "seconds": 2.792,
+          "status": 200
+        },
+        {
+          "seconds": 2.188,
+          "status": 200
+        },
+        {
+          "seconds": 2.202,
+          "status": 200
+        },
+        {
+          "seconds": 2.392,
+          "status": 200
+        },
+        {
+          "seconds": 2.272,
+          "status": 200
+        },
+        {
+          "seconds": 2.276,
+          "status": 200
+        },
+        {
+          "seconds": 2.167,
+          "status": 200
+        },
+        {
+          "seconds": 2.259,
+          "status": 200
+        },
+        {
+          "seconds": 2.227,
+          "status": 200
+        },
+        {
+          "seconds": 2.188,
+          "status": 200
+        },
+        {
+          "seconds": 2.491,
+          "status": 200
+        },
+        {
+          "seconds": 2.246,
+          "status": 200
+        },
+        {
+          "seconds": 2.262,
+          "status": 200
+        },
+        {
+          "seconds": 3.285,
+          "status": 200
+        }
+      ]
+    },
+    "job_status": {
+      "first_read": {
+        "seconds": 1.279,
+        "status": 200
+      },
+      "warm": {
+        "samples": 20,
+        "p95_seconds": 2.539,
+        "max_seconds": 3.494,
+        "successes": 20,
+        "passed": true
+      },
+      "measurements": [
+        {
+          "seconds": 1.295,
+          "status": 200
+        },
+        {
+          "seconds": 1.877,
+          "status": 200
+        },
+        {
+          "seconds": 2.252,
+          "status": 200
+        },
+        {
+          "seconds": 1.34,
+          "status": 200
+        },
+        {
+          "seconds": 1.282,
+          "status": 200
+        },
+        {
+          "seconds": 1.667,
+          "status": 200
+        },
+        {
+          "seconds": 1.662,
+          "status": 200
+        },
+        {
+          "seconds": 3.494,
+          "status": 200
+        },
+        {
+          "seconds": 2.358,
+          "status": 200
+        },
+        {
+          "seconds": 1.285,
+          "status": 200
+        },
+        {
+          "seconds": 1.286,
+          "status": 200
+        },
+        {
+          "seconds": 1.286,
+          "status": 200
+        },
+        {
+          "seconds": 2.539,
+          "status": 200
+        },
+        {
+          "seconds": 1.282,
+          "status": 200
+        },
+        {
+          "seconds": 1.275,
+          "status": 200
+        },
+        {
+          "seconds": 1.289,
+          "status": 200
+        },
+        {
+          "seconds": 1.28,
+          "status": 200
+        },
+        {
+          "seconds": 1.848,
+          "status": 200
+        },
+        {
+          "seconds": 2.292,
+          "status": 200
+        },
+        {
+          "seconds": 1.269,
+          "status": 200
+        }
+      ]
+    }
+  },
+  "capacity_certified": false,
+  "passed": true,
+  "release": "d648ac4bec9f78514ff306cf137202b202b8a3de",
+  "verified_date": "2026-10-22",
+  "jobs_enabled_during_probe": true
+}

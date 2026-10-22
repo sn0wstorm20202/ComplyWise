@@ -1,0 +1,303 @@
+{
+  "business_id": "aba825d2-081b-47fa-9875-8c549b5189d8",
+  "runs": [
+    {
+      "id": "4e6930dc-a2d1-4fd0-8587-fd9dd3e008b8",
+      "title": "1 \u00b7 Merchant export \u00b7 no production power",
+      "mode": "PRODUCTION",
+      "hash": "sha256:f8308c9f4a57c7f1ae9bbe7780a575b425782e730a456452166f8bb4214311ae",
+      "requirements": 93
+    },
+    {
+      "id": "bcb2ad04-59d7-4f40-ae77-cf3436fba07a",
+      "title": "2 \u00b7 Manufacturing \u00b7 production power recorded",
+      "mode": "PRODUCTION",
+      "hash": "sha256:fa0d7e8eaf4639948173e54fb01a1b477fd28e4e20113b03bfd30b867e933e3d",
+      "requirements": 93
+    },
+    {
+      "id": "8745267d-3530-4080-99f9-44a70aaf1f9f",
+      "title": "3 \u00b7 Manufacturing \u00b7 power information unknown",
+      "mode": "PRODUCTION",
+      "hash": "sha256:585abc3341d6bcb76d9f0dcf499cfa678905111defc7ed8cb9e82783003655f6",
+      "requirements": 93
+    }
+  ],
+  "comparisons": [
+    {
+      "before": "4e6930dc-a2d1-4fd0-8587-fd9dd3e008b8",
+      "after": "bcb2ad04-59d7-4f40-ae77-cf3436fba07a",
+      "context_matches": true,
+      "changes": 1,
+      "uncertain": 36,
+      "factory": [
+        {
+          "requirement_id": "REQ-TN-FACTORY-LICENSE",
+          "title": "Factory License (Tamil Nadu)",
+          "before": {
+            "status": "NOT_APPLICABLE",
+            "title": "Factory License (Tamil Nadu)",
+            "explanation": "Evaluated under RULE-TN-FACTORY-01: Evaluation completed with status NOT_APPLICABLE",
+            "reason": null,
+            "facts_used": {
+              "state": "TAMIL_NADU",
+              "total_worker_count": 48,
+              "connected_power_load": 0
+            },
+            "rule_evaluations": [
+              {
+                "rule_id": "RULE-TN-FACTORY-01",
+                "version": 1,
+                "truth_value": "FALSE",
+                "trace": {
+                  "op": "AND",
+                  "result": "FALSE",
+                  "children": [
+                    {
+                      "op": "EQ",
+                      "result": "TRUE",
+                      "variables_used": {
+                        "state": "TAMIL_NADU"
+                      }
+                    },
+                    {
+                      "op": "GTE",
+                      "result": "TRUE",
+                      "variables_used": {
+                        "total_worker_count": 48
+                      }
+                    },
+                    {
+                      "op": "GT",
+                      "result": "FALSE",
+                      "variables_used": {
+                        "connected_power_load": 0
+                      }
+                    }
+                  ],
+                  "variables_used": {}
+                }
+              }
+            ],
+            "evidence": {
+              "status": "NO_RECORDED_PASSAGE",
+              "recorded_passages": 0,
+              "reviewed_passages": 0,
+              "missing_references": 0,
+              "sources": [],
+              "completion_status": "NOT_VERIFIED_BY_APPLICABILITY"
+            }
+          },
+          "after": {
+            "status": "APPLICABLE",
+            "title": "Factory License (Tamil Nadu)",
+            "explanation": "Evaluated under RULE-TN-FACTORY-01: Evaluation completed with status APPLICABLE",
+            "reason": null,
+            "facts_used": {
+              "state": "TAMIL_NADU",
+              "total_worker_count": 48,
+              "connected_power_load": 50
+            },
+            "rule_evaluations": [
+              {
+                "rule_id": "RULE-TN-FACTORY-01",
+                "version": 1,
+                "truth_value": "TRUE",
+                "trace": {
+                  "op": "AND",
+                  "result": "TRUE",
+                  "children": [
+                    {
+                      "op": "EQ",
+                      "result": "TRUE",
+                      "variables_used": {
+                        "state": "TAMIL_NADU"
+                      }
+                    },
+                    {
+                      "op": "GTE",
+                      "result": "TRUE",
+                      "variables_used": {
+                        "total_worker_count": 48
+                      }
+                    },
+                    {
+                      "op": "GT",
+                      "result": "TRUE",
+                      "variables_used": {
+                        "connected_power_load": 50
+                      }
+                    }
+                  ],
+                  "variables_used": {}
+                }
+              }
+            ],
+            "evidence": {
+              "status": "REVIEW_NEEDED",
+              "recorded_passages": 1,
+              "reviewed_passages": 0,
+              "missing_references": 0,
+              "sources": [
+                {
+                  "evidence_id": "EVD-TN-FACTORIES-WORKERS",
+                  "title": "Tamil Nadu Factories Rules, 1950",
+                  "url": null,
+                  "verification_status": "VERIFIED",
+                  "publication_date": "1950-03-15",
+                  "effective_date": "1950-04-01",
+                  "retrieved_at": null
+                }
+              ],
+              "completion_status": "NOT_VERIFIED_BY_APPLICABILITY"
+            }
+          },
+          "status_changed": true,
+          "changed_facts_used": [
+            "connected_power_load"
+          ],
+          "needs_attention": false
+        }
+      ]
+    },
+    {
+      "before": "bcb2ad04-59d7-4f40-ae77-cf3436fba07a",
+      "after": "8745267d-3530-4080-99f9-44a70aaf1f9f",
+      "context_matches": true,
+      "changes": 1,
+      "uncertain": 37,
+      "factory": [
+        {
+          "requirement_id": "REQ-TN-FACTORY-LICENSE",
+          "title": "Factory License (Tamil Nadu)",
+          "before": {
+            "status": "APPLICABLE",
+            "title": "Factory License (Tamil Nadu)",
+            "explanation": "Evaluated under RULE-TN-FACTORY-01: Evaluation completed with status APPLICABLE",
+            "reason": null,
+            "facts_used": {
+              "state": "TAMIL_NADU",
+              "total_worker_count": 48,
+              "connected_power_load": 50
+            },
+            "rule_evaluations": [
+              {
+                "rule_id": "RULE-TN-FACTORY-01",
+                "version": 1,
+                "truth_value": "TRUE",
+                "trace": {
+                  "op": "AND",
+                  "result": "TRUE",
+                  "children": [
+                    {
+                      "op": "EQ",
+                      "result": "TRUE",
+                      "variables_used": {
+                        "state": "TAMIL_NADU"
+                      }
+                    },
+                    {
+                      "op": "GTE",
+                      "result": "TRUE",
+                      "variables_used": {
+                        "total_worker_count": 48
+                      }
+                    },
+                    {
+                      "op": "GT",
+                      "result": "TRUE",
+                      "variables_used": {
+                        "connected_power_load": 50
+                      }
+                    }
+                  ],
+                  "variables_used": {}
+                }
+              }
+            ],
+            "evidence": {
+              "status": "REVIEW_NEEDED",
+              "recorded_passages": 1,
+              "reviewed_passages": 0,
+              "missing_references": 0,
+              "sources": [
+                {
+                  "evidence_id": "EVD-TN-FACTORIES-WORKERS",
+                  "title": "Tamil Nadu Factories Rules, 1950",
+                  "url": null,
+                  "verification_status": "VERIFIED",
+                  "publication_date": "1950-03-15",
+                  "effective_date": "1950-04-01",
+                  "retrieved_at": null
+                }
+              ],
+              "completion_status": "NOT_VERIFIED_BY_APPLICABILITY"
+            }
+          },
+          "after": {
+            "status": "NEEDS_INFORMATION",
+            "title": "Factory License (Tamil Nadu)",
+            "explanation": "Evaluated under RULE-TN-FACTORY-01: Evaluation completed with status NEEDS_INFORMATION",
+            "reason": null,
+            "facts_used": {
+              "state": "TAMIL_NADU",
+              "total_worker_count": 48,
+              "connected_power_load": null
+            },
+            "rule_evaluations": [
+              {
+                "rule_id": "RULE-TN-FACTORY-01",
+                "version": 1,
+                "truth_value": "UNKNOWN",
+                "trace": {
+                  "op": "AND",
+                  "result": "UNKNOWN",
+                  "children": [
+                    {
+                      "op": "EQ",
+                      "result": "TRUE",
+                      "variables_used": {
+                        "state": "TAMIL_NADU"
+                      }
+                    },
+                    {
+                      "op": "GTE",
+                      "result": "TRUE",
+                      "variables_used": {
+                        "total_worker_count": 48
+                      }
+                    },
+                    {
+                      "op": "GT",
+                      "notes": [
+                        "Decision-critical variable is missing or null -> UNKNOWN"
+                      ],
+                      "result": "UNKNOWN",
+                      "variables_used": {
+                        "connected_power_load": null
+                      }
+                    }
+                  ],
+                  "variables_used": {}
+                }
+              }
+            ],
+            "evidence": {
+              "status": "NO_RECORDED_PASSAGE",
+              "recorded_passages": 0,
+              "reviewed_passages": 0,
+              "missing_references": 0,
+              "sources": [],
+              "completion_status": "NOT_VERIFIED_BY_APPLICABILITY"
+            }
+          },
+          "status_changed": true,
+          "changed_facts_used": [
+            "connected_power_load"
+          ],
+          "needs_attention": true
+        }
+      ]
+    }
+  ]
+}

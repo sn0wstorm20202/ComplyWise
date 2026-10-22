@@ -1,0 +1,9 @@
+{
+  "verified_date": "2026-10-22",
+  "url": "https://complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io/assessment-comparison?business_id=aba825d2-081b-47fa-9875-8c549b5189d8&before_run_id=4e6930dc-a2d1-4fd0-8587-fd9dd3e008b8&after_run_id=bcb2ad04-59d7-4f40-ae77-cf3436fba07a",
+  "before": "1 · Merchant export · no production power · 22 Oct 2026",
+  "after": "2 · Manufacturing · production power recorded · 22 Oct 2026",
+  "recorded_factory_result": "Factory License (Tamil Nadu)\n\nREQ-TN-FACTORY-LICENSE · Status changed\n\nChanged facts found in the recorded trace: connected power load\n\nBEFORE\n\nNOT APPLICABLE\n\nEvaluated under RULE-TN-FACTORY-01: Evaluation completed with status NOT_APPLICABLE\n\nFacts and rules read by this decision\n\nEvidence: No source passage recorded · 0/0 passages marked reviewed\n\nSource publication date: Not recorded\n\nCompletion: Applicability does not verify filing, licence issuance or authority approval.\n\nAFTER\n\nAPPLICABLE\n\nEvaluated under RULE-TN-FACTORY-01: Evaluation completed with status APPLICABLE\n\nFacts and rules read by this decision\n\nEvidence: Source review needed · 0/1 passages marked reviewed\n\nPrimary source published: 15 Mar 1950 · Effective: 1 Apr 1950\n\nRecorded source dates (1)\n\nCompletion: Applicability does not verify filing, licence issuance or authority approval.",
+  "unknown_case_verified": "The manufacturing-to-unknown selection displayed APPLICABLE → NEEDS INFORMATION; see unknown-comparison.png",
+  "prepared_button_reset_verified": true
+}

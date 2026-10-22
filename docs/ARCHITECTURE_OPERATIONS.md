@@ -67,6 +67,8 @@ Host provider-driven jobs in a region supported by the configured vendors. Direc
 
 `ops/deploy_assessment_worker.py` copies the existing API's relevant configuration in memory, including strategy and cost/discovery limits, into stable named secret references. It does not persist keys to files or enable the API flag. Apply migration 0006 first; verify the same-release heartbeat and a real provider result before enabling submissions. The student subscription allows only one standard environment, so replace the newly created empty/test environment rather than leaving duplicate workers. See the dated report for the measured rollout.
 
+Verified on 22 October 2026: the ingress-free Korea Central worker is running with 0.5 CPU / 1 GiB and one replica. API submissions are enabled with matching-release heartbeat checks; an isolated real provider-backed operation completed successfully. Frontend/API public hostnames are unchanged. See [deployment evidence and limitations](JUDGING_HISTORY_EVIDENCE_AND_WORKERS_2026-10-22.md#verified-deployment--22-october-2026) for exact deployed versions and timings. An intentional image URI change using a same-digest release tag was needed for Express to refresh settings; always verify the live capability endpoint after flag changes.
+
 ## Source changes and publication
 
 The review workspace shows changed captures and their affected rule/run counts. A reviewer records NO_RULE_CHANGE or UPDATE_REQUIRED with a reason. Publication requires an official captured source, a verbatim persisted passage, effective dates, an AST and executable positive/negative/missing-fact cases.

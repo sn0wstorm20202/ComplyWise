@@ -40,4 +40,36 @@ The East Asia worker could process persisted jobs, but its provider requests fel
 
 The supported worker target is Korea Central, which is listed by [OpenAI](https://help.openai.com/en/articles/5347006-openai-api-supported-countries-and-territories) and [Google](https://ai.google.dev/gemini-api/docs/available-regions). The public frontend/API URLs stay unchanged. Provider-backed question generation joins the three existing queued stages; deterministic answer interpretation stays local. The student subscription's one-standard-environment quota requires replacing the temporary East Asia worker environment rather than retaining two running workers. No provider key is changed or printed.
 
-Deployment and final live results will be recorded after verification.
+## Verified deployment — 22 October 2026
+
+The user approved the Korea worker deployment with the explicit condition that the judges' link stay unchanged. The temporary East Asia worker app and its empty standard environment were removed; deletion completed before provisioning the replacement. The pre-existing Express environments and unrelated services were retained.
+
+- Frontend: `https://complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io`, image source `8112778d52cd749cf3d55c8fc110282bfde47ffa`. This final frontend change makes the prepared walkthrough button restore its two snapshots even after the selectors change on the same URL.
+- API: `https://complywise-backend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io`, backend source `d648ac4bec9f78514ff306cf137202b202b8a3de`, same-digest `-workers` image tag. Express required a changed image URI to refresh its runtime settings; the live authenticated capability response, rather than control-plane configuration alone, confirmed activation.
+- Worker: `complywise-assessment-worker` in `complywise-worker-korea-standard`, Korea Central, standard WorkloadProfiles Consumption, 0.5 CPU / 1 GiB, min/max replicas 1, no ingress. Its backend release matches the API. Existing database, provider configuration and signing keys were preserved. No new public worker URL was created.
+- Live API: `background_processing_enabled=true`, `worker_ready=true`; demo mode remains enabled. Heartbeat matching is required before accepting new operations. A worker outage remains an explicit availability error rather than an unsafe second execution path.
+
+The internal isolated worker check completed in 18.251 seconds with one attempt. A separate real HTTP submission returned 202 in 3.406 seconds, resumed the same job on duplicate submission, and completed in 18.717 seconds with one attempt. Both saved facts with `LLM_BUSINESS_UNDERSTANDING` provenance. These verify actual provider generation from Korea, rather than the East Asia heuristic fallback. They are narrowly scoped operational checks, not a claim that every provider, stage or possible business has been tested. The test businesses were archived after terminal completion. The six original judging businesses were not rewritten.
+
+### Measured release reads
+
+These measurements were taken after worker activation from the local verification client, with three concurrent reads and 20 warm samples per route. Every first read and all 60 warm reads returned HTTP 200. Network travel is included; provider-driven generation is outside this read budget.
+
+| Read route | Warm p95 | Warm maximum | Budget p95 / maximum |
+| --- | ---: | ---: | ---: |
+| Saved dashboard | 6.750 s | 7.582 s | 10 / 15 s |
+| Saved comparison | 2.792 s | 3.285 s | 8 / 12 s |
+| Job status / capability | 2.539 s | 3.494 s | 3 / 6 s |
+
+All six original judging dashboards also returned 200 with unchanged saved run IDs and action counts (14, 11, 12, 10, 13, 11). Their concurrent and repeated reads stayed below 6.571 seconds. Read-only database verification recomputed all 16 recorded canonical content hashes: 13 pre-existing archives plus the three new walkthrough archives matched their captured hashes. No queued or running jobs remained at the final audit.
+
+### Test and browser evidence
+
+- Backend suite: **1,063 passed, 10 optional/integration skips**. The skipped checks are listed in the saved output; they are not counted as passing. A separate real PostgreSQL check exercised assessment lock contention, immediate duplicate-operation reuse, competing consumers and expired-lease recovery.
+- Frontend transport checks cover disabled-mode compatibility, queued question generation, unavailable-worker handling and avoiding duplicate execution after network errors. TypeScript and targeted comparison-page lint passed. The final frontend and backend images built successfully in GitHub Actions run `39754574858`; the deployed backend remains the matching `d648ac4` API/worker release because the later change affected only frontend behaviour and deployment tooling/tests.
+- Live browser verification showed factory applicability changing `NOT_APPLICABLE → APPLICABLE`, then `APPLICABLE → NEEDS_INFORMATION` when production power became unknown. Recorded evidence dates, review gaps and the distinction between applicability and completion were visible. The prepared button correctly reset the pair on the same route.
+- [Evidence directory](architecture-evidence/judging-history-2026-10-22/) contains timings, worker results, safe deployment metadata, PostgreSQL results, archive checks and screenshots. Provider keys and authentication tokens are excluded. The temporary GitHub registry build secret was removed after the successful build.
+
+For judging, enter the existing demo account, open **Dashboard → Compare saved assessments → Merchant export → manufacturing walkthrough**, then change **After** to snapshot 3 to inspect uncertainty. These are fictional saved inputs evaluated by the shared engine; the comparison feature is authorized by business and is available for other accounts with two sealed runs. Existing six-case demo login and starter profiles are retained.
+
+The catalogue still has source review and coverage gaps, which the UI now exposes. Applicability does not certify legal completeness, filing or authority approval. This release establishes sampled read budgets and a supervised durable worker; it does not eliminate provider latency, certify production capacity, install a full alerting service, or promise a bug-free system. The single worker deliberately limits concurrency for the judging deployment; measure queue age before increasing replicas or making capacity claims.

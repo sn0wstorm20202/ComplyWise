@@ -1,0 +1,19 @@
+{
+  "release": "d648ac4bec9f78514ff306cf137202b202b8a3de",
+  "capability": {
+    "background_processing_enabled": true,
+    "worker_ready": true
+  },
+  "stage": "BUSINESS_UNDERSTANDING",
+  "submission_http": 202,
+  "submission_seconds": 3.406,
+  "retry_same_job": true,
+  "retry_seconds": 5.579,
+  "status": "SUCCEEDED",
+  "attempts": 1,
+  "total_seconds": 18.717,
+  "understanding_saved": true,
+  "fact_sources": [
+    "LLM_BUSINESS_UNDERSTANDING"
+  ]
+}

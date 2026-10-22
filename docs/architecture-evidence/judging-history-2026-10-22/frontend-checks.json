@@ -1,0 +1,16 @@
+{
+  "verified_date": "2026-10-22",
+  "frontend_source": "8112778d52cd749cf3d55c8fc110282bfde47ffa",
+  "tests": {
+    "assessmentJobs": 10,
+    "industryStarters": 2,
+    "sourceProvenance": 3
+  },
+  "total_passed": 15,
+  "failed": 0,
+  "typescript_no_emit": "passed",
+  "targeted_comparison_page_eslint": "passed",
+  "production_image_build": "https://github.com/sn0wstorm20202/ComplyWise/actions/runs/39754574858",
+  "image_build_result": "success",
+  "temporary_github_registry_secret_removed": true
+}

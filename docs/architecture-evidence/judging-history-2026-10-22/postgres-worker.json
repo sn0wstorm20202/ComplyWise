@@ -1,0 +1,12 @@
+{
+  "database": "postgresql",
+  "isolated_business": "4ba75f8c-2e5b-4fc2-a9fc-1a00f21ded67",
+  "resume_seconds": 0.739,
+  "second_worker_skipped_locked_job": true,
+  "single_execution": true,
+  "expired_lease_recovered": true,
+  "terminal_jobs": [
+    "SUCCEEDED",
+    "SUCCEEDED"
+  ]
+}

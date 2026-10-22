@@ -1,0 +1,12 @@
+{
+  "openai": {
+    "http": 200,
+    "error_code": null,
+    "error_type": null
+  },
+  "gemini": {
+    "http": 200,
+    "error_status": null,
+    "reason_codes": []
+  }
+}

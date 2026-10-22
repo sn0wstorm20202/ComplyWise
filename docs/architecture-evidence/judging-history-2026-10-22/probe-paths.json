@@ -1,0 +1,5 @@
+{
+  "dashboard": "/api/v1/businesses/7f27ea65-f87d-4c48-9764-ae9edb14c506/dashboard?assessment_id=24b0e695-d297-4671-9183-987e42745bc4",
+  "comparison": "/api/v1/businesses/aba825d2-081b-47fa-9875-8c549b5189d8/compare/4e6930dc-a2d1-4fd0-8587-fd9dd3e008b8/bcb2ad04-59d7-4f40-ae77-cf3436fba07a",
+  "job_status": "/api/v1/assessments/24b0e695-d297-4671-9183-987e42745bc4/jobs/"
+}

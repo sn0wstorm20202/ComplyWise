@@ -1,0 +1,29 @@
+{
+  "verified_at": "2026-10-23T15:32:34.971Z",
+  "frontend_source": "40ad9254c31a2e702a28d12660c67f8da9f295fa",
+  "public_url": "https://complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io",
+  "first": {
+    "animation": "cw-loading-breathe",
+    "duration": "2.4s",
+    "opacity": "0.2",
+    "play_state": "running",
+    "reduced_motion": true,
+    "text": "Loading dashboard…\n0s elapsed",
+    "transform": "none"
+  },
+  "second": {
+    "animation": "cw-loading-breathe",
+    "duration": "2.4s",
+    "opacity": "0.955033",
+    "play_state": "running",
+    "reduced_motion": true,
+    "text": "Loading dashboard…\n1s elapsed",
+    "transform": "none"
+  },
+  "opacity_changed": true,
+  "notes": [
+    "Real business switch; no network interception, browser preference changes or artificial wait added.",
+    "Screenshot and DOM observations are separate operations, so the painted timer can lag the DOM by one frame.",
+    "Normal-motion shimmer/spinner CSS retained; only reduced-motion mode was visually verified in this browser."
+  ]
+}

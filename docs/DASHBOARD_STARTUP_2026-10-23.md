@@ -21,7 +21,15 @@ The structural fix follows [React's guidance on avoiding effect-driven request w
 
 The loading component has a CSS shimmer, spinner, visible loading text, a live elapsed-seconds counter, and a longer-wait message after eight seconds. The dashboard placeholder follows the header/metric/graph layout. It never displays a made-up completion percentage.
 
-The live test browser reported `prefers-reduced-motion: reduce`, which suppressed both the old pulse and the new CSS motion. The elapsed counter therefore provides visible activity even in that mode. Motion remains disabled when requested by the operating system, following [MDN reduced-motion guidance](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/%40media/prefers-reduced-motion). Status text uses a polite live region; the changing numeric timer is hidden from assistive announcements to avoid one announcement every second. See [W3C status-message guidance](https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html).
+The first release's live test browser reported `prefers-reduced-motion: reduce`, which suppressed both the old pulse and the new CSS motion. Its elapsed counter provided activity, but the rectangles remained static. The follow-up below supersedes that loading behaviour. Status text uses a polite live region; the changing numeric timer is hidden from assistive announcements to avoid one announcement every second. See [W3C status-message guidance](https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html).
+
+### Follow-up: visible loading activity
+
+Frontend source `40ad9254c31a2e702a28d12660c67f8da9f295fa` changes the dashboard label to **Loading dashboard…** and the longer-wait text to **Still loading. This is taking longer than usual.** It retains shimmer and spinner motion for the normal-motion setting. In reduced-motion mode, a narrowly scoped CSS exception gives only the transient loading shapes and indicator a gentle 2.4-second opacity pulse, without spatial travel. The rest of the product's reduced-motion rule remains intact; see [MDN reduced-motion guidance](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/%40media/prefers-reduced-motion).
+
+Type checking, targeted lint and the production image build passed. A real deployed business switch showed `cw-loading-breathe`, a running animation, and skeleton overlay opacity changing from `0.2` to `0.955033` between the `0s` and `1s` DOM observations, with reduced motion enabled. VoltGrid's 11-action dashboard loaded afterward, and the original Meridian workspace was restored. No network interception, preference changes or artificial loading delay was used. Normal-motion rendering was not separately verified in this browser. [Two raw screenshots and computed-style observations](architecture-evidence/loading-feedback-2026-10-23/) record this check; screenshot and DOM operations can observe adjacent paint frames.
+
+The frontend-only deployment succeeded at the existing public hostname. Backend, worker, database, judge scenarios and dashboard ordering were unchanged. Temporary GitHub registry credentials were removed after the successful image build. The earlier release and latency measurements below remain historical evidence, not new measurements for this CSS/copy update.
 
 ## Verification
 

@@ -28,7 +28,7 @@ export default function DashboardView({ onNavigateToView }: DashboardViewProps) 
   const needsInfo = summary?.metrics?.needs_information_count ?? "—";
   const readiness = summary?.compliance_readiness;
   const query = activeBusinessId ? "?business_id=" + encodeURIComponent(activeBusinessId) + (activeAssessmentId ? "&assessment_id=" + encodeURIComponent(activeAssessmentId) : "") : "";
-  if (isLoading) return <LoadingSkeleton variant="dashboard" label="Loading your saved dashboard…" />;
+  if (isLoading) return <LoadingSkeleton variant="dashboard" label="Loading dashboard…" />;
   if (loadError) return <ErrorState message={loadError} onRetry={() => void refreshDashboardData()} />;
   return <div className="space-y-8">
     <header className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">

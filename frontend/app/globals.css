@@ -26,8 +26,15 @@
 }
 @keyframes cw-loading-shimmer { to { transform: translateX(100%); } }
 @keyframes cw-loading-spin { to { transform: rotate(360deg); } }
+@keyframes cw-loading-breathe { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
-  .cw-loading-shape::after, .cw-loading-spinner { animation: none; }
+  .cw-loading-shape::after {
+    transform: none;
+    background: rgba(85, 125, 107, .18);
+  }
+  .cw-loading-shape::after, .cw-loading-spinner {
+    animation: cw-loading-breathe 2.4s ease-in-out infinite;
+  }
 }
 
 :root {

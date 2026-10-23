@@ -20,7 +20,7 @@ export function LoadingSkeleton({ className = "h-6 w-full", count = 1, variant =
     <div className="space-y-5">
       <div role="status" aria-live="polite" className="flex items-center gap-3 text-sm text-[var(--ui-secondary)]">
         <span className="cw-loading-spinner" aria-hidden="true" />
-        <span>{takingLonger ? "Still loading. The server is taking longer than usual." : label}</span>
+        <span>{takingLonger ? "Still loading. This is taking longer than usual." : label}</span>
         <span aria-hidden="true" className="ml-auto shrink-0 tabular-nums text-xs">{elapsedSeconds}s elapsed</span>
       </div>
       {variant === "dashboard" ? <div aria-hidden="true" className="space-y-6">

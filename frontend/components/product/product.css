@@ -160,6 +160,13 @@
 @media (max-width: 1023px) { .ui-app-body > .ui-sidebar { display: none; } .ui-topbar { height: 64px; } }
 @media (max-width: 639px) { .ui-canvas { padding: 24px 16px 48px; } .ui-topbar { padding-inline: 12px; gap: 8px; } .ui-page h1 { font-size: 26px; } .ui-page > :first-child:has(h1) { padding-bottom: 8px; } .ui-attention { grid-template-columns: 1fr; } .ui-attention a { padding: 12px 8px; } .ui-attention a + a { border-left: 0; border-top: 1px solid var(--ui-border); } .ui-attention strong { font-size: 24px; min-width: 32px; } .ui-auth main > div { padding: 24px; } .ui-object { padding: 20px; } .ui-overlay { max-height: calc(100svh - 24px); } .ui-overlay-drawer { max-height: 100svh; } .ui-page .flex:has(>button.rounded-full) { flex-wrap: wrap; } }
 @media (prefers-reduced-motion: reduce) { .cw-product *, .cw-product *::before, .cw-product *::after { animation: none !important; transition-duration: 0ms !important; scroll-behavior: auto !important; } }
+/* Loading needs visible activity even when spatial motion is reduced. Keep
+   this exception local to the transient indicator; the rest of the app stays still. */
+@media (prefers-reduced-motion: reduce) {
+  .cw-product .cw-loading-shape::after, .cw-product .cw-loading-spinner {
+    animation: cw-loading-breathe 2.4s ease-in-out infinite !important;
+  }
+}
 @media (max-width: 359px) { .ui-topbar a > .select-none > .leading-none { display: none; } }
 @media (max-width: 639px) { .ui-topbar .ui-nav-profile-default { display: none; } }
 @media (max-width: 767px) { .ui-topbar .ui-nav-review-link { display: none; } }

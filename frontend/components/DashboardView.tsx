@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import LoadingSkeleton from "./LoadingSkeleton";
 import ErrorState from "./ErrorState";
@@ -14,6 +15,7 @@ import Disclosure from "./product/Disclosure";
 import { AssessmentEvidencePanel } from "./product/AssessmentEvidence";
 interface DashboardViewProps { onNavigateToView: (view: NavView) => void; onOpenNewQuery?: () => void }
 export default function DashboardView({ onNavigateToView }: DashboardViewProps) {
+  const router = useRouter();
   const [activityOpen, setActivityOpen] = useState(false);
   const { profile, activeBusinessId, activeAssessmentId, isLoading, loadError, refreshDashboardData, liveDashboardSummary: summary, isDemoMode } = useBusinessContext();
   const { user } = useAuth();
@@ -44,11 +46,11 @@ export default function DashboardView({ onNavigateToView }: DashboardViewProps) 
     </nav>
     {summary?.widgets && <DashboardOverview summary={summary}
       onOpenActivity={() => setActivityOpen(true)}
-      onOpenDocuments={() => onNavigateToView("documents")}
-      onOpenRequirements={() => onNavigateToView("compliance")}
-      onOpenStandards={() => onNavigateToView("standards")}
-      onOpenActions={() => onNavigateToView("compliance")}
-      onOpenWorkflows={() => onNavigateToView("workflows")} />}
+      onOpenDocuments={() => router.push("/documents" + query)}
+      onOpenRequirements={() => router.push("/compliance" + query)}
+      onOpenStandards={() => router.push("/standards" + query)}
+      onOpenActions={() => router.push("/compliance" + query)}
+      onOpenWorkflows={() => router.push("/workflows" + query)} />}
     {hasBusiness && <Link href={"/assessment-comparison" + query} className="ui-button">Compare saved assessments →</Link>}
     <AssessmentEvidencePanel provenance={summary?.provenance} />
     <Overlay open={activityOpen} onClose={() => setActivityOpen(false)} title="Recent workspace activity" drawer>

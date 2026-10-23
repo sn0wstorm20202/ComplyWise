@@ -265,8 +265,12 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         });
         setIsDemoMode(false);
       setLiveDashboardSummary(loaded.dashboard);
-      // Directory browsing must not delay the selected workspace's metrics.
-      void api.businesses.getProfileHome(bizId).then(home => {
+      // The legacy dashboard GET also persisted the selected assessment. Keep
+      // that resume behaviour through the explicit workspace API, after the
+      // graphs are ready, without reintroducing a startup dependency.
+      void api.businesses.setWorkspace({business_id: bizId, assessment_id: effectiveAssId})
+        .catch(() => null).then(() => current() ? api.businesses.getProfileHome(bizId) : null).then(home => {
+        if (!home) return;
         if (current()) { setUserBusinesses(home.businesses || []); setRecentAssessments(home.recent_assessments || []); }
       }).catch(() => { /* The directory can be retried from the account menu. */ });
     } catch (err: any) {

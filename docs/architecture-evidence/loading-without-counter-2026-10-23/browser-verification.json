@@ -1,0 +1,30 @@
+{
+  "verified_at": "2026-10-23T15:56:05.054Z",
+  "frontend_source": "1dcfa923c9618aa0889199b6fcfa86edae35fb8b",
+  "public_url": "https://complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io",
+  "dashboard_loading_observations": [
+    {
+      "animation": "cw-loading-breathe",
+      "counter_present": false,
+      "opacity": "0.2",
+      "play_state": "running",
+      "reduced_motion": true,
+      "text": "Loading dashboard…"
+    },
+    {
+      "animation": "cw-loading-breathe",
+      "counter_present": false,
+      "opacity": "0.211",
+      "play_state": "running",
+      "text": "Loading dashboard…"
+    }
+  ],
+  "skeleton_opacity_changed": true,
+  "workspace_loading_text": true,
+  "workspace_counter_present": false,
+  "notes": [
+    "The workspace-loading screenshot was captured during a real reload of the existing browser tab.",
+    "The dashboard observations were made during a real business switch, without artificial network delay.",
+    "The shared loader now uses one delayed update for longer-wait copy instead of a per-second interval."
+  ]
+}

@@ -19,7 +19,11 @@ The structural fix follows [React's guidance on avoiding effect-driven request w
 
 ## Loading feedback
 
-The loading component has a CSS shimmer, spinner, visible loading text, a live elapsed-seconds counter, and a longer-wait message after eight seconds. The dashboard placeholder follows the header/metric/graph layout. It never displays a made-up completion percentage.
+The initial loading release had a CSS shimmer, spinner, visible loading text, a live elapsed-seconds counter, and a longer-wait message after eight seconds. The dashboard placeholder follows the header/metric/graph layout. It never displays a made-up completion percentage.
+
+The subsequent frontend change `1dcfa923c9618aa0889199b6fcfa86edae35fb8b` removes the visible elapsed counter from the shared component at the user's request. One delayed state update retains the longer-wait message, replacing the interval that previously updated every second. The spinner, skeleton animation, reduced-motion pulse and five-card dashboard layout remain unchanged. Type checking and targeted lint passed. Earlier counter screenshots and observations below are historical evidence, not the current interface.
+
+The [counter-removal production build](https://github.com/sn0wstorm20202/ComplyWise/actions/runs/39981873433) passed and was deployed to the same frontend hostname. During a real business switch, the live status text was only **Loading dashboard…**, with no elapsed counter; the running reduced-motion pulse changed overlay opacity from `0.2` to `0.211` across two observations. A real reload of the existing tab also showed the shared **Loading…** screen without a counter. [Current screenshots and observations](architecture-evidence/loading-without-counter-2026-10-23/) record these checks. The temporary registry credential was removed after the build.
 
 The first release's live test browser reported `prefers-reduced-motion: reduce`, which suppressed both the old pulse and the new CSS motion. Its elapsed counter provided activity, but the rectangles remained static. The follow-up below supersedes that loading behaviour. Status text uses a polite live region; the changing numeric timer is hidden from assistive announcements to avoid one announcement every second. See [W3C status-message guidance](https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html).
 

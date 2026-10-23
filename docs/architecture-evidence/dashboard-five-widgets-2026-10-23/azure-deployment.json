@@ -1,0 +1,6 @@
+{
+  "image": "complywiseacr.azurecr.io/complywise-frontend:architecture-45a8a5413a5b9fcfbfa69583fc5da4de5727b589",
+  "name": "complywise-frontend",
+  "state": "Succeeded",
+  "url": "complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io"
+}

@@ -1,0 +1,47 @@
+{
+  "verified_at": "2026-10-23T15:48:14.250Z",
+  "frontend_source": "45a8a5413a5b9fcfbfa69583fc5da4de5727b589",
+  "public_url": "https://complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io",
+  "layout": {
+    "evidence_top": 1183,
+    "headings": [
+      {
+        "text": "Workspace activity",
+        "x": 297,
+        "y": 465
+      },
+      {
+        "text": "Documents",
+        "x": 703,
+        "y": 465
+      },
+      {
+        "text": "Applicable Requirements",
+        "x": 1030,
+        "y": 527
+      },
+      {
+        "text": "Compliance Actions",
+        "x": 297,
+        "y": 764
+      },
+      {
+        "text": "Tracked case status",
+        "x": 866,
+        "y": 764
+      }
+    ],
+    "overview_bottom": 1075,
+    "page_width": 1275,
+    "scroll_y": 0,
+    "text": "Workspace activity\nLast seven days\n0\nevents\nRecorded events\nSat\nSun\nMon\nTue\nWed\nThu\nFri\nDocuments\nUploaded documents\n0\nuploaded\n0 uploaded this week\nApproved\n0%\nAwaiting review\n0%\nBIS\nApplicable Requirements\n11\nStandards to explore\n0\nCompliance Actions\n\nActions to review\n\nActions to review:\n14\n\n3\nNeeds review\n14\nAll actions\n\nWorkflow events · last seven days\n\nSat\nSun\nMon\nTue\nWed\nThu\nFri\nTracked case status\nOverall\n0\n%\n0%\n0%\n0\nCompleted\n0\nIn Progress\n0\nOverdue",
+    "viewport_width": 1275
+  },
+  "all_five_cards_present": true,
+  "evidence_follows_all_five": true,
+  "review_filter_text": "Compliance Actions\n\nNeeds information or review\n\nNeeds review:\n3\n\n3\nNeeds review\n14\nAll actions\n\nWorkflow events · last seven days\n\nSat\nSun\nMon\nTue\nWed\nThu\nFri\n",
+  "requirements_url": "https://complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io/compliance?business_id=7f27ea65-f87d-4c48-9764-ae9edb14c506&assessment_id=24b0e695-d297-4671-9183-987e42745bc4",
+  "standards_url": "https://complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io/standards?business_id=7f27ea65-f87d-4c48-9764-ae9edb14c506&assessment_id=24b0e695-d297-4671-9183-987e42745bc4",
+  "narrow_layout": "Existing 430px browser tab: all five cards in the accessibility tree; actions and case-status cards inspected visually with no clipped content.",
+  "restored_workspace": "Meridian Pharma Formulations Pvt. Ltd. — original business and assessment IDs retained."
+}

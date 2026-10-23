@@ -1,0 +1,15 @@
+{
+  "frontend_release": "883dff2b886bc3e9ce0bdb82a83638e9acf0c07c",
+  "api_worker_release": "9d819f1ae0f20ce9a5b375e042e614902982d23d",
+  "typescript_no_emit": "passed",
+  "targeted_lint_errors": 0,
+  "frontend_regression_tests_passed": 14,
+  "backend_tests_passed": 1067,
+  "backend_optional_skips": 10,
+  "builds_succeeded": [
+    39972370007,
+    39973698219,
+    39974887932
+  ],
+  "temporary_registry_secret_removed": true
+}

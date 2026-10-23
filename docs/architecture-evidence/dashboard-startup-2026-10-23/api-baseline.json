@@ -1,0 +1,30 @@
+[
+  {
+    "route": "auth_me",
+    "status": 200,
+    "seconds": 1.631,
+    "bytes": 278,
+    "server_timing": "app;dur=880.4"
+  },
+  {
+    "route": "profile_home",
+    "status": 200,
+    "seconds": 2.635,
+    "bytes": 15450,
+    "server_timing": "app;dur=1804.4"
+  },
+  {
+    "route": "assessment",
+    "status": 200,
+    "seconds": 1.278,
+    "bytes": 14578,
+    "server_timing": "app;dur=500.0"
+  },
+  {
+    "route": "dashboard",
+    "status": 200,
+    "seconds": 4.595,
+    "bytes": 31989,
+    "server_timing": "app;dur=3826.2"
+  }
+]

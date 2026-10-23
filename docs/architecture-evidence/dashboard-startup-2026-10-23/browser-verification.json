@@ -1,0 +1,14 @@
+{
+  "verified_date": "2026-10-23",
+  "frontend_release": "883dff2b886bc3e9ce0bdb82a83638e9acf0c07c",
+  "api_worker_release": "9d819f1ae0f20ce9a5b375e042e614902982d23d",
+  "initial_reload_seconds": 5.898,
+  "final_historical_navigation_seconds": 8.329,
+  "counter_initial": "Loading your saved dashboard…\n0s elapsed",
+  "counter_later": "Loading your saved dashboard…\n1s elapsed",
+  "reduced_motion": true,
+  "animation_disabled_as_requested": true,
+  "metrics_before_graphs": true,
+  "graphs_before_evidence": true,
+  "final_curated_navigation_seconds": 6.357
+}

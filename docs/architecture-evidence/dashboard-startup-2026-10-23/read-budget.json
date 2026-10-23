@@ -1,0 +1,129 @@
+{
+  "budgets": {
+    "schema_version": 1,
+    "description": "Initial judging-release acceptance budgets; sampled probes do not certify capacity or a production SLO.",
+    "minimum_warm_samples": 20,
+    "concurrency": 3,
+    "timeout_seconds": 20,
+    "routes": {
+      "dashboard": {
+        "p95_seconds": 10,
+        "max_seconds": 15
+      },
+      "workspace_startup": {
+        "p95_seconds": 8,
+        "max_seconds": 12
+      },
+      "comparison": {
+        "p95_seconds": 8,
+        "max_seconds": 12
+      },
+      "job_status": {
+        "p95_seconds": 3,
+        "max_seconds": 6
+      }
+    },
+    "required_success_ratio": 1.0
+  },
+  "results": {
+    "workspace_startup": {
+      "first_read": {
+        "seconds": 5.56,
+        "status": 200
+      },
+      "warm": {
+        "samples": 20,
+        "p95_seconds": 6.347,
+        "max_seconds": 6.556,
+        "successes": 20,
+        "passed": true
+      },
+      "measurements": [
+        {
+          "seconds": 6.347,
+          "status": 200
+        },
+        {
+          "seconds": 4.811,
+          "status": 200
+        },
+        {
+          "seconds": 5.478,
+          "status": 200
+        },
+        {
+          "seconds": 4.609,
+          "status": 200
+        },
+        {
+          "seconds": 4.471,
+          "status": 200
+        },
+        {
+          "seconds": 4.67,
+          "status": 200
+        },
+        {
+          "seconds": 5.23,
+          "status": 200
+        },
+        {
+          "seconds": 4.441,
+          "status": 200
+        },
+        {
+          "seconds": 6.556,
+          "status": 200
+        },
+        {
+          "seconds": 4.656,
+          "status": 200
+        },
+        {
+          "seconds": 4.6,
+          "status": 200
+        },
+        {
+          "seconds": 4.434,
+          "status": 200
+        },
+        {
+          "seconds": 4.636,
+          "status": 200
+        },
+        {
+          "seconds": 4.578,
+          "status": 200
+        },
+        {
+          "seconds": 4.475,
+          "status": 200
+        },
+        {
+          "seconds": 4.549,
+          "status": 200
+        },
+        {
+          "seconds": 4.596,
+          "status": 200
+        },
+        {
+          "seconds": 4.61,
+          "status": 200
+        },
+        {
+          "seconds": 4.786,
+          "status": 200
+        },
+        {
+          "seconds": 4.875,
+          "status": 200
+        }
+      ]
+    }
+  },
+  "capacity_certified": false,
+  "passed": true,
+  "release": "9d819f1ae0f20ce9a5b375e042e614902982d23d",
+  "verified_date": "2026-10-23"
+}

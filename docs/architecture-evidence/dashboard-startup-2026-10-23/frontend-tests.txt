@@ -1,0 +1,25 @@
+bun test v1.3.4 (5eb2145b)
+
+tests\assessmentJobs.test.ts:
+(pass) disabled background processing uses synchronous execution without any job POST
+(pass) enabled processing returns durable job results without synchronous execution [16.00ms]
+(pass) an unavailable supervised worker never starts synchronous work or submits a job
+(pass) question generation submits the supported queued stage and preserves its result
+(pass) capability network failure does not start synchronous work
+(pass) submission network failure does not start synchronous work
+(pass) an explicit disabled response during a configuration change falls back once
+(pass) older APIs remain compatible through their explicit disabled response
+(pass) malformed capability responses and failed jobs do not invoke a second execution
+(pass) a synchronous stage failure propagates without retrying or submitting a job
+
+tests\requestDeadline.test.ts:
+(pass) deadline covers a stalled response body even when an external signal is supplied [31.00ms]
+(pass) caller cancellation aborts the actual fetch without misreporting a timeout
+
+tests\workspaceSelection.test.ts:
+(pass) validated saved workspace needs no assessment-list request and supersedes stale cache
+(pass) switching businesses validates cached assessment against that business only
+
+ 14 pass
+ 0 fail
+Ran 14 tests across 3 files. [142.00ms]

@@ -1,0 +1,32 @@
+{
+  "verified_date": "2026-10-23",
+  "applications": [
+    {
+      "name": "complywise-backend",
+      "location": "East Asia",
+      "image": "complywiseacr.azurecr.io/complywise-backend:architecture-9d819f1ae0f20ce9a5b375e042e614902982d23d",
+      "state": "Succeeded",
+      "public_hostname": "complywise-backend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io",
+      "cpu": 1.0,
+      "memory": "2.0Gi"
+    },
+    {
+      "name": "complywise-frontend",
+      "location": "East Asia",
+      "image": "complywiseacr.azurecr.io/complywise-frontend:architecture-883dff2b886bc3e9ce0bdb82a83638e9acf0c07c",
+      "state": "Succeeded",
+      "public_hostname": "complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io",
+      "cpu": 0.5,
+      "memory": "1Gi"
+    },
+    {
+      "name": "complywise-assessment-worker",
+      "location": "Korea Central",
+      "image": "complywiseacr.azurecr.io/complywise-backend:architecture-9d819f1ae0f20ce9a5b375e042e614902982d23d",
+      "state": "Succeeded",
+      "public_hostname": null,
+      "cpu": 0.5,
+      "memory": "1Gi"
+    }
+  ]
+}

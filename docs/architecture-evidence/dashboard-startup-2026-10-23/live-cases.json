@@ -1,0 +1,73 @@
+{
+  "version": "9d819f1ae0f20ce9a5b375e042e614902982d23d",
+  "max_concurrent_requests": 3,
+  "concurrent_cases": [
+    {
+      "business": "Meridian Pharma Formulations Pvt. Ltd.",
+      "seconds": 5.595,
+      "status": 200,
+      "action_count": 14,
+      "saved_run_unchanged": true
+    },
+    {
+      "business": "VoltGrid Mobility Services Pvt. Ltd.",
+      "seconds": 5.588,
+      "status": 200,
+      "action_count": 11,
+      "saved_run_unchanged": true
+    },
+    {
+      "business": "ApexBuild Infrastructure Pvt. Ltd.",
+      "seconds": 5.166,
+      "status": 200,
+      "action_count": 12,
+      "saved_run_unchanged": true
+    },
+    {
+      "business": "SilkRoute Exports Pvt. Ltd.",
+      "seconds": 5.056,
+      "status": 200,
+      "action_count": 10,
+      "saved_run_unchanged": true
+    },
+    {
+      "business": "CloudAxis Data Centres India Pvt. Ltd.",
+      "seconds": 5.148,
+      "status": 200,
+      "action_count": 13,
+      "saved_run_unchanged": true
+    },
+    {
+      "business": "Sahaya Microfinance Services Ltd.",
+      "seconds": 5.724,
+      "status": 200,
+      "action_count": 11,
+      "saved_run_unchanged": true
+    }
+  ],
+  "repeated_meridian_reads": [
+    {
+      "business": "Meridian Pharma Formulations Pvt. Ltd.",
+      "seconds": 4.922,
+      "status": 200,
+      "action_count": 14,
+      "saved_run_unchanged": true
+    },
+    {
+      "business": "Meridian Pharma Formulations Pvt. Ltd.",
+      "seconds": 4.951,
+      "status": 200,
+      "action_count": 14,
+      "saved_run_unchanged": true
+    },
+    {
+      "business": "Meridian Pharma Formulations Pvt. Ltd.",
+      "seconds": 5.469,
+      "status": 200,
+      "action_count": 14,
+      "saved_run_unchanged": true
+    }
+  ],
+  "all_status_200": true,
+  "max_seconds": 5.724
+}

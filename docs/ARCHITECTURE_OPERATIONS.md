@@ -99,6 +99,10 @@ For multiple serving replicas, implement a shared replay store or authenticated 
 
 ## Verification and rollout
 
+### Workspace startup
+
+The frontend reads `/api/v1/user/workspace-bootstrap` for the selected business, exact assessment profile and dashboard in one authorized no-store response. The explicit workspace-selection write and business-directory loading follow rendering and are not readiness dependencies. Existing-token auth validation and bootstrap can overlap; cancellation, token identity and request-generation checks prevent stale responses from replacing another selection. The request deadline includes JSON consumption even when a caller supplies its own abort signal. Loading has a live elapsed counter as well as reduced-motion-aware CSS feedback. See [startup verification](DASHBOARD_STARTUP_2026-10-23.md) and the `workspace_startup` route budget; individual dashboard API times alone are not end-to-end browser timings.
+
 ### Dated procedural information
 
 Apply knowledge migration 0005 before running the updated API and worker. It creates RequirementRevision and an optional rule link. It does not invent dates or reviewer provenance for legacy definitions. Definitions without revisions retain their previous behaviour until reviewed publication creates their first release. Before that first release date, fresh evaluations report the versioned requirement as UNVERIFIED. Saved historical assessments are unchanged.

@@ -39,8 +39,6 @@ export default function DashboardView({ onNavigateToView }: DashboardViewProps) 
       </div>
       <Link href={hasBusiness ? "/compliance" + query : "/onboarding?new=true"} className="ui-button ui-button-primary">{hasBusiness ? "View requirements" : "Understand your business"}<ArrowRight size={16} /></Link>
     </header>
-    {hasBusiness && <Link href={"/assessment-comparison" + query} className="ui-button">Compare saved assessments →</Link>}
-    <AssessmentEvidencePanel provenance={summary?.provenance} />
     <nav className="ui-attention" aria-label="Needs attention">
       <Link href={"/compliance" + query}><strong>{actionCount}</strong><span>actions to review</span></Link>
       <Link href={"/calendar" + query}><strong>{assessed ? deadlines.length : "—"}</strong><span>upcoming deadlines</span></Link>
@@ -51,6 +49,8 @@ export default function DashboardView({ onNavigateToView }: DashboardViewProps) 
       <DocumentsCard documentsData={summary.widgets.documents} onOpen={() => onNavigateToView("documents")} />
       <ComplianceStatusCard categoryBreakdown={summary.widgets.cases} onExpand={() => onNavigateToView("workflows")} />
     </section>}
+    {hasBusiness && <Link href={"/assessment-comparison" + query} className="ui-button">Compare saved assessments →</Link>}
+    <AssessmentEvidencePanel provenance={summary?.provenance} />
     <Overlay open={activityOpen} onClose={() => setActivityOpen(false)} title="Recent workspace activity" drawer>
       {summary?.widgets?.recent_activity.length ? summary.widgets.recent_activity.map(event => <article key={event.id} className="ui-object"><p className="ui-eyebrow">{new Date(event.recorded_at).toLocaleString()}</p><h3 className="mt-2">{event.event.replaceAll("_", " ")}</h3><p className="text-xs mt-2">{event.case}</p></article>) : <p className="text-sm text-[var(--ui-secondary)]">Your saved workflow actions and reviewer decisions will appear here.</p>}
     </Overlay>

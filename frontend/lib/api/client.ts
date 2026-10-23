@@ -130,41 +130,36 @@ export async function request<T>(endpoint: string, options: RequestOptions = {})
   }
 
   const controller = new AbortController();
+  const abortFromCaller = () => controller.abort();
+  if (init.signal?.aborted) controller.abort();
+  init.signal?.addEventListener("abort", abortFromCaller, {once: true});
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   let res: Response;
+  let body: unknown;
   try {
     res = await fetch(url, {
       ...init,
       headers,
-      signal: init.signal || controller.signal,
+      signal: controller.signal,
     });
+    if (res.status === 204) return {} as T;
+    try {
+      body = await res.json();
+    } catch (err) {
+      if (controller.signal.aborted) throw err;
+      if (!res.ok) throw new ApiError("SERVER_ERROR", `Server returned ${res.status}: ${res.statusText}`, res.status);
+      return {} as T;
+    }
   } catch (err: unknown) {
-    clearTimeout(timer);
+    if (init.signal?.aborted) throw err;
     if (err instanceof Error && (err.name === "AbortError" || err.message?.includes("aborted"))) {
       throw new ApiError("TIMEOUT", `Request to ${endpoint} timed out after ${timeoutMs}ms`, 408);
     }
     throw err;
   } finally {
     clearTimeout(timer);
-  }
-
-  if (res.status === 204) {
-    return {} as T;
-  }
-
-  let body: unknown;
-  try {
-    body = await res.json();
-  } catch {
-    if (!res.ok) {
-      throw new ApiError(
-        "SERVER_ERROR",
-        `Server returned ${res.status}: ${res.statusText}`,
-        res.status
-      );
-    }
-    return {} as T;
+    init.signal?.removeEventListener("abort", abortFromCaller);
   }
 
   if (!res.ok) {

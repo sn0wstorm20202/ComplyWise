@@ -11,16 +11,13 @@ import React, {
 } from "react";
 import {
   BusinessProfile,
-  DEMO_PROFILES,
   DashboardData,
   getDashboardData,
 } from "@/data/demo";
 import { api } from "@/lib/api";
-import { DashboardSummary, Business, BusinessSummary, AssessmentSummary } from "@/types";
+import { DashboardSummary, BusinessSummary, AssessmentSummary } from "@/types";
 import { getAuthToken } from "@/lib/api/client";
 import { useAuth } from "./AuthContext";
-import { selectWorkspaceAssessment } from "@/lib/workspaceSelection";
-import { INITIAL_DATABASE_BUSINESSES, INITIAL_DATABASE_ASSESSMENTS } from "@/data/userProfileHomeData";
 
 interface BusinessContextValue {
   isLoading: boolean;
@@ -133,6 +130,8 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   const { token, loading: authLoading } = useAuth();
   const [profile, setProfileState] = useState<BusinessProfile>(EMPTY_PROFILE);
   const requestVersion = useRef(0);
+  const startupRequest = useRef<AbortController | null>(null);
+  const startedSession = useRef<string | null | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
@@ -178,10 +177,14 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
 
   const fetchBackendData = useCallback(async (preferredBizId?: string | null) => {
     const version = ++requestVersion.current;
-    const current = () => requestVersion.current === version;
+    startupRequest.current?.abort();
+    const session = getAuthToken();
+    const current = () => requestVersion.current === version && getAuthToken() === session;
+    const controller = new AbortController();
+    startupRequest.current = controller;
     setLoadError(null);
     setLiveDashboardSummary(null);
-    if (!getAuthToken()) {
+    if (!session) {
       setActiveBusinessId(null); setActiveAssessmentIdState(null);
       setUserBusinesses([]); setRecentAssessments([]); setProfileState(EMPTY_PROFILE);
       setIsLoading(false); return;
@@ -190,47 +193,36 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     try {
       const route = new URLSearchParams(window.location.search);
       const requestedBusiness = preferredBizId || route.get("business_id") || localStorage.getItem("complywise_active_business_id");
-      const home = await api.businesses.getProfileHome(requestedBusiness);
+      const routeAssessment = route.get("business_id") === requestedBusiness ? route.get("assessment_id") : null;
+      const loaded = await api.businesses.getWorkspaceBootstrap(requestedBusiness, routeAssessment,
+        localStorage.getItem("complywise_active_assessment_id"), controller.signal);
       if (!current()) return;
-      const homeBusinesses = home.businesses || [];
-      setUserBusinesses(homeBusinesses);
-      setRecentAssessments(home.recent_assessments || []);
-      if (!homeBusinesses.length) {
+      const selected = loaded.business;
+      setUserBusinesses(selected ? [selected] : []);
+      setRecentAssessments([]);
+      if (!selected) {
         setActiveBusinessId(null); setActiveAssessmentIdState(null); setProfileState(EMPTY_PROFILE);
         localStorage.removeItem("complywise_active_business_id");
         localStorage.removeItem("complywise_active_assessment_id");
         return;
       }
-      const serverWs = home.workspace ?? await api.businesses.getWorkspace();
-      if (!current()) return;
-      const preferred = requestedBusiness || serverWs?.active_business_id;
-      const selected = homeBusinesses.find(b => b.id === preferred) || homeBusinesses[0];
       const bizId = selected.id;
-      const cachedAssessment = localStorage.getItem("complywise_active_assessment_id");
-      const routeAssessment = route.get("business_id") === bizId ? route.get("assessment_id") : null;
-      const effectiveAssId = routeAssessment || await selectWorkspaceAssessment(bizId, serverWs, cachedAssessment, api.businesses.getAssessments);
-      if (!current()) return;
+      const effectiveAssId = loaded.assessment_id;
       setActiveBusinessId(bizId); setActiveAssessmentIdState(effectiveAssId);
       localStorage.setItem("complywise_active_business_id", bizId);
       if (effectiveAssId) localStorage.setItem("complywise_active_assessment_id", effectiveAssId);
       else localStorage.removeItem("complywise_active_assessment_id");
-      const [profileResp, summary, selectedAssessment] = await Promise.all([
-        effectiveAssId ? Promise.resolve(null) : api.businesses.getProfile(bizId), api.dashboard.get(bizId, effectiveAssId),
-        effectiveAssId ? api.businesses.getAssessment(bizId, effectiveAssId) : Promise.resolve(null),
-      ]);
-      if (!current()) return;
-      const matchedSummary = selected;
       const bizName = selected.name;
-      const cv = selectedAssessment?.profile_variables ?? profileResp?.current_version?.variables;
-        const rawState = String(cv?.state?.value || (selectedAssessment ? "" : matchedSummary?.state) || "");
+      const cv = loaded.profile_variables;
+        const rawState = String(cv?.state?.value || "");
         const stateFormatted = formatStateName(rawState);
-        const district = String(cv?.district?.value || (selectedAssessment ? "" : matchedSummary?.district) || "");
+        const district = String(cv?.district?.value || "");
         const constitution = formatConstitution(String(cv?.legal_constitution?.value || ""));
         const workerCount = Number(cv?.total_worker_count?.value ?? 0);
         const turnover = cv?.annual_turnover?.value ?? 0;
         const investment = cv?.plant_machinery_investment?.value ?? 0;
         const scaleFormatted = formatScale(String(turnover), String(investment));
-        const productDesc = String(cv?.product_description?.value || (selectedAssessment ? "" : matchedSummary?.product_description) || "");
+        const productDesc = String(cv?.product_description?.value || "");
         const powerLoad = String(cv?.connected_power_load?.value || "");
         const turnoverLakhs = Math.round((Number(turnover) || 0) / 100000);
         const invLakhs = Math.round((Number(investment) || 0) / 100000);
@@ -246,7 +238,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
 
         const panNumber = String(cv?.pan?.value || "Not provided");
 
-        setProfileState((prev) => ({
+        setProfileState({
           ...EMPTY_PROFILE,
           id: bizId,
           manufacturing: cv?.is_manufacturing?.value === true,
@@ -259,7 +251,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
           district: district,
           location: district && stateFormatted ? `${district}, ${stateFormatted}` : "Not provided",
           employeeCount: workerCount,
-          scale: scaleFormatted || matchedSummary?.msme_scale || "Not provided",
+          scale: scaleFormatted || "Not provided",
           activities,
           annualTurnoverLakhs: turnoverLakhs,
           plantInvestmentLakhs: invLakhs,
@@ -270,9 +262,13 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
           sector: activities[0] || "Business activities not provided",
           bisRegistration: String(cv?.bis_registration?.value || "Not provided"),
           lastSync: "Live from Database",
-        }));
+        });
         setIsDemoMode(false);
-      setLiveDashboardSummary(summary);
+      setLiveDashboardSummary(loaded.dashboard);
+      // Directory browsing must not delay the selected workspace's metrics.
+      void api.businesses.getProfileHome(bizId).then(home => {
+        if (current()) { setUserBusinesses(home.businesses || []); setRecentAssessments(home.recent_assessments || []); }
+      }).catch(() => { /* The directory can be retried from the account menu. */ });
     } catch (err: any) {
       if (current()) {
         setLiveDashboardSummary(null);
@@ -304,14 +300,21 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   // Load persisted profile from localStorage on mount and check live backend
   useEffect(() => {
     setIsLoaded(true);
-    if (authLoading) return;
-    fetchBackendData();
+    const session = getAuthToken();
+    if (authLoading && !session) return;
+    // A stored token may start its authorized read alongside /auth/me. The
+    // later auth state update must not restart the same in-flight load.
+    if (startedSession.current === session) return;
+    startedSession.current = session;
+    void fetchBackendData();
   }, [fetchBackendData, token, authLoading]);
 
   // Listen for logout event to completely reset tenant state
   useEffect(() => {
     const handleLogout = () => {
       ++requestVersion.current;
+      startupRequest.current?.abort();
+      startedSession.current = undefined;
       setIsLoading(false);
       setActiveBusinessId(null);
       setActiveAssessmentIdState(null);

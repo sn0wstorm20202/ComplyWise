@@ -148,3 +148,10 @@ export interface UserProfileHome {
   total_assessments: number;
 }
 
+export interface WorkspaceBootstrap {
+  business: Pick<BusinessSummary, "id" | "name" | "assessment_count" | "created_at" | "updated_at"> | null;
+  assessment_id: string | null;
+  profile_variables: Record<string, {value: unknown; origin?: string}>;
+  dashboard: import("./dashboard").DashboardSummary | null;
+}
+

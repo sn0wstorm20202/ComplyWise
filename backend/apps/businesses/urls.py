@@ -6,10 +6,12 @@ from django.urls import path
 
 from . import views
 from .comparison_views import AssessmentComparisonView, DecisionHistoryView, PreparedWalkthroughView
+from apps.dashboard.bootstrap import WorkspaceBootstrapView
 
 app_name = "businesses"
 
 urlpatterns = [
+    path("user/workspace-bootstrap", WorkspaceBootstrapView.as_view(), name="workspace-bootstrap"),
     path("assessment-walkthrough", PreparedWalkthroughView.as_view()),
     path("businesses/<uuid:business_id>/decision-history", DecisionHistoryView.as_view()),
     path("businesses/<uuid:business_id>/compare/<uuid:before_id>/<uuid:after_id>", AssessmentComparisonView.as_view()),

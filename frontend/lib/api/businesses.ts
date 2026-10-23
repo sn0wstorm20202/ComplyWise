@@ -15,9 +15,16 @@ import {
   ProfileVariableDefinition,
   ProfileVariableValue,
   UserProfileHome,
+  WorkspaceBootstrap,
 } from "@/types";
 
 export const businessesApi = {
+  getWorkspaceBootstrap: (businessId?: string | null, assessmentId?: string | null, cachedAssessmentId?: string | null, signal?: AbortSignal) =>
+    request<WorkspaceBootstrap>("/user/workspace-bootstrap", {
+      params: {business_id: businessId || undefined, assessment_id: assessmentId || undefined,
+        cached_assessment_id: cachedAssessmentId || undefined},
+      signal, cache: "no-store", timeoutMs: 20000,
+    }),
   /** Get current user's profile home (businesses & recent assessments) */
   getProfileHome: (businessId?: string | null, businessPage = 1, search?: string) =>
     request<UserProfileHome>("/user/profile", {

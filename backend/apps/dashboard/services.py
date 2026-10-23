@@ -304,27 +304,33 @@ def get_dashboard_summary(business: Business, assessment_id: str | None = None) 
 
 def get_workspace_widgets(business):
     """Business operational history; never infer fulfilled obligations from applicability."""
-    from apps.documents.models import DocumentRequirement
+    from apps.documents.models import DocumentRequirement, DocumentSubmission
+    from django.db.models import Count, Q, OuterRef, Subquery
+    from django.db.models.functions import TruncDate
     from apps.workflows.models import WorkflowEvent, ComplianceCase
     today = timezone.localdate()
     start = today - datetime.timedelta(days=6)
-    events = list(WorkflowEvent.objects.filter(compliance_case__business=business,
-        created_at__date__gte=start).select_related("compliance_case").order_by("created_at"))
+    events = WorkflowEvent.objects.filter(compliance_case__business=business, created_at__date__gte=start)
+    daily_counts = dict(events.order_by().annotate(day=TruncDate("created_at")).values("day")
+        .annotate(total=Count("id")).values_list("day", "total"))
+    recent = list(events.select_related("compliance_case").only("id", "event_code", "created_at",
+        "compliance_case__case_number").order_by("-created_at", "-id")[:10])
     days = [{"day": (start + datetime.timedelta(days=i)).strftime("%a"),
              "dateStr": (start + datetime.timedelta(days=i)).strftime("%d %b"),
-             "tasks": sum(timezone.localdate(e.created_at) == start + datetime.timedelta(days=i) for e in events),
+             "tasks": daily_counts.get(start + datetime.timedelta(days=i), 0),
              "isHighlight": i == 6} for i in range(7)]
-    submissions = [d.latest_submission for d in DocumentRequirement.objects.filter(case__business=business)]
-    submissions = [s for s in submissions if s]
+    latest = DocumentSubmission.objects.filter(document_requirement_id=OuterRef("pk")).order_by("-version_number").values("pk")[:1]
+    latest_ids = DocumentRequirement.objects.filter(case__business=business).order_by().annotate(latest=Subquery(latest)).values("latest")
+    submissions = list(DocumentSubmission.objects.filter(pk__in=latest_ids).only("status_code", "created_at"))
     verified = sum(s.status_code in {"INTERNAL_HUMAN_APPROVED"} for s in submissions)
     under_review = sum(s.status_code in {"PENDING", "PRECHECK_QUEUED", "PRECHECK_PROCESSING", "PRECHECK_PASSED"} for s in submissions)
     total = len(submissions)
-    cases = ComplianceCase.objects.filter(business=business)
-    completed = cases.filter(status_code="COMPLETED").count()
-    overdue = cases.filter(status_code="OVERDUE").count()
-    pending = cases.count() - completed - overdue
-    denominator = max(cases.count(), 1)
-    return {"activity": {"weeklyTasks": len(events), "growthPercentage": "Recorded events",
+    cases = ComplianceCase.objects.filter(business=business).aggregate(total=Count("pk"),
+        completed=Count("pk", filter=Q(status_code="COMPLETED")), overdue=Count("pk", filter=Q(status_code="OVERDUE")))
+    completed, overdue = cases["completed"], cases["overdue"]
+    pending = cases["total"] - completed - overdue
+    denominator = max(cases["total"], 1)
+    return {"activity": {"weeklyTasks": sum(daily_counts.values()), "growthPercentage": "Recorded events",
                 "maxTasks": max((d["tasks"] for d in days), default=1) or 1, "daily": days},
             "documents": {"totalCount": total, "onTrackCount": verified,
                 "changeThisWeek": f"{sum(s.created_at.date() >= start for s in submissions)} uploaded this week",
@@ -334,7 +340,7 @@ def get_workspace_widgets(business):
                 "compliantCount": completed, "inProgressCount": pending, "overdueCount": overdue,
                 "inProgressPercentage": round(100 * pending / denominator), "overduePercentage": round(100 * overdue / denominator)}},
             "recent_activity": [{"id": str(e.id), "event": e.event_code, "case": e.compliance_case.case_number,
-                                 "recorded_at": e.created_at.isoformat()} for e in events[-10:][::-1]]}
+                                 "recorded_at": e.created_at.isoformat()} for e in recent]}
 
 
 #: Requirement metadata key holding a statutory renewal cycle, in years.

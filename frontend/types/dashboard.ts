@@ -89,6 +89,8 @@ export interface DashboardSummary {
   total_workflows_count?: number;
   schemes_preview?: Array<{ id: string; name: string; title?: string; authority: string; benefit_type?: string; benefit?: string; benefit_summary?: string }>;
   standards_preview?: Array<{ standard_code?: string; title: string; authority: string; is_mandatory?: boolean }>;
+  /** Full standards workspace count, including contextual suggestions; not certifications. */
+  total_standards_count?: number;
   /** Always empty: no regulatory-change ingestion exists yet. */
   recent_updates: never[];
   recent_updates_available: boolean;

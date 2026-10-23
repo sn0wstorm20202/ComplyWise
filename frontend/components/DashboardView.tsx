@@ -4,9 +4,7 @@ import { useState } from "react";
 import LoadingSkeleton from "./LoadingSkeleton";
 import ErrorState from "./ErrorState";
 import Overlay from "./product/Overlay";
-import { ComplianceActivityCard } from "./dashboard/ComplianceActivityCard";
-import { DocumentsCard } from "./dashboard/DocumentsCard";
-import { ComplianceStatusCard } from "./dashboard/ComplianceStatusCard";
+import { DashboardOverview } from "./dashboard/DashboardOverview";
 import { ArrowRight, FileText, GitFork, ShieldCheck, Calendar, Sparkles } from "lucide-react";
 import { useBusinessContext } from "@/context/BusinessContext";
 import { useAuth } from "@/context/AuthContext";
@@ -44,11 +42,13 @@ export default function DashboardView({ onNavigateToView }: DashboardViewProps) 
       <Link href={"/calendar" + query}><strong>{assessed ? deadlines.length : "—"}</strong><span>upcoming deadlines</span></Link>
       <Link href={"/compliance" + query + (query ? "&" : "?") + "tab=action_required"}><strong>{needsInfo}</strong><span>need information</span></Link>
     </nav>
-    {summary?.widgets && <section aria-label="Business workspace overview" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      <ComplianceActivityCard activityData={summary.widgets.activity} onExpand={() => setActivityOpen(true)} />
-      <DocumentsCard documentsData={summary.widgets.documents} onOpen={() => onNavigateToView("documents")} />
-      <ComplianceStatusCard categoryBreakdown={summary.widgets.cases} onExpand={() => onNavigateToView("workflows")} />
-    </section>}
+    {summary?.widgets && <DashboardOverview summary={summary}
+      onOpenActivity={() => setActivityOpen(true)}
+      onOpenDocuments={() => onNavigateToView("documents")}
+      onOpenRequirements={() => onNavigateToView("compliance")}
+      onOpenStandards={() => onNavigateToView("standards")}
+      onOpenActions={() => onNavigateToView("compliance")}
+      onOpenWorkflows={() => onNavigateToView("workflows")} />}
     {hasBusiness && <Link href={"/assessment-comparison" + query} className="ui-button">Compare saved assessments →</Link>}
     <AssessmentEvidencePanel provenance={summary?.provenance} />
     <Overlay open={activityOpen} onClose={() => setActivityOpen(false)} title="Recent workspace activity" drawer>

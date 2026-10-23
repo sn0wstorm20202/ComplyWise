@@ -1,0 +1,14 @@
+{
+  "verified_date": "2026-10-23",
+  "frontend_release": "369545920c131bd09dda544fcc876c72e2838f02",
+  "url": "https://complywise-frontend.bravesand-4d6fbaeb.eastasia.azurecontainerapps.io/dashboard",
+  "order": [
+    "Needs attention metrics",
+    "Business workspace overview graphs",
+    "Compare saved assessments",
+    "Assessment evidence and coverage"
+  ],
+  "metrics_before_graphs": true,
+  "graphs_before_comparison": true,
+  "comparison_before_evidence": true
+}

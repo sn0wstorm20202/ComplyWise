@@ -6,6 +6,7 @@
   "timeout_seconds": 20,
   "routes": {
     "dashboard": {"p95_seconds": 10, "max_seconds": 15},
+    "workspace_startup": {"p95_seconds": 8, "max_seconds": 12},
     "comparison": {"p95_seconds": 8, "max_seconds": 12},
     "job_status": {"p95_seconds": 3, "max_seconds": 6}
   },

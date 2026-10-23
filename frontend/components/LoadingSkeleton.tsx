@@ -9,16 +9,19 @@ interface LoadingSkeletonProps {
 }
 
 export function LoadingSkeleton({ className = "h-6 w-full", count = 1, variant = "bars", label = "Loading…" }: LoadingSkeletonProps) {
-  const [takingLonger, setTakingLonger] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const takingLonger = elapsedSeconds >= 8;
   useEffect(() => {
-    const timer = setTimeout(() => setTakingLonger(true), 8000);
-    return () => clearTimeout(timer);
+    const started = performance.now();
+    const timer = setInterval(() => setElapsedSeconds(Math.floor((performance.now() - started) / 1000)), 1000);
+    return () => clearInterval(timer);
   }, []);
   return (
     <div className="space-y-5">
       <div role="status" aria-live="polite" className="flex items-center gap-3 text-sm text-[var(--ui-secondary)]">
         <span className="cw-loading-spinner" aria-hidden="true" />
         <span>{takingLonger ? "Still loading. The server is taking longer than usual." : label}</span>
+        <span aria-hidden="true" className="ml-auto shrink-0 tabular-nums text-xs">{elapsedSeconds}s elapsed</span>
       </div>
       {variant === "dashboard" ? <div aria-hidden="true" className="space-y-6">
         <div className="cw-loading-shape h-8 w-2/3 rounded-lg" />
